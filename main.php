@@ -84,7 +84,14 @@ $discord->on('ready', function (Discord $discord) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
                     if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
-                        $assistance = $plan->assist($chatAI, $message->user_id, $message->content);
+                        $assistance = $plan->assist(
+                            $chatAI,
+                            $message->guild_id,
+                            $message->channel_id,
+                            $message->user_id,
+                            $message->content,
+                            $botID
+                        );
 
                         if (!empty($assistance)) {
                             $message->reply($assistance);

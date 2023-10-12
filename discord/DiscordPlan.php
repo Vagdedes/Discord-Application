@@ -8,6 +8,7 @@ class DiscordPlan
     public array $channels, $whitelistContents, $punishmentTypes, $punishments;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
+    private array $assistance;
 
     public function __construct($planID)
     {
@@ -28,6 +29,7 @@ class DiscordPlan
         $this->expirationReason = $query->expiration_reason;
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
+        $this->assistance = array();
 
         // Separator
 
@@ -218,30 +220,38 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(ChatAI $chatAI, $userID, $message): ?string
+    public function assist(ChatAI $chatAI, $serverID, $channelID, $userID, $message, $botID): ?string
     {
-        $cacheKey = array(__METHOD__, $userID, $message);
-        $cache = get_key_value_pair($cacheKey);
+        if (!array_key_exists($userID, $this->assistance)) {
+            $this->assistance[$userID] = true;
 
-        if ($cache !== null) {
-            return $cache;
-        }
-        $result = $chatAI->getText($chatAI->getResult(
-            overflow_long(overflow_long($userID * 31) + $this->planID),
-            array(
-                "messages" => array(
+            if (!empty($message)) {
+                $cacheKey = array(__METHOD__, $userID, $message);
+                $cache = get_key_value_pair($cacheKey);
+
+                if ($cache !== null) {
+                    return $cache;
+                }
+                $result = $chatAI->getText($chatAI->getResult(
+                    overflow_long(overflow_long($userID * 31) + $this->planID),
                     array(
-                        "role" => "system",
-                        "content" => $this->instructions->build()
-                    ),
-                    array(
-                        "role" => "user",
-                        "content" => $message
+                        "messages" => array(
+                            array(
+                                "role" => "system",
+                                "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
+                            ),
+                            array(
+                                "role" => "user",
+                                "content" => $message
+                            )
+                        )
                     )
-                )
-            )
-        ));
-        set_key_value_pair($cacheKey, $result);
-        return $result;
+                ));
+                set_key_value_pair($cacheKey, $result);
+                unset($this->assistance[$userID]);
+                return $result;
+            }
+        }
+        return null;
     }
 }

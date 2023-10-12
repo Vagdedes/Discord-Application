@@ -30,3 +30,25 @@ class BotDatabaseTable
         BOT_PUNISHMENT_TYPES = "discord.botPunishmentTypes",
         BOT_WHITELIST = "discord.botWhitelist";
 }
+
+class DiscordSyntax
+{
+    public const
+        ITALICS = "*",
+        UNDERLINE_ITALICS = array("__*", "*__"),
+        BOLD = "**",
+        UNDERLINE_BOLD = array("__**", "**__"),
+        BOLD_ITALICS = "***",
+        UNDERLINE_BOLD_ITALICS = array("__***", "***__"),
+        UNDERLINE = "__",
+        STRIKETHROUGH = "~~",
+        BIG_HEADER = "#",
+        MEDIUM_HEADER = "##",
+        SMALL_HEADER = "###",
+        LIST = "-",
+        CODE_BLOCK = "`",
+        HEAVY_CODE_BLOCK = "```",
+        QUOTE = ">",
+        MULTI_QUOTE = ">>>",
+        SPOILER = "||";
+}

@@ -41,9 +41,76 @@ class DiscordInstructions
         );
     }
 
-    public function build(): string
+    public function build($serverID, $channelID, $userID, $message, $botID): ?string
     {
-        //todo
-        return "";
+        if (!empty($this->instructions)) {
+            $hasPlaceholders = !empty($this->placeholders);
+            $placeholderArray = array();
+            $information = "";
+            $disclaimer = "";
+            $object = new stdClass();
+            $object->serverID = $serverID;
+            $object->channelID = $channelID;
+            $object->userID = $userID;
+            $object->message = $message;
+            $object->botID = $botID;
+
+            foreach ($this->instructions as $instruction) {
+                $placeholderStart = $instruction->placeholder_start;
+                $placeholderEnd = $instruction->placeholder_end;
+                $rowInformation = $instruction->information;
+                $rowDisclaimer = $instruction->disclaimer;
+
+                if ($hasPlaceholders) {
+                    foreach ($this->placeholders as $placeholder) {
+                        if (isset($object->{$placeholder->placeholder})) {
+                            $value = $object->{$placeholder->placeholder};
+                            $placeholderArray[] = $value;
+
+                            if ($placeholder->include_previous !== null
+                                && $placeholder->include_previous > 0) {
+                                $size = sizeof($placeholderArray);
+
+                                for ($position = 1; $position <= $placeholder->include_previous; $position++) {
+                                    $modifiedPosition = $size - $position;
+
+                                    if ($modifiedPosition >= 0) {
+                                        $positionValue = $placeholderArray[$modifiedPosition];
+                                        $rowInformation = str_replace(
+                                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                            $positionValue,
+                                            $rowInformation
+                                        );
+                                        $rowDisclaimer = str_replace(
+                                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                            $positionValue,
+                                            $rowDisclaimer
+                                        );
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                            $rowInformation = str_replace(
+                                $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                $value,
+                                $rowInformation
+                            );
+                            $rowDisclaimer = str_replace(
+                                $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                $value,
+                                $rowDisclaimer
+                            );
+                        }
+                    }
+                }
+                $information .= $rowInformation;
+                $disclaimer .= $rowDisclaimer;
+            }
+            return $information . (!empty($disclaimer)
+                    ? DiscordSyntax::HEAVY_CODE_BLOCK . $disclaimer . DiscordSyntax::HEAVY_CODE_BLOCK
+                    : "");
+        }
+        return null;
     }
 }
