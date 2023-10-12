@@ -32,24 +32,6 @@ $chatAI = new ChatAI(AIModel::CHAT_GPT_3_5, $AI_key[0]);
 if (!$chatAI->exists) {
     exit("AI model not found");
 }
-if (true) {
-    var_dump($chatAI->getText($chatAI->getResult(
-        5,
-        array(
-            "messages" => array(
-                array(
-                    "role" => "system",
-                    "content" => "You are a helpful assistant."
-                ),
-                array(
-                    "role" => "user",
-                    "content" => "What is the number pi?"
-                )
-            )
-        )
-    )));
-    return;
-}
 
 use Discord\Discord;
 use Discord\Helpers\Collection;
@@ -89,7 +71,7 @@ $scheduler = new DiscordScheduler();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 
 $discord->on('ready', function (Discord $discord) {
-    global $scheduler;
+    global $scheduler, $chatAI;
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($botID);
@@ -97,12 +79,16 @@ $discord->on('ready', function (Discord $discord) {
     $scheduler->addTask($discordBot, "refreshPunishments", null, 60_000);
     $scheduler->addTask($discordBot, "refreshInstructions", null, 60_000);
 
-    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
+    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI) {
         foreach ($message->mentions as $user) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
                     if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
-                        $message->reply("I AM ALIVE!");
+                        $assistance = $plan->assist($chatAI, $message->user_id, $message->content);
+
+                        if (!empty($assistance)) {
+                            $message->reply($assistance);
+                        }
                         break;
                     }
                 }

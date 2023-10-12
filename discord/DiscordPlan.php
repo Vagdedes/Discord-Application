@@ -217,4 +217,31 @@ class DiscordPlan
         set_key_value_pair($cacheKey, $result, 60);
         return $result;
     }
+
+    public function assist(ChatAI $chatAI, $userID, $message): ?string
+    {
+        $cacheKey = array(__METHOD__, $userID, $message);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        }
+        $result = $chatAI->getText($chatAI->getResult(
+            overflow_long(overflow_long($userID * 31) + $this->planID),
+            array(
+                "messages" => array(
+                    array(
+                        "role" => "system",
+                        "content" => $this->instructions->build()
+                    ),
+                    array(
+                        "role" => "user",
+                        "content" => $message
+                    )
+                )
+            )
+        ));
+        set_key_value_pair($cacheKey, $result);
+        return $result;
+    }
 }
