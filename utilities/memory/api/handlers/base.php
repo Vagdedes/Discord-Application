@@ -1,5 +1,18 @@
 <?php
 
+function remove_expired_memory(): void
+{
+    global $memory_array;
+
+    if (!empty($memory_array)) {
+        foreach ($memory_array as $key => $value) {
+            if ($value->expiration !== false && $value->expiration < time()) {
+                unset($memory_array[$key]);
+            }
+        }
+    }
+}
+
 class IndividualMemoryBlock
 {
     private $originalKey;
@@ -41,7 +54,6 @@ class IndividualMemoryBlock
     public function set($value, $expiration = false): bool
     {
         $this->internalSet($value, $expiration);
-        $this->removeExpired();
         return true;
     }
 
@@ -79,18 +91,5 @@ class IndividualMemoryBlock
         $object->creation = time();
         $object->expiration = is_numeric($expiration) ? $expiration : false;
         $memory_array[$this->key] = $object;
-    }
-
-    private function removeExpired(): void
-    {
-        global $memory_array;
-
-        if (!empty($memory_array)){
-            foreach ($memory_array as $key => $value) {
-                if ($value->expiration !== false && $value->expiration < time()) {
-                    unset($memory_array[$key]);
-                }
-            }
-        }
     }
 }
