@@ -230,26 +230,30 @@ class DiscordPlan
                 $cache = get_key_value_pair($cacheKey);
 
                 if ($cache !== null) {
+                    unset($this->assistance[$userID]);
                     return $cache;
-                }
-                $result = $chatAI->getText($chatAI->getResult(
-                    overflow_long(overflow_long($userID * 31) + $this->planID),
-                    array(
-                        "messages" => array(
-                            array(
-                                "role" => "system",
-                                "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
-                            ),
-                            array(
-                                "role" => "user",
-                                "content" => $message
+                } else {
+                    $result = $chatAI->getText($chatAI->getResult(
+                        overflow_long(overflow_long($userID * 31) + $this->planID),
+                        array(
+                            "messages" => array(
+                                array(
+                                    "role" => "system",
+                                    "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
+                                ),
+                                array(
+                                    "role" => "user",
+                                    "content" => $message
+                                )
                             )
                         )
-                    )
-                ));
-                set_key_value_pair($cacheKey, $result);
+                    ));
+                    set_key_value_pair($cacheKey, $result);
+                    unset($this->assistance[$userID]);
+                    return $result;
+                }
+            } else {
                 unset($this->assistance[$userID]);
-                return $result;
             }
         }
         return null;

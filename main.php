@@ -47,7 +47,6 @@ use Discord\Parts\Guild\Integration;
 use Discord\Parts\Guild\Role;
 use Discord\Parts\Guild\ScheduledEvent;
 use Discord\Parts\Interactions\Interaction;
-use Discord\Parts\Thread\Member;
 use Discord\Parts\User\User;
 use Discord\Parts\WebSockets\AutoModerationActionExecution;
 use Discord\Parts\WebSockets\MessageReaction;
@@ -83,6 +82,7 @@ $discord->on('ready', function (Discord $discord) {
         foreach ($message->mentions as $user) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
+                    var_dump($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id));
                     if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
                         $assistance = $plan->assist(
                             $chatAI,
@@ -229,17 +229,10 @@ $discord->on('ready', function (Discord $discord) {
 
     // Separator
 
-    $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger) {
-        $logger->log($member->user_id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
-    });
-
-    $discord->on(Event::GUILD_MEMBER_REMOVE, function (Member $member, Discord $discord) use ($logger) {
-        $logger->log($member->user_id, Event::GUILD_MEMBER_REMOVE, $member->getRawAttributes());
-    });
-
-    $discord->on(Event::GUILD_MEMBER_UPDATE, function (Member $member, Discord $discord, ?Member $oldMember) use ($logger) {
-        $logger->log(null, Event::GUILD_MEMBER_UPDATE, $member->getRawAttributes(), $oldMember?->getRawAttributes());
-    });
+    // Event::GUILD_MEMBER_UPDATE: Results in error
+    // Event::GUILD_MEMBER_ADD: Results in error
+    // Event::GUILD_MEMBER_REMOVE: Results in error
+    // Event::GUILD_MEMBER_UPDATE: Results in error
 
     // Separator
 
