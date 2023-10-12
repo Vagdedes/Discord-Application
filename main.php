@@ -53,13 +53,18 @@ $discord = new Discord([
     'disabledEvents' => [],
     'dnsConfig' => '1.1.1.1'
 ]);
+
 $scheduler = new DiscordScheduler();
+$scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 
 $discord->on('ready', function (Discord $discord) {
     global $scheduler;
     $botID = $discord->id;
-    $discordBot = new DiscordBot($botID);
     $logger = new DiscordLogs($botID);
+    $discordBot = new DiscordBot($botID);
+    $scheduler->addTask($discordBot, "refreshWhitelist", null, 60_000);
+    $scheduler->addTask($discordBot, "refreshPunishments", null, 60_000);
+    $scheduler->addTask($discordBot, "refreshInstructions", null, 60_000);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         foreach ($message->mentions as $user) {
@@ -344,10 +349,7 @@ $discord->on('ready', function (Discord $discord) {
 
     // Separator
 
-    $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
-    $scheduler->addTask($discordBot, "refreshWhitelist", null, 60_000);
-    $scheduler->addTask($discordBot, "refreshPunishments", null, 60_000);
-    //$scheduler->run();
+    //$scheduler->run(); //todo
 });
 
 $discord->run();

@@ -46,4 +46,11 @@ class DiscordBot
         }
     }
 
+    public function refreshInstructions(): void
+    {
+        foreach ($this->plans as $plan) {
+            $plan->instructions->refresh();
+        }
+    }
+
 }
