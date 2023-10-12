@@ -13,7 +13,7 @@ class DiscordLogs
     public function log($userID, ?string $action, $object, $oldObject = null): void
     {
         sql_insert(
-            DatabaseVariables::BOT_LOGS_TABLE,
+            BotDatabaseTable::BOT_LOGS,
             array(
                 "bot_id" => $this->botID,
                 "user_id" => $userID,

@@ -4,22 +4,15 @@ class DiscordPlan
 {
     public int $planID;
     public string $creationDate;
-    public ?string $creationReason;
-    public ?string $expirationDate;
-    public ?string $expirationReason;
-    public ?string $deletionDate;
-    public ?string $deletionReason;
-    public array $channels;
-    public array $whitelistContents;
-    public array $punishmentTypes;
-    public array $punishments;
+    public ?string $expirationDate, $creationReason, $expirationReason;
+    public array $channels, $whitelistContents, $punishmentTypes, $punishments;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
 
     public function __construct($planID)
     {
         $query = get_sql_query(
-            DatabaseVariables::BOT_PLANS_TABLE,
+            BotDatabaseTable::BOT_PLANS,
             null,
             array(
                 array("id", $planID),
@@ -33,15 +26,13 @@ class DiscordPlan
         $this->creationReason = $query->creation_reason;
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
-        $this->deletionDate = $query->deletion_date;
-        $this->deletionReason = $query->deletion_reason;
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
 
         // Separator
 
         $this->channels = get_sql_query(
-            DatabaseVariables::BOT_CHANNELS_TABLE,
+            BotDatabaseTable::BOT_CHANNELS,
             null,
             array(
                 array("plan_id", $this->planID),
@@ -60,7 +51,7 @@ class DiscordPlan
         // Separator
 
         $this->punishmentTypes = get_sql_query(
-            DatabaseVariables::BOT_PUNISHMENT_TYPES_TABLE,
+            BotDatabaseTable::BOT_PUNISHMENT_TYPES,
             null,
             array(
                 null,
@@ -80,7 +71,7 @@ class DiscordPlan
     public function refreshWhitelist(): void
     {
         $this->whitelistContents = get_sql_query(
-            DatabaseVariables::BOT_WHITELIST_TABLE,
+            BotDatabaseTable::BOT_WHITELIST,
             null,
             array(
                 array("plan_id", $this->planID),
@@ -98,7 +89,7 @@ class DiscordPlan
     {
         if (!empty($this->punishmentTypes)) {
             $query = get_sql_query(
-                DatabaseVariables::BOT_PUNISHMENTS_TABLE,
+                BotDatabaseTable::BOT_PUNISHMENTS,
                 null,
                 array(
                     array("bot_id", $this->botID),
@@ -135,7 +126,7 @@ class DiscordPlan
     {
         set_sql_cache("1 second");
         return get_sql_query(
-            DatabaseVariables::BOT_MESSAGES_TABLE,
+            BotDatabaseTable::BOT_MESSAGES,
             null,
             array(
                 array("plan_id", $this->planID),
@@ -154,7 +145,7 @@ class DiscordPlan
     {
         set_sql_cache("1 second");
         return get_sql_query(
-            DatabaseVariables::BOT_REPLIES_TABLE,
+            BotDatabaseTable::BOT_REPLIES,
             null,
             array(
                 array("plan_id", $this->planID),

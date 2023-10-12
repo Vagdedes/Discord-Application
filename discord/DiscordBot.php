@@ -8,7 +8,7 @@ class DiscordBot
     public function __construct($botID)
     {
         $query = get_sql_query(
-            DatabaseVariables::BOT_PLANS_TABLE,
+            BotDatabaseTable::BOT_PLANS,
             array("id"),
             array(
                 array("bot_id", $botID),

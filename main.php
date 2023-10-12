@@ -12,12 +12,15 @@ require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/scheduler.php';
 
-require '/root/discord_bot/database/variables.php';
+require '/root/discord_bot/discord/variables.php';
 require '/root/discord_bot/discord/DiscordPlan.php';
 require '/root/discord_bot/discord/DiscordKnowledge.php';
 require '/root/discord_bot/discord/DiscordInstructions.php';
 require '/root/discord_bot/discord/DiscordLogs.php';
 require '/root/discord_bot/discord/DiscordBot.php';
+
+require '/root/discord_bot/ai/variables.php';
+require '/root/discord_bot/ai/ChatAI.php';
 
 use Discord\Discord;
 use Discord\Helpers\Collection;
@@ -37,7 +40,6 @@ use Discord\Parts\Thread\Member;
 use Discord\Parts\User\User;
 use Discord\Parts\WebSockets\AutoModerationActionExecution;
 use Discord\Parts\WebSockets\MessageReaction;
-use Discord\Parts\WebSockets\PresenceUpdate;
 use Discord\Parts\WebSockets\TypingStart;
 use Discord\Parts\WebSockets\VoiceServerUpdate;
 use Discord\Parts\WebSockets\VoiceStateUpdate;

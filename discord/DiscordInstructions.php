@@ -16,7 +16,7 @@ class DiscordInstructions
     public function refresh(): void
     {
         $this->instructions = get_sql_query(
-            DatabaseVariables::BOT_INSTRUCTIONS_TABLE,
+            BotDatabaseTable::BOT_INSTRUCTIONS,
             null,
             array(
                 array("plan_id", $this->plan->planID),
@@ -28,7 +28,7 @@ class DiscordInstructions
             )
         );
         $this->placeholders = get_sql_query(
-            DatabaseVariables::BOT_INSTRUCTION_PLACEHOLDERS_TABLE,
+            BotDatabaseTable::BOT_INSTRUCTION_PLACEHOLDERS,
             null,
             array(
                 array("plan_id", $this->plan->planID),

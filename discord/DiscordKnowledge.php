@@ -14,7 +14,7 @@ class DiscordKnowledge
     {
         set_sql_cache("1 second");
         return get_sql_query(
-            DatabaseVariables::BOT_STATIC_KNOWLEDGE_TABLE,
+            BotDatabaseTable::BOT_STATIC_KNOWLEDGE,
             null,
             array(
                 array("plan_id", $this->plan->planID),
@@ -37,7 +37,7 @@ class DiscordKnowledge
     {
         set_sql_cache("1 second");
         return get_sql_query(
-            DatabaseVariables::BOT_DYNAMIC_KNOWLEDGE_TABLE,
+            BotDatabaseTable::BOT_DYNAMIC_KNOWLEDGE,
             null,
             array(
                 array("plan_id", $this->plan->planID),
