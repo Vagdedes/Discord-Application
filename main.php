@@ -5,6 +5,11 @@ $token = get_keys_from_file("/root/discord_bot/private/credentials/discord_token
 if ($token === null) {
     exit("No token found");
 }
+$AI_key = get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key", 1);
+
+if ($AI_key === null) {
+    exit("No AI api key found");
+}
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';
 
@@ -21,6 +26,30 @@ require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
 require '/root/discord_bot/ai/ChatAI.php';
+
+$chatAI = new ChatAI(AIModel::CHAT_GPT_3_5, $AI_key[0]);
+
+if (!$chatAI->exists) {
+    exit("AI model not found");
+}
+if (true) {
+    var_dump($chatAI->getText($chatAI->getResult(
+        5,
+        array(
+            "messages" => array(
+                array(
+                    "role" => "system",
+                    "content" => "You are a helpful assistant."
+                ),
+                array(
+                    "role" => "user",
+                    "content" => "What is the number pi?"
+                )
+            )
+        )
+    )));
+    return;
+}
 
 use Discord\Discord;
 use Discord\Helpers\Collection;

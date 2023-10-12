@@ -109,7 +109,7 @@ function create_and_close_curl_connection($url, $properties = null): bool|string
     );
 }
 
-function get_curl($url, $type, $arguments, $headers, $timeoutSeconds = 0)
+function get_curl($url, $type, $headers, $arguments, $timeoutSeconds = 0)
 {
     $ch = curl_init();
 
@@ -125,18 +125,11 @@ function get_curl($url, $type, $arguments, $headers, $timeoutSeconds = 0)
     if ($timeoutSeconds > 0) {
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
     }
-
-    $headersList = array();
-    $headersList[] = 'Content-Type: application/json';
-
-    foreach ($headers as $value) {
-        $headersList[] = $value;
-    }
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headersList);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
     $result = curl_exec($ch);
     curl_close($ch);
-    return json_decode($result);
+    return $result;
 }
 
 function send_file_download($file, $exit = true): void
