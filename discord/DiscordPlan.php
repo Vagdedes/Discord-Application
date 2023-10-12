@@ -13,6 +13,8 @@ class DiscordPlan
     public array $whitelistContents;
     public array $punishmentTypes;
     public array $punishments;
+    public DiscordKnowledge $knowledge;
+    public DiscordInstructions $instructions;
 
     public function __construct($planID)
     {
@@ -33,6 +35,8 @@ class DiscordPlan
         $this->expirationReason = $query->expiration_reason;
         $this->deletionDate = $query->deletion_date;
         $this->deletionReason = $query->deletion_reason;
+        $this->knowledge = new DiscordKnowledge($this);
+        $this->instructions = new DiscordInstructions($this);
 
         // Separator
 
