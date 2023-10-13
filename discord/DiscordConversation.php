@@ -16,9 +16,12 @@ class DiscordConversation
             BotDatabaseTable::BOT_MESSAGES,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("user_id", $userID),
                 array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
             ),
             array(
                 "DESC",
@@ -42,9 +45,12 @@ class DiscordConversation
             BotDatabaseTable::BOT_REPLIES,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("user_id", $userID),
                 array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
             ),
             array(
                 "DESC",
