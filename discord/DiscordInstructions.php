@@ -55,7 +55,6 @@ class DiscordInstructions
             $object->message = $message;
             $object->botID = $botID;
             $object->newLine = "\n";
-            //todo add more (user message history, bot message history, static knowledge, dynamic knowledge)
 
             foreach ($this->instructions as $instruction) {
                 $placeholderStart = $instruction->placeholder_start;
@@ -67,6 +66,64 @@ class DiscordInstructions
                     foreach ($this->placeholders as $placeholder) {
                         if (isset($object->{$placeholder->placeholder})) {
                             $value = $object->{$placeholder->placeholder};
+                        } else {
+                            $value = null;
+                            $keyWord = explode($placeholder->placeholder_middle, $placeholder->placeholder);
+                            $size = sizeof($keyWord);
+
+                            if ($size === 1) {
+                                switch ($keyWord[0]) {
+                                    case "staticKnowledge":
+                                        $value = $this->plan->knowledge->getStatic($userID);
+                                        break;
+                                    case "dynamicKnowledge":
+                                        $value = $this->plan->knowledge->getDynamic($userID);
+                                        break;
+                                    case "allKnowledge":
+                                        $value = $this->plan->knowledge->getAll($userID);
+                                        break;
+                                    case "botReplies":
+                                        $value = $this->plan->getReplies($userID);
+                                        break;
+                                    case "botMessages":
+                                        $value = $this->plan->getMessages($userID);
+                                        break;
+                                    case "allMessages":
+                                        $value = $this->plan->getConversation($userID);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } else if ($size === 2 && is_numeric($keyWord[1])) {
+                                switch ($keyWord[0]) {
+                                    case "staticKnowledge":
+                                        $value = $this->plan->knowledge->getStatic($userID, $keyWord[1]);
+                                        break;
+                                    case "dynamicKnowledge":
+                                        $value = $this->plan->knowledge->getDynamic($userID, $keyWord[1]);
+                                        break;
+                                    case "allKnowledge":
+                                        $value = $this->plan->knowledge->getAll($userID, $keyWord[1]);
+                                        break;
+                                    case "botReplies":
+                                        $value = $this->plan->getReplies($userID, $keyWord[1]);
+                                        break;
+                                    case "botMessages":
+                                        $value = $this->plan->getMessages($userID, $keyWord[1]);
+                                        break;
+                                    case "allMessages":
+                                        $value = $this->plan->getConversation($userID, $keyWord[1]);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+
+                        if ($value !== null) {
+                            if (is_array($value)) {
+
+                            }
                             $placeholderArray[] = $value;
 
                             if ($placeholder->include_previous !== null

@@ -33,9 +33,9 @@ function get_final_directory(): string
 
 // Google Docs
 
-function get_raw_google_doc($url, $returnHTML = false): ?string
+function get_raw_google_doc($url, $returnHTML = false, $timeoutSeconds = 30): ?string
 {
-    $html = timed_file_get_contents($url);
+    $html = timed_file_get_contents($url, $timeoutSeconds);
 
     if ($html !== false) {
         $html = explode('doc-content">', $html);

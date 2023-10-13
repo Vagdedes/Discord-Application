@@ -4,11 +4,10 @@ class DiscordPlan
 {
     public int $planID;
     public string $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason, $messageExpiration;
+    public ?string $expirationDate, $creationReason, $expirationReason, $messageRetention, $messageCooldown;
     public array $channels, $whitelistContents, $punishmentTypes, $punishments;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
-    private array $assistance;
 
     public function __construct($planID)
     {
@@ -23,14 +22,14 @@ class DiscordPlan
         );
         $query = $query[0];
         $this->planID = (int)$query->id;
-        $this->messageExpiration = $query->message_expiration;
+        $this->messageRetention = $query->message_retention;
+        $this->messageCooldown = $query->message_cooldown;
         $this->creationDate = $query->creation_date;
         $this->creationReason = $query->creation_reason;
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
-        $this->assistance = array();
 
         // Separator
 
@@ -38,8 +37,11 @@ class DiscordPlan
             BotDatabaseTable::BOT_CHANNELS,
             null,
             array(
-                array("plan_id", $this->planID),
                 array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->planID),
+                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -53,21 +55,6 @@ class DiscordPlan
 
         // Separator
 
-        $this->punishmentTypes = get_sql_query(
-            BotDatabaseTable::BOT_PUNISHMENT_TYPES,
-            null,
-            array(
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->planID),
-                null,
-                array("deletion_date", null),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
         $this->refreshPunishments();
     }
 
@@ -88,14 +75,29 @@ class DiscordPlan
         clear_memory(array(self::class . "::canAssist"), true);
     }
 
-    public function refreshPunishments(): void
+    public function refreshPunishments(): void //todo fix and add set & get method
     {
+        $this->punishmentTypes = get_sql_query(
+            BotDatabaseTable::BOT_PUNISHMENT_TYPES,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
         if (!empty($this->punishmentTypes)) {
             $query = get_sql_query(
                 BotDatabaseTable::BOT_PUNISHMENTS,
                 null,
                 array(
-                    array("bot_id", $this->botID),
                     array("deletion_date", null),
                     null,
                     array("expiration_date", "IS", null, 0),
@@ -183,6 +185,54 @@ class DiscordPlan
         return $final;
     }
 
+    // Separator
+
+    public function addReply($botID, $serverID, $channelID, $userID, $messageID, $message): void
+    {
+        global $scheduler;
+        $scheduler->addTask(
+            null,
+            "sql_insert",
+            array(
+                BotDatabaseTable::BOT_REPLIES,
+                array(
+                    "plan_id" => $this->planID,
+                    "bot_id" => $botID,
+                    "server_id" => $serverID,
+                    "channel_id" => $channelID,
+                    "user_id" => $userID,
+                    "message_id" => $messageID,
+                    "message_content" => $message,
+                    "creation_date" => get_current_date(),
+                )
+            )
+        );
+    }
+
+    public function addMessage($botID, $serverID, $channelID, $userID, $messageID, $message): void
+    {
+        global $scheduler;
+        $scheduler->addTask(
+            null,
+            "sql_insert",
+            array(
+                BotDatabaseTable::BOT_MESSAGES,
+                array(
+                    "plan_id" => $this->planID,
+                    "bot_id" => $botID,
+                    "server_id" => $serverID,
+                    "channel_id" => $channelID,
+                    "user_id" => $userID,
+                    "message_id" => $messageID,
+                    "message_content" => $message,
+                    "creation_date" => get_current_date(),
+                )
+            )
+        );
+    }
+
+    // Separator
+
     public function canAssist($serverID, $channelID, $userID): bool
     {
         $cacheKey = array(__METHOD__, $serverID, $channelID, $userID);
@@ -192,6 +242,7 @@ class DiscordPlan
             return $cache;
         }
         $result = false;
+
 
         if (!empty($this->channels)) {
             foreach ($this->channels as $channel) {
@@ -221,47 +272,61 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(ChatAI $chatAI, $serverID, $channelID, $userID, $message, $botID): ?string
+    public function assist(ChatAI $chatAI, $serverID, $channelID, $userID,
+                                  $messageID, $message, $botID): ?string
     {
         $assistance = null;
+        $cooldownKey = array(__METHOD__, $this->planID, $userID);
 
-        if (!array_key_exists($userID, $this->assistance)) {
-            $this->assistance[$userID] = true;
+        if (get_key_value_pair($cooldownKey) === null) {
+            set_key_value_pair($cooldownKey, true);
+            $cacheKey = array(__METHOD__, $this->planID, $userID, $message);
+            $cache = get_key_value_pair($cacheKey);
 
-            if (!empty($message)) {
-                $cacheKey = array(__METHOD__, $userID, $message);
-                $cache = get_key_value_pair($cacheKey);
-
-                if ($cache !== null) {
-                    $assistance = $cache;
-                } else {
-                    $reply = $chatAI->getResult(
-                        overflow_long(overflow_long($userID * 31) + $this->planID),
-                        array(
-                            "messages" => array(
-                                array(
-                                    "role" => "system",
-                                    "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
-                                ),
-                                array(
-                                    "role" => "user",
-                                    "content" => $message
-                                )
+            if ($cache !== null) {
+                $assistance = $cache;
+            } else {
+                $reply = $chatAI->getResult(
+                    overflow_long(overflow_long($this->planID * 31) + $userID),
+                    array(
+                        "messages" => array(
+                            array(
+                                "role" => "system",
+                                "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
+                            ),
+                            array(
+                                "role" => "user",
+                                "content" => $message
                             )
                         )
-                    );
+                    )
+                );
 
-                    if ($reply[1] !== null) {
-                        $assistance = $chatAI->getText($reply[0], $reply[1]);
+                if ($reply[1] !== null) {
+                    $assistance = $chatAI->getText($reply[0], $reply[1]);
 
-                        if ($assistance !== null) {
-                            $this->knowledge->addDynamicKnowledge($botID, $userID, $message, $this->messageExpiration);
-                            set_key_value_pair($cacheKey, $assistance);
-                        }
+                    if ($assistance !== null) {
+                        $this->addMessage(
+                            $botID,
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            $messageID,
+                            $message,
+                        );
+                        $this->addReply(
+                            $botID,
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            $messageID,
+                            $assistance,
+                        );
+                        set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
                     }
                 }
             }
-            unset($this->assistance[$userID]);
+            set_key_value_pair($cooldownKey, true, $this->messageCooldown);
         }
         return $assistance;
     }

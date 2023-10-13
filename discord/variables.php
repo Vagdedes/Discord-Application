@@ -31,6 +31,14 @@ class BotDatabaseTable
         BOT_WHITELIST = "discord.botWhitelist";
 }
 
+class DiscordPunishment
+{
+    public const
+        BAN = 1,
+        KICK = 2,
+        TIMEOUT = 3;
+}
+
 class DiscordSyntax
 {
     public const

@@ -89,6 +89,7 @@ $discord->on('ready', function (Discord $discord) {
                             $message->guild_id,
                             $message->channel_id,
                             $message->user_id,
+                            $message->id,
                             $message->content,
                             $botID
                         );

@@ -60,7 +60,14 @@ class IndividualMemoryBlock
     public function getRaw(): object|null
     {
         global $memory_array;
-        return $memory_array[$this->key] ?? null;
+
+        if (isset($memory_array[$this->key])
+            && ($memory_array[$this->key]->expiration === false
+                || $memory_array[$this->key]->expiration >= time())) {
+            return $memory_array[$this->key];
+        } else {
+            return null;
+        }
     }
 
     public function get($objectKey = "value")
@@ -71,7 +78,7 @@ class IndividualMemoryBlock
 
     public function exists(): bool
     {
-        return isset($memory_array[$this->key]);
+        return $this->getRaw() !== null;
     }
 
     public function clear(): void
