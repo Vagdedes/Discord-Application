@@ -4,8 +4,7 @@ class DiscordInstructions
 {
 
     private DiscordPlan $plan;
-    private array $instructions;
-    private array $placeholders;
+    private array $instructions, $placeholders;
 
     public function __construct(DiscordPlan $plan)
     {
@@ -55,6 +54,9 @@ class DiscordInstructions
             $object->message = $message;
             $object->botID = $botID;
             $object->newLine = "\n";
+            $object->messageRetention = $this->plan->messageRetention;
+            $object->messageCooldown = $this->plan->messageCooldown;
+            $object->punishmentTypes = $this->plan->moderation->punishmentTypes;
 
             foreach ($this->instructions as $instruction) {
                 $placeholderStart = $instruction->placeholder_start;
@@ -74,22 +76,22 @@ class DiscordInstructions
                             if ($size === 1) {
                                 switch ($keyWord[0]) {
                                     case "staticKnowledge":
-                                        $value = $this->plan->knowledge->getStatic($userID);
+                                        $value = $this->plan->knowledge->getStatic($userID, 0, false);
                                         break;
                                     case "dynamicKnowledge":
-                                        $value = $this->plan->knowledge->getDynamic($userID);
+                                        $value = $this->plan->knowledge->getDynamic($userID, 0, false);
                                         break;
                                     case "allKnowledge":
-                                        $value = $this->plan->knowledge->getAll($userID);
+                                        $value = $this->plan->knowledge->getAll($userID, 0, false);
                                         break;
                                     case "botReplies":
-                                        $value = $this->plan->conversation->getReplies($userID);
+                                        $value = $this->plan->conversation->getReplies($userID, 0, false);
                                         break;
                                     case "botMessages":
-                                        $value = $this->plan->conversation->getMessages($userID);
+                                        $value = $this->plan->conversation->getMessages($userID, 0, false);
                                         break;
                                     case "allMessages":
-                                        $value = $this->plan->conversation->getConversation($userID);
+                                        $value = $this->plan->conversation->getConversation($userID, 0, false);
                                         break;
                                     default:
                                         break;
@@ -97,22 +99,22 @@ class DiscordInstructions
                             } else if ($size === 2 && is_numeric($keyWord[1])) {
                                 switch ($keyWord[0]) {
                                     case "staticKnowledge":
-                                        $value = $this->plan->knowledge->getStatic($userID, $keyWord[1]);
+                                        $value = $this->plan->knowledge->getStatic($userID, $keyWord[1], false);
                                         break;
                                     case "dynamicKnowledge":
-                                        $value = $this->plan->knowledge->getDynamic($userID, $keyWord[1]);
+                                        $value = $this->plan->knowledge->getDynamic($userID, $keyWord[1], false);
                                         break;
                                     case "allKnowledge":
-                                        $value = $this->plan->knowledge->getAll($userID, $keyWord[1]);
+                                        $value = $this->plan->knowledge->getAll($userID, $keyWord[1], false);
                                         break;
                                     case "botReplies":
-                                        $value = $this->plan->conversation->getReplies($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getReplies($userID, $keyWord[1], false);
                                         break;
                                     case "botMessages":
-                                        $value = $this->plan->conversation->getMessages($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getMessages($userID, $keyWord[1], false);
                                         break;
                                     case "allMessages":
-                                        $value = $this->plan->conversation->getConversation($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getConversation($userID, $keyWord[1], false);
                                         break;
                                     default:
                                         break;
@@ -122,7 +124,15 @@ class DiscordInstructions
 
                         if ($value !== null) {
                             if (is_array($value)) {
+                                $array = $value;
+                                $value = "";
 
+                                foreach ($array as $row) {
+                                    $value .= $row . $object->newLine;
+                                }
+                                if (!empty($value)) {
+                                    $value = substr($value, 0, -strlen($object->newLine));
+                                }
                             }
                             $placeholderArray[] = $value;
 

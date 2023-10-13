@@ -30,7 +30,7 @@ class DiscordKnowledge
         );
     }
 
-    public function getStatic($userID, ?int $limit = 0): array
+    public function getStatic($userID, ?int $limit = 0, $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -92,13 +92,19 @@ class DiscordKnowledge
                 }
             }
         }
+
+        if (!$object) {
+            foreach ($array as $arrayKey => $row) {
+                $array[$arrayKey] = $row->information_value;
+            }
+        }
         return $array;
     }
 
-    public function getDynamic($userID, ?int $limit = 0): array
+    public function getDynamic($userID, ?int $limit = 0, $object = true): array
     {
         set_sql_cache("1 second");
-        return get_sql_query(
+        $array = get_sql_query(
             BotDatabaseTable::BOT_DYNAMIC_KNOWLEDGE,
             null,
             array(
@@ -116,13 +122,20 @@ class DiscordKnowledge
             ),
             $limit
         );
+
+        if (!$object) {
+            foreach ($array as $arrayKey => $row) {
+                $array[$arrayKey] = $row->information_value;
+            }
+        }
+        return $array;
     }
 
-    public function getAll($userID, ?int $limit = 0): array
+    public function getAll($userID, ?int $limit = 0, $object = true): array
     {
         $final = array();
-        $static = $this->getStatic($userID, $limit);
-        $dynamic = $this->getDynamic($userID, $limit);
+        $static = $this->getStatic($userID, $limit, $object);
+        $dynamic = $this->getDynamic($userID, $limit, $object);
 
         if (!empty($static)) {
             foreach ($static as $row) {

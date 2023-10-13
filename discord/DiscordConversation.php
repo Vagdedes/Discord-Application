@@ -9,10 +9,10 @@ class DiscordConversation
         $this->plan = $plan;
     }
 
-    public function getMessages($userID, ?int $limit = 0): array
+    public function getMessages($userID, ?int $limit = 0, $object = true): array
     {
         set_sql_cache("1 second");
-        return get_sql_query(
+        $array = get_sql_query(
             BotDatabaseTable::BOT_MESSAGES,
             null,
             array(
@@ -26,12 +26,19 @@ class DiscordConversation
             ),
             $limit
         );
+
+        if (!$object) {
+            foreach ($array as $arrayKey => $row) {
+                $array[$arrayKey] = $row->message_content;
+            }
+        }
+        return $array;
     }
 
-    public function getReplies($userID, ?int $limit = 0): array
+    public function getReplies($userID, ?int $limit = 0, $object = true): array
     {
         set_sql_cache("1 second");
-        return get_sql_query(
+        $array = get_sql_query(
             BotDatabaseTable::BOT_REPLIES,
             null,
             array(
@@ -45,22 +52,29 @@ class DiscordConversation
             ),
             $limit
         );
+
+        if (!$object) {
+            foreach ($array as $arrayKey => $row) {
+                $array[$arrayKey] = $row->message_content;
+            }
+        }
+        return $array;
     }
 
-    public function getConversation($userID, ?int $limit = 0): array
+    public function getConversation($userID, ?int $limit = 0, $object = true): array
     {
         $final = array();
-        $messages = $this->getMessages($userID, $limit);
-        $replies = $this->getReplies($userID, $limit);
+        $messages = $this->getMessages($userID, $limit, $object);
+        $replies = $this->getReplies($userID, $limit, $object);
 
         if (!empty($messages)) {
             foreach ($messages as $row) {
-                $final[strtotime($row->creation_date)] = $row;
+                $final[strtotime($row->creation_date)] = "user: " . $row;
             }
         }
         if (!empty($replies)) {
             foreach ($replies as $row) {
-                $final[strtotime($row->creation_date)] = $row;
+                $final[strtotime($row->creation_date)] = "bot: " . $row;
             }
         }
         krsort($final);
