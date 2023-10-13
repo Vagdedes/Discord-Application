@@ -38,5 +38,7 @@ class AIDatabaseTable
 class AIProperties
 {
 
-    public const TOKEN_PER_WORD = 1000.0 / 750.0; // 1.333333
+    public const
+        TOKEN_TO_WORD = 1000.0 / 750.0, // 1.333333
+        WORD_TO_TOKEN = 750.0 / 1000.0; // 0.75
 }

@@ -32,7 +32,7 @@ class DiscordKnowledge
 
     public function getStatic($userID, ?int $limit = 0, $object = true): array
     {
-        set_sql_cache("1 second");
+        set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 1000);
         $array = get_sql_query(
             BotDatabaseTable::BOT_STATIC_KNOWLEDGE,
             null,

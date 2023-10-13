@@ -48,7 +48,7 @@ class ChatAI
                 if ($maxReplyLength === null) {
                     $this->maxTokens = null;
                 } else {
-                    $maxReplyLength *= AIProperties::TOKEN_PER_WORD;
+                    $maxReplyLength *= AIProperties::WORD_TO_TOKEN;
                     $maxReplyLength /= 100.0;
                     $maxReplyLength = floor($maxReplyLength);
                     $this->maxTokens = $maxReplyLength * 100;

@@ -32,25 +32,10 @@ class DiscordBot
         }
     }
 
-    public function refreshWhitelist(): void
+    public function refresh(): void
     {
         foreach ($this->plans as $plan) {
-            $plan->refreshWhitelist();
+            $plan->refresh();
         }
     }
-
-    public function refreshPunishments(): void
-    {
-        foreach ($this->plans as $plan) {
-            $plan->moderation->refreshPunishments();
-        }
-    }
-
-    public function refreshInstructions(): void
-    {
-        foreach ($this->plans as $plan) {
-            $plan->instructions->refresh();
-        }
-    }
-
 }

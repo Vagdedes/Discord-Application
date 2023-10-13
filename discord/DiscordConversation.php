@@ -83,7 +83,8 @@ class DiscordConversation
 
     // Separator
 
-    public function addReply($botID, $serverID, $channelID, $userID, $messageID, $message): void
+    public function addReply($botID, $serverID, $channelID, $threadID,
+                             $userID, $messageID, $message): void
     {
         global $scheduler;
         $scheduler->addTask(
@@ -96,6 +97,7 @@ class DiscordConversation
                     "bot_id" => $botID,
                     "server_id" => $serverID,
                     "channel_id" => $channelID,
+                    "thread_id" => $threadID,
                     "user_id" => $userID,
                     "message_id" => $messageID,
                     "message_content" => $message,
@@ -105,7 +107,8 @@ class DiscordConversation
         );
     }
 
-    public function addMessage($botID, $serverID, $channelID, $userID, $messageID, $message): void
+    public function addMessage($botID, $serverID, $channelID, $threadID,
+                               $userID, $messageID, $message): void
     {
         global $scheduler;
         $scheduler->addTask(
@@ -118,6 +121,7 @@ class DiscordConversation
                     "bot_id" => $botID,
                     "server_id" => $serverID,
                     "channel_id" => $channelID,
+                    "thread_id" => $threadID,
                     "user_id" => $userID,
                     "message_id" => $messageID,
                     "message_content" => $message,

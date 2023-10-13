@@ -4,7 +4,7 @@ class DiscordPlan
 {
     public int $planID;
     public string $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason, $messageRetention, $messageCooldown;
+    public ?string $expirationDate, $creationReason, $expirationReason, $messageRetention, $messageCooldown, $promptMessage, $failureMessage;
     public array $channels, $whitelistContents;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
@@ -30,13 +30,18 @@ class DiscordPlan
         $this->creationReason = $query->creation_reason;
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
+        $this->promptMessage = $query->prompt_message;
+        $this->failureMessage = $query->failure_message;
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
 
-        // Separator
+        $this->refresh();
+    }
 
+    public function refresh(): void
+    {
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
@@ -52,18 +57,6 @@ class DiscordPlan
                 null
             )
         );
-
-        // Separator
-
-        $this->refreshWhitelist();
-
-        // Separator
-
-        $this->moderation->refreshPunishments();
-    }
-
-    public function refreshWhitelist(): void
-    {
         $this->whitelistContents = get_sql_query(
             BotDatabaseTable::BOT_WHITELIST,
             null,
@@ -79,6 +72,8 @@ class DiscordPlan
                 null
             )
         );
+        $this->instructions->refresh();
+        $this->moderation->refresh();
         clear_memory(array(self::class . "::canAssist"), true);
     }
 
@@ -89,7 +84,7 @@ class DiscordPlan
         if ($this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID) !== null) {
             return false;
         }
-        $cacheKey = array(__METHOD__, $serverID, $channelID, $userID);
+        $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -121,11 +116,11 @@ class DiscordPlan
                 }
             }
         }
-        set_key_value_pair($cacheKey, $result, 60);
+        set_key_value_pair($cacheKey, $result);
         return $result;
     }
 
-    public function assist(ChatAI $chatAI, $serverID, $channelID, $userID,
+    public function assist(ChatAI $chatAI, $serverID, $channelID, $threadID, $userID,
                                   $messageID, $message, $botID): ?string
     {
         $assistance = null;
@@ -163,6 +158,7 @@ class DiscordPlan
                             $botID,
                             $serverID,
                             $channelID,
+                            $threadID,
                             $userID,
                             $messageID,
                             $message,
@@ -171,6 +167,7 @@ class DiscordPlan
                             $botID,
                             $serverID,
                             $channelID,
+                            $threadID,
                             $userID,
                             $messageID,
                             $assistance,

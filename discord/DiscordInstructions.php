@@ -9,7 +9,6 @@ class DiscordInstructions
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->refresh();
     }
 
     public function refresh(): void

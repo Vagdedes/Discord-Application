@@ -77,9 +77,7 @@ $discord->on('ready', function (Discord $discord) {
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($botID);
-    $scheduler->addTask($discordBot, "refreshWhitelist", null, 60_000);
-    $scheduler->addTask($discordBot, "refreshPunishments", null, 60_000);
-    $scheduler->addTask($discordBot, "refreshInstructions", null, 60_000);
+    $scheduler->addTask($discordBot, "refresh", null, DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI, $scheduler) {
         $scheduler->process();
@@ -88,10 +86,14 @@ $discord->on('ready', function (Discord $discord) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
                     if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
+                        if ($plan->promptMessage !== null) {
+                            $message->reply($plan->promptMessage);
+                        }
                         $assistance = $plan->assist(
                             $chatAI,
                             $message->guild_id,
                             $message->channel_id,
+                            $message->thread?->id,
                             $message->user_id,
                             $message->id,
                             $message->content,
@@ -100,6 +102,8 @@ $discord->on('ready', function (Discord $discord) {
 
                         if (!empty($assistance)) {
                             $message->reply($assistance);
+                        } else if ($plan->failureMessage !== null) {
+                            $message->reply($plan->failureMessage);
                         }
                         break;
                     }

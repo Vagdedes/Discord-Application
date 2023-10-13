@@ -10,7 +10,7 @@ class DiscordModeration
         $this->plan = $plan;
     }
 
-    public function refreshPunishments(): void
+    public function refresh(): void
     {
         $this->punishmentTypes = get_sql_query(
             BotDatabaseTable::BOT_PUNISHMENT_TYPES,
