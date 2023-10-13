@@ -9,10 +9,6 @@ class DiscordInstructions
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-    }
-
-    public function refresh(): void
-    {
         $this->instructions = get_sql_query(
             BotDatabaseTable::BOT_INSTRUCTIONS,
             null,

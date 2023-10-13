@@ -7,11 +7,17 @@ class DiscordBot
 
     public function __construct($botID)
     {
+        $this->botID = $botID;
+        $this->refresh();
+    }
+
+    public function refresh(): void
+    {
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id"),
             array(
-                array("bot_id", $botID),
+                array("bot_id", $this->botID),
                 array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -21,21 +27,11 @@ class DiscordBot
         );
 
         if (empty($query)) {
-            exit("Discord bot not found in the database");
-        } else {
-            $this->botID = $botID;
             $this->plans = array();
-
+        } else {
             foreach ($query as $plan) {
                 $this->plans[] = new DiscordPlan($plan->id);
             }
-        }
-    }
-
-    public function refresh(): void
-    {
-        foreach ($this->plans as $plan) {
-            $plan->refresh();
         }
     }
 }

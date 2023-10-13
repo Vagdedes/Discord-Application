@@ -8,10 +8,6 @@ class DiscordModeration
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-    }
-
-    public function refresh(): void
-    {
         $this->punishmentTypes = get_sql_query(
             BotDatabaseTable::BOT_PUNISHMENT_TYPES,
             null,
@@ -64,10 +60,7 @@ class DiscordModeration
         } else {
             $this->punishments = array();
         }
-        clear_memory(array(
-            self::class . "::getPunishments",
-            self::class . "::hasPunishment"
-        ), true);
+        clear_memory(array(self::class), true);
     }
 
     public function getPunishments($userID): array

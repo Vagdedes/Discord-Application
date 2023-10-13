@@ -23,6 +23,7 @@ class DiscordPlan
             1
         );
         $query = $query[0];
+
         $this->planID = (int)$query->id;
         $this->messageRetention = $query->message_retention;
         $this->messageCooldown = $query->message_cooldown;
@@ -32,16 +33,12 @@ class DiscordPlan
         $this->expirationReason = $query->expiration_reason;
         $this->promptMessage = $query->prompt_message;
         $this->failureMessage = $query->failure_message;
+
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
 
-        $this->refresh();
-    }
-
-    public function refresh(): void
-    {
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
@@ -72,9 +69,7 @@ class DiscordPlan
                 null
             )
         );
-        $this->instructions->refresh();
-        $this->moderation->refresh();
-        clear_memory(array(self::class . "::canAssist"), true);
+        clear_memory(array(self::class), true);
     }
 
     // Separator
