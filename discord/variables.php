@@ -34,9 +34,10 @@ class BotDatabaseTable
 class DiscordPunishment
 {
     public const
-        BAN = 1,
-        KICK = 2,
-        TIMEOUT = 3;
+        DISCORD_BAN = 1,
+        DISCORD_KICK = 2,
+        DISCORD_TIMEOUT = 3,
+        CUSTOM_BLACKLIST = 4;
 }
 
 class DiscordSyntax

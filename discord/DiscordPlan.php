@@ -75,7 +75,7 @@ class DiscordPlan
         clear_memory(array(self::class . "::canAssist"), true);
     }
 
-    public function refreshPunishments(): void //todo fix and add set & get method
+    public function refreshPunishments(): void
     {
         $this->punishmentTypes = get_sql_query(
             BotDatabaseTable::BOT_PUNISHMENT_TYPES,
@@ -99,6 +99,10 @@ class DiscordPlan
                 null,
                 array(
                     array("deletion_date", null),
+                    null,
+                    array("plan_id", "IS", null, 0),
+                    array("plan_id", $this->planID),
+                    null,
                     null,
                     array("expiration_date", "IS", null, 0),
                     array("expiration_date", ">", get_current_date()),
@@ -125,6 +129,57 @@ class DiscordPlan
         } else {
             $this->punishments = array();
         }
+        clear_memory(array(
+            self::class . "::getPunishments",
+            self::class . "::hasPunishment"
+        ), true);
+    }
+
+    // Separator
+
+    public function hasPunishment(?int $type, $userID): ?object
+    {
+        $cacheKey = array(__METHOD__, $this->planID, $type, $userID);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache === false ? null : $cache;
+        }
+        $object = null;
+
+        if (!empty($this->punishments)) {
+            foreach ($this->punishments as $punishment) {
+                if ($punishment->user_id == $userID
+                    && ($type === null || $punishment->type == $type)) {
+                    $object = $punishment;
+                }
+            }
+        }
+        set_key_value_pair($cacheKey, $object);
+        return $object;
+    }
+
+    // Separator
+
+    public function getPunishments($userID): array
+    {
+        $cacheKey = array(__METHOD__, $userID);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        }
+        $array = array();
+
+        if (!empty($this->punishments)) {
+            foreach ($this->punishments as $punishment) {
+                if ($punishment->user_id == $userID) {
+                    $array[] = $punishment;
+                }
+            }
+        }
+        set_key_value_pair($cacheKey, $array);
+        return $array;
     }
 
     public function getMessages($userID, ?int $limit = 0): array
@@ -231,10 +286,51 @@ class DiscordPlan
         );
     }
 
+    public function addPunishment(?int $type, $botID, $executorID, $userID, $reason, $duration = null): bool
+    {
+        if (empty($this->punishmentTypes)) {
+            return false;
+        }
+        $found = false;
+
+        foreach ($this->punishmentTypes as $punishmentType) {
+            if ($punishmentType->id == $type) {
+                $found = true;
+                break;
+            }
+        }
+
+        if ($found) {
+            global $scheduler;
+            $scheduler->addTask(
+                null,
+                "sql_insert",
+                array(
+                    BotDatabaseTable::BOT_PUNISHMENTS,
+                    array(
+                        "type" => $type,
+                        "bot_id" => $botID,
+                        "executor_id" => $executorID,
+                        "user_id" => $userID,
+                        "creation_date" => get_current_date(),
+                        "creation_reason" => $reason,
+                        "expiration_date" => $duration === null ? null : get_future_date($duration)
+                    )
+                )
+            );
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // Separator
 
     public function canAssist($serverID, $channelID, $userID): bool
     {
+        if ($this->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID) !== null) {
+            return false;
+        }
         $cacheKey = array(__METHOD__, $serverID, $channelID, $userID);
         $cache = get_key_value_pair($cacheKey);
 
@@ -242,7 +338,6 @@ class DiscordPlan
             return $cache;
         }
         $result = false;
-
 
         if (!empty($this->channels)) {
             foreach ($this->channels as $channel) {

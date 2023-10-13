@@ -51,10 +51,15 @@ class IndividualMemoryBlock
         }
     }
 
-    public function set($value, $expiration = false): bool
+    public function set($value, $expiration = false): void
     {
-        $this->internalSet($value, $expiration);
-        return true;
+        global $memory_array;
+        $object = new stdClass();
+        $object->key = $this->originalKey;
+        $object->value = $value;
+        $object->creation = time();
+        $object->expiration = is_numeric($expiration) ? $expiration : false;
+        $memory_array[$this->key] = $object;
     }
 
     public function getRaw(): object|null
@@ -85,18 +90,5 @@ class IndividualMemoryBlock
     {
         global $memory_array;
         unset($memory_array[$this->key]);
-    }
-
-    // Separator
-
-    public function internalSet($value, $expiration): void
-    {
-        global $memory_array;
-        $object = new stdClass();
-        $object->key = $this->originalKey;
-        $object->value = $value;
-        $object->creation = time();
-        $object->expiration = is_numeric($expiration) ? $expiration : false;
-        $memory_array[$this->key] = $object;
     }
 }

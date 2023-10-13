@@ -14,12 +14,8 @@ function has_memory_limit($key, $countLimit, $futureTime = null): bool
 
             if ($object !== null && isset($object->original_expiration) && isset($object->count)) {
                 $object->count++;
-
-                if ($memoryBlock->set($object, $object->original_expiration)) {
-                    return $object->count >= $countLimit;
-                } else {
-                    return false;
-                }
+                $memoryBlock->set($object, $object->original_expiration);
+                return $object->count >= $countLimit;
             }
             $object = new stdClass();
             $object->count = 1;
