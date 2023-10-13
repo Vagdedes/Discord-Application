@@ -89,7 +89,7 @@ class DiscordKnowledge
                 $final[strtotime($row->creation_date)] = $row;
             }
         }
-        rsort($final);
+        krsort($final);
         return $final;
     }
 }

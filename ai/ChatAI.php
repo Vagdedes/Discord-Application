@@ -31,12 +31,12 @@ class ChatAI
                 $model = new ChatModel($row->id);
 
                 if ($model->exists) {
-                    $this->models[$model->context] = $model;
+                    $this->models[(int)$model->context] = $model;
                 }
             }
 
             if (!empty($this->models)) {
-                sort($this->models);
+                ksort($this->models);
                 $this->exists = true;
                 $this->apiKey = $apiKey;
                 $this->temperature = $temperature;
@@ -180,6 +180,20 @@ class ChatAI
                                 )
                             );
                             return array($model, $reply);
+                        } else {
+                            sql_insert(
+                                AIDatabaseTable::AI_TEXT_HISTORY,
+                                array(
+                                    "model_id" => $model->modelID,
+                                    "hash" => $hash,
+                                    "failure" => true,
+                                    "sent_parameters" => $parameters,
+                                    "received_parameters" => $received,
+                                    "currency_id" => $model->currency->id,
+                                    "creation_date" => get_current_date()
+                                )
+                            );
+                            return array($model, null);
                         }
                     }
                 }
