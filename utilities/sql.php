@@ -285,7 +285,6 @@ function get_sql_query($table, $select = null, $where = null, $order = null, $li
             $cacheKey[] = $sql_cache_tag;
             $sql_cache_tag = null;
         }
-        //var_dump(manipulate_memory_key($cacheKey));
         $cache = get_key_value_pair($cacheKey);
 
         if (is_array($cache)) {

@@ -222,6 +222,8 @@ class DiscordPlan
 
     public function assist(ChatAI $chatAI, $serverID, $channelID, $userID, $message, $botID): ?string
     {
+        $assistance = null;
+
         if (!array_key_exists($userID, $this->assistance)) {
             $this->assistance[$userID] = true;
 
@@ -230,11 +232,10 @@ class DiscordPlan
                 $cache = get_key_value_pair($cacheKey);
 
                 if ($cache !== null) {
-                    unset($this->assistance[$userID]);
-                    return $cache;
+                    $assistance = $cache;
                 } else {
-                    $result = $chatAI->getText($chatAI->getResult(
-                        overflow_long(overflow_long($userID * 31) + $this->planID),
+                    $reply = $chatAI->getResult(
+                        overflow_long(($userID * 31) + $this->planID),
                         array(
                             "messages" => array(
                                 array(
@@ -247,15 +248,17 @@ class DiscordPlan
                                 )
                             )
                         )
-                    ));
-                    set_key_value_pair($cacheKey, $result);
-                    unset($this->assistance[$userID]);
-                    return $result;
+                    );
+
+                    if ($reply[1] !== null) {
+                        $result = $chatAI->getText($reply[0], $reply[1]);
+                        set_key_value_pair($cacheKey, $result);
+                        $assistance = $result;
+                    }
                 }
-            } else {
-                unset($this->assistance[$userID]);
             }
+            unset($this->assistance[$userID]);
         }
-        return null;
+        return $assistance;
     }
 }

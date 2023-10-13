@@ -52,3 +52,10 @@ class DiscordSyntax
         MULTI_QUOTE = ">>>",
         SPOILER = "||";
 }
+
+class DiscordProperties
+{
+    public const
+        MESSAGE_MAX_LENGTH = 2000,
+        MESSAGE_NITRO_MAX_LENGTH = 4000;
+}

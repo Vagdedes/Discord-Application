@@ -1,65 +1,57 @@
 <?php
 
+// $temperature: How precise or creative the reply will be. 0.0 is the most precise, 1.0 is the most creative.
+// $frequency_penalty: Increase or decrease the likelihood of token repetition. -2.0 to 2.0, with -2.0 being most likely to repeat tokens, 0.0 being equally likely, and 2.0 being least likely.
+//todo explain the rest and properly
+
 class ChatAI
 {
-    public int $modelID;
+    public array $models;
     private string $apiKey;
-    public string $code, $name, $description;
-    public object $parameter, $currency;
-    public float $received_token_cost, $sent_token_cost;
+    private ?float $temperature, $top_p, $frequency_penalty, $presence_penalty;
+    private ?int $maxTokens, $completions;
     public bool $exists;
 
-    public function __construct(?int $model, string $apiKey)
+    public function __construct(int    $modelFamily, string $apiKey,
+                                ?int   $maxReplyLength = null, ?float $temperature = null,
+                                ?float $frequency_penalty = null, ?float $presence_penalty = null,
+                                ?int   $completions = null, ?float $top_p = null)
     {
         $query = get_sql_query(
             AIDatabaseTable::AI_MODELS,
-            null,
+            array("id"),
             array(
-                array("id", $model),
+                array("family", $modelFamily),
                 array("deletion_date", null),
-            ),
-            null,
-            1
+            )
         );
 
         if (!empty($query)) {
-            $query = $query[0];
-            $queryChild = get_sql_query(
-                AIDatabaseTable::AI_PARAMETERS,
-                null,
-                array(
-                    array("id", $query->parameter_id),
-                    array("deletion_date", null),
-                ),
-                null,
-                1
-            );
+            foreach ($query as $row) {
+                $model = new ChatModel($row->id);
 
-            if (!empty($queryChild)) {
-                $this->parameter = $queryChild[0];
-                $queryChild = get_sql_query(
-                    AIDatabaseTable::AI_CURRENCIES,
-                    null,
-                    array(
-                        array("id", $query->currency_id),
-                        array("deletion_date", null),
-                    ),
-                    null,
-                    1
-                );
+                if ($model->exists) {
+                    $this->models[$model->context] = $model;
+                }
+            }
 
-                if (!empty($queryChild)) {
-                    $this->apiKey = $apiKey;
-                    $this->currency = $queryChild[0];
-                    $this->modelID = $query->id;
-                    $this->code = $query->code;
-                    $this->name = $query->name;
-                    $this->description = $query->description;
-                    $this->received_token_cost = $query->received_token_cost;
-                    $this->sent_token_cost = $query->sent_token_cost;
-                    $this->exists = true;
+            if (!empty($this->models)) {
+                sort($this->models);
+                $this->exists = true;
+                $this->apiKey = $apiKey;
+                $this->temperature = $temperature;
+                $this->frequency_penalty = $frequency_penalty;
+                $this->completions = $completions;
+                $this->top_p = $top_p;
+                $this->presence_penalty = $presence_penalty;
+
+                if ($maxReplyLength === null) {
+                    $this->maxTokens = null;
                 } else {
-                    $this->exists = false;
+                    $maxReplyLength *= AIProperties::TOKEN_PER_WORD;
+                    $maxReplyLength /= 100.0;
+                    $maxReplyLength = floor($maxReplyLength);
+                    $this->maxTokens = $maxReplyLength * 100;
                 }
             } else {
                 $this->exists = false;
@@ -87,19 +79,64 @@ class ChatAI
         );
     }
 
-    public function getResult($hash, array $parameters, ?int $timeout = 30)
+    public function getResult($hash, array $parameters, ?int $timeout = 30): array
     {
-        switch ($this->modelID) {
-            case AIModel::CHAT_GPT_3_5:
+        if (sizeof($this->models) === 1) {
+            $model = $this->models[0];
+        } else {
+            $model = null;
+            $length = 0;
+
+            foreach ($parameters["messages"] as $parameter) {
+                $length += strlen($parameter["content"]);
+            }
+            foreach ($this->models as $rowModel) {
+                if ($length <= $rowModel->context) {
+                    $model = $rowModel;
+                    break;
+                }
+            }
+
+            if ($model === null) {
+                return array(null, null);
+            }
+        }
+
+        switch ($model->modelID) {
+            case AIModel::CHAT_GPT_3_5_DIALOGUE:
+            case AIModel::CHAT_GPT_3_5_INSTRUCTIONS:
+            case AIModel::CHAT_GPT_4_COMPLEX:
+            case AIModel::CHAT_GPT_4:
                 $link = "https://api.openai.com/v1/chat/completions";
+                $parameters["model"] = $model->code;
+
+                if ($this->completions !== null) {
+                    $parameters["n"] = $this->completions;
+                }
+                if ($this->maxTokens !== null) {
+                    $parameters["max_tokens"] = $this->maxTokens;
+                }
+                if ($this->temperature !== null) {
+                    $parameters["temperature"] = $this->temperature;
+                }
+                if ($this->frequency_penalty !== null) {
+                    $parameters["frequency_penalty"] = $this->frequency_penalty;
+                }
+                if ($this->presence_penalty !== null) {
+                    $parameters["presence_penalty"] = $this->presence_penalty;
+                }
+                if ($this->top_p !== null) {
+                    $parameters["top_p"] = $this->top_p;
+                }
                 break;
             default:
                 $link = null;
                 break;
         }
+        var_dump($parameters);
 
         if ($link !== null) {
-            switch ($this->parameter->id) {
+            switch ($model->parameter->id) {
                 case AIParameterType::JSON:
                     $contentType = "application/json";
                     break;
@@ -109,7 +146,6 @@ class ChatAI
             }
 
             if ($contentType !== null) {
-                $parameters["model"] = $this->code;
                 $parameters = json_encode($parameters);
                 $reply = get_curl(
                     $link,
@@ -122,8 +158,7 @@ class ChatAI
                     $timeout
                 );
 
-                if ($reply !== null
-                    && $reply !== false) {
+                if ($reply !== null && $reply !== false) {
                     $received = $reply;
                     $reply = json_decode($reply);
 
@@ -133,51 +168,46 @@ class ChatAI
                             sql_insert(
                                 AIDatabaseTable::AI_TEXT_HISTORY,
                                 array(
-                                    "model_id" => $this->modelID,
+                                    "model_id" => $model->modelID,
                                     "hash" => $hash,
                                     "sent_parameters" => $parameters,
                                     "received_parameters" => $received,
                                     "sent_tokens" => $reply->usage->prompt_tokens,
                                     "received_tokens" => $reply->usage->completion_tokens,
-                                    "currency_id" => $this->currency->id,
-                                    "sent_token_cost" => ($reply->usage->prompt_tokens * $this->sent_token_cost),
-                                    "received_token_cost" => ($reply->usage->completion_tokens * $this->received_token_cost),
+                                    "currency_id" => $model->currency->id,
+                                    "sent_token_cost" => ($reply->usage->prompt_tokens * $model->sent_token_cost),
+                                    "received_token_cost" => ($reply->usage->completion_tokens * $model->received_token_cost),
                                     "creation_date" => get_current_date()
                                 )
                             );
-                            return $reply;
-                        } else {
-                            $failure = true;
+                            return array($model, $reply);
                         }
-                    } else {
-                        $failure = true;
                     }
-                } else {
-                    $failure = true;
                 }
 
-                if ($failure) {
-                    sql_insert(
-                        AIDatabaseTable::AI_TEXT_HISTORY,
-                        array(
-                            "model_id" => $this->modelID,
-                            "hash" => $hash,
-                            "failure" => true,
-                            "sent_parameters" => $parameters,
-                            "currency_id" => $this->currency->id,
-                            "creation_date" => get_current_date()
-                        )
-                    );
-                }
+                sql_insert(
+                    AIDatabaseTable::AI_TEXT_HISTORY,
+                    array(
+                        "model_id" => $model->modelID,
+                        "hash" => $hash,
+                        "failure" => true,
+                        "sent_parameters" => $parameters,
+                        "currency_id" => $model->currency->id,
+                        "creation_date" => get_current_date()
+                    )
+                );
             }
         }
-        return null;
+        return array($model, null);
     }
 
-    public function getText($object): ?string
+    public function getText($model, $object): ?string
     {
-        switch ($this->modelID) {
-            case AIModel::CHAT_GPT_3_5:
+        switch ($model->modelID) {
+            case AIModel::CHAT_GPT_3_5_DIALOGUE:
+            case AIModel::CHAT_GPT_3_5_INSTRUCTIONS:
+            case AIModel::CHAT_GPT_4_COMPLEX:
+            case AIModel::CHAT_GPT_4:
                 return $object?->choices[0]?->message->content;
             default:
                 return null;

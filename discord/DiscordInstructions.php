@@ -54,6 +54,8 @@ class DiscordInstructions
             $object->userID = $userID;
             $object->message = $message;
             $object->botID = $botID;
+            $object->newLine = "\n";
+            //todo add more (user message history, bot message history, static knowledge, dynamic knowledge)
 
             foreach ($this->instructions as $instruction) {
                 $placeholderStart = $instruction->placeholder_start;
