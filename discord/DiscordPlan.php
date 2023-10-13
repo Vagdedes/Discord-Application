@@ -10,6 +10,7 @@ class DiscordPlan
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
+    public DiscordLimits $limits;
 
     public function __construct($planID)
     {
@@ -38,6 +39,7 @@ class DiscordPlan
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
+        $this->limits = new DiscordLimits($this);
 
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,

@@ -28,7 +28,8 @@ class BotDatabaseTable
         BOT_DYNAMIC_KNOWLEDGE = "discord.botDynamicKnowledge",
         BOT_PUNISHMENTS = "discord.botPunishments",
         BOT_PUNISHMENT_TYPES = "discord.botPunishmentTypes",
-        BOT_WHITELIST = "discord.botWhitelist";
+        BOT_WHITELIST = "discord.botWhitelist",
+        BOT_LIMITS = "discord.botLimits";
 }
 
 class DiscordPunishment

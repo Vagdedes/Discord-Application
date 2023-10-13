@@ -24,6 +24,7 @@ require '/root/discord_bot/discord/DiscordInstructions.php';
 require '/root/discord_bot/discord/DiscordLogs.php';
 require '/root/discord_bot/discord/DiscordModeration.php';
 require '/root/discord_bot/discord/DiscordConversation.php';
+require '/root/discord_bot/discord/DiscordLimits.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
