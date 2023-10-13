@@ -25,7 +25,6 @@ class DiscordScheduler
                     $this->pause = 0;
                     usleep($pause);
                 }
-                var_dump("y");
                 if (!empty($this->tasks)) {
                     foreach ($this->tasks as $key => $task) {
                         if ($this->add) {

@@ -235,7 +235,7 @@ class DiscordPlan
                     $assistance = $cache;
                 } else {
                     $reply = $chatAI->getResult(
-                        overflow_long(($userID * 31) + $this->planID),
+                        overflow_long(overflow_long($userID * 31) + $this->planID),
                         array(
                             "messages" => array(
                                 array(

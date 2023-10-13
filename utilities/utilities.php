@@ -31,6 +31,29 @@ function get_final_directory(): string
     return $array[sizeof($array) - 1];
 }
 
+// Google Docs
+
+function get_raw_google_doc($url, $returnHTML = false): ?string
+{
+    $html = timed_file_get_contents($url);
+
+    if ($html !== false) {
+        $html = explode('doc-content">', $html);
+
+        if (sizeof($html) > 1) {
+            $html = explode('<script', $html[1])[0];
+            $html = str_replace("</span>", "\n</span>", $html);
+            $html = strip_tags($html);
+
+            if ($returnHTML) {
+                $html = str_replace("\n", "<br>", $html);
+            }
+            return $html;
+        }
+    }
+    return null;
+}
+
 // Connections
 
 function post_file_get_contents($url, $parameters = null, $clearPreviousParameters = null, $user_agent = null, $timeoutSeconds = 0): bool|string
@@ -314,9 +337,17 @@ function get_user_agent(): string
     return $_SERVER['HTTP_USER_AGENT'] ?? "";
 }
 
-function get_domain(): string
+function get_domain($subdomains = true): string
 {
-    return $_SERVER['SERVER_NAME'] ?? "";
+    if ($subdomains) {
+        return $_SERVER['SERVER_NAME'] ?? "";
+    } else if (isset($_SERVER['SERVER_NAME'])) {
+        $domain = explode(".", $_SERVER['HTTP_HOST'] ?? "");
+        $size = sizeof($domain);
+        return $domain[$size - 2] . "." . $domain[$size - 1];
+    } else {
+        return "";
+    }
 }
 
 // Validators
@@ -665,7 +696,7 @@ function cut_decimal($value, $cut): float
 
 // Debug
 
-function manage_errors($display = null, $log = null) // NULL leaves it unaffected in relation to its current
+function manage_errors($display = null, $log = null): void // NULL leaves it unaffected in relation to its current
 {
     if ($display !== null) {
         ini_set('display_errors', $display ? 1 : 0);

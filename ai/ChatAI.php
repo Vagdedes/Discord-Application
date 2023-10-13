@@ -133,7 +133,6 @@ class ChatAI
                 $link = null;
                 break;
         }
-        var_dump($parameters);
 
         if ($link !== null) {
             switch ($model->parameter->id) {
