@@ -42,7 +42,7 @@ class DiscordBot
     public function refreshPunishments(): void
     {
         foreach ($this->plans as $plan) {
-            $plan->refreshPunishments();
+            $plan->moderation->refreshPunishments();
         }
     }
 

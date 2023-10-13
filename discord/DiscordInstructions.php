@@ -83,13 +83,13 @@ class DiscordInstructions
                                         $value = $this->plan->knowledge->getAll($userID);
                                         break;
                                     case "botReplies":
-                                        $value = $this->plan->getReplies($userID);
+                                        $value = $this->plan->conversation->getReplies($userID);
                                         break;
                                     case "botMessages":
-                                        $value = $this->plan->getMessages($userID);
+                                        $value = $this->plan->conversation->getMessages($userID);
                                         break;
                                     case "allMessages":
-                                        $value = $this->plan->getConversation($userID);
+                                        $value = $this->plan->conversation->getConversation($userID);
                                         break;
                                     default:
                                         break;
@@ -106,13 +106,13 @@ class DiscordInstructions
                                         $value = $this->plan->knowledge->getAll($userID, $keyWord[1]);
                                         break;
                                     case "botReplies":
-                                        $value = $this->plan->getReplies($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getReplies($userID, $keyWord[1]);
                                         break;
                                     case "botMessages":
-                                        $value = $this->plan->getMessages($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getMessages($userID, $keyWord[1]);
                                         break;
                                     case "allMessages":
-                                        $value = $this->plan->getConversation($userID, $keyWord[1]);
+                                        $value = $this->plan->conversation->getConversation($userID, $keyWord[1]);
                                         break;
                                     default:
                                         break;
