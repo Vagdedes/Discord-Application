@@ -10,10 +10,25 @@ class DiscordKnowledge
         $this->plan = $plan;
     }
 
+    public function addDynamicKnowledge($botID, $userID, $message, $expirationDate = null): void
+    {
+        sql_insert(
+            BotDatabaseTable::BOT_DYNAMIC_KNOWLEDGE,
+            array(
+                "plan_id" => $this->plan->planID,
+                "bot_id" => $botID,
+                "user_id" => $userID,
+                "information" => $message,
+                "creation_date" => get_current_date(),
+                "expiration_date" => $expirationDate
+            )
+        );
+    }
+
     public function getStatic($userID, ?int $limit = 0): array
     {
         set_sql_cache("1 second");
-        return get_sql_query(
+        $array = get_sql_query(
             BotDatabaseTable::BOT_STATIC_KNOWLEDGE,
             null,
             array(
@@ -31,6 +46,8 @@ class DiscordKnowledge
             ),
             $limit
         );
+        //todo query for urls and make the keys same to dynamic knowledge
+        return $array;
     }
 
     public function getDynamic($userID, ?int $limit = 0): array

@@ -4,7 +4,7 @@ class DiscordPlan
 {
     public int $planID;
     public string $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason;
+    public ?string $expirationDate, $creationReason, $expirationReason, $messageExpiration;
     public array $channels, $whitelistContents, $punishmentTypes, $punishments;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
@@ -23,6 +23,7 @@ class DiscordPlan
         );
         $query = $query[0];
         $this->planID = (int)$query->id;
+        $this->messageExpiration = $query->message_expiration;
         $this->creationDate = $query->creation_date;
         $this->creationReason = $query->creation_reason;
         $this->expirationDate = $query->expiration_date;
@@ -251,9 +252,12 @@ class DiscordPlan
                     );
 
                     if ($reply[1] !== null) {
-                        $result = $chatAI->getText($reply[0], $reply[1]);
-                        set_key_value_pair($cacheKey, $result);
-                        $assistance = $result;
+                        $assistance = $chatAI->getText($reply[0], $reply[1]);
+
+                        if ($assistance !== null) {
+                            $this->knowledge->addDynamicKnowledge($botID, $userID, $message, $this->messageExpiration);
+                            set_key_value_pair($cacheKey, $assistance);
+                        }
                     }
                 }
             }
