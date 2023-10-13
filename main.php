@@ -15,7 +15,7 @@ require '/root/vendor/autoload.php';
 
 require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
-require '/root/discord_bot/utilities/scheduler.php';
+require '/root/discord_bot/utilities/runnable.php';
 
 require '/root/discord_bot/discord/variables.php';
 require '/root/discord_bot/discord/DiscordPlan.php';
@@ -67,7 +67,7 @@ $discord = new Discord([
     'dnsConfig' => '1.1.1.1'
 ]);
 
-$scheduler = new DiscordScheduler();
+$scheduler = new DiscordRunnable();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 
 $discord->on('ready', function (Discord $discord) {
@@ -79,7 +79,9 @@ $discord->on('ready', function (Discord $discord) {
     $scheduler->addTask($discordBot, "refreshPunishments", null, 60_000);
     $scheduler->addTask($discordBot, "refreshInstructions", null, 60_000);
 
-    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI) {
+    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI, $scheduler) {
+        $scheduler->process();
+
         foreach ($message->mentions as $user) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
@@ -364,10 +366,6 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::WEBHOOKS_UPDATE, function (object $guild, Discord $discord, object $channel) use ($logger) {
         $logger->log(null, Event::WEBHOOKS_UPDATE, $channel);
     });
-
-    // Separator
-
-    //$scheduler->run(); //todo
 });
 
 $discord->run();
