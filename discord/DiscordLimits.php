@@ -37,7 +37,9 @@ class DiscordLimits
                     json_decode(json_encode($object), true),
                     array(
                         array("id", $object->id)
-                    )
+                    ),
+                    null,
+                    1
                 );
             }
         }
@@ -109,27 +111,28 @@ class DiscordLimits
 
                     if ($object->counter === $object->limit_type->limit) {
                         $remaining[] = $object;
-                    } else {
+                    } else if (empty($remaining)) { // Do not run more limits if at least one is found to be reached
                         $object->counter++;
                     }
                     $this->storage[$object->id] = $object;
                 }
             }
+            $this->store();
             return $remaining;
         } else {
             return $cache;
         }
     }
 
-    private function recreate(object $row, int $defaultCounter = 0): array
+    private function recreate(object $object, int $defaultCounter = 0): array
     {
         $date = get_current_date();
 
-        if ($row->expiration_date <= $date) {
-            $futureDate = get_future_date($row->limit_type->duration);
-            $row->counter = 1;
-            $row->creation_date = $date;
-            $row->expiration_date = $futureDate;
+        if ($object->expiration_date <= $date) {
+            $futureDate = get_future_date($object->limit_type->duration);
+            $object->counter = 1;
+            $object->creation_date = $date;
+            $object->expiration_date = $futureDate;
             set_sql_query(
                 BotDatabaseTable::BOT_LIMIT_TRACKING,
                 array(
@@ -138,12 +141,14 @@ class DiscordLimits
                     "expiration_date" => $futureDate,
                 ),
                 array(
-                    array("id", $row->id)
-                )
+                    array("id", $object->id)
+                ),
+                null,
+                1
             );
-            return array(true, $row);
+            return array(true, $object);
         } else {
-            return array(false, $row);
+            return array(false, $object);
         }
     }
 }

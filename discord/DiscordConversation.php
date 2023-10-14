@@ -75,12 +75,12 @@ class DiscordConversation
 
         if (!empty($messages)) {
             foreach ($messages as $row) {
-                $final[strtotime($row->creation_date)] = "user: " . $row;
+                $final[strtotime($row->creation_date)] = "user: " . $row->message_content;
             }
         }
         if (!empty($replies)) {
             foreach ($replies as $row) {
-                $final[strtotime($row->creation_date)] = "bot: " . $row;
+                $final[strtotime($row->creation_date)] = "bot: " . $row->message_content;
             }
         }
         krsort($final);
