@@ -17,6 +17,7 @@ class DiscordPlan
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
     public DiscordLimits $limits;
+    public DiscordCommands $commands;
 
     public function __construct($planID)
     {
@@ -53,6 +54,7 @@ class DiscordPlan
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
         $this->limits = new DiscordLimits($this);
+        $this->commands = new DiscordCommands($this);
 
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
@@ -91,15 +93,6 @@ class DiscordPlan
 
     public function canAssist($mentions, $serverID, $channelID, $userID, $messageContent, $botID): bool
     {
-        if ($this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID) !== null) {
-            return false;
-        }
-        $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
-        $cache = get_key_value_pair($cacheKey);
-
-        if ($cache !== null) {
-            return $cache;
-        }
         if (!$this->requireMention) {
             $result = true;
         } else if (!empty($mentions)) {
@@ -116,46 +109,56 @@ class DiscordPlan
         }
 
         if ($result) {
-            if ($this->requireStartingText !== null) {
-                $result &= starts_with($messageContent, $this->requireStartingText);
+            $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
+            $cache = get_key_value_pair($cacheKey);
+
+            if ($cache !== null) {
+                return $cache;
             }
-            if ($result && $this->requireContainedText !== null) {
-                $result &= str_contains($messageContent, $this->requireContainedText);
-            }
-            if ($result && $this->requireEndingText !== null) {
-                $result &= ends_with($messageContent, $this->requireEndingText);
-            }
+            $result = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID) === null;
 
             if ($result) {
-                $result = false;
+                if ($this->requireStartingText !== null) {
+                    $result &= starts_with($messageContent, $this->requireStartingText);
+                }
+                if ($result && $this->requireContainedText !== null) {
+                    $result &= str_contains($messageContent, $this->requireContainedText);
+                }
+                if ($result && $this->requireEndingText !== null) {
+                    $result &= ends_with($messageContent, $this->requireEndingText);
+                }
 
-                if (!empty($this->channels)) {
-                    foreach ($this->channels as $channel) {
-                        if ($channel->server_id == $serverID
-                            && $channel->channel_id == $channelID) {
-                            if ($channel->whitelist === null) {
-                                $result = true;
-                                break;
-                            } else if (!empty($this->whitelistContents)) {
-                                foreach ($this->whitelistContents as $whitelist) {
-                                    if ($whitelist->user_id == $userID
-                                        && ($whitelist->server_id === null
-                                            || $whitelist->server_id === $serverID
-                                            && ($whitelist->channel_id === null
-                                                || $whitelist->channel_id === $channelID))) {
-                                        $result = true;
-                                        break 2;
+                if ($result) {
+                    $result = false;
+
+                    if (!empty($this->channels)) {
+                        foreach ($this->channels as $channel) {
+                            if ($channel->server_id == $serverID
+                                && $channel->channel_id == $channelID) {
+                                if ($channel->whitelist === null) {
+                                    $result = true;
+                                    break;
+                                } else if (!empty($this->whitelistContents)) {
+                                    foreach ($this->whitelistContents as $whitelist) {
+                                        if ($whitelist->user_id == $userID
+                                            && ($whitelist->server_id === null
+                                                || $whitelist->server_id === $serverID
+                                                && ($whitelist->channel_id === null
+                                                    || $whitelist->channel_id === $channelID))) {
+                                            $result = true;
+                                            break 2;
+                                        }
                                     }
+                                } else {
+                                    break;
                                 }
-                            } else {
-                                break;
                             }
                         }
                     }
                 }
+                set_key_value_pair($cacheKey, $result);
             }
         }
-        set_key_value_pair($cacheKey, $result);
         return $result;
     }
 
