@@ -1,10 +1,14 @@
 <?php
 
+use Discord\Parts\Channel\Message;
+
 class DiscordPlan
 {
     public int $planID;
     public string $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason, $messageRetention, $messageCooldown, $promptMessage, $failureMessage;
+    public ?string $expirationDate, $creationReason, $expirationReason,
+        $messageRetention, $messageCooldown,
+        $promptMessage, $cooldownMessage, $failureMessage;
     public array $channels, $whitelistContents;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
@@ -33,6 +37,7 @@ class DiscordPlan
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
         $this->promptMessage = $query->prompt_message;
+        $this->cooldownMessage = $query->cooldown_message;
         $this->failureMessage = $query->failure_message;
 
         $this->knowledge = new DiscordKnowledge($this);
@@ -117,31 +122,56 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(ChatAI $chatAI, $serverID, $channelID, $threadID, $userID,
-                                  $messageID, $message, $botID): ?string
+    public function assist(ChatAI $chatAI, Message $message,
+                                  $serverID, $channelID, $threadID, $userID,
+                                  $messageID, $messageContent, $botID): ?string
     {
         $assistance = null;
         $cooldownKey = array(__METHOD__, $this->planID, $userID);
 
         if (get_key_value_pair($cooldownKey) === null) {
             set_key_value_pair($cooldownKey, true);
-            $cacheKey = array(__METHOD__, $this->planID, $userID, $message);
+
+            if ($this->promptMessage !== null) {
+                $object = $this->instructions->getObject(
+                    $serverID,
+                    $channelID,
+                    $threadID,
+                    $userID,
+                    $messageContent,
+                    $messageID,
+                    $botID
+                );
+                $message->reply($this->instructions->replace(array($this->promptMessage), $object)[0]);
+            }
+            $cacheKey = array(__METHOD__, $this->planID, $userID, $messageContent);
             $cache = get_key_value_pair($cacheKey);
 
             if ($cache !== null) {
                 $assistance = $cache;
             } else {
+                if (!isset($object)) {
+                    $object = $this->instructions->getObject(
+                        $serverID,
+                        $channelID,
+                        $threadID,
+                        $userID,
+                        $messageContent,
+                        $messageID,
+                        $botID
+                    );
+                }
                 $reply = $chatAI->getResult(
                     overflow_long(overflow_long($this->planID * 31) + $userID),
                     array(
                         "messages" => array(
                             array(
                                 "role" => "system",
-                                "content" => $this->instructions->build($serverID, $channelID, $userID, $message, $botID)
+                                "content" => $this->instructions->build($object)
                             ),
                             array(
                                 "role" => "user",
-                                "content" => $message
+                                "content" => $messageContent
                             )
                         )
                     )
@@ -158,7 +188,7 @@ class DiscordPlan
                             $threadID,
                             $userID,
                             $messageID,
-                            $message,
+                            $messageContent,
                         );
                         $this->conversation->addReply(
                             $botID,
@@ -172,8 +202,23 @@ class DiscordPlan
                         set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
                     }
                 }
+
+                if ($assistance === null && $this->failureMessage !== null) {
+                    $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
+                }
             }
             set_key_value_pair($cooldownKey, true, $this->messageCooldown);
+        } else if ($this->cooldownMessage !== null) {
+            $object = $this->instructions->getObject(
+                $serverID,
+                $channelID,
+                $threadID,
+                $userID,
+                $messageContent,
+                $messageID,
+                $botID
+            );
+            $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
         }
         return $assistance;
     }

@@ -87,11 +87,9 @@ $discord->on('ready', function (Discord $discord) {
             if ($user->id == $botID) {
                 foreach ($discordBot->plans as $plan) {
                     if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
-                        if ($plan->promptMessage !== null) {
-                            $message->reply($plan->promptMessage);
-                        }
                         $assistance = $plan->assist(
                             $chatAI,
+                            $message,
                             $message->guild_id,
                             $message->channel_id,
                             $message->thread?->id,
@@ -103,8 +101,6 @@ $discord->on('ready', function (Discord $discord) {
 
                         if (!empty($assistance)) {
                             $message->reply($assistance);
-                        } else if ($plan->failureMessage !== null) {
-                            $message->reply($plan->failureMessage);
                         }
                         break;
                     }

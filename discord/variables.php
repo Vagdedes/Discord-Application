@@ -68,5 +68,9 @@ class DiscordProperties
     public const
         MESSAGE_MAX_LENGTH = 2000,
         MESSAGE_NITRO_MAX_LENGTH = 4000,
-        SYSTEM_REFRESH_MILLISECONDS = 60_000;
+        SYSTEM_REFRESH_MILLISECONDS = 60_000,
+        NEW_LINE = "\n",
+        DEFAULT_PLACEHOLDER_START = "%%__",
+        DEFAULT_PLACEHOLDER_MIDDLE = "__",
+        DEFAULT_PLACEHOLDER_END = "__%%";
 }
