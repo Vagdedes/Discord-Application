@@ -56,58 +56,33 @@ class DiscordInstructions
             }
             foreach ($this->placeholders as $placeholder) {
                 if (isset($object->{$placeholder->placeholder})) {
-                    $value = $object->{$placeholder->placeholder};
-                } else if (!empty($placeholderMiddle)) {
-                    $value = null;
+                    $value = $object->{$placeholder->code_field};
+                } else if ($placeholder->dynamic !== null) {
                     $keyWord = explode($placeholderMiddle, $placeholder->placeholder, 3);
-                    $size = sizeof($keyWord);
+                    $limit = sizeof($keyWord) === 2 ? $keyWord[1] : 0;
 
-                    if ($size === 1) {
-                        switch ($keyWord[0]) {
-                            case "staticKnowledge":
-                                $value = $this->plan->knowledge->getStatic($object->userID, 0, false);
-                                break;
-                            case "dynamicKnowledge":
-                                $value = $this->plan->knowledge->getDynamic($object->userID, 0, false);
-                                break;
-                            case "allKnowledge":
-                                $value = $this->plan->knowledge->getAll($object->userID, 0, false);
-                                break;
-                            case "botReplies":
-                                $value = $this->plan->conversation->getReplies($object->userID, 0, false);
-                                break;
-                            case "botMessages":
-                                $value = $this->plan->conversation->getMessages($object->userID, 0, false);
-                                break;
-                            case "allMessages":
-                                $value = $this->plan->conversation->getConversation($object->userID, 0, false);
-                                break;
-                            default:
-                                break;
-                        }
-                    } else if ($size === 2 && is_numeric($keyWord[1])) {
-                        switch ($keyWord[0]) {
-                            case "staticKnowledge":
-                                $value = $this->plan->knowledge->getStatic($object->userID, $keyWord[1], false);
-                                break;
-                            case "dynamicKnowledge":
-                                $value = $this->plan->knowledge->getDynamic($object->userID, $keyWord[1], false);
-                                break;
-                            case "allKnowledge":
-                                $value = $this->plan->knowledge->getAll($object->userID, $keyWord[1], false);
-                                break;
-                            case "botReplies":
-                                $value = $this->plan->conversation->getReplies($object->userID, $keyWord[1], false);
-                                break;
-                            case "botMessages":
-                                $value = $this->plan->conversation->getMessages($object->userID, $keyWord[1], false);
-                                break;
-                            case "allMessages":
-                                $value = $this->plan->conversation->getConversation($object->userID, $keyWord[1], false);
-                                break;
-                            default:
-                                break;
-                        }
+                    switch ($keyWord[0]) {
+                        case "staticKnowledge":
+                            $value = $this->plan->knowledge->getStatic($object->userID, $limit, false);
+                            break;
+                        case "dynamicKnowledge":
+                            $value = $this->plan->knowledge->getDynamic($object->userID, $limit, false);
+                            break;
+                        case "allKnowledge":
+                            $value = $this->plan->knowledge->getAll($object->userID, $limit, false);
+                            break;
+                        case "botReplies":
+                            $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
+                            break;
+                        case "botMessages":
+                            $value = $this->plan->conversation->getMessages($object->userID, $limit, false);
+                            break;
+                        case "allMessages":
+                            $value = $this->plan->conversation->getConversation($object->userID, $limit, false);
+                            break;
+                        default:
+                            $value = null;
+                            break;
                     }
                 } else {
                     $value = null;

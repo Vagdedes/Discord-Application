@@ -113,7 +113,9 @@ $discord->on('ready', function (Discord $discord) {
 
                 if (!empty($assistance)
                     && $assistance !== DiscordProperties::NO_REPLY) {
-                    $message->reply($assistance);
+                    foreach (str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                        $message->reply($split);
+                    }
                 }
                 break;
             }
