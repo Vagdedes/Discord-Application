@@ -5,6 +5,7 @@ use Discord\Parts\Channel\Message;
 class DiscordPlan
 {
     public int $planID;
+    public ?int $family, $minMessageLength, $maxMessageLength;
     public bool $strictReply, $requireMention;
     private bool $debug;
     public string $name, $description, $creationDate;
@@ -34,6 +35,7 @@ class DiscordPlan
         $query = $query[0];
 
         $this->planID = (int)$query->id;
+        $this->family = $query->family === null ? null : (int)$query->family;
         $this->messageRetention = $query->message_retention;
         $this->messageCooldown = $query->message_cooldown;
         $this->name = $query->name;
@@ -51,6 +53,8 @@ class DiscordPlan
         $this->requireMention = $query->require_mention !== null;
         $this->strictReply = $query->strict_reply !== null;
         $this->debug = $query->debug !== null;
+        $this->minMessageLength = $query->min_message_length;
+        $this->maxMessageLength = $query->max_message_length;
 
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
@@ -131,6 +135,12 @@ class DiscordPlan
                 if ($result && $this->requireEndingText !== null) {
                     $result &= ends_with($messageContent, $this->requireEndingText);
                 }
+                if ($result && $this->minMessageLength !== null) {
+                    $result &= strlen($messageContent) >= $this->minMessageLength;
+                }
+                if ($result && $this->maxMessageLength !== null) {
+                    $result &= strlen($messageContent) <= $this->maxMessageLength;
+                }
 
                 if ($result) {
                     $result = false;
@@ -167,8 +177,12 @@ class DiscordPlan
     }
 
     public function assist(ChatAI $chatAI, Message $message,
-                                  $serverID, $channelID, $threadID, $userID,
-                                  $messageID, $messageContent, $botID): ?string
+                                  $serverID, $serverName,
+                                  $channelID, $channelName,
+                                  $threadID, $threadName,
+                                  $userID, $userName,
+                                  $messageID, $messageContent,
+                                  $botID, $botName): ?string
     {
         $assistance = null;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
@@ -177,12 +191,17 @@ class DiscordPlan
             if ($punishment->notify !== null) {
                 $object = $this->instructions->getObject(
                     $serverID,
+                    $serverName,
                     $channelID,
+                    $channelName,
                     $threadID,
+                    $threadName,
                     $userID,
+                    $userName,
                     $messageContent,
                     $messageID,
-                    $botID
+                    $botID,
+                    $botName
                 );
                 $assistance = $this->instructions->replace(array($punishment->creation_reason), $object)[0];
             }
@@ -194,12 +213,17 @@ class DiscordPlan
                     if ($limit->limit_type->message !== null) {
                         $object = $this->instructions->getObject(
                             $serverID,
+                            $serverName,
                             $channelID,
+                            $channelName,
                             $threadID,
+                            $threadName,
                             $userID,
+                            $userName,
                             $messageContent,
                             $messageID,
-                            $botID
+                            $botID,
+                            $botName
                         );
                         $assistance = $this->instructions->replace(array($limit->limit_type->message), $object)[0];
                         break;
@@ -215,24 +239,34 @@ class DiscordPlan
                     if ($assistance !== null) {
                         $object = $this->instructions->getObject(
                             $serverID,
+                            $serverName,
                             $channelID,
+                            $channelName,
                             $threadID,
+                            $threadName,
                             $userID,
+                            $userName,
                             $messageContent,
                             $messageID,
-                            $botID
+                            $botID,
+                            $botName
                         );
                         $assistance = $this->instructions->replace(array($assistance), $object)[0];
                     } else {
                         if ($this->promptMessage !== null) {
                             $object = $this->instructions->getObject(
                                 $serverID,
+                                $serverName,
                                 $channelID,
+                                $channelName,
                                 $threadID,
+                                $threadName,
                                 $userID,
+                                $userName,
                                 $messageContent,
                                 $messageID,
-                                $botID
+                                $botID,
+                                $botName
                             );
                             $message->reply($this->instructions->replace(array($this->promptMessage), $object)[0]);
                         }
@@ -245,15 +279,21 @@ class DiscordPlan
                             if (!isset($object)) {
                                 $object = $this->instructions->getObject(
                                     $serverID,
+                                    $serverName,
                                     $channelID,
+                                    $channelName,
                                     $threadID,
+                                    $threadName,
                                     $userID,
+                                    $userName,
                                     $messageContent,
                                     $messageID,
-                                    $botID
+                                    $botID,
+                                    $botName
                                 );
                             }
                             $instructions = $this->instructions->build($object);
+                            var_dump(strlen($instructions)); //todo
                             $reply = $chatAI->getResult(
                                 overflow_long(overflow_long($this->planID * 31) + $userID),
                                 array(
@@ -316,12 +356,17 @@ class DiscordPlan
                 } else if ($this->cooldownMessage !== null) {
                     $object = $this->instructions->getObject(
                         $serverID,
+                        $serverName,
                         $channelID,
+                        $channelName,
                         $threadID,
+                        $threadName,
                         $userID,
+                        $userName,
                         $messageContent,
                         $messageID,
-                        $botID
+                        $botID,
+                        $botName
                     );
                     $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
                 }

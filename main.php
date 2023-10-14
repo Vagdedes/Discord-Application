@@ -33,7 +33,7 @@ require '/root/discord_bot/ai/variables.php';
 require '/root/discord_bot/ai/ChatModel.php';
 require '/root/discord_bot/ai/ChatAI.php';
 
-$chatAI = new ChatAI(AIModelFamily::CHAT_GPT_3_5, $AI_key[0], DiscordProperties::MESSAGE_MAX_LENGTH, 0.33333);
+$chatAI = new ChatAI(AIModelFamily::CHAT_GPT_3_5, $AI_key[0], DiscordProperties::MESSAGE_MAX_LENGTH, 0.5);
 
 if (!$chatAI->exists) {
     exit("AI model not found");
@@ -98,12 +98,17 @@ $discord->on('ready', function (Discord $discord) {
                     $chatAI,
                     $message,
                     $message->guild_id,
+                    $message->guild->name,
                     $message->channel_id,
+                    $message->channel->name,
                     $message->thread?->id,
+                    $message->thread?->name,
                     $message->user_id,
+                    $message->author->displayname,
                     $message->id,
                     $message->content,
-                    $botID
+                    $botID,
+                    $discord->user->displayname,
                 );
 
                 if (!empty($assistance)

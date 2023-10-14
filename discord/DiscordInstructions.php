@@ -16,7 +16,8 @@ class DiscordInstructions
                 array("deletion_date", null),
                 null,
                 array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
+                array("plan_id", "=", $this->plan->planID, 0),
+                $this->plan->family !== null ? array("family", $this->plan->family) : "",
                 null,
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -197,18 +198,26 @@ class DiscordInstructions
         return null;
     }
 
-    public function getObject($serverID, $channelID, $threadID,
-                              $userID, string $messageContent, $messageID,
-                              $botID): object
+    public function getObject($serverID, $serverName,
+                              $channelID, $channelName,
+                              $threadID, $threadName,
+                              $userID, $userName,
+                              $messageContent, $messageID,
+                              $botID, $botName): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
+        $object->serverName = $serverName;
         $object->channelID = $channelID;
+        $object->channelName = $channelName;
         $object->threadID = $threadID;
+        $object->threadName = $threadName;
         $object->userID = $userID;
+        $object->userName = $userName;
         $object->messageContent = $messageContent;
         $object->messageID = $messageID;
         $object->botID = $botID;
+        $object->botName = $botName;
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

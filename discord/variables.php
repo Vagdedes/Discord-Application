@@ -68,6 +68,9 @@ class DiscordSyntax
 
 class DiscordProperties
 {
+    private const STRICT_REPLY_INSTRUCTIONS_DEFAULT = "IMPORTANT: "
+    . "IF THE USER MESSAGE IS UNRELATED TO THE INFORMATION PROVIDED";
+
     public const
         MESSAGE_MAX_LENGTH = 2000,
         MESSAGE_NITRO_MAX_LENGTH = 4000,
@@ -77,6 +80,6 @@ class DiscordProperties
         DEFAULT_PLACEHOLDER_MIDDLE = "__",
         DEFAULT_PLACEHOLDER_END = "__%%",
         NO_REPLY = self::DEFAULT_PLACEHOLDER_START . "noReply" . self::DEFAULT_PLACEHOLDER_END,
-        STRICT_REPLY_INSTRUCTIONS = "IMPORTANT: If you do not know a definite answer based on the information provided, reply with just: " . self::NO_REPLY,
-        STRICT_REPLY_INSTRUCTIONS_WITH_MENTION = "IMPORTANT: If you do not know a definite answer based on the information provided, kindly notify the user.";
+        STRICT_REPLY_INSTRUCTIONS = self::STRICT_REPLY_INSTRUCTIONS_DEFAULT . ", REPLY WITH JUST: " . self::NO_REPLY,
+        STRICT_REPLY_INSTRUCTIONS_WITH_MENTION = self::STRICT_REPLY_INSTRUCTIONS_DEFAULT . ", KINDLY NOTIFY THE USER.";
 }
