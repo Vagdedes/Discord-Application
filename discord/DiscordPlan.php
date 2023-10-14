@@ -5,11 +5,14 @@ use Discord\Parts\Channel\Message;
 class DiscordPlan
 {
     public int $planID;
-    public string $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason,
+    private bool $requireMention;
+    public string $name, $description, $creationDate;
+    public ?string $expirationDate;
+    private ?string $creationReason, $expirationReason,
         $messageRetention, $messageCooldown,
-        $promptMessage, $cooldownMessage, $failureMessage;
-    public array $channels, $whitelistContents;
+        $promptMessage, $cooldownMessage, $failureMessage,
+        $requireStartingText, $requireContainedText, $requireEndingText;
+    private array $channels, $whitelistContents;
     public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
@@ -32,6 +35,8 @@ class DiscordPlan
         $this->planID = (int)$query->id;
         $this->messageRetention = $query->message_retention;
         $this->messageCooldown = $query->message_cooldown;
+        $this->name = $query->name;
+        $this->description = $query->description;
         $this->creationDate = $query->creation_date;
         $this->creationReason = $query->creation_reason;
         $this->expirationDate = $query->expiration_date;
@@ -39,6 +44,10 @@ class DiscordPlan
         $this->promptMessage = $query->prompt_message;
         $this->cooldownMessage = $query->cooldown_message;
         $this->failureMessage = $query->failure_message;
+        $this->requireStartingText = $query->require_starting_text;
+        $this->requireContainedText = $query->require_contained_text;
+        $this->requireEndingText = $query->require_ending_text;
+        $this->requireMention = $query->require_mention !== null;
 
         $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
@@ -81,7 +90,7 @@ class DiscordPlan
 
     // Separator
 
-    public function canAssist($serverID, $channelID, $userID): bool
+    public function canAssist($mentions, $serverID, $channelID, $userID, $messageContent, $botID): bool
     {
         if ($this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID) !== null) {
             return false;
@@ -92,28 +101,57 @@ class DiscordPlan
         if ($cache !== null) {
             return $cache;
         }
-        $result = false;
+        if (!$this->requireMention) {
+            $result = true;
+        } else if (!empty($mentions)) {
+            $result = false;
 
-        if (!empty($this->channels)) {
-            foreach ($this->channels as $channel) {
-                if ($channel->server_id == $serverID
-                    && $channel->channel_id == $channelID) {
-                    if ($channel->whitelist === null) {
-                        $result = true;
-                        break;
-                    } else if (!empty($this->whitelistContents)) {
-                        foreach ($this->whitelistContents as $whitelist) {
-                            if ($whitelist->user_id == $userID
-                                && ($whitelist->server_id === null
-                                    || $whitelist->server_id === $serverID
-                                    && ($whitelist->channel_id === null
-                                        || $whitelist->channel_id === $channelID))) {
+            foreach ($mentions as $user) {
+                if ($user->id == $botID) {
+                    $result = true;
+                    break;
+                }
+            }
+        } else {
+            $result = false;
+        }
+
+        if ($result) {
+            if ($this->requireStartingText !== null) {
+                $result &= starts_with($messageContent, $this->requireStartingText);
+            }
+            if ($result && $this->requireContainedText !== null) {
+                $result &= str_contains($messageContent, $this->requireContainedText);
+            }
+            if ($result && $this->requireEndingText !== null) {
+                $result &= ends_with($messageContent, $this->requireEndingText);
+            }
+
+            if ($result) {
+                $result = false;
+
+                if (!empty($this->channels)) {
+                    foreach ($this->channels as $channel) {
+                        if ($channel->server_id == $serverID
+                            && $channel->channel_id == $channelID) {
+                            if ($channel->whitelist === null) {
                                 $result = true;
-                                break 2;
+                                break;
+                            } else if (!empty($this->whitelistContents)) {
+                                foreach ($this->whitelistContents as $whitelist) {
+                                    if ($whitelist->user_id == $userID
+                                        && ($whitelist->server_id === null
+                                            || $whitelist->server_id === $serverID
+                                            && ($whitelist->channel_id === null
+                                                || $whitelist->channel_id === $channelID))) {
+                                        $result = true;
+                                        break 2;
+                                    }
+                                }
+                            } else {
+                                break;
                             }
                         }
-                    } else {
-                        break;
                     }
                 }
             }

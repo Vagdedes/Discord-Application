@@ -83,27 +83,29 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI, $scheduler) {
         $scheduler->process();
 
-        foreach ($message->mentions as $user) {
-            if ($user->id == $botID) {
-                foreach ($discordBot->plans as $plan) {
-                    if ($plan->canAssist($message->guild_id, $message->channel_id, $message->user_id)) {
-                        $assistance = $plan->assist(
-                            $chatAI,
-                            $message,
-                            $message->guild_id,
-                            $message->channel_id,
-                            $message->thread?->id,
-                            $message->user_id,
-                            $message->id,
-                            $message->content,
-                            $botID
-                        );
+        foreach ($discordBot->plans as $plan) {
+            if ($plan->canAssist(
+                $message->mentions,
+                $message->guild_id,
+                $message->channel_id,
+                $message->user_id,
+                $message->content,
+                $botID
+            )) {
+                $assistance = $plan->assist(
+                    $chatAI,
+                    $message,
+                    $message->guild_id,
+                    $message->channel_id,
+                    $message->thread?->id,
+                    $message->user_id,
+                    $message->id,
+                    $message->content,
+                    $botID
+                );
 
-                        if (!empty($assistance)) {
-                            $message->reply($assistance);
-                        }
-                        break;
-                    }
+                if (!empty($assistance)) {
+                    $message->reply($assistance);
                 }
                 break;
             }

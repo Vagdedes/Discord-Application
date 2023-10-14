@@ -187,7 +187,8 @@ class DiscordInstructions
     }
 
     public function getObject($serverID, $channelID, $threadID,
-                              $userID, $messageContent, $messageID, $botID): object
+                              $userID, $messageContent, $messageID,
+                              $botID): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -197,11 +198,14 @@ class DiscordInstructions
         $object->messageContent = $messageContent;
         $object->messageID = $messageID;
         $object->botID = $botID;
-        $object->newLine = DiscordProperties::NEW_LINE;
-        $object->messageRetention = $this->plan->messageRetention;
-        $object->messageCooldown = $this->plan->messageCooldown;
-        $object->punishmentTypes = $this->plan->moderation->punishmentTypes;
+
         $object->placeholderArray = array();
+        $object->newLine = DiscordProperties::NEW_LINE;
+
+        $object->planName = $this->plan->name;
+        $object->planDescription = $this->plan->description;
+        $object->planCreation = $this->plan->creationDate;
+        $object->planExpiration = $this->plan->expirationDate;
         return $object;
     }
 }
