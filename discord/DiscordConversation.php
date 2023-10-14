@@ -90,9 +90,11 @@ class DiscordConversation
     // Separator
 
     public function addReply($botID, $serverID, $channelID, $threadID,
-                             $userID, $messageID, $message): void
+                             $userID, $messageID, $message,
+                             $cost, $currencyCode): void
     {
         global $scheduler;
+        $currency = new DiscordCurrency($currencyCode);
         $scheduler->addTask(
             null,
             "sql_insert",
@@ -107,6 +109,8 @@ class DiscordConversation
                     "user_id" => $userID,
                     "message_id" => $messageID,
                     "message_content" => $message,
+                    "cost" => $cost,
+                    "currency_id" => $currency->exists ? $currency->id : null,
                     "creation_date" => get_current_date(),
                 )
             )

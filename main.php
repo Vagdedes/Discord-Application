@@ -26,6 +26,7 @@ require '/root/discord_bot/discord/DiscordModeration.php';
 require '/root/discord_bot/discord/DiscordConversation.php';
 require '/root/discord_bot/discord/DiscordLimits.php';
 require '/root/discord_bot/discord/DiscordCommands.php';
+require '/root/discord_bot/discord/DiscordCurrency.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';

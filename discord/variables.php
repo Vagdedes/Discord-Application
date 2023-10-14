@@ -31,6 +31,7 @@ class BotDatabaseTable
         BOT_WHITELIST = "discord.botWhitelist",
         BOT_LIMITS = "discord.botLimits",
         BOT_LIMIT_TRACKING = "discord.botLimitTracking",
+        CURRENCIES = "discord.currencies",
         BOT_COMMANDS = "discord.botCommands";
 }
 

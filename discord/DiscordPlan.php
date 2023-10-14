@@ -258,11 +258,17 @@ class DiscordPlan
                         );
 
                         if ($reply[1] !== null) {
-                            $assistance = $chatAI->getText($reply[0], $reply[1]);
+                            $model = $reply[0];
+                            $modelReply = $reply[1];
+                            $assistance = $chatAI->getText($model, $modelReply);
 
                             if ($assistance !== null) {
                                 if ($this->debug) {
-                                    $assistance = DiscordSyntax::HEAVY_CODE_BLOCK . $instructions . DiscordSyntax::HEAVY_CODE_BLOCK . $assistance;
+                                    $assistance = substr(
+                                        DiscordSyntax::HEAVY_CODE_BLOCK . $instructions . DiscordSyntax::HEAVY_CODE_BLOCK . $assistance,
+                                        0,
+                                        DiscordProperties::MESSAGE_MAX_LENGTH
+                                    );
                                 }
                                 $this->conversation->addMessage(
                                     $botID,
@@ -273,7 +279,7 @@ class DiscordPlan
                                     $messageID,
                                     $messageContent,
                                 );
-                                $this->conversation->addReply( //todo cost
+                                $this->conversation->addReply(
                                     $botID,
                                     $serverID,
                                     $channelID,
@@ -281,6 +287,8 @@ class DiscordPlan
                                     $userID,
                                     $messageID,
                                     $assistance,
+                                    ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
+                                    $model->currency->code
                                 );
                                 set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
                             }
