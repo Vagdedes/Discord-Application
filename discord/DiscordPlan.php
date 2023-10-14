@@ -7,9 +7,8 @@ class DiscordPlan
     public int $planID;
     private bool $requireMention;
     public string $name, $description, $creationDate;
-    public ?string $expirationDate;
-    private ?string $creationReason, $expirationReason,
-        $messageRetention, $messageCooldown,
+    public ?string $expirationDate, $creationReason, $expirationReason;
+    private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
     private array $channels, $whitelistContents;

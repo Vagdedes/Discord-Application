@@ -3,12 +3,12 @@ require '/root/discord_bot/utilities/utilities.php';
 $token = get_keys_from_file("/root/discord_bot/private/credentials/discord_token", 1);
 
 if ($token === null) {
-    exit("No token found");
+    exit("No Discord token found");
 }
 $AI_key = get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key", 1);
 
 if ($AI_key === null) {
-    exit("No AI api key found");
+    exit("No AI API key found");
 }
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';

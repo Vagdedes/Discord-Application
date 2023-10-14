@@ -31,7 +31,7 @@ function get_sql_connection(): ?object
     return $sql_connection;
 }
 
-function reset_sql_connection()
+function reset_sql_connection(): void
 {
     global $sql_connection;
     $sql_connection = null;

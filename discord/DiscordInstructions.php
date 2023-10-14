@@ -23,10 +23,7 @@ class DiscordInstructions
                 array("expiration_date", ">", get_current_date()),
                 null
             ),
-            array(
-                "ASC",
-                "plan_id"
-            )
+            "plan_id ASC, priority DESC"
         );
         $this->placeholders = get_sql_query(
             BotDatabaseTable::BOT_INSTRUCTION_PLACEHOLDERS,
@@ -204,8 +201,10 @@ class DiscordInstructions
 
         $object->planName = $this->plan->name;
         $object->planDescription = $this->plan->description;
-        $object->planCreation = $this->plan->creationDate;
-        $object->planExpiration = $this->plan->expirationDate;
+        $object->planCreationDate = $this->plan->creationDate;
+        $object->planCreationReason = $this->plan->creationReason;
+        $object->planExpirationDate = $this->plan->expirationDate;
+        $object->planExpirationReason = $this->plan->expirationReason;
         return $object;
     }
 }
