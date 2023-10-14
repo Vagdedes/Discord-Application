@@ -29,7 +29,9 @@ class BotDatabaseTable
         BOT_PUNISHMENTS = "discord.botPunishments",
         BOT_PUNISHMENT_TYPES = "discord.botPunishmentTypes",
         BOT_WHITELIST = "discord.botWhitelist",
-        BOT_LIMITS = "discord.botLimits";
+        BOT_LIMITS = "discord.botLimits",
+        BOT_LIMIT_TRACKING = "discord.botLimitTracking",
+        BOT_COMMANDS = "discord.botCommands";
 }
 
 class DiscordPunishment
@@ -68,7 +70,7 @@ class DiscordProperties
     public const
         MESSAGE_MAX_LENGTH = 2000,
         MESSAGE_NITRO_MAX_LENGTH = 4000,
-        SYSTEM_REFRESH_MILLISECONDS = 60_000,
+        SYSTEM_REFRESH_MILLISECONDS = 300_000, // 5 minutes
         NEW_LINE = "\n",
         DEFAULT_PLACEHOLDER_START = "%%__",
         DEFAULT_PLACEHOLDER_MIDDLE = "__",

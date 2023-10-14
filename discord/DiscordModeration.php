@@ -90,7 +90,7 @@ class DiscordModeration
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
-            return $cache === false ? null : $cache;
+            return $cache;
         }
         $object = null;
 

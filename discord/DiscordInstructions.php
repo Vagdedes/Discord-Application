@@ -42,12 +42,17 @@ class DiscordInstructions
         );
     }
 
-    public function replace(array $messages, $object = null,
-                                  $placeholderStart = DiscordProperties::DEFAULT_PLACEHOLDER_START,
-                                  $placeholderMiddle = DiscordProperties::DEFAULT_PLACEHOLDER_MIDDLE,
-                                  $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END): array
+    public function replace(array  $messages, ?object $object = null,
+                            string $placeholderStart = DiscordProperties::DEFAULT_PLACEHOLDER_START,
+                            string $placeholderMiddle = DiscordProperties::DEFAULT_PLACEHOLDER_MIDDLE,
+                            string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END): array
     {
         if (!empty($this->placeholders) && !empty($object)) {
+            foreach ($messages as $arrayKey => $message) {
+                if ($message === null) {
+                    $messages[$arrayKey] = "";
+                }
+            }
             foreach ($this->placeholders as $placeholder) {
                 if (isset($object->{$placeholder->placeholder})) {
                     $value = $object->{$placeholder->placeholder};
@@ -132,11 +137,13 @@ class DiscordInstructions
                                 $positionValue = $object->placeholderArray[$modifiedPosition];
 
                                 foreach ($messages as $arrayKey => $message) {
-                                    $messages[$arrayKey] = str_replace(
-                                        $placeholderStart . $placeholder->placeholder . $placeholderEnd,
-                                        $positionValue,
-                                        $message
-                                    );
+                                    if (!empty($message)) {
+                                        $messages[$arrayKey] = str_replace(
+                                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                            $positionValue,
+                                            $message
+                                        );
+                                    }
                                 }
                             } else {
                                 break;
@@ -144,11 +151,13 @@ class DiscordInstructions
                         }
                     }
                     foreach ($messages as $arrayKey => $message) {
-                        $messages[$arrayKey] = str_replace(
-                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
-                            $value,
-                            $message
-                        );
+                        if (!empty($message)) {
+                            $messages[$arrayKey] = str_replace(
+                                $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                $value,
+                                $message
+                            );
+                        }
                     }
                 }
             }
@@ -156,7 +165,7 @@ class DiscordInstructions
         return $messages;
     }
 
-    public function build($object): ?string
+    public function build(object $object): ?string
     {
         if (!empty($this->instructions)) {
             $information = "";
@@ -176,7 +185,8 @@ class DiscordInstructions
                 $information .= $replacements[0];
                 $disclaimer .= $replacements[1];
             }
-            return $information . (!empty($disclaimer)
+            return $information
+                . (!empty($disclaimer)
                     ? DiscordSyntax::HEAVY_CODE_BLOCK . $disclaimer . DiscordSyntax::HEAVY_CODE_BLOCK
                     : "");
         }
@@ -184,7 +194,7 @@ class DiscordInstructions
     }
 
     public function getObject($serverID, $channelID, $threadID,
-                              $userID, $messageContent, $messageID,
+                              $userID, string $messageContent, $messageID,
                               $botID): object
     {
         $object = new stdClass();
