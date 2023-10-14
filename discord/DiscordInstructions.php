@@ -59,7 +59,7 @@ class DiscordInstructions
                     $value = $object->{$placeholder->placeholder};
                 } else if (!empty($placeholderMiddle)) {
                     $value = null;
-                    $keyWord = explode($placeholderMiddle, $placeholder->placeholder);
+                    $keyWord = explode($placeholderMiddle, $placeholder->placeholder, 3);
                     $size = sizeof($keyWord);
 
                     if ($size === 1) {
@@ -187,8 +187,10 @@ class DiscordInstructions
                 $disclaimer .= $replacements[1];
             }
             if ($this->plan->strictReply) {
-                $information .= DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE
-                    . ($this->plan->requireMention ? DiscordProperties::STRICT_REPLY_INSTRUCTIONS_WITH_MENTION : DiscordProperties::STRICT_REPLY_INSTRUCTIONS);
+                $information = ($this->plan->requireMention
+                        ? DiscordProperties::STRICT_REPLY_INSTRUCTIONS_WITH_MENTION
+                        : DiscordProperties::STRICT_REPLY_INSTRUCTIONS)
+                    . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
             }
             return $information
                 . (!empty($disclaimer)

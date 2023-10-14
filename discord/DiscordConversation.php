@@ -32,7 +32,8 @@ class DiscordConversation
 
         if (!$object) {
             foreach ($array as $arrayKey => $row) {
-                $array[$arrayKey] = $row->message_content;
+                unset($array[$arrayKey]);
+                $array[strtotime($row->creation_date)] = $row->message_content;
             }
         }
         return $array;
@@ -61,7 +62,8 @@ class DiscordConversation
 
         if (!$object) {
             foreach ($array as $arrayKey => $row) {
-                $array[$arrayKey] = $row->message_content;
+                unset($array[$arrayKey]);
+                $array[strtotime($row->creation_date)] = $row->message_content;
             }
         }
         return $array;
@@ -74,13 +76,27 @@ class DiscordConversation
         $replies = $this->getReplies($userID, $limit, $object);
 
         if (!empty($messages)) {
-            foreach ($messages as $row) {
-                $final[strtotime($row->creation_date)] = "user: " . $row->message_content;
+            if ($object) {
+                foreach ($messages as $row) {
+                    $row->user = true;
+                    $final[strtotime($row->creation_date)] = $row;
+                }
+            } else {
+                foreach ($messages as $arrayKey => $row) {
+                    $final[$arrayKey] = "user: " . $row;
+                }
             }
         }
         if (!empty($replies)) {
-            foreach ($replies as $row) {
-                $final[strtotime($row->creation_date)] = "bot: " . $row->message_content;
+            if ($object) {
+                foreach ($replies as $row) {
+                    $row->user = false;
+                    $final[strtotime($row->creation_date)] = $row;
+                }
+            } else {
+                foreach ($messages as $arrayKey => $row) {
+                    $final[$arrayKey] = "user: " . $row;
+                }
             }
         }
         krsort($final);

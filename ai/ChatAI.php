@@ -184,7 +184,7 @@ class ChatAI
                                     )
                                 )
                             );
-                            return array($model, $reply);
+                            return array(true, $model, $reply);
                         } else {
                             $scheduler->addTask(
                                 null,
@@ -202,7 +202,7 @@ class ChatAI
                                     )
                                 )
                             );
-                            return array($model, null);
+                            return array(false, $model, $reply);
                         }
                     }
                 }
@@ -224,7 +224,7 @@ class ChatAI
                 );
             }
         }
-        return array($model, null);
+        return array(false, $model, null);
     }
 
     public function getText($model, $object): ?string

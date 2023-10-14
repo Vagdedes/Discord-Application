@@ -293,36 +293,37 @@ class DiscordPlan
                                 );
                             }
                             $instructions = $this->instructions->build($object);
-                            var_dump(strlen($instructions)); //todo
-                            $reply = $chatAI->getResult(
-                                overflow_long(overflow_long($this->planID * 31) + $userID),
-                                array(
-                                    "messages" => array(
-                                        array(
-                                            "role" => "system",
-                                            "content" => $instructions
-                                        ),
-                                        array(
-                                            "role" => "user",
-                                            "content" => $messageContent
-                                        )
+                            $parameters = array(
+                                "messages" => array(
+                                    array(
+                                        "role" => "system",
+                                        "content" => $instructions
+                                    ),
+                                    array(
+                                        "role" => "user",
+                                        "content" => $messageContent
                                     )
                                 )
                             );
+                            $reply = $chatAI->getResult(
+                                overflow_long(overflow_long($this->planID * 31) + $userID),
+                                $parameters
+                            );
+                            $modelReply = $reply[2];
 
-                            if ($reply[1] !== null) {
-                                $model = $reply[0];
-                                $modelReply = $reply[1];
+                            if ($this->debug) {
+                                foreach (str_split(json_encode($parameters), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                    $message->reply($split);
+                                }
+                                foreach (str_split(json_encode($modelReply), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                    $message->reply($split);
+                                }
+                            }
+                            if ($reply[0]) {
+                                $model = $reply[1];
                                 $assistance = $chatAI->getText($model, $modelReply);
 
                                 if ($assistance !== null) {
-                                    if ($this->debug && $assistance !== DiscordProperties::NO_REPLY) {
-                                        $assistance = substr(
-                                            DiscordSyntax::HEAVY_CODE_BLOCK . $instructions . DiscordSyntax::HEAVY_CODE_BLOCK . $assistance,
-                                            0,
-                                            DiscordProperties::MESSAGE_MAX_LENGTH
-                                        );
-                                    }
                                     $this->conversation->addMessage(
                                         $botID,
                                         $serverID,

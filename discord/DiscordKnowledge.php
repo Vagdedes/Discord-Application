@@ -145,15 +145,16 @@ class DiscordKnowledge
 
         if (!empty($static)) {
             foreach ($static as $row) {
-                $final[strtotime($row->creation_date)] = $row;
+                $row->static = true;
+                $final[] = $row;
             }
         }
         if (!empty($dynamic)) {
             foreach ($dynamic as $row) {
-                $final[strtotime($row->creation_date)] = $row;
+                $row->static = false;
+                $final[] = $row;
             }
         }
-        krsort($final);
         return $final;
     }
 }
