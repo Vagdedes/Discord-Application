@@ -75,5 +75,8 @@ class DiscordProperties
         NEW_LINE = "\n",
         DEFAULT_PLACEHOLDER_START = "%%__",
         DEFAULT_PLACEHOLDER_MIDDLE = "__",
-        DEFAULT_PLACEHOLDER_END = "__%%";
+        DEFAULT_PLACEHOLDER_END = "__%%",
+        NO_REPLY = self::DEFAULT_PLACEHOLDER_START . "noReply" . self::DEFAULT_PLACEHOLDER_END,
+        STRICT_REPLY_INSTRUCTIONS = "IMPORTANT: If you do not know a definite answer based on the information provided, reply with just: " . self::NO_REPLY,
+        STRICT_REPLY_INSTRUCTIONS_WITH_MENTION = "IMPORTANT: If you do not know a definite answer based on the information provided, kindly notify the user.";
 }

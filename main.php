@@ -106,7 +106,8 @@ $discord->on('ready', function (Discord $discord) {
                     $botID
                 );
 
-                if (!empty($assistance)) {
+                if (!empty($assistance)
+                    && $assistance !== DiscordProperties::NO_REPLY) {
                     $message->reply($assistance);
                 }
                 break;

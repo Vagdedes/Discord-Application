@@ -117,7 +117,6 @@ class DiscordLimits
                     $this->storage[$object->id] = $object;
                 }
             }
-            $this->store();
             return $remaining;
         } else {
             return $cache;

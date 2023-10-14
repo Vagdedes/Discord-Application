@@ -5,8 +5,8 @@ use Discord\Parts\Channel\Message;
 class DiscordPlan
 {
     public int $planID;
-    public bool $strictReply; //todo
-    private bool $requireMention, $debug;
+    public bool $strictReply, $requireMention;
+    private bool $debug;
     public string $name, $description, $creationDate;
     public ?string $expirationDate, $creationReason, $expirationReason;
     private ?string $messageRetention, $messageCooldown,
@@ -276,7 +276,7 @@ class DiscordPlan
                                 $assistance = $chatAI->getText($model, $modelReply);
 
                                 if ($assistance !== null) {
-                                    if ($this->debug) {
+                                    if ($this->debug && $assistance !== DiscordProperties::NO_REPLY) {
                                         $assistance = substr(
                                             DiscordSyntax::HEAVY_CODE_BLOCK . $instructions . DiscordSyntax::HEAVY_CODE_BLOCK . $assistance,
                                             0,

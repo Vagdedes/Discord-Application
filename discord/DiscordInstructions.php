@@ -185,6 +185,10 @@ class DiscordInstructions
                 $information .= $replacements[0];
                 $disclaimer .= $replacements[1];
             }
+            if ($this->plan->strictReply) {
+                $information .= DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE
+                    . ($this->plan->requireMention ? DiscordProperties::STRICT_REPLY_INSTRUCTIONS_WITH_MENTION : DiscordProperties::STRICT_REPLY_INSTRUCTIONS);
+            }
             return $information
                 . (!empty($disclaimer)
                     ? DiscordSyntax::HEAVY_CODE_BLOCK . $disclaimer . DiscordSyntax::HEAVY_CODE_BLOCK
