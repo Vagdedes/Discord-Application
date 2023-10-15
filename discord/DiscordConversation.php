@@ -7,6 +7,7 @@ class DiscordConversation
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        clear_memory(array(self::class), true);
     }
 
     public function getMessages($userID, ?int $limit = 0, $object = true): array
@@ -14,7 +15,7 @@ class DiscordConversation
         set_sql_cache("1 second");
         $array = get_sql_query(
             BotDatabaseTable::BOT_MESSAGES,
-            null,
+            array("creation_date", "message_content"),
             array(
                 array("user_id", $userID),
                 array("deletion_date", null),
@@ -44,7 +45,7 @@ class DiscordConversation
         set_sql_cache("1 second");
         $array = get_sql_query(
             BotDatabaseTable::BOT_REPLIES,
-            null,
+            array("creation_date", "message_content"),
             array(
                 array("user_id", $userID),
                 array("deletion_date", null),

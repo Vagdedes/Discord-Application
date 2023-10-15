@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Discord;
 use Discord\Parts\Channel\Message;
 
 class DiscordPlan
@@ -126,21 +127,20 @@ class DiscordPlan
                 $result = $cache;
             } else {
                 if ($this->requireStartingText !== null) {
-                    $result &= starts_with($messageContent, $this->requireStartingText);
+                    $result = starts_with($messageContent, $this->requireStartingText);
                 }
                 if ($result && $this->requireContainedText !== null) {
-                    $result &= str_contains($messageContent, $this->requireContainedText);
+                    $result = str_contains($messageContent, $this->requireContainedText);
                 }
                 if ($result && $this->requireEndingText !== null) {
-                    $result &= ends_with($messageContent, $this->requireEndingText);
+                    $result = ends_with($messageContent, $this->requireEndingText);
                 }
                 if ($result && $this->minMessageLength !== null) {
-                    $result &= strlen($messageContent) >= $this->minMessageLength;
+                    $result = strlen($messageContent) >= $this->minMessageLength;
                 }
                 if ($result && $this->maxMessageLength !== null) {
-                    $result &= strlen($messageContent) <= $this->maxMessageLength;
+                    $result = strlen($messageContent) <= $this->maxMessageLength;
                 }
-
                 if ($result) {
                     $result = false;
 
@@ -209,7 +209,7 @@ class DiscordPlan
 
             if (!empty($limits)) {
                 foreach ($limits as $limit) {
-                    if ($limit->limit_type->message !== null) {
+                    if ($limit->message !== null) {
                         $object = $this->instructions->getObject(
                             $serverID,
                             $serverName,
@@ -224,7 +224,7 @@ class DiscordPlan
                             $botID,
                             $botName
                         );
-                        $assistance = $this->instructions->replace(array($limit->limit_type->message), $object)[0];
+                        $assistance = $this->instructions->replace(array($limit->message), $object)[0];
                         break;
                     }
                 }
@@ -374,4 +374,36 @@ class DiscordPlan
         return $assistance;
     }
 
+    public function welcome(Discord $discord, $serverID, $userID): void
+    {
+        $channelObject = null;
+
+        if (!empty($this->channels)) {
+            foreach ($this->channels as $channel) {
+                if ($channel->server_id == $serverID
+                    && $channel->welcome_message !== null) {
+                    if ($channel->whitelist === null) {
+                        $channelObject = $channel;
+                        break;
+                    } else if (!empty($this->whitelistContents)) {
+                        foreach ($this->whitelistContents as $whitelist) {
+                            if ($whitelist->user_id == $userID
+                                && ($whitelist->server_id === null
+                                    || $whitelist->server_id === $serverID
+                                    && ($whitelist->channel_id === null
+                                        || $whitelist->channel_id === $channel->channel_id))) {
+                                $channelObject = $channel;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($channelObject !== null) {
+            $channelFound = $discord->getChannel($channelObject->channel_id);
+            $channelFound?->sendMessage("<@$userID> " . $channelObject->welcome_message);
+        }
+    }
 }

@@ -52,6 +52,7 @@ use Discord\Parts\Guild\Integration;
 use Discord\Parts\Guild\Role;
 use Discord\Parts\Guild\ScheduledEvent;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 use Discord\Parts\WebSockets\AutoModerationActionExecution;
 use Discord\Parts\WebSockets\MessageReaction;
@@ -249,9 +250,15 @@ $discord->on('ready', function (Discord $discord) {
     // Separator
 
     // Event::GUILD_MEMBER_UPDATE: Results in error
-    // Event::GUILD_MEMBER_ADD: Results in error
     // Event::GUILD_MEMBER_REMOVE: Results in error
     // Event::GUILD_MEMBER_UPDATE: Results in error
+
+    $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->welcome($discord, $member->guild_id, $member->id);
+        }
+        $logger->log($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
+    });
 
     // Separator
 
