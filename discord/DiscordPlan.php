@@ -383,7 +383,11 @@ class DiscordPlan
                     if ($channel->whitelist === null) {
                         if ($channel !== null) {
                             $channelFound = $discord->getChannel($channel->channel_id);
-                            $channelFound?->sendMessage("<@$userID> " . $channel->welcome_message);
+
+                            if ($channelFound !== null
+                                && $channelFound->overwrites->isset($userID)) {
+                                $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
+                            }
                         }
                     } else if (!empty($this->whitelistContents)) {
                         foreach ($this->whitelistContents as $whitelist) {
@@ -394,7 +398,11 @@ class DiscordPlan
                                         || $whitelist->channel_id === $channel->channel_id))) {
                                 if ($channel !== null) {
                                     $channelFound = $discord->getChannel($channel->channel_id);
-                                    $channelFound?->sendMessage("<@$userID> " . $channel->welcome_message);
+
+                                    if ($channelFound !== null
+                                        && $channelFound->overwrites->isset($userID)) {
+                                        $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
+                                    }
                                 }
                                 break;
                             }
