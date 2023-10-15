@@ -14,7 +14,6 @@ class DiscordPlan
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
     private array $channels, $whitelistContents;
-    public DiscordKnowledge $knowledge;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
@@ -57,7 +56,6 @@ class DiscordPlan
         $this->minMessageLength = $query->min_message_length;
         $this->maxMessageLength = $query->max_message_length;
 
-        $this->knowledge = new DiscordKnowledge($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);

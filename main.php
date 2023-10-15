@@ -19,7 +19,6 @@ require '/root/discord_bot/utilities/runnable.php';
 
 require '/root/discord_bot/discord/variables.php';
 require '/root/discord_bot/discord/DiscordPlan.php';
-require '/root/discord_bot/discord/DiscordKnowledge.php';
 require '/root/discord_bot/discord/DiscordInstructions.php';
 require '/root/discord_bot/discord/DiscordLogs.php';
 require '/root/discord_bot/discord/DiscordModeration.php';

@@ -10,11 +10,11 @@ class DiscordInstructions
     {
         $this->plan = $plan;
         $this->instructions = get_sql_query(
-            BotDatabaseTable::BOT_INSTRUCTIONS,
+            BotDatabaseTable::BOT_LOCAL_INSTRUCTIONS,
             null,
             array(
                 array("deletion_date", null),
-                array("applicationID", $this->plan->applicationID),
+                array("application_id", $this->plan->applicationID),
                 null,
                 array("plan_id", "IS", null, 0),
                 array("plan_id", "=", $this->plan->planID, 0),
@@ -42,6 +42,7 @@ class DiscordInstructions
                 null
             )
         );
+        clear_memory(array(self::class), true);
     }
 
     public function replace(array  $messages, ?object $object = null,
@@ -63,8 +64,8 @@ class DiscordInstructions
                     $limit = sizeof($keyWord) === 2 ? $keyWord[1] : 0;
 
                     switch ($keyWord[0]) {
-                        case "knowledge":
-                            $value = $this->plan->knowledge->get($object->userID, $limit, false);
+                        case "publicInstructions":
+                            $value = $this->getPublic($object->userID, $limit);
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
@@ -199,5 +200,69 @@ class DiscordInstructions
         $object->planExpirationDate = $this->plan->expirationDate;
         $object->planExpirationReason = $this->plan->expirationReason;
         return $object;
+    }
+
+    private function getPublic($userID, ?int $limit = 0): array
+    {
+        set_sql_cache(null, self::class);
+        $array = get_sql_query(
+            BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("application_id", $this->plan->applicationID),
+                null,
+                array("user_id", "IS", null, 0),
+                array("user_id", $userID),
+                null,
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", "=", $this->plan->planID, 0),
+                $this->plan->family !== null ? array("family", $this->plan->family) : "",
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ),
+            "plan_id ASC, priority DESC",
+            $limit
+        );
+
+        if (!empty($array)) {
+            $clearCache = false;
+
+            foreach ($array as $arrayKey => $row) {
+                if ($row->information_expiration !== null && $row->information_expiration > get_current_date()) {
+                    $array[$arrayKey] = $row->information_value;
+                } else {
+                    $doc = starts_with($row->information_url, "https://docs.google.com/")
+                        ? get_raw_google_doc($row->information_url, false, 5) :
+                        timed_file_get_contents($row->information_url, 5);
+
+                    if ($doc !== null) {
+                        $array[$arrayKey] = $doc;
+                        set_sql_query(
+                            BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
+                            array(
+                                "information_value" => $doc,
+                                "information_expiration" => get_future_date($row->information_duration)
+                            ),
+                            array(
+                                array("id", $row->id)
+                            )
+                        );
+                        $clearCache = true;
+                    } else {
+                        unset($array[$arrayKey]);
+                    }
+                }
+            }
+
+            if ($clearCache) {
+                clear_memory(array(self::class), true);
+            }
+        }
+        return $array;
     }
 }
