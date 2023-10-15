@@ -177,8 +177,8 @@ class DiscordConversation
     // Separator
 
     public function addReply($botID, $serverID, $channelID, $threadID,
-                             $userID, $messageID, $message,
-                             $cost, $currencyCode): void
+        $userID, $messageID, string $messageContent,
+                             int|float $cost, $currencyCode): void
     {
         global $scheduler;
         $currency = new DiscordCurrency($currencyCode);
@@ -195,7 +195,7 @@ class DiscordConversation
                     "thread_id" => $threadID,
                     "user_id" => $userID,
                     "message_id" => $messageID,
-                    "message_content" => $message,
+                    "message_content" => $messageContent,
                     "cost" => $cost,
                     "currency_id" => $currency->exists ? $currency->id : null,
                     "creation_date" => get_current_date(),
@@ -205,7 +205,7 @@ class DiscordConversation
     }
 
     public function addMessage($botID, $serverID, $channelID, $threadID,
-                               $userID, $messageID, $message): void
+                               $userID, $messageID, string $messageContent): void
     {
         global $scheduler;
         $scheduler->addTask(
@@ -221,7 +221,7 @@ class DiscordConversation
                     "thread_id" => $threadID,
                     "user_id" => $userID,
                     "message_id" => $messageID,
-                    "message_content" => $message,
+                    "message_content" => $messageContent,
                     "creation_date" => get_current_date(),
                 )
             )

@@ -98,7 +98,8 @@ class DiscordPlan
 
     // Separator
 
-    public function canAssist($mentions, $serverID, $channelID, $userID, $messageContent, $botID): bool
+    public function canAssist($mentions, $serverID, $channelID, $userID,
+                              string $messageContent, $botID): bool
     {
         if (!$this->requireMention) {
             $result = true;
@@ -180,7 +181,7 @@ class DiscordPlan
                                   $channelID, $channelName,
                                   $threadID, $threadName,
                                   $userID, $userName,
-                                  $messageID, $messageContent,
+                                  $messageID, string $messageContent,
                                   $botID, $botName): ?string
     {
         $assistance = null;

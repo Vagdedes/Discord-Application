@@ -106,7 +106,8 @@ class DiscordModeration
         return $object;
     }
 
-    public function addPunishment(?int $type, $botID, $executorID, $userID, $reason, $duration = null): bool
+    public function addPunishment(?int   $type, $botID, $executorID, $userID,
+                                  string $reason, $duration = null): bool
     {
         if (empty($this->punishmentTypes)) {
             return false;

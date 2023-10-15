@@ -43,7 +43,7 @@ class DiscordCommands
         clear_memory(array(self::class), true);
     }
 
-    public function process($serverID, $channelID, $userID, $messageContent): ?string
+    public function process($serverID, $channelID, $userID, string $messageContent): ?string
     {
         if (!empty($this->staticCommands)) {
             $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $messageContent);
@@ -88,7 +88,7 @@ class DiscordCommands
         return null;
     }
 
-    private function getCooldown($serverID, $channelID, $userID, $command): array
+    private function getCooldown($serverID, $channelID, $userID, object $command): array
     {
         if ($command->cooldown_duration !== null) {
             $cacheKey = array(
