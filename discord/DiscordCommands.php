@@ -50,7 +50,13 @@ class DiscordCommands
             $cache = get_key_value_pair($cacheKey);
 
             if ($cache !== null) {
-                return $cache;
+                $cooldown = $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
+
+                if ($cooldown[0]) {
+                    return $cooldown[1];
+                } else {
+                    return $cache[1];
+                }
             } else {
                 foreach ($this->staticCommands as $command) {
                     if (($command->server_id === null || $command->server_id == $serverID)
@@ -58,7 +64,8 @@ class DiscordCommands
                         && ($command->user_id === null || $command->user_id == $userID)
                         && $messageContent == ($command->command_placeholder . $command->command_identification)) {
                         $reply = $command->command_reply;
-                        set_key_value_pair($cacheKey, $reply);
+                        set_key_value_pair($cacheKey, array($command, $reply));
+                        $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
                         return $reply;
                     }
                 }
@@ -79,5 +86,24 @@ class DiscordCommands
             }
         }
         return null;
+    }
+
+    private function getCooldown($serverID, $channelID, $userID, $command): array
+    {
+        if ($command->cooldown_duration !== null) {
+            $cacheKey = array(
+                __METHOD__, $this->plan->planID, $serverID, $channelID, $userID,
+                $command->command_placeholder . $command->command_identification);
+            $cache = get_key_value_pair($cacheKey);
+
+            if ($cache !== null) {
+                return array(true, $command->cooldown_message);
+            } else {
+                set_key_value_pair($cacheKey, true, 5);
+                return array(false, null);
+            }
+        } else {
+            return array(false, null);
+        }
     }
 }

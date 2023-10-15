@@ -95,7 +95,7 @@ class DiscordConversation
                 }
             } else {
                 foreach ($messages as $arrayKey => $row) {
-                    $final[$arrayKey] = "user: " . $row;
+                    $final[$arrayKey] = "bot: " . $row;
                 }
             }
         }

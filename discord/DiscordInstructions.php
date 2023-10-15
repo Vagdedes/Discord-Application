@@ -81,59 +81,57 @@ class DiscordInstructions
                             $value = $this->plan->conversation->getConversation($object->userID, $limit, false);
                             break;
                         default:
-                            $value = null;
+                            $value = "";
                             break;
                     }
                 } else {
-                    $value = null;
+                    $value = "";
                 }
 
-                if ($value !== null) {
-                    if (is_array($value)) {
-                        $array = $value;
-                        $value = "";
+                if (is_array($value)) {
+                    $array = $value;
+                    $value = "";
 
-                        foreach ($array as $row) {
-                            $value .= $row . DiscordProperties::NEW_LINE;
-                        }
-                        if (!empty($value)) {
-                            $value = substr($value, 0, -strlen(DiscordProperties::NEW_LINE));
-                        }
+                    foreach ($array as $row) {
+                        $value .= $row . DiscordProperties::NEW_LINE;
                     }
-                    $object->placeholderArray[] = $value;
+                    if (!empty($value)) {
+                        $value = substr($value, 0, -strlen(DiscordProperties::NEW_LINE));
+                    }
+                }
+                $object->placeholderArray[] = $value;
 
-                    if ($placeholder->include_previous !== null
-                        && $placeholder->include_previous > 0) {
-                        $size = sizeof($object->placeholderArray);
+                if ($placeholder->include_previous !== null
+                    && $placeholder->include_previous > 0) {
+                    $size = sizeof($object->placeholderArray);
 
-                        for ($position = 1; $position <= $placeholder->include_previous; $position++) {
-                            $modifiedPosition = $size - $position;
+                    for ($position = 1; $position <= $placeholder->include_previous; $position++) {
+                        $modifiedPosition = $size - $position;
 
-                            if ($modifiedPosition >= 0) {
-                                $positionValue = $object->placeholderArray[$modifiedPosition];
+                        if ($modifiedPosition >= 0) {
+                            $positionValue = $object->placeholderArray[$modifiedPosition];
 
-                                foreach ($messages as $arrayKey => $message) {
-                                    if (!empty($message)) {
-                                        $messages[$arrayKey] = str_replace(
-                                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
-                                            $positionValue,
-                                            $message
-                                        );
-                                    }
+                            foreach ($messages as $arrayKey => $message) {
+                                if (!empty($message)) {
+                                    $messages[$arrayKey] = str_replace(
+                                        $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                        $positionValue,
+                                        $message
+                                    );
                                 }
-                            } else {
-                                break;
                             }
+                        } else {
+                            break;
                         }
                     }
-                    foreach ($messages as $arrayKey => $message) {
-                        if (!empty($message)) {
-                            $messages[$arrayKey] = str_replace(
-                                $placeholderStart . $placeholder->placeholder . $placeholderEnd,
-                                $value,
-                                $message
-                            );
-                        }
+                }
+                foreach ($messages as $arrayKey => $message) {
+                    if (!empty($message)) {
+                        $messages[$arrayKey] = str_replace(
+                            $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                            $value,
+                            $message
+                        );
                     }
                 }
             }

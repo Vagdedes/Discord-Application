@@ -10,7 +10,7 @@ class DiscordLimits
         $this->plan = $plan;
         $this->storage = array();
         $this->limits = get_sql_query(
-            BotDatabaseTable::BOT_LIMITS,
+            BotDatabaseTable::BOT_MESSAGE_LIMITS,
             null,
             array(
                 array("deletion_date", null),
@@ -33,7 +33,7 @@ class DiscordLimits
             foreach ($this->storage as $object) {
                 $object->limit_type = $object->limit_type->id;
                 set_sql_query(
-                    BotDatabaseTable::BOT_LIMIT_TRACKING,
+                    BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
                     json_decode(json_encode($object), true),
                     array(
                         array("id", $object->id)
@@ -62,7 +62,7 @@ class DiscordLimits
 
                         while ($repeat < 2) { // Here for new rows to be inserted and query to be re-run
                             $query = get_sql_query(
-                                BotDatabaseTable::BOT_LIMIT_TRACKING,
+                                BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
                                 null,
                                 array(
                                     array("limit_type", $limit->id),
@@ -75,7 +75,7 @@ class DiscordLimits
                             if (empty($query)) {
                                 $repeat++;
                                 sql_insert(
-                                    BotDatabaseTable::BOT_LIMIT_TRACKING,
+                                    BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
                                     array(
                                         "limit_type" => $limit->id,
                                         "bot_id" => $botID,
@@ -133,7 +133,7 @@ class DiscordLimits
             $object->creation_date = $date;
             $object->expiration_date = $futureDate;
             set_sql_query(
-                BotDatabaseTable::BOT_LIMIT_TRACKING,
+                BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
                 array(
                     "counter" => $defaultCounter,
                     "creation_date" => $date,

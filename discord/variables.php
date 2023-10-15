@@ -29,8 +29,9 @@ class BotDatabaseTable
         BOT_PUNISHMENTS = "discord.botPunishments",
         BOT_PUNISHMENT_TYPES = "discord.botPunishmentTypes",
         BOT_WHITELIST = "discord.botWhitelist",
-        BOT_LIMITS = "discord.botLimits",
-        BOT_LIMIT_TRACKING = "discord.botLimitTracking",
+        BOT_COST_LIMITS = "discord.botMessageLimits",
+        BOT_MESSAGE_LIMITS = "discord.botMessageLimits",
+        BOT_MESSAGE_LIMIT_TRACKING = "discord.botMessageLimitTracking",
         CURRENCIES = "discord.currencies",
         BOT_COMMANDS = "discord.botCommands";
 }
@@ -69,7 +70,7 @@ class DiscordSyntax
 class DiscordProperties
 {
     private const STRICT_REPLY_INSTRUCTIONS_DEFAULT = "MOST IMPORTANT: "
-    . "IF THE USER'S MESSAGE IS NOT RELATED TO THE FOLLOWING INFORMATION PROVIDED";
+    . "IF YOU ARE NOT OVER 90% CERTAIN THE USER'S MESSAGE IS RELATED TO THE FOLLOWING INFORMATION";
 
     public const
         MESSAGE_MAX_LENGTH = 2000,

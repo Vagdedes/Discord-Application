@@ -312,11 +312,10 @@ class DiscordPlan
                             $modelReply = $reply[2];
 
                             if ($this->debug) {
-                                foreach (str_split(json_encode($parameters), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
-                                    $message->reply($split);
-                                }
-                                foreach (str_split(json_encode($modelReply), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
-                                    $message->reply($split);
+                                foreach (array($parameters, $modelReply) as $debug) {
+                                    foreach (str_split(json_encode($debug), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                        $message->reply(str_replace("\\n", DiscordProperties::NEW_LINE, $split));
+                                    }
                                 }
                             }
                             if ($reply[0]) {
