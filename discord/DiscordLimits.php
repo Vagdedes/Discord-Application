@@ -3,14 +3,29 @@
 class DiscordLimits
 {
     private DiscordPlan $plan;
-    private array $limits, $storage;
+    private array $messageLimits, $costLimits, $messageCounter;
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->storage = array();
-        $this->limits = get_sql_query(
+        $this->messageCounter = array();
+        $this->messageLimits = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_LIMITS,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+        $this->costLimits = get_sql_query(
+            BotDatabaseTable::BOT_COST_LIMITS,
             null,
             array(
                 array("deletion_date", null),
@@ -27,127 +42,66 @@ class DiscordLimits
         clear_memory(array(self::class), true);
     }
 
-    public function store(): void
+    public function isLimited($serverID, $channelID, $userID): array
     {
-        if (!empty($this->storage)) {
-            foreach ($this->storage as $object) {
-                $object->limit_type = $object->limit_type->id;
-                set_sql_query(
-                    BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
-                    json_decode(json_encode($object), true),
-                    array(
-                        array("id", $object->id)
-                    ),
-                    null,
-                    1
-                );
-            }
-        }
-    }
+        $array = array();
 
-    public function isLimited($serverID, $channelID, $userID, $botID): array
-    {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID);
-        $cache = get_key_value_pair($cacheKey);
+        if (!empty($this->messageLimits)) {
+            foreach ($this->messageLimits as $limit) {
+                if (($limit->server_id === null || $limit->server_id === $serverID)
+                    && ($limit->channel_id === null || $limit->channel_id === $channelID)) {
+                    $loopUserID = $limit->user !== null ? $userID : null;
+                    $count = $this->plan->conversation->getMessageCount(
+                        $limit->server_id,
+                        $limit->channel_id,
+                        $loopUserID,
+                        $limit->past_lookup,
+                    );
+                    $hash = $this->hash($limit->server_id, $limit->channel_id, $loopUserID);
 
-        if ($cache === null) {
-            $cache = array();
+                    if (array_key_exists($hash, $this->messageCounter)) {
+                        $this->messageCounter[$hash]++;
+                        $count = $this->messageCounter[$hash];
+                    } else {
+                        $this->messageCounter[$hash] = $count;
+                    }
 
-            if (!empty($this->limits)) {
-                foreach ($this->limits as $limit) {
-                    if (($limit->channel_id === null || $limit->channel_id === $channelID)
-                        && ($limit->server_id === null || $limit->server_id === $serverID)
-                        && ($limit->user_id === null || $limit->user_id === $userID)) {
-                        $repeat = 0;
-
-                        while ($repeat < 2) { // Here for new rows to be inserted and query to be re-run
-                            $query = get_sql_query(
-                                BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
-                                null,
-                                array(
-                                    array("limit_type", $limit->id),
-                                    array("user_id", $userID),
-                                ),
-                                null,
-                                1
-                            );
-
-                            if (empty($query)) {
-                                $repeat++;
-                                sql_insert(
-                                    BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
-                                    array(
-                                        "limit_type" => $limit->id,
-                                        "bot_id" => $botID,
-                                        "user_id" => $userID,
-                                        "counter" => 0,
-                                        "creation_date" => get_current_date(),
-                                        "expiration_date" => get_future_date($limit->duration)
-                                    )
-                                );
-                            } else {
-                                $query[0]->limit_type = $limit;
-                                $cache[] = $repeat === 0 ? $this->recreate($query[0])[1] : $query[0];
-                                break;
-                            }
-                        }
+                    if ($count >= $limit->limit) {
+                        $array[] = $limit;
                     }
                 }
             }
-            set_key_value_pair($cacheKey, $cache);
         }
-
-        if (!empty($cache)) {
-            $remaining = array();
-
-            foreach ($cache as $arrayKey => $object) {
-                $object = $this->recreate($object, 1);
-
-                if ($object[0]) {
-                    $cache[$arrayKey] = $object[1];
-                    unset($this->storage[$object[1]->id]);
-                } else {
-                    $object = $object[1];
-
-                    if ($object->counter === $object->limit_type->limit) {
-                        $remaining[] = $object;
-                    } else if (empty($remaining)) { // Do not run more limits if at least one is found to be reached
-                        $object->counter++;
-                    }
-                    $this->storage[$object->id] = $object;
+        if (!empty($this->costLimits)) {
+            foreach ($this->costLimits as $limit) {
+                if (($limit->server_id === null || $limit->server_id === $serverID)
+                    && ($limit->channel_id === null || $limit->channel_id === $channelID)
+                    && $this->plan->conversation->getCost(
+                        $limit->server_id,
+                        $limit->channel_id,
+                        $limit->user !== null ? $userID : null,
+                        $limit->past_lookup
+                    ) >= $limit->limit) {
+                    $array[] = $limit;
                 }
             }
-            return $remaining;
-        } else {
-            return $cache;
         }
+        return $array;
     }
 
-    private function recreate(object $object, int $defaultCounter = 0): array
+    private function hash($serverID, $channelID, $userID): int
     {
-        $date = get_current_date();
+        $string = "";
 
-        if ($object->expiration_date <= $date) {
-            $futureDate = get_future_date($object->limit_type->duration);
-            $object->counter = 1;
-            $object->creation_date = $date;
-            $object->expiration_date = $futureDate;
-            set_sql_query(
-                BotDatabaseTable::BOT_MESSAGE_LIMIT_TRACKING,
-                array(
-                    "counter" => $defaultCounter,
-                    "creation_date" => $date,
-                    "expiration_date" => $futureDate,
-                ),
-                array(
-                    array("id", $object->id)
-                ),
-                null,
-                1
-            );
-            return array(true, $object);
-        } else {
-            return array(false, $object);
+        if ($serverID !== null) {
+            $string .= $serverID;
         }
+        if ($channelID !== null) {
+            $string .= $channelID;
+        }
+        if ($userID !== null) {
+            $string .= $userID;
+        }
+        return string_to_integer($string, true);
     }
 }

@@ -14,11 +14,6 @@ class DiscordBot
 
     public function refresh(): void
     {
-        if (!empty($this->plans)) {
-            foreach ($this->plans as $plan) {
-                $plan->limits->store();
-            }
-        }
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id"),

@@ -236,9 +236,9 @@ class DiscordInstructions
                 if ($row->information_expiration !== null && $row->information_expiration > get_current_date()) {
                     $array[$arrayKey] = $row->information_value;
                 } else {
-                    $doc = starts_with($row->information_url, "https://docs.google.com/")
-                        ? get_raw_google_doc($row->information_url, false, 5) :
-                        timed_file_get_contents($row->information_url, 5);
+                    $doc = get_domain_from_url($row->information_url) == "docs.google.com"
+                        ? get_raw_google_doc($row->information_url) :
+                        timed_file_get_contents($row->information_url);
 
                     if ($doc !== null) {
                         $array[$arrayKey] = $doc;

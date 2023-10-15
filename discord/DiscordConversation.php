@@ -69,6 +69,76 @@ class DiscordConversation
         return $array;
     }
 
+    public function getCost($serverID, $channelID, $userID, $pastLookup): float
+    {
+        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        } else {
+            $cost = 0.0;
+            $array = get_sql_query(
+                BotDatabaseTable::BOT_REPLIES,
+                array("cost"),
+                array(
+                    $serverID !== null ? array("server_id", $serverID) : "",
+                    $channelID !== null ? array("channel_id", $channelID) : "",
+                    $userID !== null ? array("user_id", $userID) : "",
+                    array("deletion_date", null),
+                    array("creation_date", ">", get_past_date($pastLookup)),
+                    null,
+                    array("plan_id", "IS", null, 0),
+                    array("plan_id", $this->plan->planID),
+                    null,
+                ),
+                array(
+                    "DESC",
+                    "id"
+                )
+            );
+
+            foreach ($array as $row) {
+                $cost += $row->cost;
+            }
+            set_key_value_pair($cacheKey, $cost, $pastLookup);
+            return $cost;
+        }
+    }
+
+    public function getMessageCount($serverID, $channelID, $userID, $pastLookup): float
+    {
+        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        } else {
+            $array = get_sql_query(
+                BotDatabaseTable::BOT_REPLIES,
+                array("id"),
+                array(
+                    $serverID !== null ? array("server_id", $serverID) : "",
+                    $channelID !== null ? array("channel_id", $channelID) : "",
+                    $userID !== null ? array("user_id", $userID) : "",
+                    array("deletion_date", null),
+                    array("creation_date", ">", get_past_date($pastLookup)),
+                    null,
+                    array("plan_id", "IS", null, 0),
+                    array("plan_id", $this->plan->planID),
+                    null,
+                ),
+                array(
+                    "DESC",
+                    "id"
+                )
+            );
+            $amount = sizeof($array);
+            set_key_value_pair($cacheKey, $amount, $pastLookup);
+            return $amount;
+        }
+    }
+
     public function getConversation($userID, ?int $limit = 0, $object = true): array
     {
         $final = array();

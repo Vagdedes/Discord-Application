@@ -71,8 +71,10 @@ $discord = new Discord([
     'dnsConfig' => '1.1.1.1'
 ]);
 
-$scheduler = new DiscordRunnable();
+$scheduler = new DiscordRunnables();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
+
+//todo welcome message
 
 $discord->on('ready', function (Discord $discord) {
     global $scheduler, $chatAI;

@@ -1,6 +1,6 @@
 <?php
 
-class DiscordRunnable
+class DiscordRunnables
 {
 
     private array $tasks;

@@ -205,7 +205,7 @@ class DiscordPlan
                 $assistance = $this->instructions->replace(array($punishment->creation_reason), $object)[0];
             }
         } else {
-            $limits = $this->limits->isLimited($serverID, $channelID, $userID, $botID);
+            $limits = $this->limits->isLimited($serverID, $channelID, $userID);
 
             if (!empty($limits)) {
                 foreach ($limits as $limit) {
