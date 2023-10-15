@@ -376,15 +376,15 @@ class DiscordPlan
 
     public function welcome(Discord $discord, $serverID, $userID): void
     {
-        $channelObject = null;
-
         if (!empty($this->channels)) {
             foreach ($this->channels as $channel) {
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
                     if ($channel->whitelist === null) {
-                        $channelObject = $channel;
-                        break;
+                        if ($channel !== null) {
+                            $channelFound = $discord->getChannel($channel->channel_id);
+                            $channelFound?->sendMessage("<@$userID> " . $channel->welcome_message);
+                        }
                     } else if (!empty($this->whitelistContents)) {
                         foreach ($this->whitelistContents as $whitelist) {
                             if ($whitelist->user_id == $userID
@@ -392,18 +392,16 @@ class DiscordPlan
                                     || $whitelist->server_id === $serverID
                                     && ($whitelist->channel_id === null
                                         || $whitelist->channel_id === $channel->channel_id))) {
-                                $channelObject = $channel;
-                                break 2;
+                                if ($channel !== null) {
+                                    $channelFound = $discord->getChannel($channel->channel_id);
+                                    $channelFound?->sendMessage("<@$userID> " . $channel->welcome_message);
+                                }
+                                break;
                             }
                         }
                     }
                 }
             }
-        }
-
-        if ($channelObject !== null) {
-            $channelFound = $discord->getChannel($channelObject->channel_id);
-            $channelFound?->sendMessage("<@$userID> " . $channelObject->welcome_message);
         }
     }
 }
