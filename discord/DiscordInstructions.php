@@ -14,6 +14,7 @@ class DiscordInstructions
             null,
             array(
                 array("deletion_date", null),
+                array("applicationID", $this->plan->applicationID),
                 null,
                 array("plan_id", "IS", null, 0),
                 array("plan_id", "=", $this->plan->planID, 0),

@@ -5,7 +5,7 @@ use Discord\Parts\Channel\Message;
 class DiscordPlan
 {
     public int $planID;
-    public ?int $family, $minMessageLength, $maxMessageLength;
+    public ?int $applicationID, $family, $minMessageLength, $maxMessageLength;
     public bool $strictReply, $requireMention;
     private bool $debug;
     public string $name, $description, $creationDate;
@@ -36,6 +36,7 @@ class DiscordPlan
 
         $this->planID = (int)$query->id;
         $this->family = $query->family === null ? null : (int)$query->family;
+        $this->applicationID = $query->application_id === null ? null : (int)$query->application_id;
         $this->messageRetention = $query->message_retention;
         $this->messageCooldown = $query->message_cooldown;
         $this->name = $query->name;
