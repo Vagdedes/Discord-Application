@@ -63,14 +63,8 @@ class DiscordInstructions
                     $limit = sizeof($keyWord) === 2 ? $keyWord[1] : 0;
 
                     switch ($keyWord[0]) {
-                        case "staticKnowledge":
-                            $value = $this->plan->knowledge->getStatic($object->userID, $limit, false);
-                            break;
-                        case "dynamicKnowledge":
-                            $value = $this->plan->knowledge->getDynamic($object->userID, $limit, false);
-                            break;
-                        case "allKnowledge":
-                            $value = $this->plan->knowledge->getAll($object->userID, $limit, false);
+                        case "knowledge":
+                            $value = $this->plan->knowledge->get($object->userID, $limit, false);
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
