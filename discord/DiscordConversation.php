@@ -71,7 +71,7 @@ class DiscordConversation
 
     public function getCost($serverID, $channelID, $userID, $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
+        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -108,7 +108,7 @@ class DiscordConversation
 
     public function getMessageCount($serverID, $channelID, $userID, $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
+        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
