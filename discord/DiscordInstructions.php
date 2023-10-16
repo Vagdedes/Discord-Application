@@ -4,13 +4,31 @@ class DiscordInstructions
 {
 
     private DiscordPlan $plan;
-    private array $instructions, $placeholders;
+    private array $localInstructions, $publicInstructions, $placeholders;
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->instructions = get_sql_query(
+        $this->localInstructions = get_sql_query(
             BotDatabaseTable::BOT_LOCAL_INSTRUCTIONS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("application_id", $this->plan->applicationID),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", "=", $this->plan->planID, 0),
+                $this->plan->family !== null ? array("family", $this->plan->family) : "",
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ),
+            "plan_id ASC, priority DESC"
+        );
+        $this->publicInstructions = get_sql_query(
+            BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
             null,
             array(
                 array("deletion_date", null),
@@ -64,7 +82,7 @@ class DiscordInstructions
 
                     switch ($keyWord[0]) {
                         case "publicInstructions":
-                            $value = $this->getPublic($limit);
+                            $value = $this->getPublic();
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
@@ -136,11 +154,11 @@ class DiscordInstructions
 
     public function build(object $object): ?string
     {
-        if (!empty($this->instructions)) {
+        if (!empty($this->localInstructions)) {
             $information = "";
             $disclaimer = "";
 
-            foreach ($this->instructions as $instruction) {
+            foreach ($this->localInstructions as $instruction) {
                 $replacements = $this->replace(
                     array(
                         $instruction->information,
@@ -201,34 +219,16 @@ class DiscordInstructions
         return $object;
     }
 
-    private function getPublic(?int $limit = 0): array
+    private function getPublic(): array
     {
-        $cacheKey = array(__METHOD__, $this->plan->applicationID, $this->plan->planID, $limit);
+        $cacheKey = array(__METHOD__, $this->plan->applicationID, $this->plan->planID);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
             return $cache;
         } else {
             $times = array();
-            $array = get_sql_query(
-                BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
-                null,
-                array(
-                    array("deletion_date", null),
-                    array("application_id", $this->plan->applicationID),
-                    null,
-                    array("plan_id", "IS", null, 0),
-                    array("plan_id", "=", $this->plan->planID, 0),
-                    $this->plan->family !== null ? array("family", $this->plan->family) : "",
-                    null,
-                    null,
-                    array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
-                    null
-                ),
-                "plan_id ASC, priority DESC",
-                $limit
-            );
+            $array = $this->publicInstructions;
 
             if (!empty($array)) {
                 foreach ($array as $arrayKey => $row) {
@@ -266,12 +266,7 @@ class DiscordInstructions
                         }
                     }
                 }
-
-                if (empty($times)) {
-                    $times[] = "1 minute";
-                } else {
-                    sort($times);
-                }
+                sort($times);
                 set_key_value_pair($cacheKey, $array, $times[0]);
             }
             return $array;
