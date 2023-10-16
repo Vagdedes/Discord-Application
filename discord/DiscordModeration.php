@@ -105,7 +105,7 @@ class DiscordModeration
                 }
             }
             set_key_value_pair($cacheKey, $object);
-            return $object;
+            return $object === true ? null : $object;
         }
     }
 
@@ -114,38 +114,39 @@ class DiscordModeration
     {
         if (empty($this->punishmentTypes)) {
             return false;
-        }
-        $found = false;
-
-        foreach ($this->punishmentTypes as $punishmentType) {
-            if ($punishmentType->id == $type) {
-                $found = true;
-                break;
-            }
-        }
-
-        if ($found) {
-            global $scheduler;
-            $scheduler->addTask(
-                null,
-                "sql_insert",
-                array(
-                    BotDatabaseTable::BOT_PUNISHMENTS,
-                    array(
-                        "type" => $type,
-                        "plan_id" => $this->plan->planID,
-                        "bot_id" => $botID,
-                        "executor_id" => $executorID,
-                        "user_id" => $userID,
-                        "creation_date" => get_current_date(),
-                        "creation_reason" => $reason,
-                        "expiration_date" => $duration === null ? null : get_future_date($duration)
-                    )
-                )
-            );
-            return true;
         } else {
-            return false;
+            $found = false;
+
+            foreach ($this->punishmentTypes as $punishmentType) {
+                if ($punishmentType->id == $type) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if ($found) {
+                global $scheduler;
+                $scheduler->addTask(
+                    null,
+                    "sql_insert",
+                    array(
+                        BotDatabaseTable::BOT_PUNISHMENTS,
+                        array(
+                            "type" => $type,
+                            "plan_id" => $this->plan->planID,
+                            "bot_id" => $botID,
+                            "executor_id" => $executorID,
+                            "user_id" => $userID,
+                            "creation_date" => get_current_date(),
+                            "creation_reason" => $reason,
+                            "expiration_date" => $duration === null ? null : get_future_date($duration)
+                        )
+                    )
+                );
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

@@ -40,7 +40,6 @@ class DiscordCommands
                 null
             )
         );
-        clear_memory(array(self::class), true);
     }
 
     public function process($serverID, $channelID, $userID, string $messageContent): ?string
