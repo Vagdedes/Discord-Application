@@ -210,6 +210,7 @@ class DiscordInstructions
         if ($cache !== null) {
             return $cache;
         } else {
+            $times = array();
             $array = get_sql_query(
                 BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
                 null,
@@ -236,6 +237,8 @@ class DiscordInstructions
 
             if (!empty($array)) {
                 foreach ($array as $arrayKey => $row) {
+                    $times[strtotime(get_future_date($row->information_duration))] = $row->information_duration;
+
                     if ($row->information_expiration !== null
                         && $row->information_expiration > get_current_date()) {
                         $array[$arrayKey] = $row->information_value;
@@ -268,7 +271,13 @@ class DiscordInstructions
                         }
                     }
                 }
-                set_key_value_pair($cacheKey, $array, "1 minute");
+
+                if (empty($times)) {
+                    $times[] = "1 minute";
+                } else {
+                    sort($times);
+                }
+                set_key_value_pair($cacheKey, $array, $times[0]);
             }
             return $array;
         }
