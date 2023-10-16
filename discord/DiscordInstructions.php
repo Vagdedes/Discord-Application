@@ -204,65 +204,73 @@ class DiscordInstructions
 
     private function getPublic($userID, ?int $limit = 0): array
     {
-        set_sql_cache(null, self::class);
-        $array = get_sql_query(
-            BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
-            null,
-            array(
-                array("deletion_date", null),
-                array("application_id", $this->plan->applicationID),
-                null,
-                array("user_id", "IS", null, 0),
-                array("user_id", $userID),
-                null,
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", "=", $this->plan->planID, 0),
-                $this->plan->family !== null ? array("family", $this->plan->family) : "",
-                null,
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            ),
-            "plan_id ASC, priority DESC",
-            $limit
-        );
+        $cacheKey = array(__METHOD__, $this->plan->applicationID, $this->plan->planID, $userID, $limit);
+        $cache = get_key_value_pair($cacheKey);
 
-        if (!empty($array)) {
-            $clearCache = false;
+        if ($cache !== null) {
+            return $cache;
+        } else {
+            $array = get_sql_query(
+                BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
+                null,
+                array(
+                    array("deletion_date", null),
+                    array("application_id", $this->plan->applicationID),
+                    null,
+                    array("user_id", "IS", null, 0),
+                    array("user_id", $userID),
+                    null,
+                    null,
+                    array("plan_id", "IS", null, 0),
+                    array("plan_id", "=", $this->plan->planID, 0),
+                    $this->plan->family !== null ? array("family", $this->plan->family) : "",
+                    null,
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ),
+                "plan_id ASC, priority DESC",
+                $limit
+            );
 
-            foreach ($array as $arrayKey => $row) {
-                if ($row->information_expiration !== null && $row->information_expiration > get_current_date()) {
-                    $array[$arrayKey] = $row->information_value;
-                } else {
-                    $doc = get_domain_from_url($row->information_url) == "docs.google.com"
-                        ? get_raw_google_doc($row->information_url) :
-                        timed_file_get_contents($row->information_url);
-
-                    if ($doc !== null) {
-                        $array[$arrayKey] = $doc;
-                        set_sql_query(
-                            BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
-                            array(
-                                "information_value" => $doc,
-                                "information_expiration" => get_future_date($row->information_duration)
-                            ),
-                            array(
-                                array("id", $row->id)
-                            )
-                        );
-                        $clearCache = true;
+            if (!empty($array)) {
+                foreach ($array as $arrayKey => $row) {
+                    if ($row->information_expiration !== null
+                        && $row->information_expiration > get_current_date()) {
+                        $array[$arrayKey] = $row->information_value;
                     } else {
-                        unset($array[$arrayKey]);
+                        $doc = get_domain_from_url($row->information_url) == "docs.google.com"
+                            ? get_raw_google_doc($row->information_url) :
+                            timed_file_get_contents($row->information_url);
+
+                        if ($doc !== null) {
+                            $array[$arrayKey] = $doc;
+                            set_sql_query(
+                                BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
+                                array(
+                                    "information_value" => $doc,
+                                    "information_expiration" => get_future_date($row->information_duration)
+                                ),
+                                array(
+                                    array("id", $row->id)
+                                )
+                            );
+                        } else {
+                            var_dump("Failed to retrieve value for: " . $row->information_url);
+
+                            if ($row->information_value !== null) {
+                                $array[$arrayKey] = $row->information_value;
+                                var_dump("Used backup value for: " . $row->information_url);
+                            } else {
+                                unset($array[$arrayKey]);
+                            }
+                        }
                     }
                 }
+                set_key_value_pair($cacheKey, $array, "1 minute");
             }
-
-            if ($clearCache) {
-                clear_memory(array(self::class), true);
-            }
+            return $array;
         }
-        return $array;
     }
 }

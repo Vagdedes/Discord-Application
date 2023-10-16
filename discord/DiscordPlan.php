@@ -382,13 +382,11 @@ class DiscordPlan
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
                     if ($channel->whitelist === null) {
-                        if ($channel !== null) {
-                            $channelFound = $discord->getChannel($channel->channel_id);
+                        $channelFound = $discord->getChannel($channel->channel_id);
 
-                            if ($channelFound !== null
-                                && $channelFound->overwrites->isset($userID)) {
-                                $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
-                            }
+                        if ($channelFound !== null
+                            && $channelFound->overwrites->isset($userID)) {
+                            $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                         }
                     } else if (!empty($this->whitelistContents)) {
                         foreach ($this->whitelistContents as $whitelist) {
@@ -397,13 +395,11 @@ class DiscordPlan
                                     || $whitelist->server_id === $serverID
                                     && ($whitelist->channel_id === null
                                         || $whitelist->channel_id === $channel->channel_id))) {
-                                if ($channel !== null) {
-                                    $channelFound = $discord->getChannel($channel->channel_id);
+                                $channelFound = $discord->getChannel($channel->channel_id);
 
-                                    if ($channelFound !== null
-                                        && $channelFound->overwrites->isset($userID)) {
-                                        $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
-                                    }
+                                if ($channelFound !== null
+                                    && $channelFound->overwrites->isset($userID)) {
+                                    $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                                 }
                                 break;
                             }
