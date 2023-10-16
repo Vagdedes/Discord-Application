@@ -42,7 +42,6 @@ class DiscordInstructions
                 null
             )
         );
-        clear_memory(array(self::class), true);
     }
 
     public function replace(array  $messages, ?object $object = null,
@@ -225,10 +224,6 @@ class DiscordInstructions
                     array("plan_id", "IS", null, 0),
                     array("plan_id", "=", $this->plan->planID, 0),
                     $this->plan->family !== null ? array("family", $this->plan->family) : "",
-                    null,
-                    null,
-                    array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
                     null
                 ),
                 "plan_id ASC, priority DESC",
