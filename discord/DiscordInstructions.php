@@ -64,7 +64,7 @@ class DiscordInstructions
 
                     switch ($keyWord[0]) {
                         case "publicInstructions":
-                            $value = $this->getPublic($object->userID, $limit);
+                            $value = $this->getPublic($limit);
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
@@ -201,9 +201,9 @@ class DiscordInstructions
         return $object;
     }
 
-    private function getPublic($userID, ?int $limit = 0): array
+    private function getPublic(?int $limit = 0): array
     {
-        $cacheKey = array(__METHOD__, $this->plan->applicationID, $this->plan->planID, $userID, $limit);
+        $cacheKey = array(__METHOD__, $this->plan->applicationID, $this->plan->planID, $limit);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -217,13 +217,13 @@ class DiscordInstructions
                     array("deletion_date", null),
                     array("application_id", $this->plan->applicationID),
                     null,
-                    array("user_id", "IS", null, 0),
-                    array("user_id", $userID),
-                    null,
-                    null,
                     array("plan_id", "IS", null, 0),
                     array("plan_id", "=", $this->plan->planID, 0),
                     $this->plan->family !== null ? array("family", $this->plan->family) : "",
+                    null,
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
                     null
                 ),
                 "plan_id ASC, priority DESC",

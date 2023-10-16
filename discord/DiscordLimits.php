@@ -39,7 +39,6 @@ class DiscordLimits
                 null
             )
         );
-        clear_memory(array(self::class), true);
     }
 
     public function isLimited($serverID, $channelID, $userID): array

@@ -99,7 +99,7 @@ class DiscordCommands
             if ($cache !== null) {
                 return array(true, $command->cooldown_message);
             } else {
-                set_key_value_pair($cacheKey, true, 5);
+                set_key_value_pair($cacheKey, true, $command->cooldown_duration);
                 return array(false, null);
             }
         } else {

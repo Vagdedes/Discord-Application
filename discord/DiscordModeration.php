@@ -70,18 +70,19 @@ class DiscordModeration
 
         if ($cache !== null) {
             return $cache;
-        }
-        $array = array();
+        } else {
+            $array = array();
 
-        if (!empty($this->punishments)) {
-            foreach ($this->punishments as $punishment) {
-                if ($punishment->user_id == $userID) {
-                    $array[] = $punishment;
+            if (!empty($this->punishments)) {
+                foreach ($this->punishments as $punishment) {
+                    if ($punishment->user_id == $userID) {
+                        $array[] = $punishment;
+                    }
                 }
             }
+            set_key_value_pair($cacheKey, $array);
+            return $array;
         }
-        set_key_value_pair($cacheKey, $array);
-        return $array;
     }
 
     public function hasPunishment(?int $type, $userID): ?object
@@ -90,20 +91,22 @@ class DiscordModeration
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
-            return $cache;
-        }
-        $object = null;
+            return $cache === true ? null : $cache;
+        } else {
+            $object = true;
 
-        if (!empty($this->punishments)) {
-            foreach ($this->punishments as $punishment) {
-                if ($punishment->user_id == $userID
-                    && ($type === null || $punishment->type == $type)) {
-                    $object = $punishment;
+            if (!empty($this->punishments)) {
+                foreach ($this->punishments as $punishment) {
+                    if ($punishment->user_id == $userID
+                        && ($type === null || $punishment->type == $type)) {
+                        $object = $punishment;
+                        break;
+                    }
                 }
             }
+            set_key_value_pair($cacheKey, $object);
+            return $object;
         }
-        set_key_value_pair($cacheKey, $object);
-        return $object;
     }
 
     public function addPunishment(?int   $type, $botID, $executorID, $userID,

@@ -7,7 +7,6 @@ class DiscordConversation
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        clear_memory(array(self::class), true);
     }
 
     public function getMessages($userID, ?int $limit = 0, $object = true): array
