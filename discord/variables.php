@@ -21,6 +21,7 @@ class BotDatabaseTable
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
         BOT_ERRORS = "discord.botErrors",
+        BOT_MENTIONS = "discord.botMentions",
         BOT_LOCAL_INSTRUCTIONS = "discord.botLocalInstructions",
         BOT_PUBLIC_INSTRUCTIONS = "discord.botPublicInstructions",
         BOT_INSTRUCTION_PLACEHOLDERS = "discord.botInstructionPlaceholders",

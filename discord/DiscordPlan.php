@@ -14,7 +14,7 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents, $keywords;
+    private array $channels, $whitelistContents, $keywords, $mentions;
     private ?ChatAI $chatAI;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
@@ -79,6 +79,25 @@ class DiscordPlan
                 null
             )
         );
+        if ($this->requireMention) {
+            $this->mentions = get_sql_query(
+                BotDatabaseTable::BOT_MENTIONS,
+                null,
+                array(
+                    array("deletion_date", null),
+                    null,
+                    array("plan_id", "IS", null, 0),
+                    array("plan_id", $this->planID),
+                    null,
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                )
+            );
+        } else {
+            $this->mentions = array();
+        }
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
@@ -158,6 +177,16 @@ class DiscordPlan
 
             if ($result) {
                 $messageContent = str_replace("<@" . $botID . ">", "", $messageContent);
+            } else if (!empty($this->mentions)) {
+                foreach ($this->mentions as $alternativeMention) {
+                    foreach ($mentions as $user) {
+                        if ($user->id == $alternativeMention->user_id) {
+                            $result = true;
+                            $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
+                            break 2;
+                        }
+                    }
+                }
             }
         } else {
             $result = false;
