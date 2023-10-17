@@ -30,7 +30,7 @@ class BotDatabaseTable
         BOT_WHITELIST = "discord.botWhitelist",
         BOT_COST_LIMITS = "discord.botMessageLimits",
         BOT_MESSAGE_LIMITS = "discord.botMessageLimits",
-        BOT_MESSAGE_LIMIT_TRACKING = "discord.botMessageLimitTracking",
+        BOT_KEYWORDS = "discord.botKeywords",
         CURRENCIES = "discord.currencies",
         BOT_COMMANDS = "discord.botCommands";
 }

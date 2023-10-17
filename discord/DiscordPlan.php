@@ -14,7 +14,7 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents;
+    private array $channels, $whitelistContents, $keywords;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
@@ -63,6 +63,21 @@ class DiscordPlan
         $this->limits = new DiscordLimits($this);
         $this->commands = new DiscordCommands($this);
 
+        $this->keywords = get_sql_query(
+            BotDatabaseTable::BOT_KEYWORDS,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
@@ -141,6 +156,16 @@ class DiscordPlan
                 }
                 if ($result && $this->maxMessageLength !== null) {
                     $result = strlen($messageContent) <= $this->maxMessageLength;
+                }
+                if ($result && !empty($this->keywords)) {
+                    foreach ($this->keywords as $keyword) {
+                        if ($keyword->keyword !== null) {
+                            if (str_contains($messageContent, $keyword->keyword)) {
+                                $result = true;
+                                break;
+                            }
+                        }
+                    }
                 }
                 if ($result) {
                     $result = false;
