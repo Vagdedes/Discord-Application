@@ -32,12 +32,6 @@ require '/root/discord_bot/ai/variables.php';
 require '/root/discord_bot/ai/ChatModel.php';
 require '/root/discord_bot/ai/ChatAI.php';
 
-$chatAI = new ChatAI(AIModelFamily::CHAT_GPT_3_5, $AI_key[0], DiscordProperties::MESSAGE_MAX_LENGTH, 0.5);
-
-if (!$chatAI->exists) {
-    exit("AI model not found");
-}
-
 use Discord\Discord;
 use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
@@ -76,13 +70,13 @@ $scheduler = new DiscordRunnables();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 
 $discord->on('ready', function (Discord $discord) {
-    global $scheduler, $chatAI;
+    global $scheduler;
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($botID);
     $scheduler->addTask($discordBot, "refresh", null, DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
 
-    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $chatAI, $scheduler) {
+    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $scheduler) {
         $scheduler->process();
 
         foreach ($discordBot->plans as $plan) {
@@ -95,7 +89,6 @@ $discord->on('ready', function (Discord $discord) {
                 $botID
             )) {
                 $assistance = $plan->assist(
-                    $chatAI,
                     $message,
                     $message->guild_id,
                     $message->guild->name,

@@ -31,6 +31,7 @@ class BotDatabaseTable
         BOT_COST_LIMITS = "discord.botMessageLimits",
         BOT_MESSAGE_LIMITS = "discord.botMessageLimits",
         BOT_KEYWORDS = "discord.botKeywords",
+        BOT_CHAT_MODEL = "discord.botChatModel",
         CURRENCIES = "discord.currencies",
         BOT_COMMANDS = "discord.botCommands";
 }
