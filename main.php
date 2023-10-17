@@ -75,8 +75,6 @@ $discord = new Discord([
 $scheduler = new DiscordRunnables();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 
-//todo welcome message
-
 $discord->on('ready', function (Discord $discord) {
     global $scheduler, $chatAI;
     $botID = $discord->id;
