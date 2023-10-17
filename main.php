@@ -68,9 +68,10 @@ $discord = new Discord([
 
 $scheduler = new DiscordRunnables();
 $scheduler->addTask(null, "remove_expired_memory", null, 30_000);
+$logger = new DiscordLogs(null);
 
 $discord->on('ready', function (Discord $discord) {
-    global $scheduler;
+    global $scheduler, $logger;
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($botID);
@@ -113,106 +114,106 @@ $discord->on('ready', function (Discord $discord) {
                 break;
             }
         }
-        $logger->log($message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());
+        $logger->logInfo($message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());
     });
 
     $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger) {
-        $logger->log(null, Event::MESSAGE_DELETE, $message);
+        $logger->logInfo(null, Event::MESSAGE_DELETE, $message);
     });
 
     $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger) {
-        $logger->log($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
+        $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
     });
 
     $discord->on(Event::MESSAGE_DELETE_BULK, function (Collection $messages, Discord $discord) use ($logger) {
         foreach ($messages as $message) {
-            $logger->log(null, Event::MESSAGE_DELETE_BULK, $message);
+            $logger->logInfo(null, Event::MESSAGE_DELETE_BULK, $message);
         }
     });
 
     // Separator
 
     $discord->on(Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, function (CommandPermissions $commandPermission, Discord $discord, ?CommandPermissions $oldCommandPermission) use ($logger) {
-        $logger->log(null, Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, $commandPermission->getRawAttributes(), $oldCommandPermission?->getRawAttributes());
+        $logger->logInfo(null, Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, $commandPermission->getRawAttributes(), $oldCommandPermission?->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::AUTO_MODERATION_RULE_CREATE, function (Rule $rule, Discord $discord) use ($logger) {
-        $logger->log($rule->creator->id, Event::AUTO_MODERATION_RULE_CREATE, $rule->getRawAttributes());
+        $logger->logInfo($rule->creator->id, Event::AUTO_MODERATION_RULE_CREATE, $rule->getRawAttributes());
     });
 
     $discord->on(Event::AUTO_MODERATION_RULE_UPDATE, function (Rule $rule, Discord $discord, ?Rule $oldRule) use ($logger) {
-        $logger->log(null, Event::AUTO_MODERATION_RULE_UPDATE, $rule->getRawAttributes(), $oldRule?->getRawAttributes());
+        $logger->logInfo(null, Event::AUTO_MODERATION_RULE_UPDATE, $rule->getRawAttributes(), $oldRule?->getRawAttributes());
     });
 
     $discord->on(Event::AUTO_MODERATION_RULE_DELETE, function (Rule $rule, Discord $discord) use ($logger) {
-        $logger->log(null, Event::AUTO_MODERATION_RULE_DELETE, $rule->getRawAttributes());
+        $logger->logInfo(null, Event::AUTO_MODERATION_RULE_DELETE, $rule->getRawAttributes());
     });
 
     $discord->on(Event::AUTO_MODERATION_ACTION_EXECUTION, function (AutoModerationActionExecution $actionExecution, Discord $discord) use ($logger) {
-        $logger->log($actionExecution->user_id, Event::AUTO_MODERATION_ACTION_EXECUTION, $actionExecution->getRawAttributes());
+        $logger->logInfo($actionExecution->user_id, Event::AUTO_MODERATION_ACTION_EXECUTION, $actionExecution->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::CHANNEL_CREATE, function (Channel $channel, Discord $discord) use ($logger) {
-        $logger->log($channel->parent_id, Event::CHANNEL_CREATE, $channel->getRawAttributes());
+        $logger->logInfo($channel->parent_id, Event::CHANNEL_CREATE, $channel->getRawAttributes());
     });
 
     $discord->on(Event::CHANNEL_UPDATE, function (Channel $channel, Discord $discord, ?Channel $oldChannel) use ($logger) {
-        $logger->log(null, Event::CHANNEL_UPDATE, $channel->getRawAttributes(), $oldChannel?->getRawAttributes());
+        $logger->logInfo(null, Event::CHANNEL_UPDATE, $channel->getRawAttributes(), $oldChannel?->getRawAttributes());
     });
 
     $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger) {
-        $logger->log(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
+        $logger->logInfo(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
     });
 
     $discord->on(Event::CHANNEL_PINS_UPDATE, function ($pins, Discord $discord) use ($logger) {
-        $logger->log(null, Event::CHANNEL_PINS_UPDATE, $pins);
+        $logger->logInfo(null, Event::CHANNEL_PINS_UPDATE, $pins);
     });
 
     // Separator
 
     $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger) {
-        $logger->log(null, Event::THREAD_CREATE, $thread);
+        $logger->logInfo(null, Event::THREAD_CREATE, $thread);
     });
 
     $discord->on(Event::THREAD_UPDATE, function (Thread $thread, Discord $discord, ?Thread $oldThread) use ($logger) {
-        $logger->log(null, Event::THREAD_UPDATE, $thread, $oldThread);
+        $logger->logInfo(null, Event::THREAD_UPDATE, $thread, $oldThread);
     });
 
     $discord->on(Event::THREAD_DELETE, function (object $thread, Discord $discord) use ($logger) {
-        $logger->log(null, Event::THREAD_DELETE, $thread);
+        $logger->logInfo(null, Event::THREAD_DELETE, $thread);
     });
 
     $discord->on(Event::THREAD_LIST_SYNC, function (Collection $threads, Discord $discord) use ($logger) {
-        $logger->log(null, Event::THREAD_LIST_SYNC, $threads);
+        $logger->logInfo(null, Event::THREAD_LIST_SYNC, $threads);
     });
 
     $discord->on(Event::THREAD_MEMBER_UPDATE, function (Member $threadMember, Discord $discord) use ($logger) {
-        $logger->log(null, Event::THREAD_MEMBER_UPDATE, $threadMember->getRawAttributes());
+        $logger->logInfo(null, Event::THREAD_MEMBER_UPDATE, $threadMember->getRawAttributes());
     });
 
     $discord->on(Event::THREAD_MEMBERS_UPDATE, function (Thread $thread, Discord $discord) use ($logger) {
-        $logger->log(null, Event::THREAD_MEMBERS_UPDATE, $thread);
+        $logger->logInfo(null, Event::THREAD_MEMBERS_UPDATE, $thread);
     });
 
     // Separator
 
     $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($logger) {
         if ($guild instanceof Guild) {
-            $logger->log(null, Event::GUILD_CREATE, $guild);
+            $logger->logInfo(null, Event::GUILD_CREATE, $guild);
         }
     });
 
     $discord->on(Event::GUILD_UPDATE, function (Guild $guild, Discord $discord, ?Guild $oldGuild) use ($logger) {
-        $logger->log(null, Event::GUILD_UPDATE, $guild->getRawAttributes(), $oldGuild?->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_UPDATE, $guild->getRawAttributes(), $oldGuild?->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_DELETE, function (object $guild, Discord $discord, bool $unavailable) use ($logger) {
         if (!$unavailable) {
-            $logger->log(null, Event::GUILD_DELETE, $guild);
+            $logger->logInfo(null, Event::GUILD_DELETE, $guild);
         }
     });
 
@@ -221,21 +222,21 @@ $discord->on('ready', function (Discord $discord) {
     // Event::GUILD_AUDIT_LOG_ENTRY_CREATE: Results in error
 
     $discord->on(Event::GUILD_BAN_ADD, function (Ban $ban, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_BAN_ADD, $ban->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_BAN_ADD, $ban->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_BAN_REMOVE, function (Ban $ban, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_BAN_REMOVE, $ban->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_BAN_REMOVE, $ban->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::GUILD_EMOJIS_UPDATE, function (Collection $emojis, Discord $discord, Collection $oldEmojis) use ($logger) {
-        $logger->log(null, Event::GUILD_EMOJIS_UPDATE, $emojis, $oldEmojis);
+        $logger->logInfo(null, Event::GUILD_EMOJIS_UPDATE, $emojis, $oldEmojis);
     });
 
     $discord->on(Event::GUILD_STICKERS_UPDATE, function (Collection $stickers, Discord $discord, Collection $oldStickers) use ($logger) {
-        $logger->log(null, Event::GUILD_STICKERS_UPDATE, $stickers, $oldStickers);
+        $logger->logInfo(null, Event::GUILD_STICKERS_UPDATE, $stickers, $oldStickers);
     });
 
     // Separator
@@ -248,95 +249,95 @@ $discord->on('ready', function (Discord $discord) {
         foreach ($discordBot->plans as $plan) {
             $plan->welcome($discord, $member->guild_id, $member->id);
         }
-        $logger->log($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
+        $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::GUILD_ROLE_CREATE, function (Role $role, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_ROLE_CREATE, $role->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_ROLE_CREATE, $role->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_ROLE_UPDATE, function (Role $role, Discord $discord, ?Role $oldRole) use ($logger) {
-        $logger->log(null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_ROLE_DELETE, function (object $role, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_ROLE_DELETE, $role);
+        $logger->logInfo(null, Event::GUILD_ROLE_DELETE, $role);
     });
 
     // Separator
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_CREATE, function (ScheduledEvent $scheduledEvent, Discord $discord) use ($logger) {
-        $logger->log($scheduledEvent->creator_id, Event::GUILD_SCHEDULED_EVENT_CREATE, $scheduledEvent->getRawAttributes());
+        $logger->logInfo($scheduledEvent->creator_id, Event::GUILD_SCHEDULED_EVENT_CREATE, $scheduledEvent->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_UPDATE, function (ScheduledEvent $scheduledEvent, Discord $discord, ?ScheduledEvent $oldScheduledEvent) use ($logger) {
-        $logger->log(null, Event::GUILD_SCHEDULED_EVENT_UPDATE, $scheduledEvent->getRawAttributes(), $oldScheduledEvent?->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_UPDATE, $scheduledEvent->getRawAttributes(), $oldScheduledEvent?->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_DELETE, function (ScheduledEvent $scheduledEvent, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_SCHEDULED_EVENT_DELETE, $scheduledEvent->getRawAttributes());
+        $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_DELETE, $scheduledEvent->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_ADD, function ($data, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_SCHEDULED_EVENT_USER_ADD, $data);
+        $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_USER_ADD, $data);
     });
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, function ($data, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
+        $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
     });
 
     // Separator
 
     $discord->on(Event::GUILD_INTEGRATIONS_UPDATE, function (object $guild, Discord $discord) use ($logger) {
-        $logger->log(null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
+        $logger->logInfo(null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
     });
 
     $discord->on(Event::INTEGRATION_CREATE, function (Integration $integration, Discord $discord) use ($logger) {
-        $logger->log(null, Event::INTEGRATION_CREATE, $integration->getRawAttributes());
+        $logger->logInfo(null, Event::INTEGRATION_CREATE, $integration->getRawAttributes());
     });
 
     $discord->on(Event::INTEGRATION_UPDATE, function (Integration $integration, Discord $discord, ?Integration $oldIntegration) use ($logger) {
-        $logger->log(null, Event::INTEGRATION_UPDATE, $integration->getRawAttributes(), $oldIntegration?->getRawAttributes());
+        $logger->logInfo(null, Event::INTEGRATION_UPDATE, $integration->getRawAttributes(), $oldIntegration?->getRawAttributes());
     });
 
     $discord->on(Event::INTEGRATION_DELETE, function (object $integration, Discord $discord) use ($logger) {
-        $logger->log(null, Event::INTEGRATION_DELETE, $integration);
+        $logger->logInfo(null, Event::INTEGRATION_DELETE, $integration);
     });
 
     // Separator
 
     $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger) {
-        $logger->log($invite->inviter->id, Event::INVITE_CREATE, $invite->getRawAttributes());
+        $logger->logInfo($invite->inviter->id, Event::INVITE_CREATE, $invite->getRawAttributes());
     });
 
     $discord->on(Event::INVITE_DELETE, function (object $invite, Discord $discord) use ($logger) {
-        $logger->log(null, Event::INVITE_DELETE, $invite);
+        $logger->logInfo(null, Event::INVITE_DELETE, $invite);
     });
 
     // Separator
 
     $discord->on(Event::INTERACTION_CREATE, function (Interaction $interaction, Discord $discord) use ($logger) {
-        $logger->log($interaction->user->id, Event::INTERACTION_CREATE, $interaction->getRawAttributes());
+        $logger->logInfo($interaction->user->id, Event::INTERACTION_CREATE, $interaction->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::MESSAGE_REACTION_ADD, function (MessageReaction $reaction, Discord $discord) use ($logger) {
-        $logger->log($reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction->getRawAttributes());
+        $logger->logInfo($reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction->getRawAttributes());
     });
 
     $discord->on(Event::MESSAGE_REACTION_REMOVE, function (MessageReaction $reaction, Discord $discord) use ($logger) {
-        $logger->log(null, Event::MESSAGE_REACTION_REMOVE, $reaction->getRawAttributes());
+        $logger->logInfo(null, Event::MESSAGE_REACTION_REMOVE, $reaction->getRawAttributes());
     });
 
     $discord->on(Event::MESSAGE_REACTION_REMOVE_ALL, function (MessageReaction $reaction, Discord $discord) use ($logger) {
-        $logger->log(null, Event::MESSAGE_REACTION_REMOVE_ALL, $reaction->getRawAttributes());
+        $logger->logInfo(null, Event::MESSAGE_REACTION_REMOVE_ALL, $reaction->getRawAttributes());
     });
 
     $discord->on(Event::MESSAGE_REACTION_REMOVE_EMOJI, function (MessageReaction $reaction, Discord $discord) use ($logger) {
-        $logger->log(null, Event::MESSAGE_REACTION_REMOVE_EMOJI, $reaction->getRawAttributes());
+        $logger->logInfo(null, Event::MESSAGE_REACTION_REMOVE_EMOJI, $reaction->getRawAttributes());
     });
 
     // Separator
@@ -344,41 +345,41 @@ $discord->on('ready', function (Discord $discord) {
     // PRESENCE_UPDATE: Too many events and few useful information
 
     $discord->on(Event::TYPING_START, function (TypingStart $typing, Discord $discord) use ($logger) {
-        $logger->log($typing->user_id, Event::TYPING_START, $typing->getRawAttributes());
+        $logger->logInfo($typing->user_id, Event::TYPING_START, $typing->getRawAttributes());
     });
 
     $discord->on(Event::USER_UPDATE, function (User $user, Discord $discord, ?User $oldUser) use ($logger) {
-        $logger->log(null, Event::USER_UPDATE, $user->getRawAttributes(), $oldUser?->getRawAttributes());
+        $logger->logInfo(null, Event::USER_UPDATE, $user->getRawAttributes(), $oldUser?->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::STAGE_INSTANCE_CREATE, function (StageInstance $stageInstance, Discord $discord) use ($logger) {
-        $logger->log(null, Event::STAGE_INSTANCE_CREATE, $stageInstance->getRawAttributes());
+        $logger->logInfo(null, Event::STAGE_INSTANCE_CREATE, $stageInstance->getRawAttributes());
     });
 
     $discord->on(Event::STAGE_INSTANCE_UPDATE, function (StageInstance $stageInstance, Discord $discord, ?StageInstance $oldStageInstance) use ($logger) {
-        $logger->log(null, Event::STAGE_INSTANCE_UPDATE, $stageInstance->getRawAttributes(), $oldStageInstance?->getRawAttributes());
+        $logger->logInfo(null, Event::STAGE_INSTANCE_UPDATE, $stageInstance->getRawAttributes(), $oldStageInstance?->getRawAttributes());
     });
 
     $discord->on(Event::STAGE_INSTANCE_DELETE, function (StageInstance $stageInstance, Discord $discord) use ($logger) {
-        $logger->log(null, Event::STAGE_INSTANCE_DELETE, $stageInstance->getRawAttributes());
+        $logger->logInfo(null, Event::STAGE_INSTANCE_DELETE, $stageInstance->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::VOICE_STATE_UPDATE, function (VoiceStateUpdate $state, Discord $discord, $oldstate) use ($logger) {
-        $logger->log($state->user_id, Event::VOICE_STATE_UPDATE, $state->getRawAttributes(), $oldstate);
+        $logger->logInfo($state->user_id, Event::VOICE_STATE_UPDATE, $state->getRawAttributes(), $oldstate);
     });
 
     $discord->on(Event::VOICE_SERVER_UPDATE, function (VoiceServerUpdate $guild, Discord $discord) use ($logger) {
-        $logger->log(null, Event::VOICE_SERVER_UPDATE, $guild->getRawAttributes());
+        $logger->logInfo(null, Event::VOICE_SERVER_UPDATE, $guild->getRawAttributes());
     });
 
     // Separator
 
     $discord->on(Event::WEBHOOKS_UPDATE, function (object $guild, Discord $discord, object $channel) use ($logger) {
-        $logger->log(null, Event::WEBHOOKS_UPDATE, $channel);
+        $logger->logInfo(null, Event::WEBHOOKS_UPDATE, $channel);
     });
 });
 

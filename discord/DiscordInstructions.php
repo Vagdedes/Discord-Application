@@ -231,7 +231,8 @@ class DiscordInstructions
             $array = $this->publicInstructions;
 
             if (!empty($array)) {
-                global $scheduler;
+                global $scheduler, $logger;
+
                 foreach ($array as $arrayKey => $row) {
                     $times[strtotime(get_future_date($row->information_duration))] = $row->information_duration;
 
@@ -260,11 +261,11 @@ class DiscordInstructions
                                 )
                             );
                         } else {
-                            var_dump("Failed to retrieve value for: " . $row->information_url);
+                            $logger->logError($this->plan->planID, "Failed to retrieve value for: " . $row->information_url);
 
                             if ($row->information_value !== null) {
                                 $array[$arrayKey] = $row->information_value;
-                                var_dump("Used backup value for: " . $row->information_url);
+                                $logger->logError($this->plan->planID, "Used backup value for: " . $row->information_url);
                             } else {
                                 unset($array[$arrayKey]);
                             }

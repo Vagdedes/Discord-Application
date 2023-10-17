@@ -275,7 +275,7 @@ class DiscordPlan
                 $cooldownKey = array(__METHOD__, $this->planID, $userID);
 
                 if (get_key_value_pair($cooldownKey) === null) {
-                    global $AI_key;
+                    global $AI_key, $logger;
                     set_key_value_pair($cooldownKey, true);
 
                     if ($this->model !== null) {
@@ -404,7 +404,11 @@ class DiscordPlan
                                             $model->currency->code
                                         );
                                         set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
+                                    } else {
+                                        $logger->logError($this->planID, "Failed to get text from chat-model for plan: " . $this->planID);
                                     }
+                                } else {
+                                    $logger->logError($this->planID, $modelReply);
                                 }
 
                                 if ($assistance === null && $this->failureMessage !== null) {
@@ -413,6 +417,7 @@ class DiscordPlan
                             }
                         }
                     } else if ($this->failureMessage !== null) {
+                        $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
                         $object = $this->instructions->getObject(
                             $serverID,
                             $serverName,
