@@ -163,30 +163,34 @@ class DiscordPlan
     public function canAssist($mentions, $serverID, $channelID, $userID,
                               string $messageContent, $botID): bool
     {
-        if (!$this->requireMention) {
-            $result = true;
-        } else if (!empty($mentions)) {
-            $result = false;
+        if ($userID !== $botID) {
+            if (!$this->requireMention) {
+                $result = true;
+            } else if (!empty($mentions)) {
+                $result = false;
 
-            foreach ($mentions as $user) {
-                if ($user->id == $botID) {
-                    $result = true;
-                    break;
+                foreach ($mentions as $user) {
+                    if ($user->id == $botID) {
+                        $result = true;
+                        break;
+                    }
                 }
-            }
 
-            if ($result) {
-                $messageContent = str_replace("<@" . $botID . ">", "", $messageContent);
-            } else if (!empty($this->mentions)) {
-                foreach ($this->mentions as $alternativeMention) {
-                    foreach ($mentions as $user) {
-                        if ($user->id == $alternativeMention->user_id) {
-                            $result = true;
-                            $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
-                            break 2;
+                if ($result) {
+                    $messageContent = str_replace("<@" . $botID . ">", "", $messageContent);
+                } else if (!empty($this->mentions)) {
+                    foreach ($this->mentions as $alternativeMention) {
+                        foreach ($mentions as $user) {
+                            if ($user->id == $alternativeMention->user_id) {
+                                $result = true;
+                                $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
+                                break 2;
+                            }
                         }
                     }
                 }
+            } else {
+                $result = false;
             }
         } else {
             $result = false;
