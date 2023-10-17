@@ -15,7 +15,7 @@ class DiscordPlan
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
     private array $channels, $whitelistContents, $keywords;
-    private ?object $model;
+    private ?ChatAI $chatAI;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
@@ -121,9 +121,20 @@ class DiscordPlan
         );
 
         if (!empty($query)) {
-            $this->model = $query[0];
+            global $AI_key;
+            $query = $query[0];
+            $this->chatAI = new ChatAI(
+                $query->model_family,
+                $AI_key[0],
+                DiscordProperties::MESSAGE_MAX_LENGTH,
+                $query->temperature,
+                $query->frequency_penalty,
+                $query->presence_penalty,
+                $query->completions,
+                $query->top_p,
+            );
         } else {
-            $this->model = null;
+            $this->chatAI = null;
         }
         clear_memory(array(self::class), true);
     }
@@ -275,25 +286,10 @@ class DiscordPlan
                 $cooldownKey = array(__METHOD__, $this->planID, $userID);
 
                 if (get_key_value_pair($cooldownKey) === null) {
-                    global $AI_key, $logger;
+                    global $logger;
                     set_key_value_pair($cooldownKey, true);
 
-                    if ($this->model !== null) {
-                        $chatAI = get_chat_ai(
-                            $this->model->model_family,
-                            $AI_key[0],
-                            DiscordProperties::MESSAGE_MAX_LENGTH,
-                            $this->model->temperature,
-                            $this->model->frequency_penalty,
-                            $this->model->presence_penalty,
-                            $this->model->completions,
-                            $this->model->top_p,
-                        );
-                    } else {
-                        $chatAI = null;
-                    }
-
-                    if ($chatAI !== null && $chatAI->exists) {
+                    if ($this->chatAI !== null && $this->chatAI->exists) {
                         $assistance = $this->commands->process($serverID, $channelID, $userID, $messageContent);
 
                         if ($assistance !== null) {
@@ -365,7 +361,7 @@ class DiscordPlan
                                         )
                                     )
                                 );
-                                $reply = $chatAI->getResult(
+                                $reply = $this->chatAI->getResult(
                                     overflow_long(overflow_long($this->planID * 31) + $userID),
                                     $parameters
                                 );
@@ -380,7 +376,7 @@ class DiscordPlan
                                 }
                                 if ($reply[0]) {
                                     $model = $reply[1];
-                                    $assistance = $chatAI->getText($model, $modelReply);
+                                    $assistance = $this->chatAI->getText($model, $modelReply);
 
                                     if ($assistance !== null) {
                                         $this->conversation->addMessage(
@@ -467,7 +463,7 @@ class DiscordPlan
                         $channelFound = $discord->getChannel($channel->channel_id);
 
                         if ($channelFound !== null
-                            && $channelFound->overwrites->isset($userID)) {
+                            && $channelFound->allowText()) {
                             $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                         }
                     } else if (!empty($this->whitelistContents)) {
@@ -480,7 +476,7 @@ class DiscordPlan
                                 $channelFound = $discord->getChannel($channel->channel_id);
 
                                 if ($channelFound !== null
-                                    && $channelFound->overwrites->isset($userID)) {
+                                    && $channelFound->allowText()) {
                                     $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                                 }
                                 break;

@@ -4,40 +4,6 @@
 // $frequency_penalty: Increase or decrease the likelihood of token repetition. -2.0 to 2.0, with -2.0 being most likely to repeat tokens, 0.0 being equally likely, and 2.0 being least likely.
 //todo explain the rest and properly
 
-function get_chat_ai(int    $modelFamily, string $apiKey,
-                   ?int   $maxReplyLength = null, ?float $temperature = null,
-                   ?float $frequency_penalty = null, ?float $presence_penalty = null,
-                   ?int   $completions = null, ?float $top_p = null): ChatAI
-{
-    $cacheKey = array(
-        __METHOD__,
-        $modelFamily,
-        $apiKey,
-        $maxReplyLength,
-        $temperature,
-        $frequency_penalty,
-        $presence_penalty,
-        $completions,
-        $top_p
-    );
-    $cache = get_key_value_pair($cacheKey);
-
-    if ($cache === null) {
-        $cache = new ChatAI(
-            $modelFamily,
-            $apiKey,
-            $maxReplyLength,
-            $temperature,
-            $frequency_penalty,
-            $presence_penalty,
-            $completions,
-            $top_p
-        );
-        set_key_value_pair($cacheKey, $cache, DiscordProperties::SYSTEM_REFRESH_MILLISECONDS * 2);
-    }
-    return $cache;
-}
-
 class ChatAI
 {
     public array $models;
