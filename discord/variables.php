@@ -20,6 +20,8 @@ class BotDatabaseTable
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
+        BOT_TARGETS = "discord.botTargets",
+        BOT_TARGET_EXECUTIONS = "discord.botTargetExecutions",
         BOT_ERRORS = "discord.botErrors",
         BOT_MENTIONS = "discord.botMentions",
         BOT_LOCAL_INSTRUCTIONS = "discord.botLocalInstructions",
