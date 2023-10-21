@@ -41,18 +41,20 @@ class IndividualMemoryBlock
     public function set($value, $expiration = false): void
     {
         global $memory_array;
+
+        if (!empty($memory_array)) {
+            foreach ($memory_array as $arrayKey => $arrayValue) {
+                if ($arrayValue->expiration !== false && $arrayValue->expiration < time()) {
+                    unset($memory_array[$arrayKey]);
+                }
+            }
+        }
         $object = new stdClass();
         $object->key = $this->originalKey;
         $object->value = $value;
         $object->creation = time();
         $object->expiration = is_numeric($expiration) ? $expiration : false;
         $memory_array[$this->key] = $object;
-
-        foreach ($memory_array as $key => $value) {
-            if ($value->expiration !== false && $value->expiration < time()) {
-                unset($memory_array[$key]);
-            }
-        }
     }
 
     public function getRaw(): object|null
