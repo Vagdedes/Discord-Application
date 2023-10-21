@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Discord;
+
 class DiscordCommands
 {
     private DiscordPlan $plan;
@@ -42,7 +44,7 @@ class DiscordCommands
         );
     }
 
-    public function process($serverID, $channelID, $userID, string $messageContent): ?string
+    public function process(Discord $discord, $serverID, $channelID, $userID, string $messageContent): ?string
     {
         if (!empty($this->staticCommands)) {
             $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $messageContent);

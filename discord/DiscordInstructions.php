@@ -231,7 +231,7 @@ class DiscordInstructions
             $array = $this->publicInstructions;
 
             if (!empty($array)) {
-                global $scheduler, $logger;
+                global $logger;
 
                 foreach ($array as $arrayKey => $row) {
                     $times[strtotime(get_future_date($row->information_duration))] = $row->information_duration;
@@ -246,18 +246,14 @@ class DiscordInstructions
 
                         if ($doc !== null) {
                             $array[$arrayKey] = $doc;
-                            $scheduler->addTask(
-                                null,
-                                "set_sql_query",
+                            set_sql_query(
+                                BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
                                 array(
-                                    BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
-                                    array(
-                                        "information_value" => $doc,
-                                        "information_expiration" => get_future_date($row->information_duration)
-                                    ),
-                                    array(
-                                        array("id", $row->id)
-                                    )
+                                    "information_value" => $doc,
+                                    "information_expiration" => get_future_date($row->information_duration)
+                                ),
+                                array(
+                                    array("id", $row->id)
                                 )
                             );
                         } else {

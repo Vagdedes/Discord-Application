@@ -145,7 +145,6 @@ class ChatAI
             }
 
             if ($contentType !== null) {
-                global $scheduler;
                 $parameters = json_encode($parameters);
                 $reply = get_curl(
                     $link,
@@ -165,41 +164,33 @@ class ChatAI
                     if (is_object($reply)) {
                         if (isset($reply->usage->prompt_tokens)
                             && isset($reply->usage->completion_tokens)) {
-                            $scheduler->addTask(
-                                null,
-                                "sql_insert",
+                            sql_insert(
+                                AIDatabaseTable::AI_TEXT_HISTORY,
                                 array(
-                                    AIDatabaseTable::AI_TEXT_HISTORY,
-                                    array(
-                                        "model_id" => $model->modelID,
-                                        "hash" => $hash,
-                                        "sent_parameters" => $parameters,
-                                        "received_parameters" => $received,
-                                        "sent_tokens" => $reply->usage->prompt_tokens,
-                                        "received_tokens" => $reply->usage->completion_tokens,
-                                        "currency_id" => $model->currency->id,
-                                        "sent_token_cost" => ($reply->usage->prompt_tokens * $model->sent_token_cost),
-                                        "received_token_cost" => ($reply->usage->completion_tokens * $model->received_token_cost),
-                                        "creation_date" => get_current_date()
-                                    )
+                                    "model_id" => $model->modelID,
+                                    "hash" => $hash,
+                                    "sent_parameters" => $parameters,
+                                    "received_parameters" => $received,
+                                    "sent_tokens" => $reply->usage->prompt_tokens,
+                                    "received_tokens" => $reply->usage->completion_tokens,
+                                    "currency_id" => $model->currency->id,
+                                    "sent_token_cost" => ($reply->usage->prompt_tokens * $model->sent_token_cost),
+                                    "received_token_cost" => ($reply->usage->completion_tokens * $model->received_token_cost),
+                                    "creation_date" => get_current_date()
                                 )
                             );
                             return array(true, $model, $reply);
                         } else {
-                            $scheduler->addTask(
-                                null,
-                                "sql_insert",
+                            sql_insert(
+                                AIDatabaseTable::AI_TEXT_HISTORY,
                                 array(
-                                    AIDatabaseTable::AI_TEXT_HISTORY,
-                                    array(
-                                        "model_id" => $model->modelID,
-                                        "hash" => $hash,
-                                        "failure" => true,
-                                        "sent_parameters" => $parameters,
-                                        "received_parameters" => $received,
-                                        "currency_id" => $model->currency->id,
-                                        "creation_date" => get_current_date()
-                                    )
+                                    "model_id" => $model->modelID,
+                                    "hash" => $hash,
+                                    "failure" => true,
+                                    "sent_parameters" => $parameters,
+                                    "received_parameters" => $received,
+                                    "currency_id" => $model->currency->id,
+                                    "creation_date" => get_current_date()
                                 )
                             );
                             return array(false, $model, $reply);
@@ -207,19 +198,15 @@ class ChatAI
                     }
                 }
 
-                $scheduler->addTask(
-                    null,
-                    "sql_insert",
+                sql_insert(
+                    AIDatabaseTable::AI_TEXT_HISTORY,
                     array(
-                        AIDatabaseTable::AI_TEXT_HISTORY,
-                        array(
-                            "model_id" => $model->modelID,
-                            "hash" => $hash,
-                            "failure" => true,
-                            "sent_parameters" => $parameters,
-                            "currency_id" => $model->currency->id,
-                            "creation_date" => get_current_date()
-                        )
+                        "model_id" => $model->modelID,
+                        "hash" => $hash,
+                        "failure" => true,
+                        "sent_parameters" => $parameters,
+                        "currency_id" => $model->currency->id,
+                        "creation_date" => get_current_date()
                     )
                 );
             }

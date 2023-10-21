@@ -179,26 +179,21 @@ class DiscordConversation
         $userID, $messageID, string $messageContent,
                              int|float $cost, $currencyCode): void
     {
-        global $scheduler;
         $currency = new DiscordCurrency($currencyCode);
-        $scheduler->addTask(
-            null,
-            "sql_insert",
+        sql_insert(
+            BotDatabaseTable::BOT_REPLIES,
             array(
-                BotDatabaseTable::BOT_REPLIES,
-                array(
-                    "plan_id" => $this->plan->planID,
-                    "bot_id" => $botID,
-                    "server_id" => $serverID,
-                    "channel_id" => $channelID,
-                    "thread_id" => $threadID,
-                    "user_id" => $userID,
-                    "message_id" => $messageID,
-                    "message_content" => $messageContent,
-                    "cost" => $cost,
-                    "currency_id" => $currency->exists ? $currency->id : null,
-                    "creation_date" => get_current_date(),
-                )
+                "plan_id" => $this->plan->planID,
+                "bot_id" => $botID,
+                "server_id" => $serverID,
+                "channel_id" => $channelID,
+                "thread_id" => $threadID,
+                "user_id" => $userID,
+                "message_id" => $messageID,
+                "message_content" => $messageContent,
+                "cost" => $cost,
+                "currency_id" => $currency->exists ? $currency->id : null,
+                "creation_date" => get_current_date(),
             )
         );
     }
@@ -206,23 +201,18 @@ class DiscordConversation
     public function addMessage($botID, $serverID, $channelID, $threadID,
                                $userID, $messageID, string $messageContent): void
     {
-        global $scheduler;
-        $scheduler->addTask(
-            null,
-            "sql_insert",
+        sql_insert(
+            BotDatabaseTable::BOT_MESSAGES,
             array(
-                BotDatabaseTable::BOT_MESSAGES,
-                array(
-                    "plan_id" => $this->plan->planID,
-                    "bot_id" => $botID,
-                    "server_id" => $serverID,
-                    "channel_id" => $channelID,
-                    "thread_id" => $threadID,
-                    "user_id" => $userID,
-                    "message_id" => $messageID,
-                    "message_content" => $messageContent,
-                    "creation_date" => get_current_date(),
-                )
+                "plan_id" => $this->plan->planID,
+                "bot_id" => $botID,
+                "server_id" => $serverID,
+                "channel_id" => $channelID,
+                "thread_id" => $threadID,
+                "user_id" => $userID,
+                "message_id" => $messageID,
+                "message_content" => $messageContent,
+                "creation_date" => get_current_date(),
             )
         );
     }

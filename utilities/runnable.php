@@ -22,6 +22,7 @@ class DiscordRunnables
                     $task[2] = microtime(true) + $task[3];
                 }
             }
+            ksort($this->tasks);
         }
     }
 

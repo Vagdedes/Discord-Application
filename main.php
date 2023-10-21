@@ -65,20 +65,16 @@ $discord = new Discord([
     'disabledEvents' => [],
     'dnsConfig' => '1.1.1.1'
 ]);
-
-$scheduler = new DiscordRunnables();
-$scheduler->addTask(null, "remove_expired_memory", null, 30_000);
 $logger = new DiscordLogs(null);
 
 $discord->on('ready', function (Discord $discord) {
-    global $scheduler, $logger;
+    global $logger;
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($botID);
-    $scheduler->addTask($discordBot, "refresh", null, DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
 
-    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger, $scheduler) {
-        $scheduler->process();
+    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
+        $discordBot->refresh();
 
         foreach ($discordBot->plans as $plan) {
             if ($plan->canAssist(
@@ -90,6 +86,7 @@ $discord->on('ready', function (Discord $discord) {
                 $botID
             )) {
                 $assistance = $plan->assist(
+                    $discord,
                     $message,
                     $message->guild_id,
                     $message->guild->name,
@@ -246,6 +243,8 @@ $discord->on('ready', function (Discord $discord) {
     // Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
+        $discordBot->refresh();
+
         foreach ($discordBot->plans as $plan) {
             $plan->welcome($discord, $member->guild_id, $member->id);
         }

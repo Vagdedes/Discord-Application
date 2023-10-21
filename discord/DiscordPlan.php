@@ -262,7 +262,7 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(Message $message,
+    public function assist(Discord $discord, Message $message,
                                    $serverID, $serverName,
                                    $channelID, $channelName,
                                    $threadID, $threadName,
@@ -323,7 +323,7 @@ class DiscordPlan
                     set_key_value_pair($cooldownKey, true);
 
                     if ($this->chatAI !== null && $this->chatAI->exists) {
-                        $assistance = $this->commands->process($serverID, $channelID, $userID, $messageContent);
+                        $assistance = $this->commands->process($discord, $serverID, $channelID, $userID, $messageContent);
 
                         if ($assistance !== null) {
                             $object = $this->instructions->getObject(

@@ -125,22 +125,17 @@ class DiscordModeration
             }
 
             if ($found) {
-                global $scheduler;
-                $scheduler->addTask(
-                    null,
-                    "sql_insert",
+                sql_insert(
+                    BotDatabaseTable::BOT_PUNISHMENTS,
                     array(
-                        BotDatabaseTable::BOT_PUNISHMENTS,
-                        array(
-                            "type" => $type,
-                            "plan_id" => $this->plan->planID,
-                            "bot_id" => $botID,
-                            "executor_id" => $executorID,
-                            "user_id" => $userID,
-                            "creation_date" => get_current_date(),
-                            "creation_reason" => $reason,
-                            "expiration_date" => $duration === null ? null : get_future_date($duration)
-                        )
+                        "type" => $type,
+                        "plan_id" => $this->plan->planID,
+                        "bot_id" => $botID,
+                        "executor_id" => $executorID,
+                        "user_id" => $userID,
+                        "creation_date" => get_current_date(),
+                        "creation_reason" => $reason,
+                        "expiration_date" => $duration === null ? null : get_future_date($duration)
                     )
                 );
                 return true;
