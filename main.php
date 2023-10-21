@@ -74,9 +74,7 @@ $discord->on('ready', function (Discord $discord) {
     $discordBot = new DiscordBot($botID);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
-        $discordBot->refresh();
-
-        foreach ($discordBot->plans as $plan) {
+        foreach ($discordBot->getPlans() as $plan) {
             if ($plan->canAssist(
                 $message->mentions,
                 $message->guild_id,
@@ -243,9 +241,7 @@ $discord->on('ready', function (Discord $discord) {
     // Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
-        $discordBot->refresh();
-
-        foreach ($discordBot->plans as $plan) {
+        foreach ($discordBot->getPlans() as $plan) {
             $plan->welcome($discord, $member->guild_id, $member->id);
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());

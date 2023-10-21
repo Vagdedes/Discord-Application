@@ -14,11 +14,12 @@ class DiscordBot
         $this->refresh();
     }
 
-    public function refresh(): void
+    private function refresh(): void
     {
-        if (get_current_date() > $this->refreshDate) {
-            $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
+        $date = get_current_date();
 
+        if ($date > $this->refreshDate) {
+            $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_PLANS,
                 array("id"),
@@ -27,7 +28,7 @@ class DiscordBot
                     array("deletion_date", null),
                     null,
                     array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
+                    array("expiration_date", ">", $date),
                     null
                 )
             );
@@ -40,5 +41,11 @@ class DiscordBot
                 }
             }
         }
+    }
+
+    public function getPlans(): array
+    {
+        $this->refresh();
+        return $this->plans;
     }
 }
