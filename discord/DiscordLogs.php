@@ -25,7 +25,7 @@ class DiscordLogs
         );
     }
 
-    public function logError($planID, $object): void
+    public function logError($planID, $object, $exit = false): void
     {
         sql_insert(
             BotDatabaseTable::BOT_ERRORS,
@@ -36,6 +36,10 @@ class DiscordLogs
                 "creation_date" => get_current_date()
             )
         );
-        var_dump($object);
+        if ($exit) {
+            $exit($object);
+        } else {
+            var_dump($object);
+        }
     }
 }
