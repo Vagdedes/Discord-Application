@@ -488,7 +488,11 @@ class DiscordPlan
 
     public function welcome(Discord $discord, $serverID, $userID): void
     {
-        if (!empty($this->channels)) {
+        if (!has_memory_limit(
+                array(__METHOD__, $this->planID, $serverID, $userID),
+                1
+            )
+            && !empty($this->channels)) {
             foreach ($this->channels as $channel) {
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
