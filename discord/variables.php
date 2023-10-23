@@ -11,7 +11,8 @@ sql_sql_credentials(
     null,
     null,
     null,
-    true
+    true,
+    (DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes"
 );
 
 class BotDatabaseTable
