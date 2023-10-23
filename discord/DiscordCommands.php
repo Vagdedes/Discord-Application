@@ -68,7 +68,7 @@ class DiscordCommands
                         && $messageContent == ($command->command_placeholder . $command->command_identification)) {
                         $reply = $command->command_reply;
                         set_key_value_pair($cacheKey, array($command, $reply));
-                        $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
+                        $this->getCooldown($serverID, $channelID, $userID, $command);
                         return $reply;
                     }
                 }

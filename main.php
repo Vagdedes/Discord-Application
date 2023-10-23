@@ -74,39 +74,41 @@ $discord->on('ready', function (Discord $discord) {
     $discordBot = new DiscordBot($botID);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
-        foreach ($discordBot->getPlans() as $plan) {
-            if ($plan->canAssist(
-                $message->mentions,
-                $message->guild_id,
-                $message->channel_id,
-                $message->user_id,
-                $message->content,
-                $botID
-            )) {
-                $assistance = $plan->assist(
-                    $discord,
-                    $message,
+        if ($message->guild_id !== null) {
+            foreach ($discordBot->getPlans() as $plan) {
+                if ($plan->canAssist(
                     $message->guild_id,
-                    $message->guild->name,
                     $message->channel_id,
-                    $message->channel->name,
-                    $message->thread?->id,
-                    $message->thread?->name,
                     $message->user_id,
-                    $message->author->displayname,
-                    $message->id,
                     $message->content,
-                    $botID,
-                    $discord->user->displayname,
-                );
+                    $botID
+                )) {
+                    $assistance = $plan->assist(
+                        $discord,
+                        $message,
+                        $message->mentions,
+                        $message->guild_id,
+                        $message->guild->name,
+                        $message->channel_id,
+                        $message->channel->name,
+                        $message->thread?->id,
+                        $message->thread?->name,
+                        $message->user_id,
+                        $message->author->displayname,
+                        $message->id,
+                        $message->content,
+                        $botID,
+                        $discord->user->displayname,
+                    );
 
-                if (!empty($assistance)
-                    && $assistance !== DiscordProperties::NO_REPLY) {
-                    foreach (str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
-                        $message->reply($split);
+                    if (!empty($assistance)
+                        && $assistance !== DiscordProperties::NO_REPLY) {
+                        foreach (str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                            $message->reply($split);
+                        }
                     }
+                    break;
                 }
-                break;
             }
         }
         $logger->logInfo($message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());
