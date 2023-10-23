@@ -152,7 +152,7 @@ class DiscordInstructions
         return $messages;
     }
 
-    public function build(object $object): ?string
+    public function build(object $object): string
     {
         if (!empty($this->localInstructions)) {
             $information = "";
@@ -183,7 +183,7 @@ class DiscordInstructions
                     ? DiscordSyntax::HEAVY_CODE_BLOCK . $disclaimer . DiscordSyntax::HEAVY_CODE_BLOCK
                     : "");
         }
-        return null;
+        return "";
     }
 
     public function getObject($serverID, $serverName,
