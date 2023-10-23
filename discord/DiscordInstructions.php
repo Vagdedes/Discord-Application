@@ -65,9 +65,12 @@ class DiscordInstructions
     public function replace(array  $messages, ?object $object = null,
                             string $placeholderStart = DiscordProperties::DEFAULT_PLACEHOLDER_START,
                             string $placeholderMiddle = DiscordProperties::DEFAULT_PLACEHOLDER_MIDDLE,
-                            string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END): array
+                            string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END,
+                            bool   $recursive = true): array
     {
         if (!empty($this->placeholders) && !empty($object)) {
+            $replace = false;
+
             foreach ($messages as $arrayKey => $message) {
                 if ($message === null) {
                     $messages[$arrayKey] = "";
@@ -83,6 +86,7 @@ class DiscordInstructions
                     switch ($keyWord[0]) {
                         case "publicInstructions":
                             $value = $this->getPublic();
+                            $replace = true;
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
@@ -106,7 +110,18 @@ class DiscordInstructions
                     $value = "";
 
                     foreach ($array as $row) {
-                        $value .= $row . DiscordProperties::NEW_LINE;
+                        if ($replace && $recursive) {
+                            $value .= $this->replace(
+                                    array($row),
+                                    $object,
+                                    $placeholderStart,
+                                    $placeholderMiddle,
+                                    $placeholderEnd,
+                                    false
+                                )[0] . DiscordProperties::NEW_LINE;
+                        } else {
+                            $value .= $row . DiscordProperties::NEW_LINE;
+                        }
                     }
                     if (!empty($value)) {
                         $value = substr($value, 0, -strlen(DiscordProperties::NEW_LINE));
@@ -268,8 +283,13 @@ class DiscordInstructions
                         }
                     }
                 }
-                ksort($times);
-                set_key_value_pair($cacheKey, $array, $times[0]);
+
+                if (!empty($times)) {
+                    ksort($times);
+                    set_key_value_pair($cacheKey, $array, array_shift($times));
+                } else {
+                    set_key_value_pair($cacheKey, $array, "1 minute");
+                }
             }
             return $array;
         }
