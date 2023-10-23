@@ -31,7 +31,7 @@ class IndividualMemoryBlock
     {
         global $memory_array;
 
-        if (isset($memory_array[$this->key])) {
+        if (array_key_exists($this->key, $memory_array)) {
             return strlen(serialize($memory_array[$this->key]));
         } else {
             return 0;
@@ -61,10 +61,14 @@ class IndividualMemoryBlock
     {
         global $memory_array;
 
-        if (isset($memory_array[$this->key])
-            && ($memory_array[$this->key]->expiration === false
-                || $memory_array[$this->key]->expiration >= time())) {
-            return $memory_array[$this->key];
+        if (array_key_exists($this->key, $memory_array)) {
+            if ($memory_array[$this->key]->expiration === false
+                || $memory_array[$this->key]->expiration >= time()) {
+                return $memory_array[$this->key];
+            } else {
+                unset($memory_array[$this->key]);
+                return null;
+            }
         } else {
             return null;
         }

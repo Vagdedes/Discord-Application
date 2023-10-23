@@ -249,7 +249,8 @@ class DiscordInstructions
                 global $logger;
 
                 foreach ($array as $arrayKey => $row) {
-                    $times[strtotime(get_future_date($row->information_duration))] = $row->information_duration;
+                    $timeKey = strtotime(get_future_date($row->information_duration));
+                    $times[$timeKey] = $row->information_duration;
 
                     if ($row->information_expiration !== null
                         && $row->information_expiration > get_current_date()) {
@@ -279,6 +280,7 @@ class DiscordInstructions
                                 $logger->logError($this->plan->planID, "Used backup value for: " . $row->information_url);
                             } else {
                                 unset($array[$arrayKey]);
+                                unset($times[$timeKey]);
                             }
                         }
                     }

@@ -272,23 +272,23 @@ class DiscordPlan
     {
         $assistance = null;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
+        $object = $this->instructions->getObject(
+            $serverID,
+            $serverName,
+            $channelID,
+            $channelName,
+            $threadID,
+            $threadName,
+            $userID,
+            $userName,
+            $messageContent,
+            $messageID,
+            $botID,
+            $botName
+        );
 
         if ($punishment !== null) {
             if ($punishment->notify !== null) {
-                $object = $this->instructions->getObject(
-                    $serverID,
-                    $serverName,
-                    $channelID,
-                    $channelName,
-                    $threadID,
-                    $threadName,
-                    $userID,
-                    $userName,
-                    $messageContent,
-                    $messageID,
-                    $botID,
-                    $botName
-                );
                 $assistance = $this->instructions->replace(array($punishment->creation_reason), $object)[0];
             }
         } else {
@@ -297,20 +297,6 @@ class DiscordPlan
             if (!empty($limits)) {
                 foreach ($limits as $limit) {
                     if ($limit->message !== null) {
-                        $object = $this->instructions->getObject(
-                            $serverID,
-                            $serverName,
-                            $channelID,
-                            $channelName,
-                            $threadID,
-                            $threadName,
-                            $userID,
-                            $userName,
-                            $messageContent,
-                            $messageID,
-                            $botID,
-                            $botName
-                        );
                         $assistance = $this->instructions->replace(array($limit->message), $object)[0];
                         break;
                     }
@@ -326,37 +312,9 @@ class DiscordPlan
                         $assistance = $this->commands->process($discord, $serverID, $channelID, $userID, $messageContent);
 
                         if ($assistance !== null) {
-                            $object = $this->instructions->getObject(
-                                $serverID,
-                                $serverName,
-                                $channelID,
-                                $channelName,
-                                $threadID,
-                                $threadName,
-                                $userID,
-                                $userName,
-                                $messageContent,
-                                $messageID,
-                                $botID,
-                                $botName
-                            );
                             $assistance = $this->instructions->replace(array($assistance), $object)[0];
                         } else {
                             if ($this->promptMessage !== null) {
-                                $object = $this->instructions->getObject(
-                                    $serverID,
-                                    $serverName,
-                                    $channelID,
-                                    $channelName,
-                                    $threadID,
-                                    $threadName,
-                                    $userID,
-                                    $userName,
-                                    $messageContent,
-                                    $messageID,
-                                    $botID,
-                                    $botName
-                                );
                                 $message->reply($this->instructions->replace(array($this->promptMessage), $object)[0]);
                             }
                             $cacheKey = array(__METHOD__, $this->planID, $userID, $messageContent);
@@ -365,22 +323,6 @@ class DiscordPlan
                             if ($cache !== null) {
                                 $assistance = $cache;
                             } else {
-                                if (!isset($object)) {
-                                    $object = $this->instructions->getObject(
-                                        $serverID,
-                                        $serverName,
-                                        $channelID,
-                                        $channelName,
-                                        $threadID,
-                                        $threadName,
-                                        $userID,
-                                        $userName,
-                                        $messageContent,
-                                        $messageID,
-                                        $botID,
-                                        $botName
-                                    );
-                                }
                                 $instructions = $this->instructions->build($object);
                                 $parameters = array(
                                     "messages" => array(
@@ -447,38 +389,10 @@ class DiscordPlan
                         }
                     } else if ($this->failureMessage !== null) {
                         $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
-                        $object = $this->instructions->getObject(
-                            $serverID,
-                            $serverName,
-                            $channelID,
-                            $channelName,
-                            $threadID,
-                            $threadName,
-                            $userID,
-                            $userName,
-                            $messageContent,
-                            $messageID,
-                            $botID,
-                            $botName
-                        );
                         $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
                     }
                     set_key_value_pair($cooldownKey, true, $this->messageCooldown);
                 } else if ($this->cooldownMessage !== null) {
-                    $object = $this->instructions->getObject(
-                        $serverID,
-                        $serverName,
-                        $channelID,
-                        $channelName,
-                        $threadID,
-                        $threadName,
-                        $userID,
-                        $userName,
-                        $messageContent,
-                        $messageID,
-                        $botID,
-                        $botName
-                    );
                     $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
                 }
             }
