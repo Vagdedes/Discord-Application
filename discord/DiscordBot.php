@@ -6,7 +6,7 @@ class DiscordBot
     public array $plans;
     private string $refreshDate;
 
-    public function __construct($botID)
+    public function __construct(int|string $botID)
     {
         $this->botID = $botID;
         $this->plans = array();

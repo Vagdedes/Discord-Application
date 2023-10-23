@@ -7,7 +7,7 @@ class DiscordCurrency
     public bool $exists;
     public ?string $creationReason;
 
-    public function __construct($code)
+    public function __construct(string $code)
     {
         $this->code = $code;
         set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);

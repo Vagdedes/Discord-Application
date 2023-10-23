@@ -22,7 +22,7 @@ class DiscordPlan
     public DiscordLimits $limits;
     public DiscordCommands $commands;
 
-    public function __construct($planID)
+    public function __construct(int|string $planID)
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
@@ -160,8 +160,9 @@ class DiscordPlan
 
     // Separator
 
-    public function canAssist($mentions, $serverID, $channelID, $userID,
-                              string $messageContent, $botID): bool
+    public function canAssist($mentions,
+                              int|string $serverID, int|string $channelID, int|string $userID,
+                              string $messageContent, int|string $botID): bool
     {
         if ($userID !== $botID) {
             if (!$this->requireMention) {
@@ -262,13 +263,13 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(Discord $discord, Message $message,
-                                   $serverID, $serverName,
-                                   $channelID, $channelName,
-                                   $threadID, $threadName,
-                                   $userID, $userName,
-                                   $messageID, string $messageContent,
-                                   $botID, $botName): ?string
+    public function assist(Discord         $discord, Message $message,
+                           int|string      $serverID, string $serverName,
+                           int|string      $channelID, string $channelName,
+                           int|string|null $threadID, string|null $threadName,
+                           int|string      $userID, string $userName,
+                           int|string      $messageID, string $messageContent,
+                           int|string      $botID, string $botName): ?string
     {
         $assistance = null;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
@@ -309,7 +310,14 @@ class DiscordPlan
                     set_key_value_pair($cooldownKey, true);
 
                     if ($this->chatAI !== null && $this->chatAI->exists) {
-                        $assistance = $this->commands->process($discord, $serverID, $channelID, $userID, $messageContent);
+                        $assistance = $this->commands->process(
+                            $discord,
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            $messageID,
+                            $messageContent
+                        );
 
                         if ($assistance !== null) {
                             $assistance = $this->instructions->replace(array($assistance), $object)[0];
@@ -400,7 +408,7 @@ class DiscordPlan
         return $assistance;
     }
 
-    public function welcome(Discord $discord, $serverID, $userID): void
+    public function welcome(Discord $discord, int|string $serverID, int|string $userID): void
     {
         if (!has_memory_limit(
                 array(__METHOD__, $this->planID, $serverID, $userID),

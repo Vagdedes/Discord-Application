@@ -5,12 +5,12 @@ class DiscordLogs
 
     private ?int $botID;
 
-    public function __construct($botID)
+    public function __construct(int|string|null $botID)
     {
         $this->botID = $botID;
     }
 
-    public function logInfo($userID, ?string $action, $object, $oldObject = null): void
+    public function logInfo(int|string|null $userID, ?string $action, mixed $object, mixed $oldObject = null): void
     {
         sql_insert(
             BotDatabaseTable::BOT_LOGS,
@@ -25,7 +25,7 @@ class DiscordLogs
         );
     }
 
-    public function logError($planID, $object, $exit = false): void
+    public function logError(int|string|null $planID, mixed $object, bool $exit = false): void
     {
         sql_insert(
             BotDatabaseTable::BOT_ERRORS,
@@ -37,7 +37,7 @@ class DiscordLogs
             )
         );
         if ($exit) {
-            $exit($object);
+            exit($object);
         } else {
             var_dump($object);
         }

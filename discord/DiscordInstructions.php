@@ -201,12 +201,12 @@ class DiscordInstructions
         return "";
     }
 
-    public function getObject($serverID, $serverName,
-                              $channelID, $channelName,
-                              $threadID, $threadName,
-                              $userID, $userName,
-                              $messageContent, $messageID,
-                              $botID, $botName): object
+    public function getObject(int|string      $serverID, int|string $serverName,
+                              int|string      $channelID, string $channelName,
+                              int|string|null $threadID, string|null $threadName,
+                              int|string      $userID, string $userName,
+                              string          $messageContent, int|string $messageID,
+                              int|string      $botID, string $botName): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -250,10 +250,10 @@ class DiscordInstructions
 
                 foreach ($array as $arrayKey => $row) {
                     $timeKey = strtotime(get_future_date($row->information_duration));
-                    $times[$timeKey] = $row->information_duration;
 
                     if ($row->information_expiration !== null
                         && $row->information_expiration > get_current_date()) {
+                        $times[$timeKey] = $row->information_duration;
                         $array[$arrayKey] = $row->information_value;
                     } else {
                         $doc = get_domain_from_url($row->information_url) == "docs.google.com"
@@ -261,6 +261,7 @@ class DiscordInstructions
                             timed_file_get_contents($row->information_url);
 
                         if ($doc !== null) {
+                            $times[$timeKey] = $row->information_duration;
                             $array[$arrayKey] = $doc;
                             set_sql_query(
                                 BotDatabaseTable::BOT_PUBLIC_INSTRUCTIONS,
@@ -276,11 +277,11 @@ class DiscordInstructions
                             $logger->logError($this->plan->planID, "Failed to retrieve value for: " . $row->information_url);
 
                             if ($row->information_value !== null) {
+                                $times[$timeKey] = $row->information_duration;
                                 $array[$arrayKey] = $row->information_value;
                                 $logger->logError($this->plan->planID, "Used backup value for: " . $row->information_url);
                             } else {
                                 unset($array[$arrayKey]);
-                                unset($times[$timeKey]);
                             }
                         }
                     }

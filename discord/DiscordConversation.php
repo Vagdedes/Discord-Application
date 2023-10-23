@@ -9,7 +9,7 @@ class DiscordConversation
         $this->plan = $plan;
     }
 
-    public function getMessages($userID, ?int $limit = 0, $object = true): array
+    public function getMessages(int|string $userID, ?int $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -35,11 +35,12 @@ class DiscordConversation
                 unset($array[$arrayKey]);
                 $array[strtotime($row->creation_date)] = $row->message_content;
             }
+            krsort($array);
         }
         return $array;
     }
 
-    public function getReplies($userID, ?int $limit = 0, $object = true): array
+    public function getReplies(int|string $userID, ?int $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -65,11 +66,49 @@ class DiscordConversation
                 unset($array[$arrayKey]);
                 $array[strtotime($row->creation_date)] = $row->message_content;
             }
+            krsort($array);
         }
         return $array;
     }
 
-    public function getCost($serverID, $channelID, $userID, $pastLookup): float
+    public function getConversation(int|string $userID, ?int $limit = 0, bool $object = true): array
+    {
+        $final = array();
+        $messages = $this->getMessages($userID, $limit, $object);
+        $replies = $this->getReplies($userID, $limit, $object);
+
+        if (!empty($messages)) {
+            if ($object) {
+                foreach ($messages as $row) {
+                    $row->user = true;
+                    $final[strtotime($row->creation_date)] = $row;
+                }
+            } else {
+                foreach ($messages as $arrayKey => $row) {
+                    $final[$arrayKey] = "user: " . $row;
+                }
+            }
+        }
+        if (!empty($replies)) {
+            if ($object) {
+                foreach ($replies as $row) {
+                    $row->user = false;
+                    $final[strtotime($row->creation_date)] = $row;
+                }
+            } else {
+                foreach ($messages as $arrayKey => $row) {
+                    $final[$arrayKey] = "bot (you): " . $row;
+                }
+            }
+        }
+        krsort($final);
+        return $final;
+    }
+
+    // Separator
+
+    public function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+                            int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -106,7 +145,8 @@ class DiscordConversation
         }
     }
 
-    public function getMessageCount($serverID, $channelID, $userID, $pastLookup): float
+    public function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+                                    int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -139,45 +179,13 @@ class DiscordConversation
         }
     }
 
-    public function getConversation($userID, ?int $limit = 0, $object = true): array
-    {
-        $final = array();
-        $messages = $this->getMessages($userID, $limit, $object);
-        $replies = $this->getReplies($userID, $limit, $object);
-
-        if (!empty($messages)) {
-            if ($object) {
-                foreach ($messages as $row) {
-                    $row->user = true;
-                    $final[strtotime($row->creation_date)] = $row;
-                }
-            } else {
-                foreach ($messages as $arrayKey => $row) {
-                    $final[$arrayKey] = "user: " . $row;
-                }
-            }
-        }
-        if (!empty($replies)) {
-            if ($object) {
-                foreach ($replies as $row) {
-                    $row->user = false;
-                    $final[strtotime($row->creation_date)] = $row;
-                }
-            } else {
-                foreach ($messages as $arrayKey => $row) {
-                    $final[$arrayKey] = "bot (you): " . $row;
-                }
-            }
-        }
-        krsort($final);
-        return $final;
-    }
-
     // Separator
 
-    public function addReply($botID, $serverID, $channelID, $threadID,
-        $userID, $messageID, string $messageContent,
-                             int|float $cost, $currencyCode): void
+    public function addReply(int|string      $botID, int|string $serverID, int|string $channelID,
+                             int|string|null $threadID,
+                             int|string      $userID,
+                             int|string      $messageID, string $messageContent,
+                             int|float       $cost, string $currencyCode): void
     {
         $currency = new DiscordCurrency($currencyCode);
         sql_insert(
@@ -198,8 +206,10 @@ class DiscordConversation
         );
     }
 
-    public function addMessage($botID, $serverID, $channelID, $threadID,
-                               $userID, $messageID, string $messageContent): void
+    public function addMessage(int|string      $botID, int|string $serverID, int|string $channelID,
+                               int|string|null $threadID,
+                               int|string      $userID,
+                               int|string      $messageID, string $messageContent): void
     {
         sql_insert(
             BotDatabaseTable::BOT_MESSAGES,

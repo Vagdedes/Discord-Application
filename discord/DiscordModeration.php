@@ -63,7 +63,7 @@ class DiscordModeration
         clear_memory(array(self::class), true);
     }
 
-    public function getPunishments($userID): array
+    public function getPunishments(int|string $userID): array
     {
         $cacheKey = array(__METHOD__, $userID);
         $cache = get_key_value_pair($cacheKey);
@@ -85,7 +85,7 @@ class DiscordModeration
         }
     }
 
-    public function hasPunishment(?int $type, $userID): ?object
+    public function hasPunishment(?int $type, int|string $userID): ?object
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $type, $userID);
         $cache = get_key_value_pair($cacheKey);
@@ -109,8 +109,8 @@ class DiscordModeration
         }
     }
 
-    public function addPunishment(?int   $type, $botID, $executorID, $userID,
-                                  string $reason, $duration = null): bool
+    public function addPunishment(?int   $type, int|string $botID, int|string $executorID, int|string $userID,
+                                  string $reason, int|string|null $duration = null): bool
     {
         if (empty($this->punishmentTypes)) {
             return false;

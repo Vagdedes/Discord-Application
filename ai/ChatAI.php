@@ -12,10 +12,10 @@ class ChatAI
     private ?int $maxTokens, $completions;
     public bool $exists;
 
-    public function __construct(int    $modelFamily, string $apiKey,
-                                ?int   $maxReplyLength = null, ?float $temperature = null,
-                                ?float $frequency_penalty = null, ?float $presence_penalty = null,
-                                ?int   $completions = null, ?float $top_p = null)
+    public function __construct(int|string $modelFamily, string $apiKey,
+                                ?int       $maxReplyLength = null, ?float $temperature = null,
+                                ?float     $frequency_penalty = null, ?float $presence_penalty = null,
+                                ?int       $completions = null, ?float $top_p = null)
     {
         $query = get_sql_query(
             AIDatabaseTable::AI_MODELS,
@@ -61,7 +61,7 @@ class ChatAI
         }
     }
 
-    public function getHistory($hash, ?bool $failure = null, ?int $limit = 0): array
+    public function getHistory(int|string $hash, ?bool $failure = null, ?int $limit = 0): array
     {
         set_sql_cache("1 second");
         return get_sql_query(
@@ -79,7 +79,7 @@ class ChatAI
         );
     }
 
-    public function getResult($hash, array $parameters, ?int $timeout = 30): array
+    public function getResult(int|string $hash, array $parameters, ?int $timeout = 30): array
     {
         if (sizeof($this->models) === 1) {
             $model = $this->models[0];
@@ -214,7 +214,7 @@ class ChatAI
         return array(false, $model, null);
     }
 
-    public function getText($model, $object): ?string
+    public function getText(object $model, ?object $object): ?string
     {
         switch ($model->modelID) {
             case AIModel::CHAT_GPT_3_5_DIALOGUE:

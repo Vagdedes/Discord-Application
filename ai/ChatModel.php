@@ -8,7 +8,7 @@ class ChatModel
     public float $received_token_cost, $sent_token_cost;
     public bool $exists;
 
-    public function __construct(int $modelID)
+    public function __construct(int|string $modelID)
     {
         $query = get_sql_query(
             AIDatabaseTable::AI_MODELS,

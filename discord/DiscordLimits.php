@@ -41,7 +41,7 @@ class DiscordLimits
         );
     }
 
-    public function isLimited($serverID, $channelID, $userID): array
+    public function isLimited(int|string $serverID, int|string $channelID, int|string $userID): array
     {
         $array = array();
 
@@ -88,7 +88,9 @@ class DiscordLimits
         return $array;
     }
 
-    private function hash($serverID, $channelID, $userID): int
+    private function hash(int|string|null $serverID,
+                          int|string|null $channelID,
+                          int|string|null $userID): int
     {
         $string = "";
 

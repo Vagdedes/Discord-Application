@@ -44,7 +44,9 @@ class DiscordCommands
         );
     }
 
-    public function process(Discord $discord, $serverID, $channelID, $userID, string $messageContent): ?string
+    public function process(Discord    $discord,
+                            int|string $serverID, int|string $channelID, int|string $userID,
+                            int|string $messageID, string $messageContent): ?string
     {
         if (!empty($this->staticCommands)) {
             $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $messageContent);
@@ -89,7 +91,8 @@ class DiscordCommands
         return null;
     }
 
-    private function getCooldown($serverID, $channelID, $userID, object $command): array
+    private function getCooldown(int|string $serverID, int|string $channelID, int|string $userID,
+                                 object     $command): array
     {
         if ($command->cooldown_duration !== null) {
             $cacheKey = array(

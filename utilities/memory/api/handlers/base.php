@@ -2,10 +2,10 @@
 
 class IndividualMemoryBlock
 {
-    private $originalKey;
+    private mixed $originalKey;
     private int $key;
 
-    public function __construct($key)
+    public function __construct(mixed $key)
     {
         if (is_integer($key)) { // Used for reserved or existing keys
             $keyToInteger = $key;
@@ -38,7 +38,7 @@ class IndividualMemoryBlock
         }
     }
 
-    public function set($value, $expiration = false): void
+    public function set(mixed $value, $expiration = false): void
     {
         global $memory_array;
 
@@ -57,7 +57,7 @@ class IndividualMemoryBlock
         $memory_array[$this->key] = $object;
     }
 
-    public function getRaw(): object|null
+    private function getRaw(): ?object
     {
         global $memory_array;
 
@@ -74,7 +74,7 @@ class IndividualMemoryBlock
         }
     }
 
-    public function get($objectKey = "value"): mixed
+    public function get(string $objectKey = "value"): mixed
     {
         $raw = $this->getRaw();
         return $raw?->{$objectKey};
