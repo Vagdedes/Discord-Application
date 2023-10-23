@@ -268,7 +268,7 @@ class DiscordInstructions
                         }
                     }
                 }
-                sort($times);
+                ksort($times);
                 set_key_value_pair($cacheKey, $array, $times[0]);
             }
             return $array;
