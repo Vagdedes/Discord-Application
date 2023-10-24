@@ -3,6 +3,8 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use Discord\Helpers\Collection;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Interactions\Interaction;
 
 class DiscordControlledMessages
 {
@@ -30,54 +32,74 @@ class DiscordControlledMessages
 
         if (!empty($this->messages)) {
             foreach ($this->messages as $arrayKey => $messageRow) {
+                unset($this->messages[$arrayKey]);
                 $channel = $discord->getChannel($messageRow->channel_id);
 
                 if ($channel !== null) {
                     if ($messageRow->message_id === null) {
-                        $channel->sendMessage($messageRow->message_content)->done(function (Message $message) use ($messageRow, $channel) {
-                            $messageRow->message_id = $message->id;
-                            set_sql_query(
-                                BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
-                                array(
-                                    "message_id" => $message->id
-                                ),
-                                array(
-                                    array("id", $messageRow->id)
-                                ),
-                                null,
-                                1
-                            );
-                        });
+                        $channel->sendMessage($this->build($discord, $messageRow, false))->done(
+                            function (Message $message) use ($discord, $messageRow, $channel) {
+                                $messageRow->message_id = $message->id;
+                                set_sql_query(
+                                    BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
+                                    array(
+                                        "message_id" => $message->id
+                                    ),
+                                    array(
+                                        array("id", $messageRow->id)
+                                    ),
+                                    null,
+                                    1
+                                );
+                            }
+                        );
                     } else {
                         $channel->getMessageHistory([
                             'limit' => 1,
                         ])->done(function (Collection $messages) use ($discord, $messageRow) {
                             foreach ($messages as $message) {
-                                if ($message->user_id == $this->plan->botID) {
-                                    $messageBuilder = MessageBuilder::new()->setContent(
-                                        empty($messageRow->message_content) ? ""
-                                            : $messageRow->message_content
-                                    );
-                                    $messageBuilder = $this->plan->component->addButtons(
-                                        $discord,
-                                        $messageBuilder,
-                                        $messageRow->id,
-                                        false
-                                    );
-                                    $message->edit($this->plan->component->addSelections(
-                                        $discord,
-                                        $messageBuilder,
-                                        $messageRow->id,
-                                        false
-                                    ));
+                                if ($message->user_id == $this->plan->botID
+                                    && $message->id == $messageRow->message_id) {
+                                    $message->edit($this->build($discord, $messageRow, false));
                                 }
                             }
                         });
                     }
-                } else {
-                    unset($this->messages[$arrayKey]);
+                    $this->messages[$messageRow->name] = $messageRow;
                 }
             }
         }
+    }
+
+    public function send(Discord       $discord, Interaction $interaction,
+                         string|object $key, bool $ephemeral): bool
+    {
+        $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
+
+        if ($message !== null) {
+            $interaction->respondWithMessage($this->build($discord, $message), $ephemeral);
+            return true;
+        }
+        return false;
+    }
+
+    private function build(Discord $discord, object $messageRow, $cache = true): MessageBuilder
+    {
+        $messageBuilder = MessageBuilder::new()->setContent(
+            empty($messageRow->message_content) ? ""
+                : $messageRow->message_content
+        );
+        $messageBuilder = $this->plan->component->addButtons(
+            $discord,
+            $messageBuilder,
+            $messageRow->id,
+            $cache
+        );
+        return $this->plan->component->addSelections(
+            $discord,
+            $messageBuilder,
+            $messageRow->id,
+            $cache
+        );
     }
 }
