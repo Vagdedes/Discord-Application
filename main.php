@@ -71,7 +71,7 @@ $discord->on('ready', function (Discord $discord) {
     global $logger;
     $botID = $discord->id;
     $logger = new DiscordLogs($botID);
-    $discordBot = new DiscordBot($botID);
+    $discordBot = new DiscordBot($discord, $botID);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {

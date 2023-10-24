@@ -1,6 +1,8 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Discord;
+use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Message;
 
 class DiscordPlan
@@ -14,7 +16,7 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents, $keywords, $mentions;
+    private array $channels, $whitelistContents, $keywords, $mentions, $controlledMessages, $products;
     private ?ChatAI $chatAI;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
@@ -22,7 +24,7 @@ class DiscordPlan
     public DiscordLimits $limits;
     public DiscordCommands $commands;
 
-    public function __construct(int|string $planID)
+    public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
@@ -54,7 +56,7 @@ class DiscordPlan
         $this->requireEndingText = $query->require_ending_text;
         $this->requireMention = $query->require_mention !== null;
         $this->strictReply = $query->strict_reply !== null;
-        $this->debug = $query->debug !== null;
+        $this->debug = false;
         $this->minMessageLength = $query->min_message_length;
         $this->maxMessageLength = $query->max_message_length;
 
@@ -155,13 +157,66 @@ class DiscordPlan
         } else {
             $this->chatAI = null;
         }
+        $this->controlledMessages = get_sql_query(
+            BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
+        if (!empty($this->controlledMessages)) {
+            foreach ($this->controlledMessages as $arrayKey => $messageRow) {
+                $channel = $discord->getChannel($messageRow->channel_id);
+
+                if ($channel !== null) {
+                    if ($messageRow->message_id === null) {
+                        $channel->sendMessage($messageRow->message_content)->done(function (Message $message) use ($messageRow, $channel) {
+                            $messageRow->message_id = $message->id;
+                            set_sql_query(
+                                BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
+                                array(
+                                    "message_id" => $message->id
+                                ),
+                                array(
+                                    array("id", $messageRow->id)
+                                ),
+                                null,
+                                1
+                            );
+                        });
+                    } else {
+                        $channel->getMessageHistory([
+                            'limit' => 1,
+                        ])->done(function (Collection $messages) use ($messageRow, $botID) {
+                            foreach ($messages as $message) {
+                                if ($message->user_id == $botID
+                                    && $messageRow->message_content !== $message->content) {
+                                    $message->edit(MessageBuilder::new()->setContent($messageRow->message_content));
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    unset($this->controlledMessages[$arrayKey]);
+                }
+            }
+        }
         clear_memory(array(self::class), true);
     }
 
     // Separator
 
     public function canAssist(int|string $serverID, int|string $channelID, int|string $userID,
-                              string $messageContent, int|string $botID): bool
+                              string     $messageContent, int|string $botID): bool
     {
         $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
         $cache = get_key_value_pair($cacheKey);
@@ -203,6 +258,8 @@ class DiscordPlan
                     foreach ($this->channels as $channel) {
                         if ($channel->server_id == $serverID
                             && $channel->channel_id == $channelID) {
+                            $this->debug = $channel->debug !== null;
+
                             if ($channel->whitelist === null) {
                                 $result = true;
                                 break;
@@ -230,7 +287,7 @@ class DiscordPlan
     }
 
     public function assist(Discord         $discord, Message $message,
-                           $mentions,
+                                           $mentions,
                            int|string      $serverID, string $serverName,
                            int|string      $channelID, string $channelName,
                            int|string|null $threadID, string|null $threadName,
@@ -289,7 +346,7 @@ class DiscordPlan
                         if ($assistance !== null) {
                             $assistance = $this->instructions->replace(array($assistance), $object)[0];
                         } else {
-                            if ($userID !== $botID) {
+                            if ($userID != $botID) {
                                 if ($this->requireMention) {
                                     $mention = false;
 

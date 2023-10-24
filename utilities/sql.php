@@ -1,11 +1,6 @@
 <?php
 // Connection
 
-$sql_timeout = 1;
-$show_sql_errors = false;
-$sql_log_connection = true; // Disabled
-$sql_store_error = true;
-
 $sql_connections = array();
 $is_sql_usable = false;
 $sql_credentials = array();
@@ -15,10 +10,21 @@ $sql_cache_tag = null;
 $sql_max_cache_time = "30 minutes";
 
 // Connection
-function sql_sql_credentials($hostname, $username, $password = null, $database = null, $port = null, $socket = null, $exit = false, $duration = null): void
+function sql_sql_credentials($hostname, $username, $password = null, $database = null, $port = null, $socket = null, $exit = false, $duration = null, $showErrors = false): void
 {
     global $sql_credentials;
-    $sql_credentials = array($hostname, $username, $password, $database, $port, $socket, $exit, $duration, get_future_date($duration));
+    $sql_credentials = array(
+        $hostname,
+        $username,
+        $password,
+        $database,
+        $port,
+        $socket,
+        $exit,
+        $duration,
+        $duration === null ? null : get_future_date($duration),
+        $showErrors
+    );
     $sql_credentials[] = string_to_integer(serialize($sql_credentials));
 }
 
@@ -30,7 +36,7 @@ function has_sql_credentials(): bool
 function get_sql_connection(): ?object
 {
     global $sql_connections, $sql_credentials;
-    return !empty($sql_credentials) ? $sql_connections[$sql_credentials[9]] : null;
+    return !empty($sql_credentials) ? $sql_connections[$sql_credentials[10]] : null;
 }
 
 function reset_sql_connection(): void
@@ -39,14 +45,14 @@ function reset_sql_connection(): void
 
     if (!empty($sql_credentials)) {
         global $sql_connections;
-        unset($sql_connections[$sql_credentials[9]]);
+        unset($sql_connections[$sql_credentials[10]]);
     }
 }
 
 function create_sql_connection(): ?object
 {
     global $sql_connections, $sql_credentials;
-    $hash = $sql_credentials[9];
+    $hash = $sql_credentials[10];
     $expired = $sql_credentials[8] !== null && $sql_credentials[8] < time();
 
     if ($expired || !array_key_exists($hash, $sql_connections)) {
@@ -55,13 +61,13 @@ function create_sql_connection(): ?object
         }
         global $sql_credentials;
 
-        if (sizeof($sql_credentials) === 10) {
-            global $sql_timeout, $show_sql_errors, $is_sql_usable;
+        if (sizeof($sql_credentials) === 11) {
+            global $is_sql_usable;
             $is_sql_usable = false;
             $sql_connections[$hash] = mysqli_init();
-            $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, $sql_timeout);
+            $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 1);
 
-            if ($show_sql_errors) {
+            if ($sql_credentials[9]) {
                 $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
                     $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
             } else {
@@ -74,7 +80,7 @@ function create_sql_connection(): ?object
             if ($sql_connections[$hash]->connect_error) {
                 $is_sql_usable = false;
 
-                if ($sql_credentials[sizeof($sql_credentials) - 1]) {
+                if ($sql_credentials[6]) {
                     exit();
                 }
             } else {
@@ -96,7 +102,7 @@ function close_sql_connection(): bool
 
         if (!empty($sql_credentials)) {
             global $sql_connections;
-            $hash = $sql_credentials[9];
+            $hash = $sql_credentials[10];
             $result = $sql_connections[$hash]->close();
             unset($sql_connections[$hash]);
             $is_sql_usable = false;
@@ -104,34 +110,6 @@ function close_sql_connection(): bool
         }
     }
     return false;
-}
-
-// Functionality
-
-function sql_log_connection(): void
-{
-    global $sql_log_connection;
-
-    if (!$sql_log_connection) {
-        $sql_log_connection = true;
-        $time = time();
-        $ip_address = get_client_ip_address();
-        $headers = getallheaders();
-
-        foreach ($headers as $key => $value) {
-            unset($headers[$key]);
-            $headers[properly_sql_encode($key)] = properly_sql_encode($value);
-        }
-        sql_insert(
-            "logs.connectionLogs",
-            array(
-                "id" => (string_to_integer($ip_address) * 31) + $time,
-                "creation" => time(),
-                "ip_address" => properly_sql_encode($ip_address),
-                "headers" => json_encode($headers),
-            )
-        );
-    }
 }
 
 // Utilities
@@ -262,7 +240,7 @@ function properly_sql_encode($string, $partial = false, $extra = false): ?string
     } else {
         global $sql_connections, $sql_credentials;
         create_sql_connection();
-        return $sql_connections[$sql_credentials[9]]->real_escape_string($partial ? $string : htmlspecialchars($string));
+        return $sql_connections[$sql_credentials[10]]->real_escape_string($partial ? $string : htmlspecialchars($string));
     }
 }
 
@@ -292,7 +270,7 @@ function get_sql_query($table, $select = null, $where = null, $order = null, $li
         $time = $sql_cache_time;
         $sql_cache_time = false;
         $cacheKey = array(
-            $sql_credentials[9],
+            $sql_credentials[10],
             $table,
             $select,
             $hasWhere ? $where[1] : null,
@@ -353,15 +331,14 @@ function sql_query_row($query): ?object
 function sql_query($command, $debug = false)
 {
     $sqlConnection = create_sql_connection();
-    global $is_sql_usable, $sql_store_error;
+    global $is_sql_usable;
 
     if ($is_sql_usable) {
-        sql_log_connection();
-
         if ($debug && (!is_string($command) || !isset($command[0]))) {
             throw new Exception("Empty Query: " . getcwd());
         }
-        global $show_sql_errors;
+        global $sql_credentials;
+        $show_sql_errors = $sql_credentials[9];
 
         if ($show_sql_errors) {
             $query = $sqlConnection->query($command);
@@ -375,7 +352,7 @@ function sql_query($command, $debug = false)
             }
             error_reporting(E_ALL);
         }
-        if ($sql_store_error && !$query) {
+        if (!$query) {
             $query = $command;
             $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
                 . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"]) . "', '" . $query . "', '" . properly_sql_encode($sqlConnection->error) . "');";
@@ -395,7 +372,6 @@ function sql_query($command, $debug = false)
         }
         return $query;
     }
-    $sql_store_error = true;
     return null;
 }
 

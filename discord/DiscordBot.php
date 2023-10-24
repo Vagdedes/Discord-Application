@@ -1,13 +1,17 @@
 <?php
 
+use Discord\Discord;
+
 class DiscordBot
 {
     public int $botID;
     public array $plans;
     private string $refreshDate;
+    private Discord $discord;
 
-    public function __construct(int|string $botID)
+    public function __construct(Discord $discord, int|string $botID)
     {
+        $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
         $this->refreshDate = get_past_date("2 seconds");
@@ -39,7 +43,7 @@ class DiscordBot
                 // In case connection or database fails, log but do not exit
             } else {
                 foreach ($query as $plan) {
-                    $this->plans[] = new DiscordPlan($plan->id);
+                    $this->plans[] = new DiscordPlan($this->discord, $this->botID, $plan->id);
                 }
             }
         }

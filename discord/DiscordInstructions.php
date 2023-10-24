@@ -271,7 +271,9 @@ class DiscordInstructions
                                 ),
                                 array(
                                     array("id", $row->id)
-                                )
+                                ),
+                                null,
+                                1
                             );
                         } else {
                             $logger->logError($this->plan->planID, "Failed to retrieve value for: " . $row->information_url);
