@@ -7,7 +7,7 @@ use Discord\Parts\Channel\Message;
 
 class DiscordPlan
 {
-    public int $planID;
+    public int $planID, $botID;
     public ?int $applicationID, $family, $minMessageLength, $maxMessageLength;
     public bool $strictReply, $requireMention;
     private bool $debug;
@@ -16,13 +16,16 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents, $keywords, $mentions, $controlledMessages, $products;
+    private array $channels, $whitelistContents, $keywords, $mentions,
+        $controlledMessages, $products;
     private ?ChatAI $chatAI;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
     public DiscordLimits $limits;
     public DiscordCommands $commands;
+    public DiscordListener $listener;
+    public DiscordComponent $component;
 
     public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
@@ -37,6 +40,7 @@ class DiscordPlan
         );
         $query = $query[0];
 
+        $this->botID = $botID;
         $this->planID = (int)$query->id;
         $this->family = $query->family === null ? null : (int)$query->family;
         $this->applicationID = $query->application_id === null ? null : (int)$query->application_id;
@@ -65,6 +69,8 @@ class DiscordPlan
         $this->moderation = new DiscordModeration($this);
         $this->limits = new DiscordLimits($this);
         $this->commands = new DiscordCommands($this);
+        $this->listener = new DiscordListener($this);
+        $this->component = new DiscordComponent($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -157,6 +163,53 @@ class DiscordPlan
         } else {
             $this->chatAI = null;
         }
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_MODAL_COMPONENTS,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $subQuery = get_sql_query(
+                    BotDatabaseTable::BOT_MODAL_SUB_COMPONENTS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("component_id", $row->id),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    ),
+                    array(
+                        "DESC",
+                        "priority"
+                    )
+                );
+
+                if (!empty($subQuery)) {
+                    $object = new stdClass();
+                    $object->component = $row;
+                    $object->subComponents = array();
+
+                    foreach ($subQuery as $subRow) {
+                        $object->subComponents[] = $subRow;
+                    }
+                    $this->modalComponents[$row->name] = $object;
+                }
+            }
+        }
         $this->controlledMessages = get_sql_query(
             BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
             null,
@@ -216,7 +269,7 @@ class DiscordPlan
     // Separator
 
     public function canAssist(int|string $serverID, int|string $channelID, int|string $userID,
-                              string     $messageContent, int|string $botID): bool
+                              string     $messageContent): bool
     {
         $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
         $cache = get_key_value_pair($cacheKey);
@@ -291,9 +344,9 @@ class DiscordPlan
                            int|string      $serverID, string $serverName,
                            int|string      $channelID, string $channelName,
                            int|string|null $threadID, string|null $threadName,
-                           int|string      $userID, string $userName,
+                           int|string      $userID, string $userName, ?string $displayname,
                            int|string      $messageID, string $messageContent,
-                           int|string      $botID, string $botName): ?string
+                           string          $botName): ?string
     {
         $assistance = null;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
@@ -306,9 +359,9 @@ class DiscordPlan
             $threadName,
             $userID,
             $userName,
+            $displayname,
             $messageContent,
             $messageID,
-            $botID,
             $botName
         );
 
@@ -346,20 +399,20 @@ class DiscordPlan
                         if ($assistance !== null) {
                             $assistance = $this->instructions->replace(array($assistance), $object)[0];
                         } else {
-                            if ($userID != $botID) {
+                            if ($userID != $this->botID) {
                                 if ($this->requireMention) {
                                     $mention = false;
 
                                     if (!empty($mentions)) {
                                         foreach ($mentions as $user) {
-                                            if ($user->id == $botID) {
+                                            if ($user->id == $this->botID) {
                                                 $mention = true;
                                                 break;
                                             }
                                         }
 
                                         if ($mention) {
-                                            $messageContent = str_replace("<@" . $botID . ">", "", $messageContent);
+                                            $messageContent = str_replace("<@" . $this->botID . ">", "", $messageContent);
                                         } else if (!empty($this->mentions)) {
                                             foreach ($this->mentions as $alternativeMention) {
                                                 foreach ($mentions as $user) {
@@ -421,7 +474,6 @@ class DiscordPlan
 
                                         if ($assistance !== null) {
                                             $this->conversation->addMessage(
-                                                $botID,
                                                 $serverID,
                                                 $channelID,
                                                 $threadID,
@@ -430,7 +482,6 @@ class DiscordPlan
                                                 $messageContent,
                                             );
                                             $this->conversation->addReply(
-                                                $botID,
                                                 $serverID,
                                                 $channelID,
                                                 $threadID,

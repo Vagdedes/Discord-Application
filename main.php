@@ -26,6 +26,8 @@ require '/root/discord_bot/discord/DiscordConversation.php';
 require '/root/discord_bot/discord/DiscordLimits.php';
 require '/root/discord_bot/discord/DiscordCommands.php';
 require '/root/discord_bot/discord/DiscordCurrency.php';
+require '/root/discord_bot/discord/DiscordListener.php';
+require '/root/discord_bot/discord/DiscordComponent.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
@@ -56,6 +58,11 @@ use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
+//todo menu
+//todo command-search
+//todo images
+//todo sound
+
 $discord = new Discord([
     'token' => $token[0],
     'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::GUILD_PRESENCES | Intents::MESSAGE_CONTENT,
@@ -80,8 +87,7 @@ $discord->on('ready', function (Discord $discord) {
                     $message->guild_id,
                     $message->channel_id,
                     $message->user_id,
-                    $message->content,
-                    $botID
+                    $message->content
                 )) {
                     $assistance = $plan->assist(
                         $discord,
@@ -95,9 +101,9 @@ $discord->on('ready', function (Discord $discord) {
                         $message->thread?->name,
                         $message->user_id,
                         $message->author->displayname,
+                        $message->author->displayname,
                         $message->id,
                         $message->content,
-                        $botID,
                         $discord->user->displayname,
                     );
 

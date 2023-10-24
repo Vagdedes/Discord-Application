@@ -204,9 +204,9 @@ class DiscordInstructions
     public function getObject(int|string      $serverID, int|string $serverName,
                               int|string      $channelID, string $channelName,
                               int|string|null $threadID, string|null $threadName,
-                              int|string      $userID, string $userName,
+                              int|string      $userID, string $userName, ?string $displayName,
                               string          $messageContent, int|string $messageID,
-                              int|string      $botID, string $botName): object
+                              string $botName): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -217,9 +217,10 @@ class DiscordInstructions
         $object->threadName = $threadName;
         $object->userID = $userID;
         $object->userName = $userName;
+        $object->displayName = $displayName;
         $object->messageContent = $messageContent;
         $object->messageID = $messageID;
-        $object->botID = $botID;
+        $object->botID = $this->plan->botID;
         $object->botName = $botName;
 
         $object->placeholderArray = array();

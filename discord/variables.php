@@ -25,6 +25,7 @@ class BotDatabaseTable
         BOT_TARGET_EXECUTIONS = "discord.botTargetExecutions",
         BOT_PRODUCTS = "discord.botProducts",
         BOT_MODAL_COMPONENTS = "discord.botModalComponents",
+        BOT_MODAL_SUB_COMPONENTS = "discord.botModalSubComponents",
         BOT_BUTTON_COMPONENTS = "discord.botButtonComponents",
         BOT_SELECTION_COMPONENTS = "discord.botSelectionComponents",
         BOT_SELECTION_SUB_COMPONENTS = "discord.botSelectionSubComponents",

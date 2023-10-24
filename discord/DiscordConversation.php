@@ -181,7 +181,7 @@ class DiscordConversation
 
     // Separator
 
-    public function addReply(int|string      $botID, int|string $serverID, int|string $channelID,
+    public function addReply(int|string $serverID, int|string $channelID,
                              int|string|null $threadID,
                              int|string      $userID,
                              int|string      $messageID, string $messageContent,
@@ -192,7 +192,7 @@ class DiscordConversation
             BotDatabaseTable::BOT_REPLIES,
             array(
                 "plan_id" => $this->plan->planID,
-                "bot_id" => $botID,
+                "bot_id" => $this->plan->botID,
                 "server_id" => $serverID,
                 "channel_id" => $channelID,
                 "thread_id" => $threadID,
@@ -206,7 +206,7 @@ class DiscordConversation
         );
     }
 
-    public function addMessage(int|string      $botID, int|string $serverID, int|string $channelID,
+    public function addMessage(int|string $serverID, int|string $channelID,
                                int|string|null $threadID,
                                int|string      $userID,
                                int|string      $messageID, string $messageContent): void
@@ -215,7 +215,7 @@ class DiscordConversation
             BotDatabaseTable::BOT_MESSAGES,
             array(
                 "plan_id" => $this->plan->planID,
-                "bot_id" => $botID,
+                "bot_id" => $this->plan->botID,
                 "server_id" => $serverID,
                 "channel_id" => $channelID,
                 "thread_id" => $threadID,
