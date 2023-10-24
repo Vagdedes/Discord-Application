@@ -1,8 +1,6 @@
 <?php
 
-use Discord\Builders\MessageBuilder;
 use Discord\Discord;
-use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Message;
 
 class DiscordPlan
@@ -16,8 +14,7 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents, $keywords, $mentions,
-        $controlledMessages, $products;
+    private array $channels, $whitelistContents, $keywords, $mentions, $products; //todo
     private ?ChatAI $chatAI;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
@@ -26,6 +23,7 @@ class DiscordPlan
     public DiscordCommands $commands;
     public DiscordListener $listener;
     public DiscordComponent $component;
+    public DiscordControlledMessages $controlledMessages;
 
     public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
@@ -71,6 +69,7 @@ class DiscordPlan
         $this->commands = new DiscordCommands($this);
         $this->listener = new DiscordListener($this);
         $this->component = new DiscordComponent($this);
+        $this->controlledMessages = new DiscordControlledMessages($discord, $this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -162,106 +161,6 @@ class DiscordPlan
             );
         } else {
             $this->chatAI = null;
-        }
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_MODAL_COMPONENTS,
-            null,
-            array(
-                array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->planID),
-                null,
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
-
-        if (!empty($query)) {
-            foreach ($query as $row) {
-                $subQuery = get_sql_query(
-                    BotDatabaseTable::BOT_MODAL_SUB_COMPONENTS,
-                    null,
-                    array(
-                        array("deletion_date", null),
-                        array("component_id", $row->id),
-                        null,
-                        array("expiration_date", "IS", null, 0),
-                        array("expiration_date", ">", get_current_date()),
-                        null
-                    ),
-                    array(
-                        "DESC",
-                        "priority"
-                    )
-                );
-
-                if (!empty($subQuery)) {
-                    $object = new stdClass();
-                    $object->component = $row;
-                    $object->subComponents = array();
-
-                    foreach ($subQuery as $subRow) {
-                        $object->subComponents[] = $subRow;
-                    }
-                    $this->modalComponents[$row->name] = $object;
-                }
-            }
-        }
-        $this->controlledMessages = get_sql_query(
-            BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
-            null,
-            array(
-                array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->planID),
-                null,
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
-
-        if (!empty($this->controlledMessages)) {
-            foreach ($this->controlledMessages as $arrayKey => $messageRow) {
-                $channel = $discord->getChannel($messageRow->channel_id);
-
-                if ($channel !== null) {
-                    if ($messageRow->message_id === null) {
-                        $channel->sendMessage($messageRow->message_content)->done(function (Message $message) use ($messageRow, $channel) {
-                            $messageRow->message_id = $message->id;
-                            set_sql_query(
-                                BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
-                                array(
-                                    "message_id" => $message->id
-                                ),
-                                array(
-                                    array("id", $messageRow->id)
-                                ),
-                                null,
-                                1
-                            );
-                        });
-                    } else {
-                        $channel->getMessageHistory([
-                            'limit' => 1,
-                        ])->done(function (Collection $messages) use ($messageRow, $botID) {
-                            foreach ($messages as $message) {
-                                if ($message->user_id == $botID
-                                    && $messageRow->message_content !== $message->content) {
-                                    $message->edit(MessageBuilder::new()->setContent($messageRow->message_content));
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    unset($this->controlledMessages[$arrayKey]);
-                }
-            }
         }
         clear_memory(array(self::class), true);
     }

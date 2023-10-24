@@ -12,7 +12,9 @@ class DiscordListener
         $this->plan = $plan;
     }
 
-    public function call($class, $method, Discord $discord, Interaction $interaction, ?array $objects): mixed
+    public function call(Discord $discord, Interaction $interaction,
+                         ?string $class, ?string $method,
+                         mixed   $objects = null): mixed
     {
         if ($method !== null) {
             require_once('/root/discord_bot/listeners/' . $this->plan->planID . "/" . $method . '.php');

@@ -24,6 +24,12 @@ class DiscordBot
 
         if ($date > $this->refreshDate) {
             $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
+
+            if (!empty($this->plans)) {
+                foreach ($this->plans as $plan) {
+                    $plan->component->clear();
+                }
+            }
             $query = get_sql_query(
                 BotDatabaseTable::BOT_PLANS,
                 array("id"),
