@@ -269,69 +269,69 @@ class DiscordPlan
                 $assistance = $this->instructions->replace(array($punishment->creation_reason), $object)[0];
             }
         } else {
-            $limits = $this->limits->isLimited($serverID, $channelID, $userID);
+            $cooldownKey = array(__METHOD__, $this->planID, $userID);
 
-            if (!empty($limits)) {
-                foreach ($limits as $limit) {
-                    if ($limit->message !== null) {
-                        $assistance = $this->instructions->replace(array($limit->message), $object)[0];
-                        break;
-                    }
-                }
-            } else {
-                $cooldownKey = array(__METHOD__, $this->planID, $userID);
+            if (get_key_value_pair($cooldownKey) === null) {
+                global $logger;
+                set_key_value_pair($cooldownKey, true);
 
-                if (get_key_value_pair($cooldownKey) === null) {
-                    global $logger;
-                    set_key_value_pair($cooldownKey, true);
+                if ($this->chatAI !== null && $this->chatAI->exists) {
+                    $assistance = $this->commands->process(
+                        $discord,
+                        $serverID,
+                        $channelID,
+                        $userID,
+                        $messageID,
+                        $messageContent
+                    );
 
-                    if ($this->chatAI !== null && $this->chatAI->exists) {
-                        $assistance = $this->commands->process(
-                            $discord,
-                            $serverID,
-                            $channelID,
-                            $userID,
-                            $messageID,
-                            $messageContent
-                        );
+                    if ($assistance !== null) {
+                        $assistance = $this->instructions->replace(array($assistance), $object)[0];
+                    } else {
+                        if ($userID != $this->botID) {
+                            if ($this->requireMention) {
+                                $mention = false;
 
-                        if ($assistance !== null) {
-                            $assistance = $this->instructions->replace(array($assistance), $object)[0];
-                        } else {
-                            if ($userID != $this->botID) {
-                                if ($this->requireMention) {
-                                    $mention = false;
-
-                                    if (!empty($mentions)) {
-                                        foreach ($mentions as $user) {
-                                            if ($user->id == $this->botID) {
-                                                $mention = true;
-                                                break;
-                                            }
+                                if (!empty($mentions)) {
+                                    foreach ($mentions as $user) {
+                                        if ($user->id == $this->botID) {
+                                            $mention = true;
+                                            break;
                                         }
+                                    }
 
-                                        if ($mention) {
-                                            $messageContent = str_replace("<@" . $this->botID . ">", "", $messageContent);
-                                        } else if (!empty($this->mentions)) {
-                                            foreach ($this->mentions as $alternativeMention) {
-                                                foreach ($mentions as $user) {
-                                                    if ($user->id == $alternativeMention->user_id) {
-                                                        $mention = true;
-                                                        $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
-                                                        break 2;
-                                                    }
+                                    if ($mention) {
+                                        $messageContent = str_replace("<@" . $this->botID . ">", "", $messageContent);
+                                    } else if (!empty($this->mentions)) {
+                                        foreach ($this->mentions as $alternativeMention) {
+                                            foreach ($mentions as $user) {
+                                                if ($user->id == $alternativeMention->user_id) {
+                                                    $mention = true;
+                                                    $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
+                                                    break 2;
                                                 }
                                             }
                                         }
                                     }
-                                } else {
-                                    $mention = true;
                                 }
                             } else {
-                                $mention = false;
+                                $mention = true;
                             }
+                        } else {
+                            $mention = false;
+                        }
 
-                            if ($mention) {
+                        if ($mention) {
+                            $limits = $this->limits->isLimited($serverID, $channelID, $userID);
+
+                            if (!empty($limits)) {
+                                foreach ($limits as $limit) {
+                                    if ($limit->message !== null) {
+                                        $assistance = $this->instructions->replace(array($limit->message), $object)[0];
+                                        break;
+                                    }
+                                }
+                            } else {
                                 if ($this->promptMessage !== null) {
                                     $message->reply($this->instructions->replace(array($this->promptMessage), $object)[0]);
                                 }
@@ -404,14 +404,14 @@ class DiscordPlan
                                 }
                             }
                         }
-                    } else if ($this->failureMessage !== null) {
-                        $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
-                        $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
                     }
-                    set_key_value_pair($cooldownKey, true, $this->messageCooldown);
-                } else if ($this->cooldownMessage !== null) {
-                    $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
+                } else if ($this->failureMessage !== null) {
+                    $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
+                    $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
                 }
+                set_key_value_pair($cooldownKey, true, $this->messageCooldown);
+            } else if ($this->cooldownMessage !== null) {
+                $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
             }
         }
         return $assistance;

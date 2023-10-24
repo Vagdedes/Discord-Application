@@ -251,39 +251,11 @@ class DiscordComponent
                         $button->setEmoji($buttonObject->emoji);
                     }
                     $actionRow->addComponent($button);
-                    $button->setListener(function (Interaction $interaction) use ($discord, $button, $buttonObject) {
-                        if ($buttonObject->response !== null) {
-                            $interaction->respondWithMessage(
-                                MessageBuilder::new()->setContent(
-                                    $this->plan->instructions->replace(
-                                        array($buttonObject->response),
-                                        $this->plan->instructions->getObject(
-                                            $interaction->guild_id,
-                                            $interaction->guild->name,
-                                            $interaction->channel_id,
-                                            $interaction->channel->name,
-                                            $interaction->message->thread->id,
-                                            $interaction->message->thread,
-                                            $interaction->user->id,
-                                            $interaction->user->username,
-                                            $interaction->user->displayname,
-                                            $interaction->message->content,
-                                            $interaction->message->id,
-                                            $discord->user->id
-                                        )
-                                    )[0]
-                                ),
-                                $buttonObject->ephemeral !== null
-                            );
-                            $this->plan->listener->call(
-                                $discord,
-                                $interaction,
-                                $buttonObject->listener_class,
-                                $buttonObject->listener_method
-                            );
-                        }
+                    $button->setListener(function (Interaction $interaction)
+                    use ($discord, $button, $buttonObject) {
+                        $this->extract($discord, $interaction, $buttonObject);
+                        $this->listenerObjects[] = $button;
                     }, $discord);
-                    $this->listenerObjects[] = $button;
                 }
             }
             $messageBuilder->addComponent($actionRow);
@@ -348,21 +320,62 @@ class DiscordComponent
                 if ($query->placeholder !== null) {
                     $select->setPlaceholder($query->placeholder);
                 }
-                foreach ($subQuery as $choice) {
-                    $option = Option::new($choice->name)
-                        ->setDefault($choice->default !== null);
+                foreach ($subQuery as $choiceObject) {
+                    $choice = Option::new($choiceObject->name)
+                        ->setDefault($choiceObject->default !== null);
 
-                    if ($choice->description !== null) {
-                        $option->setDescription($choice->description);
+                    if ($choiceObject->description !== null) {
+                        $choice->setDescription($choiceObject->description);
                     }
-                    if ($choice->emoji !== null) {
-                        $option->setEmoji($choice->emoji);
+                    if ($choiceObject->emoji !== null) {
+                        $choice->setEmoji($choiceObject->emoji);
                     }
-                    $select->addOption($option);
+                    $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($discord, $query, $select) {
+                    $this->extract($discord, $interaction, $query, $options);
+                    $this->listenerObjects[] = $select;
+                }, $discord);
             }
         }
         return $messageBuilder;
+    }
+
+    private function extract(Discord $discord, Interaction $interaction,
+                             object   $databaseObject, mixed $objects = null): void
+    {
+        if ($databaseObject->response !== null) {
+            $interaction->respondWithMessage(
+                MessageBuilder::new()->setContent(
+                    $this->plan->instructions->replace(
+                        array($databaseObject->response),
+                        $this->plan->instructions->getObject(
+                            $interaction->guild_id,
+                            $interaction->guild->name,
+                            $interaction->channel_id,
+                            $interaction->channel->name,
+                            $interaction->message->thread->id,
+                            $interaction->message->thread,
+                            $interaction->user->id,
+                            $interaction->user->username,
+                            $interaction->user->displayname,
+                            $interaction->message->content,
+                            $interaction->message->id,
+                            $discord->user->id
+                        )
+                    )[0]
+                ),
+                $databaseObject->ephemeral !== null
+            );
+        }
+        $this->plan->listener->call(
+            $discord,
+            $interaction,
+            $databaseObject->listener_class,
+            $databaseObject->listener_method,
+            $objects
+        );
     }
 }

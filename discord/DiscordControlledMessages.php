@@ -71,8 +71,8 @@ class DiscordControlledMessages
         }
     }
 
-    public function send(Discord       $discord, Interaction $interaction,
-                         string|object $key, bool $ephemeral): bool
+    public function sendStatic(Discord       $discord, Interaction $interaction,
+                               string|object $key, bool $ephemeral): bool
     {
         $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
 
@@ -81,6 +81,20 @@ class DiscordControlledMessages
             return true;
         }
         return false;
+    }
+
+    public function sendDynamic(Discord $discord, Interaction $interaction,
+                                string  $message, array $components, bool $ephemeral): bool
+    {
+        $messageBuilder = MessageBuilder::new()->setContent(
+            empty($messageRow->message_content) ? ""
+                : $messageRow->message_content
+        );
+        foreach ($components as $component) {
+            $messageBuilder->addComponent($component);
+        }
+        $interaction->respondWithMessage($messageBuilder, $ephemeral);
+        return true;
     }
 
     private function build(Discord $discord, object $messageRow, $cache = true): MessageBuilder
