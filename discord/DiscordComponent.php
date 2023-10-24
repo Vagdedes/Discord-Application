@@ -2,6 +2,8 @@
 
 use Discord\Builders\Components\ActionRow;
 use Discord\Builders\Components\Button;
+use Discord\Builders\Components\Option;
+use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
@@ -170,7 +172,7 @@ class DiscordComponent
             BotDatabaseTable::BOT_BUTTON_COMPONENTS,
             null,
             array(
-                array("component_id", $componentID),
+                array("controlled_message_id", $componentID),
                 array("deletion_date", null),
                 null,
                 array("plan_id", "IS", null, 0),
@@ -249,36 +251,35 @@ class DiscordComponent
                         $button->setEmoji($buttonObject->emoji);
                     }
                     $actionRow->addComponent($button);
-                    $button->setListener(function (Interaction $interaction) use ($discord, $button) {
-                        $object = $this->plan->instructions->getObject(
-                            $interaction->guild_id,
-                            $interaction->guild->name,
-                            $interaction->channel_id,
-                            $interaction->channel->name,
-                            $interaction->message->thread->id,
-                            $interaction->message->thread,
-                            $interaction->user->id,
-                            $interaction->user->username,
-                            $interaction->user->displayname,
-                            $interaction->message->content,
-                            $interaction->message->id,
-                            $discord->user->id
-                        );
-                        if ($button->response !== null) {
+                    $button->setListener(function (Interaction $interaction) use ($discord, $button, $buttonObject) {
+                        if ($buttonObject->response !== null) {
                             $interaction->respondWithMessage(
                                 MessageBuilder::new()->setContent(
                                     $this->plan->instructions->replace(
-                                        array($button->response),
-                                        $object
+                                        array($buttonObject->response),
+                                        $this->plan->instructions->getObject(
+                                            $interaction->guild_id,
+                                            $interaction->guild->name,
+                                            $interaction->channel_id,
+                                            $interaction->channel->name,
+                                            $interaction->message->thread->id,
+                                            $interaction->message->thread,
+                                            $interaction->user->id,
+                                            $interaction->user->username,
+                                            $interaction->user->displayname,
+                                            $interaction->message->content,
+                                            $interaction->message->id,
+                                            $discord->user->id
+                                        )
                                     )[0]
                                 ),
-                                $button->ephemeral !== null
+                                $buttonObject->ephemeral !== null
                             );
                             $this->plan->listener->call(
                                 $discord,
                                 $interaction,
-                                $button->listener_class,
-                                $button->listener_method
+                                $buttonObject->listener_class,
+                                $buttonObject->listener_method
                             );
                         }
                     }, $discord);
@@ -291,8 +292,77 @@ class DiscordComponent
     }
 
     public function addSelections(Discord    $discord, MessageBuilder $messageBuilder,
-                               int|string $componentID, bool $cache = true): MessageBuilder
+                                  int|string $componentID, bool $cache = true): MessageBuilder
     {
+        if ($cache) {
+            set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
+        }
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_SELECTION_COMPONENTS,
+            null,
+            array(
+                array("controlled_message_id", $componentID),
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ),
+            null,
+            1
+        );
+
+        if (!empty($query)) {
+            $query = $query[0];
+            $subQuery = get_sql_query(
+                BotDatabaseTable::BOT_SELECTION_SUB_COMPONENTS,
+                null,
+                array(
+                    array("deletion_date", null),
+                    array("component_id", $query->id),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ),
+                array(
+                    "DESC",
+                    "priority"
+                )
+            );
+
+            if (!empty($subQuery)) {
+                $select = SelectMenu::new()
+                    ->setDisabled($query->disabled !== null);
+
+                if ($query->max_choices !== null) {
+                    $select->setMaxValues($query->max_choices);
+                }
+                if ($query->min_choices !== null) {
+                    $select->setMinValues($query->min_choices);
+                }
+                if ($query->placeholder !== null) {
+                    $select->setPlaceholder($query->placeholder);
+                }
+                foreach ($subQuery as $choice) {
+                    $option = Option::new($choice->name)
+                        ->setDefault($choice->default !== null);
+
+                    if ($choice->description !== null) {
+                        $option->setDescription($choice->description);
+                    }
+                    if ($choice->emoji !== null) {
+                        $option->setEmoji($choice->emoji);
+                    }
+                    $select->addOption($option);
+                }
+                $messageBuilder->addComponent($select);
+            }
+        }
         return $messageBuilder;
     }
 }

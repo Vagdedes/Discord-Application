@@ -51,11 +51,13 @@ class DiscordControlledMessages
                     } else {
                         $channel->getMessageHistory([
                             'limit' => 1,
-                        ])->done(function (Collection $messages) use ($discord, $messageRow, $botID) {
+                        ])->done(function (Collection $messages) use ($discord, $messageRow) {
                             foreach ($messages as $message) {
-                                if ($message->user_id == $botID
-                                    && $messageRow->message_content !== $message->content) {
-                                    $messageBuilder = MessageBuilder::new()->setContent($messageRow->message_content);
+                                if ($message->user_id == $this->plan->botID) {
+                                    $messageBuilder = MessageBuilder::new()->setContent(
+                                        empty($messageRow->message_content) ? ""
+                                            : $messageRow->message_content
+                                    );
                                     $messageBuilder = $this->plan->component->addButtons(
                                         $discord,
                                         $messageBuilder,
