@@ -17,6 +17,8 @@ require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/runnable.php';
 
+require '/root/discord_bot/web/LoadBalancer.php';
+
 require '/root/discord_bot/discord/variables.php';
 require '/root/discord_bot/discord/DiscordPlan.php';
 require '/root/discord_bot/discord/DiscordInstructions.php';
@@ -74,6 +76,24 @@ $discord = new Discord([
     'dnsConfig' => '1.1.1.1'
 ]);
 $logger = new DiscordLogs(null);
+$files = LoadBalancer::getFiles(
+    array(
+        "/var/www/.structure/library/account/api",
+        "/var/www/.structure/library/application/api"
+    )
+);
+
+if (!empty($files)) {
+    global $logger;
+
+    foreach ($files as $file) {
+        try {
+            eval($file);
+        } catch (Throwable $error) {
+            $logger->logError(null, $error->getMessage());
+        }
+    }
+}
 
 $discord->on('ready', function (Discord $discord) {
     global $logger;
