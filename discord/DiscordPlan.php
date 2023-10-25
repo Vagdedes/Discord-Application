@@ -9,8 +9,8 @@ class DiscordPlan
     public ?int $applicationID, $family, $minMessageLength, $maxMessageLength;
     public bool $strictReply, $requireMention;
     private bool $debug;
-    public string $name, $description, $creationDate;
-    public ?string $expirationDate, $creationReason, $expirationReason;
+    public string $name, $creationDate;
+    public ?string $description, $expirationDate, $creationReason, $expirationReason;
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;

@@ -202,78 +202,89 @@ class DiscordComponent
 
         if (!empty($query)) {
             global $logger;
-            $actionRow = ActionRow::new();
+            $rows = array();
 
             foreach ($query as $buttonObject) {
-                switch ($buttonObject->color) {
-                    case "red":
-                        $button = Button::new(Button::STYLE_DANGER)->setLabel(
-                            $buttonObject->label
-                        )->setDisabled(
-                            $buttonObject->disabled !== null
-                        );
-                        break;
-                    case "green":
-                        $button = Button::new(Button::STYLE_SUCCESS)
-                            ->setLabel(
+                if (array_key_exists($buttonObject->row_id, $rows)) {
+                    $rows[$buttonObject->row_id][] = $buttonObject;
+                } else {
+                    $rows[$buttonObject->row_id] = array($buttonObject);
+                }
+            }
+            foreach ($rows as $row) {
+                $actionRow = ActionRow::new();
+
+                foreach ($row as $buttonObject) {
+                    switch ($buttonObject->color) {
+                        case "red":
+                            $button = Button::new(Button::STYLE_DANGER)->setLabel(
                                 $buttonObject->label
                             )->setDisabled(
                                 $buttonObject->disabled !== null
                             );
-                        break;
-                    case "blue":
-                        $button = Button::new(Button::STYLE_PRIMARY)
-                            ->setLabel(
-                                $buttonObject->label
-                            )->setDisabled(
-                                $buttonObject->disabled !== null
-                            );
-                        break;
-                    case "grey":
-                        $button = Button::new(Button::STYLE_SECONDARY)
-                            ->setLabel(
-                                $buttonObject->label
-                            )->setDisabled(
-                                $buttonObject->disabled !== null
-                            );
-                        break;
-                    default:
-                        if ($buttonObject->url !== null) {
-                            $button = Button::new(Button::STYLE_LINK)
+                            break;
+                        case "green":
+                            $button = Button::new(Button::STYLE_SUCCESS)
                                 ->setLabel(
                                     $buttonObject->label
                                 )->setDisabled(
                                     $buttonObject->disabled !== null
-                                )->setUrl(
-                                    $buttonObject->url
                                 );
-                        } else {
-                            $button = null;
-                            $logger->logError(
-                                $this->plan->planID,
-                                "Invalid button with ID: " . $buttonObject->id,
-                            );
+                            break;
+                        case "blue":
+                            $button = Button::new(Button::STYLE_PRIMARY)
+                                ->setLabel(
+                                    $buttonObject->label
+                                )->setDisabled(
+                                    $buttonObject->disabled !== null
+                                );
+                            break;
+                        case "grey":
+                            $button = Button::new(Button::STYLE_SECONDARY)
+                                ->setLabel(
+                                    $buttonObject->label
+                                )->setDisabled(
+                                    $buttonObject->disabled !== null
+                                );
+                            break;
+                        default:
+                            if ($buttonObject->url !== null) {
+                                $button = Button::new(Button::STYLE_LINK)
+                                    ->setLabel(
+                                        $buttonObject->label
+                                    )->setDisabled(
+                                        $buttonObject->disabled !== null
+                                    )->setUrl(
+                                        $buttonObject->url
+                                    );
+                            } else {
+                                $button = null;
+                                $logger->logError(
+                                    $this->plan->planID,
+                                    "Invalid button with ID: " . $buttonObject->id,
+                                );
+                            }
+                            break;
+                    }
+                    if ($button !== null) {
+                        if ($buttonObject->emoji !== null) {
+                            $button->setEmoji($buttonObject->emoji);
                         }
-                        break;
-                }
-                if ($button !== null) {
-                    if ($buttonObject->emoji !== null) {
-                        $button->setEmoji($buttonObject->emoji);
-                    }
-                    if ($buttonObject->custom_id !== null) {
-                        $button->setCustomId($buttonObject->custom_id);
-                    }
-                    $actionRow->addComponent($button);
+                        if ($buttonObject->custom_id !== null) {
+                            $button->setCustomId($buttonObject->custom_id);
+                        }
+                        $actionRow->addComponent($button);
 
-                    if (!$button->isDisabled()) {
-                        $button->setListener(function (Interaction $interaction) use ($button, $buttonObject) {
-                            $this->extract($interaction, $buttonObject, $button);
-                            $this->listenerObjects[] = $button;
-                        }, $this->plan->discord);
+                        if (!$button->isDisabled()) {
+                            $button->setListener(function (Interaction $interaction) use ($button, $buttonObject) {
+                                $this->extract($interaction, $buttonObject, $button);
+                                $this->listenerObjects[] = $button;
+                            }, $this->plan->discord);
+                        }
                     }
                 }
+                $messageBuilder->addComponent($actionRow);
             }
-            $messageBuilder->addComponent($actionRow);
         }
         return $messageBuilder;
     }
