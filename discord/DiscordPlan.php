@@ -14,7 +14,7 @@ class DiscordPlan
     private ?string $messageRetention, $messageCooldown,
         $promptMessage, $cooldownMessage, $failureMessage,
         $requireStartingText, $requireContainedText, $requireEndingText;
-    private array $channels, $whitelistContents, $keywords, $mentions, $products; //todo
+    private array $channels, $whitelistContents, $keywords, $mentions;
     private ?ChatAI $chatAI;
     public Discord $discord;
     public DiscordInstructions $instructions;

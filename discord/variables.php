@@ -21,7 +21,7 @@ class BotDatabaseTable
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
-        BOT_TARGETS = "discord.botTargets",
+        BOT_TARGETS = "discord.botTargets", //todo
         BOT_TARGET_EXECUTIONS = "discord.botTargetExecutions",
         BOT_MODAL_COMPONENTS = "discord.botModalComponents",
         BOT_MODAL_SUB_COMPONENTS = "discord.botModalSubComponents",

@@ -2,6 +2,7 @@
 
 use Discord\Builders\Components\ActionRow;
 use Discord\Builders\Components\Button;
+use Discord\Builders\Components\Component;
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
@@ -79,7 +80,7 @@ class DiscordComponent
 
     // Separator
 
-    public function showStaticModal(Interaction $interaction, string|object $key): bool
+    public function showModal(Interaction $interaction, string|object $key): bool
     {
         $modal = $this->modalComponents[$key] ?? null;
 
@@ -151,7 +152,7 @@ class DiscordComponent
         }
     }
 
-    public function showDynamicModal(Interaction $interaction,
+    public function createModal(Interaction $interaction,
                                      string      $title, array $textInputs,
                                      ?int        $customID = null,
                                      ?callable   $listener = null): bool
@@ -172,8 +173,8 @@ class DiscordComponent
 
     // Separator
 
-    public function addStaticButtons(MessageBuilder $messageBuilder,
-                                     int|string     $componentID, bool $cache = true): MessageBuilder
+    public function addButtons(MessageBuilder $messageBuilder,
+                               int|string     $componentID, bool $cache = true): MessageBuilder
     {
         if ($cache) {
             set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
@@ -289,27 +290,24 @@ class DiscordComponent
         return $messageBuilder;
     }
 
-    public function addDynamicButtons(MessageBuilder $messageBuilder,
-                                      array          $buttonsAndListeners): MessageBuilder
+    public function makeButtonRow(array $buttonsAndListeners): Component
     {
         $actionRow = ActionRow::new();
 
         foreach ($buttonsAndListeners as $button => $listener) {
             $actionRow->addComponent($button);
 
-            if ($listener !== null
-                && !$button->isDisabled()) {
+            if ($listener !== null && !$button->isDisabled()) {
                 $button->setListener($listener, $this->plan->discord);
             }
         }
-        $messageBuilder->addComponent($actionRow);
-        return $messageBuilder;
+        return $actionRow;
     }
 
     // Separator
 
-    public function addStaticSelection(MessageBuilder $messageBuilder,
-                                       int|string     $componentID, bool $cache = true): MessageBuilder
+    public function addSelection(MessageBuilder $messageBuilder,
+                                 int|string     $componentID, bool $cache = true): MessageBuilder
     {
         if ($cache) {
             set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
@@ -391,12 +389,11 @@ class DiscordComponent
         return $messageBuilder;
     }
 
-    public function addDynamicSelection(MessageBuilder $messageBuilder,
-                                        array          $choices,
-                                        ?string        $placeholder = null,
-                                        bool           $disabled = false,
-                                        ?int           $maxChoices = null, ?int $minChoices = null,
-                                        ?callable      $listener = null): MessageBuilder
+    public function makeSelection(array     $choices,
+                                  ?string   $placeholder = null,
+                                  bool      $disabled = false,
+                                  ?int      $maxChoices = null, ?int $minChoices = null,
+                                  ?callable $listener = null): Component
     {
         $select = SelectMenu::new()
             ->setDisabled($disabled);
@@ -413,13 +410,10 @@ class DiscordComponent
         foreach ($choices as $choice) {
             $select->addOption($choice);
         }
-        $messageBuilder->addComponent($select);
-
-        if ($listener !== null
-            && !$select->isDisabled()) {
+        if ($listener !== null && !$select->isDisabled()) {
             $select->setListener($listener, $this->plan->discord);
         }
-        return $messageBuilder;
+        return $select;
     }
 
     // Separator
