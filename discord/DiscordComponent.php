@@ -77,6 +77,8 @@ class DiscordComponent
         }
     }
 
+    // Separator
+
     public function showStaticModal(Interaction $interaction, string|object $key): bool
     {
         $modal = $this->modalComponents[$key] ?? null;
@@ -87,8 +89,8 @@ class DiscordComponent
                 $interaction->guild->name,
                 $interaction->channel_id,
                 $interaction->channel->name,
-                $interaction->message->thread->id,
-                $interaction->message->thread,
+                $interaction->message?->thread?->id,
+                $interaction->message?->thread,
                 $interaction->user->id,
                 $interaction->user->username,
                 $interaction->user->displayname,
@@ -134,14 +136,13 @@ class DiscordComponent
                             $this->plan->instructions->replace(array($modal->response), $modal->object)[0]
                         ));
                     } else {
-                        $interaction->acknowledge();
+                        $this->plan->listener->call(
+                            $interaction,
+                            $modal->listener_class,
+                            $modal->listener_method,
+                            $components
+                        );
                     }
-                    $this->plan->listener->call(
-                        $interaction,
-                        $modal->listener_class,
-                        $modal->listener_method,
-                        $components
-                    );
                 }
             );
             return true;
@@ -259,11 +260,14 @@ class DiscordComponent
                     if ($buttonObject->emoji !== null) {
                         $button->setEmoji($buttonObject->emoji);
                     }
+                    if ($buttonObject->custom_id !== null) {
+                        $button->setCustomId($buttonObject->custom_id);
+                    }
                     $actionRow->addComponent($button);
 
                     if (!$button->isDisabled()) {
                         $button->setListener(function (Interaction $interaction) use ($button, $buttonObject) {
-                            $this->extract($interaction, $buttonObject);
+                            $this->extract($interaction, $buttonObject, $button);
                             $this->listenerObjects[] = $button;
                         }, $this->plan->discord);
                     }
@@ -422,8 +426,8 @@ class DiscordComponent
                             $interaction->guild->name,
                             $interaction->channel_id,
                             $interaction->channel->name,
-                            $interaction->message->thread->id,
-                            $interaction->message->thread,
+                            $interaction->message?->thread?->id,
+                            $interaction->message?->thread,
                             $interaction->user->id,
                             $interaction->user->username,
                             $interaction->user->displayname,
@@ -435,12 +439,13 @@ class DiscordComponent
                 ),
                 $databaseObject->ephemeral !== null
             );
+        } else {
+            $this->plan->listener->call(
+                $interaction,
+                $databaseObject->listener_class,
+                $databaseObject->listener_method,
+                $objects
+            );
         }
-        $this->plan->listener->call(
-            $interaction,
-            $databaseObject->listener_class,
-            $databaseObject->listener_method,
-            $objects
-        );
     }
 }

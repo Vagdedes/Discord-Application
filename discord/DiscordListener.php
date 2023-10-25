@@ -1,6 +1,5 @@
 <?php
 
-use Discord\Discord;
 use Discord\Parts\Interactions\Interaction;
 
 class DiscordListener
@@ -16,10 +15,10 @@ class DiscordListener
                          ?string     $class, ?string $method,
                          mixed       $objects = null): mixed
     {
-        if ($method !== null) {
-            require_once('/root/discord_bot/listeners/' . $this->plan->planID . "/" . $method . '.php');
+        if ($class !== null && $method !== null) {
+            require_once('/root/discord_bot/listeners/' . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
-                $class !== null ? array($class, $method) : $method,
+                array($class, $method),
                 array($this->plan->discord, $interaction, $objects)
             );
         } else {

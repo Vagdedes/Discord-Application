@@ -94,8 +94,8 @@ class DiscordControlledMessages
                     $interaction->guild->name,
                     $interaction->channel_id,
                     $interaction->channel->name,
-                    $interaction->message->thread->id,
-                    $interaction->message->thread,
+                    $interaction->message?->thread?->id,
+                    $interaction->message?->thread,
                     $interaction->user->id,
                     $interaction->user->username,
                     $interaction->user->displayname,
@@ -107,7 +107,6 @@ class DiscordControlledMessages
         );
 
         foreach ($components as $component) {
-            //todo prepare component
             $messageBuilder->addComponent($component);
         }
         $interaction->respondWithMessage($messageBuilder, $ephemeral);
