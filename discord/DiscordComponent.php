@@ -6,7 +6,6 @@ use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
-use Discord\Discord;
 use Discord\Helpers\Collection;
 use Discord\Parts\Interactions\Interaction;
 
@@ -78,8 +77,7 @@ class DiscordComponent
         }
     }
 
-    public function getModalComponent(Discord       $discord, Interaction $interaction,
-                                      string|object $key): ?object
+    public function showStaticModal(Interaction $interaction, string|object $key): bool
     {
         $modal = $this->modalComponents[$key] ?? null;
 
@@ -96,7 +94,7 @@ class DiscordComponent
                 $interaction->user->displayname,
                 $interaction->message->content,
                 $interaction->message->id,
-                $discord->user->id
+                $this->plan->discord->user->id
             );
             foreach ($modal->subComponents as $arrayKey => $textInput) {
                 $placeholder = $this->plan->instructions->replace(array($textInput->placeholder), $modal->object)[0];
@@ -125,23 +123,11 @@ class DiscordComponent
                 $actionRow->addComponent($input);
                 $modal->subComponents[$arrayKey] = $actionRow;
             }
-            return $modal;
-        } else {
-            return null;
-        }
-    }
-
-    public function showModal(Discord       $discord, Interaction $interaction,
-                              string|object $key): void
-    {
-        $modal = is_object($key) ? $key : $this->getModalComponent($discord, $interaction, $key);
-
-        if ($modal !== null) {
             $interaction->showModal(
                 $modal->title,
                 $modal->custom_id,
                 $modal->subComponents,
-                function (Interaction $interaction, Collection $components) use ($discord, $modal) {
+                function (Interaction $interaction, Collection $components) use ($modal) {
                     if ($modal->response !== null) {
                         $interaction->acknowledgeWithResponse($modal->ephemeral !== null);
                         $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
@@ -151,7 +137,6 @@ class DiscordComponent
                         $interaction->acknowledge();
                     }
                     $this->plan->listener->call(
-                        $discord,
                         $interaction,
                         $modal->listener_class,
                         $modal->listener_method,
@@ -159,11 +144,35 @@ class DiscordComponent
                     );
                 }
             );
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public function addButtons(Discord    $discord, MessageBuilder $messageBuilder,
-                               int|string $componentID, bool $cache = true): MessageBuilder
+    public function showDynamicModal(Interaction $interaction,
+                                     string      $title, array $textInputs,
+                                     ?int        $customID = null,
+                                     ?callable   $listener = null): bool
+    {
+        foreach ($textInputs as $arrayKey => $textInput) {
+            $actionRow = ActionRow::new();
+            $actionRow->addComponent($textInput);
+            $textInputs[$arrayKey] = $actionRow;
+        }
+        $interaction->showModal(
+            $title,
+            $customID,
+            $textInputs,
+            $listener
+        );
+        return true;
+    }
+
+    // Separator
+
+    public function addStaticButtons(MessageBuilder $messageBuilder,
+                                     int|string     $componentID, bool $cache = true): MessageBuilder
     {
         if ($cache) {
             set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
@@ -251,11 +260,13 @@ class DiscordComponent
                         $button->setEmoji($buttonObject->emoji);
                     }
                     $actionRow->addComponent($button);
-                    $button->setListener(function (Interaction $interaction)
-                    use ($discord, $button, $buttonObject) {
-                        $this->extract($discord, $interaction, $buttonObject);
-                        $this->listenerObjects[] = $button;
-                    }, $discord);
+
+                    if (!$button->isDisabled()) {
+                        $button->setListener(function (Interaction $interaction) use ($button, $buttonObject) {
+                            $this->extract($interaction, $buttonObject);
+                            $this->listenerObjects[] = $button;
+                        }, $this->plan->discord);
+                    }
                 }
             }
             $messageBuilder->addComponent($actionRow);
@@ -263,8 +274,27 @@ class DiscordComponent
         return $messageBuilder;
     }
 
-    public function addSelections(Discord    $discord, MessageBuilder $messageBuilder,
-                                  int|string $componentID, bool $cache = true): MessageBuilder
+    public function addDynamicButtons(MessageBuilder $messageBuilder,
+                                      array          $buttonsAndListeners): MessageBuilder
+    {
+        $actionRow = ActionRow::new();
+
+        foreach ($buttonsAndListeners as $button => $listener) {
+            $actionRow->addComponent($button);
+
+            if ($listener !== null
+                && !$button->isDisabled()) {
+                $button->setListener($listener, $this->plan->discord);
+            }
+        }
+        $messageBuilder->addComponent($actionRow);
+        return $messageBuilder;
+    }
+
+    // Separator
+
+    public function addStaticSelection(MessageBuilder $messageBuilder,
+                                       int|string     $componentID, bool $cache = true): MessageBuilder
     {
         if ($cache) {
             set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
@@ -333,18 +363,54 @@ class DiscordComponent
                     $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
-                $select->setListener(function (Interaction $interaction, Collection $options)
-                use ($discord, $query, $select) {
-                    $this->extract($discord, $interaction, $query, $options);
-                    $this->listenerObjects[] = $select;
-                }, $discord);
+
+                if (!$select->isDisabled()) {
+                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    use ($query, $select) {
+                        $this->extract($interaction, $query, $options);
+                        $this->listenerObjects[] = $select;
+                    }, $this->plan->discord);
+                }
             }
         }
         return $messageBuilder;
     }
 
-    private function extract(Discord $discord, Interaction $interaction,
-                             object   $databaseObject, mixed $objects = null): void
+    public function addDynamicSelection(MessageBuilder $messageBuilder,
+                                        array          $choices,
+                                        ?string        $placeholder = null,
+                                        bool           $disabled = false,
+                                        ?int           $maxChoices = null, ?int $minChoices = null,
+                                        ?callable      $listener = null): MessageBuilder
+    {
+        $select = SelectMenu::new()
+            ->setDisabled($disabled);
+
+        if ($maxChoices !== null) {
+            $select->setMaxValues($maxChoices);
+        }
+        if ($minChoices !== null) {
+            $select->setMinValues($minChoices);
+        }
+        if ($placeholder !== null) {
+            $select->setPlaceholder($placeholder);
+        }
+        foreach ($choices as $choice) {
+            $select->addOption($choice);
+        }
+        $messageBuilder->addComponent($select);
+
+        if ($listener !== null
+            && !$select->isDisabled()) {
+            $select->setListener($listener, $this->plan->discord);
+        }
+        return $messageBuilder;
+    }
+
+    // Separator
+
+    private function extract(Interaction $interaction,
+                             object      $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
             $interaction->respondWithMessage(
@@ -363,7 +429,7 @@ class DiscordComponent
                             $interaction->user->displayname,
                             $interaction->message->content,
                             $interaction->message->id,
-                            $discord->user->id
+                            $this->plan->discord->user->id
                         )
                     )[0]
                 ),
@@ -371,7 +437,6 @@ class DiscordComponent
             );
         }
         $this->plan->listener->call(
-            $discord,
             $interaction,
             $databaseObject->listener_class,
             $databaseObject->listener_method,

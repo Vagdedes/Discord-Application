@@ -44,8 +44,7 @@ class DiscordCommands
         );
     }
 
-    public function process(Discord    $discord,
-                            int|string $serverID, int|string $channelID, int|string $userID,
+    public function process(int|string $serverID, int|string $channelID, int|string $userID,
                             int|string $messageID, string $messageContent): ?string
     {
         if (!empty($this->staticCommands)) {

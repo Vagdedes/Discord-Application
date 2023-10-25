@@ -16,6 +16,7 @@ class DiscordPlan
         $requireStartingText, $requireContainedText, $requireEndingText;
     private array $channels, $whitelistContents, $keywords, $mentions, $products; //todo
     private ?ChatAI $chatAI;
+    public Discord $discord;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
@@ -38,6 +39,7 @@ class DiscordPlan
         );
         $query = $query[0];
 
+        $this->discord = $discord;
         $this->botID = $botID;
         $this->planID = (int)$query->id;
         $this->family = $query->family === null ? null : (int)$query->family;
@@ -69,7 +71,7 @@ class DiscordPlan
         $this->commands = new DiscordCommands($this);
         $this->listener = new DiscordListener($this);
         $this->component = new DiscordComponent($this);
-        $this->controlledMessages = new DiscordControlledMessages($discord, $this);
+        $this->controlledMessages = new DiscordControlledMessages($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -238,7 +240,7 @@ class DiscordPlan
         return $result;
     }
 
-    public function assist(Discord         $discord, Message $message,
+    public function assist(Message $message,
                                            $mentions,
                            int|string      $serverID, string $serverName,
                            int|string      $channelID, string $channelName,
@@ -277,7 +279,6 @@ class DiscordPlan
 
                 if ($this->chatAI !== null && $this->chatAI->exists) {
                     $assistance = $this->commands->process(
-                        $discord,
                         $serverID,
                         $channelID,
                         $userID,
@@ -417,7 +418,7 @@ class DiscordPlan
         return $assistance;
     }
 
-    public function welcome(Discord $discord, int|string $serverID, int|string $userID): void
+    public function welcome(int|string $serverID, int|string $userID): void
     {
         if (!has_memory_limit(
                 array(__METHOD__, $this->planID, $serverID, $userID),
@@ -428,7 +429,7 @@ class DiscordPlan
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
                     if ($channel->whitelist === null) {
-                        $channelFound = $discord->getChannel($channel->channel_id);
+                        $channelFound = $this->discord->getChannel($channel->channel_id);
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
@@ -441,7 +442,7 @@ class DiscordPlan
                                     || $whitelist->server_id === $serverID
                                     && ($whitelist->channel_id === null
                                         || $whitelist->channel_id === $channel->channel_id))) {
-                                $channelFound = $discord->getChannel($channel->channel_id);
+                                $channelFound = $this->discord->getChannel($channel->channel_id);
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {

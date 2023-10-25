@@ -24,12 +24,6 @@ class DiscordBot
 
         if ($date > $this->refreshDate) {
             $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
-
-            if (!empty($this->plans)) {
-                foreach ($this->plans as $plan) {
-                    $plan->component->clear();
-                }
-            }
             $query = get_sql_query(
                 BotDatabaseTable::BOT_PLANS,
                 array("id"),
@@ -48,6 +42,12 @@ class DiscordBot
                 $logger->logError(null, "Found no plans for bot with ID: " . $this->botID);
                 // In case connection or database fails, log but do not exit
             } else {
+                if (!empty($this->plans)) {
+                    foreach ($this->plans as $plan) {
+                        $plan->component->clear();
+                    }
+                    $this->plans = array();
+                }
                 foreach ($query as $plan) {
                     $this->plans[] = new DiscordPlan($this->discord, $this->botID, $plan->id);
                 }

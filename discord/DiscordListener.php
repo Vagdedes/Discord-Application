@@ -12,15 +12,15 @@ class DiscordListener
         $this->plan = $plan;
     }
 
-    public function call(Discord $discord, Interaction $interaction,
-                         ?string $class, ?string $method,
-                         mixed   $objects = null): mixed
+    public function call(Interaction $interaction,
+                         ?string     $class, ?string $method,
+                         mixed       $objects = null): mixed
     {
         if ($method !== null) {
             require_once('/root/discord_bot/listeners/' . $this->plan->planID . "/" . $method . '.php');
             return call_user_func_array(
                 $class !== null ? array($class, $method) : $method,
-                array($discord, $interaction, $objects)
+                array($this->plan->discord, $interaction, $objects)
             );
         } else {
             return false; // False because the PHP method returns false on error

@@ -91,7 +91,6 @@ $discord->on('ready', function (Discord $discord) {
                     $message->content
                 )) {
                     $assistance = $plan->assist(
-                        $discord,
                         $message,
                         $message->mentions,
                         $message->guild_id,
@@ -251,7 +250,7 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->getPlans() as $plan) {
-            $plan->welcome($discord, $member->guild_id, $member->id);
+            $plan->welcome($member->guild_id, $member->id);
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });
