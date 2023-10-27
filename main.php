@@ -80,8 +80,12 @@ $discord = new Discord([
 $logger = new DiscordLogs(null);
 $files = LoadBalancer::getFiles(
     array(
-        "/var/www/.structure/library/account/api",
-        "/var/www/.structure/library/application/api"
+        "/var/www/.structure/library/application/api",
+        "/var/www/.structure/library/account",
+        "/var/www/.structure/library/polymart",
+        "/var/www/.structure/library/patreon",
+        "/var/www/.structure/library/paypal",
+        "/var/www/.structure/library/stripe"
     )
 );
 

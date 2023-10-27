@@ -24,7 +24,8 @@ function load_previous_sql_database(): void
             null,
             null,
             null,
-            true);
+            true,
+            "5 minutes");
     } else {
         load_sql_database();
     }
@@ -49,7 +50,8 @@ function load_sql_database($file = SqlDatabaseCredentials::STORAGE): void
             null,
             null,
             null,
-            true
+            true,
+            "5 minutes"
         );
     }
 }
