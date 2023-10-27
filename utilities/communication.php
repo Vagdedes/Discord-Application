@@ -11,6 +11,7 @@ function private_file_get_contents($url, $createAndClose = false): bool|string
         $memory_private_connections_table,
         array(
             "code" => hash("sha512", $code),
+            "expiration" => time() + 60
         )
     );
     load_previous_sql_database();
@@ -34,27 +35,27 @@ function is_private_connection($checkClientIP = false): bool
 
     if (isset($_POST['private_verification_key'])) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
-        $query = get_sql_query(
+        $query = get_sql_query( // No cache required, already in memory table
             $memory_private_connections_table,
             array("id"),
             array(
-                array("code", hash("sha512", $_POST['private_verification_key'])),
+                array("code", hash("sha512", $_POST['private_verification_key']))
             ),
             null,
             1
         );
-        load_previous_sql_database();
 
-        if (!empty($query)) {
+        if (!empty($query)
+            && !has_memory_cooldown(__METHOD__, null, false)) {
+            global $administrator_local_server_ip_addresses_table;
             delete_sql_query(
                 $memory_private_connections_table,
                 array(
-                    array("id", $query[0]->id),
-                ),
-                null,
-                1
+                    array("id", "=", $query[0]->id, 0),
+                    array("expiration", "<", time())
+                )
             );
-            global $administrator_local_server_ip_addresses_table;
+            load_previous_sql_database();
             set_sql_cache();
             if (!empty(get_sql_query(
                 $administrator_local_server_ip_addresses_table,
@@ -90,6 +91,9 @@ function is_private_connection($checkClientIP = false): bool
                     return true;
                 }
             }
+        } else {
+            has_memory_cooldown(__METHOD__, "5 minutes", true, true);
+            load_previous_sql_database();
         }
     }
     return false;
