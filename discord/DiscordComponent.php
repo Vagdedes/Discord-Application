@@ -268,9 +268,11 @@ class DiscordComponent
                         $actionRow->addComponent($button);
 
                         if (!$button->isDisabled()) {
-                            $button->setListener(function (Interaction $interaction) use ($button, $buttonObject) {
-                                $this->extract($interaction, $buttonObject, $button);
-                                $this->listenerObjects[] = $button;
+                            $button->setListener(function (Interaction $interaction) use ($actionRow, $button, $buttonObject) {
+                                if (!$this->hasCooldown($actionRow)) {
+                                    $this->extract($interaction, $buttonObject, $button);
+                                    $this->listenerObjects[] = $button;
+                                }
                             }, $this->plan->discord);
                         }
                     }
@@ -289,7 +291,12 @@ class DiscordComponent
             $actionRow->addComponent($button);
 
             if ($listener !== null && !$button->isDisabled()) {
-                $button->setListener($listener, $this->plan->discord);
+                $button->setListener(function (Interaction $interaction) use ($listener, $actionRow, $button) {
+                    if (!$this->hasCooldown($actionRow)) {
+                        $listener($interaction, $button);
+                        $this->listenerObjects[] = $button;
+                    }
+                }, $this->plan->discord);
             }
         }
         return $actionRow;
@@ -366,8 +373,10 @@ class DiscordComponent
                 if (!$select->isDisabled()) {
                     $select->setListener(function (Interaction $interaction, Collection $options)
                     use ($query, $select) {
-                        $this->extract($interaction, $query, $options);
-                        $this->listenerObjects[] = $select;
+                        if (!$this->hasCooldown($select)) {
+                            $this->extract($interaction, $query, $options);
+                            $this->listenerObjects[] = $select;
+                        }
                     }, $this->plan->discord);
                 }
             } else {
@@ -403,7 +412,12 @@ class DiscordComponent
             $select->addOption($choice);
         }
         if ($listener !== null && !$select->isDisabled()) {
-            $select->setListener($listener, $this->plan->discord);
+            $select->setListener(function (Interaction $interaction, Collection $options) use ($listener, $select) {
+                if (!$this->hasCooldown($select)) {
+                    $listener($interaction, $options);
+                    $this->listenerObjects[] = $select;
+                }
+            }, $this->plan->discord);
         }
         return $select;
     }
@@ -444,5 +458,14 @@ class DiscordComponent
                 $objects
             );
         }
+    }
+
+    private function hasCooldown(Component $component): bool
+    {
+        return has_memory_cooldown(array(
+            self::class,
+            "interaction",
+            json_encode($component)
+        ), 1);
     }
 }

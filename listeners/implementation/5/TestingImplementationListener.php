@@ -4,7 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use Discord\Parts\Interactions\Interaction;
 
-class TestingListener // Name can be changed
+class TestingImplementationListener // Name can be changed
 {
 
     public static function test_method(Discord $discord, Interaction $interaction,

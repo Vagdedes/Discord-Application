@@ -3,13 +3,13 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 
-class TestingListener // Name can be changed
+class AccountCreationListener // Name can be changed
 {
 
-    public static function test_method(Discord        $discord,
+    public static function my_account(Discord        $discord,
                                        MessageBuilder $messageBuilder): MessageBuilder // Name can be changed
     {
-        $messageBuilder->setContent("Hello World!");
+        var_dump("test");
         return $messageBuilder;
     }
 }
