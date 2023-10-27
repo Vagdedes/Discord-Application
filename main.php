@@ -85,7 +85,11 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/polymart",
         "/var/www/.structure/library/patreon",
         "/var/www/.structure/library/paypal",
-        "/var/www/.structure/library/stripe"
+        "/var/www/.structure/library/stripe",
+        "/var/www/.structure/library/builtbybit",
+        "/var/www/.structure/library/phone",
+        "/var/www/.structure/library/email",
+        "/var/www/.structure/library/gameCloud"
     )
 );
 

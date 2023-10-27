@@ -357,7 +357,7 @@ class DiscordComponent
                     $select->setPlaceholder($query->placeholder);
                 }
                 foreach ($subQuery as $choiceObject) {
-                    $choice = Option::new($choiceObject->name)
+                    $choice = Option::new($choiceObject->name, $choiceObject->value)
                         ->setDefault($choiceObject->default !== null);
 
                     if ($choiceObject->description !== null) {

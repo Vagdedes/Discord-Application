@@ -122,7 +122,8 @@ class DiscordControlledMessages
                         $component->removeOption($option);
                         $description = $option->getDescription();
                         $option = Option::new(
-                            $option->getLabel()
+                            $option->getLabel(),
+                            $option->getValue()
                         )->setDefault(
                             $option->isDefault()
                         )->setEmoji(
