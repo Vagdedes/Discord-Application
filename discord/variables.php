@@ -1,19 +1,4 @@
 <?php
-$sql_credentials = get_keys_from_file("/root/discord_bot/private/credentials/sql_credentials", 3);
-
-if ($sql_credentials === null) {
-    exit("Database credentials not found");
-}
-sql_sql_credentials(
-    $sql_credentials[0],
-    $sql_credentials[1],
-    $sql_credentials[2],
-    null,
-    null,
-    null,
-    true,
-    (DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes"
-);
 
 class BotDatabaseTable
 {

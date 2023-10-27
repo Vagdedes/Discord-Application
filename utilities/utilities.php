@@ -12,9 +12,9 @@ $unsigned_59bit_full_Integer = 576460752303423488;
 
 // Constants
 
-function get_server_identifier(): int
+function get_server_identifier($long = false): int
 {
-    return string_to_integer(getHostName());
+    return string_to_integer(getHostName(), $long);
 }
 
 // File
@@ -223,6 +223,11 @@ function get_client_ip_address(): ?string
             return $privateIpAddress;
         }
     }
+    return get_raw_client_ip_address();
+}
+
+function get_raw_client_ip_address(): ?string
+{
     if (getenv('HTTP_CLIENT_IP')) {
         $ipAddress = getenv('HTTP_CLIENT_IP');
     } else if (getenv('HTTP_X_FORWARDED_FOR')) {
@@ -499,8 +504,9 @@ function get_keys_from_file($file, $amount): ?array
     if ($contents !== false) {
         $keys = explode("\n", $contents);
         return sizeof($keys) != $amount ? null : $keys;
+    } else {
+        return null;
     }
-    return null;
 }
 
 function multi_explode($delimiters, $string): array

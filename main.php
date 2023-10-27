@@ -16,6 +16,8 @@ require '/root/vendor/autoload.php';
 require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/runnable.php';
+require '/root/discord_bot/utilities/sql_connection.php';
+require '/root/discord_bot/utilities/communication.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
@@ -148,11 +150,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
     });
 
-    $discord->on(Event::MESSAGE_DELETE_BULK, function (Collection $messages, Discord $discord) use ($logger) {
-        foreach ($messages as $message) {
-            $logger->logInfo(null, Event::MESSAGE_DELETE_BULK, $message);
-        }
-    });
+    // Event::MESSAGE_DELETE_BULK: Results in error
 
     // Separator
 

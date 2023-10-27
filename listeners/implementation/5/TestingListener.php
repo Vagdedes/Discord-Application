@@ -8,7 +8,7 @@ class TestingListener // Name can be changed
 {
 
     public static function test_method(Discord $discord, Interaction $interaction,
-                                       mixed $objects): void // Name can be changed
+                                       mixed   $objects): void // Name can be changed
     {
         $interaction->respondWithMessage(
             MessageBuilder::new()->setContent(json_encode($objects)),

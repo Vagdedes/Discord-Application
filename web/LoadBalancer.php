@@ -12,7 +12,7 @@ class LoadBalancer
         $array = array();
 
         foreach ($directories as $directory) {
-            $files = timed_file_get_contents(
+            $files = private_file_get_contents(
                 self::local_ip_address
                 . self::website_path
                 . "?scripts=" . $directory,

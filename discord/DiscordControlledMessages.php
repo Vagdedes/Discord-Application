@@ -159,7 +159,7 @@ class DiscordControlledMessages
         return true;
     }
 
-    private function build(object $messageRow, $cache = true): MessageBuilder
+    private function build(object $messageRow): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new()->setContent(
             empty($messageRow->message_content) ? ""
@@ -167,13 +167,16 @@ class DiscordControlledMessages
         );
         $messageBuilder = $this->plan->component->addButtons(
             $messageBuilder,
-            $messageRow->id,
-            $cache
+            $messageRow->id
         );
-        return $this->plan->component->addSelection(
+        $messageBuilder = $this->plan->component->addSelection(
             $messageBuilder,
-            $messageRow->id,
-            $cache
+            $messageRow->id
+        );
+        return $this->plan->listener->callCreation(
+            $messageBuilder,
+            $messageRow->listener_class,
+            $messageRow->listener_method
         );
     }
 }
