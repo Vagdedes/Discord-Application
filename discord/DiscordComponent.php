@@ -460,7 +460,7 @@ class DiscordComponent
         }
     }
 
-    private function hasCooldown(Component $component): bool
+    public function hasCooldown(Component $component): bool
     {
         return has_memory_cooldown(array(
             self::class,

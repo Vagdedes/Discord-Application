@@ -10,6 +10,8 @@ $max_59bit_Integer = 288230376151711743;
 $min_59bit_Integer = -288230376151711744;
 $unsigned_59bit_full_Integer = 576460752303423488;
 
+$backup_domain = "www.idealistic.ai";
+
 // Constants
 
 function get_server_identifier($long = false): int
@@ -342,16 +344,22 @@ function get_user_agent(): string
     return $_SERVER['HTTP_USER_AGENT'] ?? "";
 }
 
-function get_domain($subdomains = true): string
+function get_domain($subdomains = true, $backup = null): string
 {
     if ($subdomains) {
-        return $_SERVER['SERVER_NAME'] ?? "";
+        $domain = $_SERVER['SERVER_NAME'] ?? "";
     } else if (isset($_SERVER['SERVER_NAME'])) {
         $domain = explode(".", $_SERVER['HTTP_HOST'] ?? "");
         $size = sizeof($domain);
-        return $domain[$size - 2] . "." . $domain[$size - 1];
+        $domain = $domain[$size - 2] . "." . $domain[$size - 1];
     } else {
-        return "";
+        $domain = null;
+    }
+    if (empty($domain)) {
+        global $backup_domain;
+        return $backup_domain;
+    } else {
+        return $domain;
     }
 }
 

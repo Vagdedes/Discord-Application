@@ -23,7 +23,7 @@ class DiscordListener
             require_once(self::IMPLEMENTATION . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan->discord, $interaction, $objects)
+                array($this->plan, $interaction, $objects)
             );
         }
     }
@@ -35,7 +35,7 @@ class DiscordListener
             require_once(self::CREATION . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan->discord, $messageBuilder)
+                array($this->plan, $messageBuilder)
             );
         } else {
             return $messageBuilder;

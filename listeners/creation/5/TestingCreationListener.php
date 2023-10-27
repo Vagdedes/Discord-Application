@@ -6,7 +6,7 @@ use Discord\Discord;
 class TestingCreationListener // Name can be changed
 {
 
-    public static function test_method(Discord        $discord,
+    public static function test_method(DiscordPlan    $plan,
                                        MessageBuilder $messageBuilder): MessageBuilder // Name can be changed
     {
         $messageBuilder->setContent("Hello World!");
