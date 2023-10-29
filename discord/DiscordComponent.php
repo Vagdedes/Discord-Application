@@ -158,6 +158,10 @@ class DiscordComponent
             $actionRow->addComponent($textInput);
             $textInputs[$arrayKey] = $actionRow;
         }
+        if ($customID === null) {
+            global $min_59bit_Integer, $max_59bit_Integer;
+            $customID = rand($min_59bit_Integer, $max_59bit_Integer);
+        }
         $interaction->showModal(
             $title,
             $customID,

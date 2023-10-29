@@ -3,7 +3,6 @@
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
-use Discord\Discord;
 use Discord\Helpers\Collection;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
@@ -14,15 +13,9 @@ class AccountCreationListener
     public static function my_account(DiscordPlan    $plan,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        $productObject = new Application($plan->applicationID);
-
-        if (false) { //todo
-            $isLoggedIn = true;
-            $account = null;
-        } else {
-            $isLoggedIn = false;
-            $account = $productObject->getAccount(0);
-        }
+        $application = new Application($plan->applicationID);
+        $session = $application->getAccountSession();
+        $account = $application->getAccount(0);
         $productObject = $account->getProduct();
         $products = $productObject->find(null, false);
 
@@ -43,16 +36,18 @@ class AccountCreationListener
             // Separator
 
             $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($productObject, $plan, $select, $isLoggedIn, $account) {
+            use ($productObject, $plan, $select, $session) {
                 if (!$plan->component->hasCooldown($select)) {
                     $product = $productObject->find($options[0]->getValue(), false);
 
                     if ($product->isPositiveOutcome()) {
                         $interaction->respondWithMessage(
                             self::loadProduct(
-                                MessageBuilder::new(), $plan->discord,
-                                $product->getObject()[0],
-                                $account, $isLoggedIn
+                                $interaction,
+                                MessageBuilder::new(),
+                                $plan,
+                                $session,
+                                $product->getObject()[0]
                             ),
                             true
                         );
@@ -64,10 +59,16 @@ class AccountCreationListener
         return $messageBuilder;
     }
 
-    private static function loadProduct(MessageBuilder $messageBuilder, Discord $discord,
-                                        object         $product,
-                                        object         $account, bool $isLoggedIn): MessageBuilder
+    private static function loadProduct(Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        DiscordPlan    $plan,
+                                        object         $session,
+                                        object         $product): MessageBuilder
     {
+        $session->setCustomKey("discord", $interaction->user->id);
+        $account = $session->getSession();
+        $isLoggedIn = $account->isPositiveOutcome();
+        $account = $account->getObject();
         $productID = $product->id;
         $isFree = $product->is_free;
         $hasPurchased = $isFree
@@ -81,11 +82,12 @@ class AccountCreationListener
 
         // Separator
 
-        $embed = new Embed($discord);
+        $embed = new Embed($plan->discord);
 
         if ($product->color !== null) {
             $embed->setColor($product->color);
         }
+
         $embed->setDescription(self::htmlToDiscord($product->description));
 
         if ($downloadURL) {
@@ -108,7 +110,7 @@ class AccountCreationListener
             $select = SelectMenu::new();
             $select->setMinValues(1);
             $select->setMaxValues(1);
-            $select->setPlaceholder("Pick a Choice");
+            $select->setPlaceholder("Select to Learn More");
 
             foreach ($productDivisions as $family => $divisions) {
                 $divisionObject = new stdClass();
@@ -126,9 +128,9 @@ class AccountCreationListener
             }
             $messageBuilder->addComponent($select);
             $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($discord, $productDivisions) {
+            use ($plan, $productDivisions) {
                 $reply = MessageBuilder::new();
-                $embed = new Embed($discord);
+                $embed = new Embed($plan->discord);
                 $division = $productDivisions[$options[0]->getValue()];
 
                 if ($division->has_title) {
@@ -143,22 +145,36 @@ class AccountCreationListener
                 }
                 $reply->addEmbed($embed);
                 $interaction->respondWithMessage($reply, true);
-            }, $discord);
+            }, $plan->discord);
         }
-
-        // Separator
-
         return $messageBuilder;
     }
 
-    private static function htmlToDiscord($string): string
+    private
+    static function htmlToDiscord($string): string
     {
         return strip_tags(
-            str_replace("<br>", "\n",
-                str_replace("<u>", "__",
-                    str_replace("</u>", "__",
-                        str_replace("<b>", "**",
-                            str_replace("</b>", "**", $string)
+            str_replace("<h1>", DiscordSyntax::BIG_HEADER,
+                str_replace("</h1>", "\n",
+                    str_replace("<h2>", DiscordSyntax::MEDIUM_HEADER,
+                        str_replace("</h2>", "\n",
+                            str_replace("<h3>", DiscordSyntax::SMALL_HEADER,
+                                str_replace("</h3>", "\n",
+                                    str_replace("<br>", "\n",
+                                        str_replace("<u>", DiscordSyntax::UNDERLINE,
+                                            str_replace("</u>", DiscordSyntax::UNDERLINE,
+                                                str_replace("<i>", DiscordSyntax::ITALICS,
+                                                    str_replace("</i>", DiscordSyntax::ITALICS,
+                                                        str_replace("<b>", DiscordSyntax::BOLD,
+                                                            str_replace("</b>", DiscordSyntax::BOLD, $string)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
                         )
                     )
                 )

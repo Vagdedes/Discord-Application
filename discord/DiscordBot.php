@@ -23,7 +23,7 @@ class DiscordBot
                 array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", $date),
+                array("expiration_date", ">", get_current_date()),
                 null
             )
         );

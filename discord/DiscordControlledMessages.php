@@ -35,41 +35,45 @@ class DiscordControlledMessages
 
         if (!empty($this->messages)) {
             foreach ($this->messages as $arrayKey => $messageRow) {
-                unset($this->messages[$arrayKey]);
-                $channel = $this->plan->discord->getChannel($messageRow->channel_id);
+                if ($messageRow->server_id !== null
+                    && $messageRow->channel_id !== null) {
+                    $channel = $this->plan->discord->getChannel($messageRow->channel_id);
 
-                if ($channel !== null) {
-                    if ($messageRow->message_id === null) {
-                        $channel->sendMessage($this->build($messageRow, false))->done(
-                            function (Message $message) use ($messageRow) {
-                                $messageRow->message_id = $message->id;
-                                set_sql_query(
-                                    BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
-                                    array(
-                                        "message_id" => $message->id
-                                    ),
-                                    array(
-                                        array("id", $messageRow->id)
-                                    ),
-                                    null,
-                                    1
-                                );
-                            }
-                        );
-                    } else {
-                        $channel->getMessageHistory([
-                            'limit' => 1,
-                        ])->done(function (Collection $messages) use ($messageRow) {
-                            foreach ($messages as $message) {
-                                if ($message->user_id == $this->plan->botID
-                                    && $message->id == $messageRow->message_id) {
-                                    $message->edit($this->build($messageRow, false));
+                    if ($channel !== null
+                        && $channel->guild_id == $messageRow->server_id) {
+                        if ($messageRow->message_id === null) {
+                            $channel->sendMessage($this->build($messageRow))->done(
+                                function (Message $message) use ($messageRow) {
+                                    $messageRow->message_id = $message->id;
+                                    set_sql_query(
+                                        BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
+                                        array(
+                                            "message_id" => $message->id
+                                        ),
+                                        array(
+                                            array("id", $messageRow->id)
+                                        ),
+                                        null,
+                                        1
+                                    );
                                 }
-                            }
-                        });
+                            );
+                        } else {
+                            $channel->getMessageHistory([
+                                'limit' => 10,
+                            ])->done(function (Collection $messages) use ($messageRow) {
+                                foreach ($messages as $message) {
+                                    if ($message->user_id == $this->plan->botID
+                                        && $message->id == $messageRow->message_id) {
+                                        $message->edit($this->build($messageRow));
+                                    }
+                                }
+                            });
+                        }
                     }
-                    $this->messages[$messageRow->name] = $messageRow;
                 }
+                unset($this->messages[$arrayKey]);
+                $this->messages[$messageRow->name] = $messageRow;
             }
         }
     }
