@@ -98,7 +98,7 @@ class ChatAI
             }
 
             if ($model === null) {
-                return array(null, null);
+                return array(false, null, null);
             }
         }
 

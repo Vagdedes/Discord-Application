@@ -34,7 +34,14 @@ class AccountMessageImplementationListener
                                           MessageBuilder $messageBuilder,
                                           mixed          $objects): void
     {
-        $plan->component->showModal($interaction, "0-register");
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $plan->component->showModal($interaction, "0-register");
+        }
     }
 
     public static function log_in(DiscordPlan    $plan,
@@ -42,7 +49,14 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $plan->component->showModal($interaction, "0-log_in");
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function change_email(DiscordPlan    $plan,
