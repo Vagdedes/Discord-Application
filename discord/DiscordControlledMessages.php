@@ -178,7 +178,7 @@ class DiscordControlledMessages
             $messageBuilder,
             $messageRow->id
         );
-        return $this->plan->listener->callCreation(
+        return $this->plan->listener->callMessageBuilderCreation(
             $messageBuilder,
             $messageRow->listener_class,
             $messageRow->listener_method

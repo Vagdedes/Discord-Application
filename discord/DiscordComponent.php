@@ -88,7 +88,7 @@ class DiscordComponent
                     $this->plan->discord->user->id
                 );
 
-                foreach ($subQuery as $textInput) {
+                foreach ($subQuery as $arrayKey => $textInput) {
                     $placeholder = $this->plan->instructions->replace(array($textInput->placeholder), $object)[0];
                     $input = TextInput::new(
                         $placeholder,
@@ -113,11 +113,17 @@ class DiscordComponent
                     }
                     $actionRow = ActionRow::new();
                     $actionRow->addComponent($input);
+                    $subQuery[$arrayKey] = $actionRow;
                 }
+                $subQuery = $this->plan->listener->callModalCreation(
+                    $subQuery,
+                    $query->creation_listener_class,
+                    $query->creation_listener_method
+                );
                 $interaction->showModal(
                     $query->title,
                     $query->custom_id,
-                    $query->subComponents,
+                    $subQuery,
                     function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
                             $interaction->acknowledgeWithResponse($query->ephemeral !== null);
@@ -127,8 +133,9 @@ class DiscordComponent
                         } else {
                             $this->plan->listener->callImplementation(
                                 $interaction,
-                                $query->listener_class,
-                                $query->listener_method,
+                                null,
+                                $query->implement_listener_class,
+                                $query->implement_listener_method,
                                 $components
                             );
                         }
@@ -279,6 +286,11 @@ class DiscordComponent
                             }, $this->plan->discord);
                         }
                     }
+                    $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                        $messageBuilder,
+                        $buttonObject->creation_listener_class,
+                        $buttonObject->creation_listener_method
+                    );
                 }
                 $messageBuilder->addComponent($actionRow);
             }
@@ -372,6 +384,11 @@ class DiscordComponent
                     $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
+                $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                    $messageBuilder,
+                    $query->creation_listener_class,
+                    $query->creation_listener_method
+                );
 
                 if (!$select->isDisabled()) {
                     $select->setListener(function (Interaction $interaction, Collection $options)
@@ -458,8 +475,8 @@ class DiscordComponent
             $this->plan->listener->callImplementation(
                 $interaction,
                 $messageBuilder,
-                $databaseObject->listener_class,
-                $databaseObject->listener_method,
+                $databaseObject->implement_listener_class,
+                $databaseObject->implement_listener_method,
                 $objects
             );
         }

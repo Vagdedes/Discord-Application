@@ -1,9 +1,8 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
-use Discord\Discord;
 
-class TestingCreationListener // Name can be changed
+class TestingMessageCreationListener // Name can be changed
 {
 
     public static function test_method(DiscordPlan    $plan,

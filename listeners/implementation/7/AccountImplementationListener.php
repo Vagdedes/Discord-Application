@@ -121,22 +121,4 @@ class AccountImplementationListener
             true
         );
     }
-
-    public static function toggle_settings_redirect(DiscordPlan    $plan,
-                                                    Interaction    $interaction,
-                                                    MessageBuilder $messageBuilder,
-                                                    mixed          $objects): void
-    {
-        $interaction->respondWithMessage(
-            $interaction->message->
-            true
-        );
-    }
-
-    public static function connect_account_redirect(DiscordPlan $plan,
-                                                    Interaction $interaction,
-                                                    mixed       $objects): void
-    {
-
-    }
 }

@@ -7,7 +7,7 @@ use Discord\Helpers\Collection;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
-class AccountCreationListener
+class AccountMessageCreationListener
 {
 
     public static function my_account(DiscordPlan    $plan,
@@ -150,8 +150,21 @@ class AccountCreationListener
         return $messageBuilder;
     }
 
-    private
-    static function htmlToDiscord(string $string): string
+    public static function toggle_settings(DiscordPlan    $plan,
+                                           MessageBuilder $messageBuilder): MessageBuilder
+    {
+        return $messageBuilder;
+    }
+
+    public static function connect_account(DiscordPlan    $plan,
+                                           MessageBuilder $messageBuilder): MessageBuilder
+    {
+        return $messageBuilder;
+    }
+
+    // Separator
+
+    private static function htmlToDiscord(string $string): string
     {
         return strip_tags(
             str_replace("<h1>", DiscordSyntax::BIG_HEADER,
