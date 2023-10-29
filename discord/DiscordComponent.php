@@ -191,8 +191,7 @@ class DiscordComponent
             array(
                 "DESC",
                 "priority"
-            ),
-            DiscordProperties::MAX_BUTTONS_PER_ACTION_ROW
+            )
         );
 
         if (!empty($query)) {
@@ -271,9 +270,10 @@ class DiscordComponent
                         $actionRow->addComponent($button);
 
                         if (!$button->isDisabled()) {
-                            $button->setListener(function (Interaction $interaction) use ($actionRow, $button, $buttonObject) {
+                            $button->setListener(function (Interaction $interaction)
+                            use ($actionRow, $button, $buttonObject, $messageBuilder) {
                                 if (!$this->hasCooldown($actionRow)) {
-                                    $this->extract($interaction, $buttonObject, $button);
+                                    $this->extract($interaction, $messageBuilder, $buttonObject, $button);
                                     $this->listenerObjects[] = $button;
                                 }
                             }, $this->plan->discord);
@@ -375,9 +375,9 @@ class DiscordComponent
 
                 if (!$select->isDisabled()) {
                     $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($query, $select) {
+                    use ($query, $select, $messageBuilder) {
                         if (!$this->hasCooldown($select)) {
-                            $this->extract($interaction, $query, $options);
+                            $this->extract($interaction, $messageBuilder, $query, $options);
                             $this->listenerObjects[] = $select;
                         }
                     }, $this->plan->discord);
@@ -427,8 +427,9 @@ class DiscordComponent
 
     // Separator
 
-    private function extract(Interaction $interaction,
-                             object      $databaseObject, mixed $objects = null): void
+    private function extract(Interaction    $interaction,
+                             MessageBuilder $messageBuilder,
+                             object         $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
             $interaction->respondWithMessage(
@@ -456,6 +457,7 @@ class DiscordComponent
         } else {
             $this->plan->listener->callImplementation(
                 $interaction,
+                $messageBuilder,
                 $databaseObject->listener_class,
                 $databaseObject->listener_method,
                 $objects

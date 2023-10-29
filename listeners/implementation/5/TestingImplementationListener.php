@@ -8,6 +8,7 @@ class TestingImplementationListener // Name can be changed
 
     public static function test_method(DiscordPlan $plan,
                                        Interaction $interaction,
+                                       MessageBuilder $messageBuilder,
                                        mixed       $objects): void // Name can be changed
     {
         $interaction->respondWithMessage(

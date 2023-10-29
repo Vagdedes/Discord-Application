@@ -16,6 +16,7 @@ class DiscordListener
     }
 
     public function callImplementation(Interaction $interaction,
+                                       MessageBuilder $messageBuilder,
                                        ?string     $class, ?string $method,
                                        mixed       $objects = null): void
     {
@@ -23,7 +24,7 @@ class DiscordListener
             require_once(self::IMPLEMENTATION . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $objects)
+                array($this->plan, $interaction, $messageBuilder, $objects)
             );
         }
     }

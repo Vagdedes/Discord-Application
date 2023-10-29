@@ -151,7 +151,7 @@ class AccountCreationListener
     }
 
     private
-    static function htmlToDiscord($string): string
+    static function htmlToDiscord(string $string): string
     {
         return strip_tags(
             str_replace("<h1>", DiscordSyntax::BIG_HEADER,
