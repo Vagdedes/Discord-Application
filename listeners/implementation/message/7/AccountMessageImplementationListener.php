@@ -30,9 +30,9 @@ class AccountMessageImplementationListener
     }
 
     public static function register(DiscordPlan    $plan,
-                                          Interaction    $interaction,
-                                          MessageBuilder $messageBuilder,
-                                          mixed          $objects): void
+                                    Interaction    $interaction,
+                                    MessageBuilder $messageBuilder,
+                                    mixed          $objects): void
     {
         $account = self::getAccountSession($plan, $interaction);
         $account = $account->getSession();
@@ -45,9 +45,9 @@ class AccountMessageImplementationListener
     }
 
     public static function log_in(DiscordPlan    $plan,
-                                        Interaction    $interaction,
-                                        MessageBuilder $messageBuilder,
-                                        mixed          $objects): void
+                                  Interaction    $interaction,
+                                  MessageBuilder $messageBuilder,
+                                  mixed          $objects): void
     {
         $account = self::getAccountSession($plan, $interaction);
         $account = $account->getSession();
@@ -59,11 +59,33 @@ class AccountMessageImplementationListener
         }
     }
 
+    public static function log_out(DiscordPlan    $plan,
+                                   Interaction    $interaction,
+                                   MessageBuilder $messageBuilder,
+                                   mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction);
+        $interaction->respondWithMessage(
+            MessageBuilder::new()->setContent(
+                $account->getSession()->getObject()->getActions()->logOut($account)->getMessage()
+            ),
+            true
+        );
+    }
+
     public static function change_email(DiscordPlan    $plan,
                                         Interaction    $interaction,
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function change_password(DiscordPlan    $plan,
@@ -71,7 +93,14 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function change_username(DiscordPlan    $plan,
@@ -79,7 +108,14 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function view_history(DiscordPlan    $plan,
@@ -87,7 +123,14 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function view_support_code(DiscordPlan    $plan,
@@ -95,7 +138,14 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function toggle_settings(DiscordPlan    $plan,
@@ -103,7 +153,14 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function connect_account(DiscordPlan    $plan,
@@ -111,7 +168,14 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
 
+        if ($account->isPositiveOutcome()) {
+            //todo
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function toggle_settings_click(DiscordPlan    $plan,
@@ -119,10 +183,17 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $interaction->respondWithMessage(
-            $plan->component->addSelection(MessageBuilder::new(), "0-toggle_settings"),
-            true
-        );
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $interaction->respondWithMessage(
+                $plan->component->addSelection(MessageBuilder::new(), "0-toggle_settings"),
+                true
+            );
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 
     public static function connect_account_click(DiscordPlan    $plan,
@@ -130,9 +201,16 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $interaction->respondWithMessage(
-            $plan->component->addSelection(MessageBuilder::new(), "0-connect_accounts"),
-            true
-        );
+        $account = self::getAccountSession($plan, $interaction);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $interaction->respondWithMessage(
+                $plan->component->addSelection(MessageBuilder::new(), "0-connect_accounts"),
+                true
+            );
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
     }
 }

@@ -89,7 +89,8 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/builtbybit",
         "/var/www/.structure/library/phone",
         "/var/www/.structure/library/email",
-        "/var/www/.structure/library/gameCloud"
+        "/var/www/.structure/library/gameCloud",
+        "/var/www/.structure/library/base/encrypt.php"
     )
 );
 
