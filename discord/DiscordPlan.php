@@ -164,7 +164,6 @@ class DiscordPlan
         } else {
             $this->chatAI = null;
         }
-        clear_memory(array(self::class), true);
     }
 
     // Separator

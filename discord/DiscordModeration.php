@@ -60,7 +60,6 @@ class DiscordModeration
         } else {
             $this->punishments = array();
         }
-        clear_memory(array(self::class), true);
     }
 
     public function getPunishments(int|string $userID): array

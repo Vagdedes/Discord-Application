@@ -222,6 +222,7 @@ class DiscordInstructions
         $object->messageID = $messageID;
         $object->botID = $this->plan->botID;
         $object->botName = $botName;
+        $object->domain = get_domain();
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

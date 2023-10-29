@@ -63,10 +63,10 @@ use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
-//todo menu
 //todo command-search
 //todo images
 //todo sound
+//todo file logs
 
 $discord = new Discord([
     'token' => $token[0],
@@ -75,7 +75,7 @@ $discord = new Discord([
     'retrieveBans' => false,
     'loadAllMembers' => false,
     'disabledEvents' => [],
-    'dnsConfig' => '1.1.1.1'
+    'dnsConfig' => '1.1.1.1',
 ]);
 $logger = new DiscordLogs(null);
 $files = LoadBalancer::getFiles(
@@ -108,12 +108,12 @@ if (!empty($files)) {
 $discord->on('ready', function (Discord $discord) {
     global $logger;
     $botID = $discord->id;
-    $logger = new DiscordLogs($botID);
     $discordBot = new DiscordBot($discord, $botID);
+    $logger = new DiscordLogs($discordBot);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {
-            foreach ($discordBot->getPlans() as $plan) {
+            foreach ($discordBot->plans as $plan) {
                 if ($plan->canAssist(
                     $message->guild_id,
                     $message->channel_id,
@@ -275,7 +275,7 @@ $discord->on('ready', function (Discord $discord) {
     // Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
-        foreach ($discordBot->getPlans() as $plan) {
+        foreach ($discordBot->plans as $plan) {
             $plan->welcome($member->guild_id, $member->id);
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());

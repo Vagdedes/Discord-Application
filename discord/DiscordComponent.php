@@ -21,7 +21,6 @@ class DiscordComponent
     {
         $this->plan = $plan;
         $this->listenerObjects = array();
-        clear_memory(array(self::class), true);
     }
 
     public function clear(): void
@@ -231,7 +230,7 @@ class DiscordComponent
                                     $buttonObject->disabled !== null
                                 );
                             break;
-                        case "grey":
+                        case "gray":
                             $button = Button::new(Button::STYLE_SECONDARY)
                                 ->setLabel(
                                     $buttonObject->label
