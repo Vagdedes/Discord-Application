@@ -61,6 +61,37 @@ class DiscordSyntax
         QUOTE = ">",
         MULTI_QUOTE = ">>>",
         SPOILER = "||";
+
+    public static function htmlToDiscord(string $string): string
+    {
+        return strip_tags(
+            str_replace("<h1>", DiscordSyntax::BIG_HEADER,
+                str_replace("</h1>", "\n",
+                    str_replace("<h2>", DiscordSyntax::MEDIUM_HEADER,
+                        str_replace("</h2>", "\n",
+                            str_replace("<h3>", DiscordSyntax::SMALL_HEADER,
+                                str_replace("</h3>", "\n",
+                                    str_replace("<br>", "\n",
+                                        str_replace("<u>", DiscordSyntax::UNDERLINE,
+                                            str_replace("</u>", DiscordSyntax::UNDERLINE,
+                                                str_replace("<i>", DiscordSyntax::ITALICS,
+                                                    str_replace("</i>", DiscordSyntax::ITALICS,
+                                                        str_replace("<b>", DiscordSyntax::BOLD,
+                                                            str_replace("</b>", DiscordSyntax::BOLD, $string)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+    }
 }
 
 class DiscordProperties

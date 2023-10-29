@@ -3,10 +3,10 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Interaction;
 
-class AccountImplementationListener
+class AccountMessageImplementationListener
 {
 
-    private static function getAccountSession(DiscordPlan $plan, Interaction $interaction): object
+    public static function getAccountSession(DiscordPlan $plan, Interaction $interaction): object
     {
         $application = new Application($plan->applicationID);
         $session = $application->getAccountSession();
@@ -22,7 +22,7 @@ class AccountImplementationListener
         $account = self::getAccountSession($plan, $interaction);
         $account = $account->getSession();
 
-        if (true || $account->isPositiveOutcome()) {
+        if ($account->isPositiveOutcome()) {
             $plan->controlledMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
@@ -30,18 +30,19 @@ class AccountImplementationListener
     }
 
     public static function register(DiscordPlan    $plan,
-                                    Interaction    $interaction,
-                                    MessageBuilder $messageBuilder,
-                                    mixed          $objects): void
+                                          Interaction    $interaction,
+                                          MessageBuilder $messageBuilder,
+                                          mixed          $objects): void
     {
+        $plan->component->showModal($interaction, "0-register");
     }
 
     public static function log_in(DiscordPlan    $plan,
-                                  Interaction    $interaction,
-                                  MessageBuilder $messageBuilder,
-                                  mixed          $objects): void
+                                        Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        mixed          $objects): void
     {
-
+        $plan->component->showModal($interaction, "0-log_in");
     }
 
     public static function change_email(DiscordPlan    $plan,
@@ -49,7 +50,6 @@ class AccountImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-
     }
 
     public static function change_password(DiscordPlan    $plan,

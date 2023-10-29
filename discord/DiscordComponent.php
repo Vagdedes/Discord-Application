@@ -89,15 +89,14 @@ class DiscordComponent
                 );
 
                 foreach ($subQuery as $arrayKey => $textInput) {
-                    $placeholder = $this->plan->instructions->replace(array($textInput->placeholder), $object)[0];
                     $input = TextInput::new(
-                        $placeholder,
+                        $this->plan->instructions->replace(array($textInput->title), $object)[0],
                         $textInput->allow_lines !== null ? TextInput::STYLE_PARAGRAPH : TextInput::STYLE_SHORT,
                         $textInput->custom_id
                     )->setRequired(
                         $textInput->required !== null
                     )->setPlaceholder(
-                        $placeholder
+                        $this->plan->instructions->replace(array($textInput->placeholder), $object)[0]
                     );
 
                     if ($textInput->value) {
@@ -120,6 +119,10 @@ class DiscordComponent
                     $query->creation_listener_class,
                     $query->creation_listener_method
                 );
+                if ($query->custom_id === null) {
+                    global $min_59bit_Integer, $max_59bit_Integer;
+                    $query->custom_id = rand($min_59bit_Integer, $max_59bit_Integer);
+                }
                 $interaction->showModal(
                     $query->title,
                     $query->custom_id,
@@ -131,9 +134,8 @@ class DiscordComponent
                                 $this->plan->instructions->replace(array($query->response), $object)[0]
                             ));
                         } else {
-                            $this->plan->listener->callImplementation(
+                            $this->plan->listener->callModalImplementation(
                                 $interaction,
-                                null,
                                 $query->implement_listener_class,
                                 $query->implement_listener_method,
                                 $components
@@ -472,7 +474,7 @@ class DiscordComponent
                 $databaseObject->ephemeral !== null
             );
         } else {
-            $this->plan->listener->callImplementation(
+            $this->plan->listener->callMessageImplementation(
                 $interaction,
                 $messageBuilder,
                 $databaseObject->implement_listener_class,

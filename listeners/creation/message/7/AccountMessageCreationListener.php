@@ -28,7 +28,7 @@ class AccountMessageCreationListener
             foreach ($products->getObject() as $product) {
                 if ($product->independent !== null) {
                     $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
-                    $option->setDescription(substr(self::htmlToDiscord($product->description), 0, 100));
+                    $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
                     $select->addOption($option);
                 }
             }
@@ -88,7 +88,7 @@ class AccountMessageCreationListener
             $embed->setColor($product->color);
         }
 
-        $embed->setDescription(self::htmlToDiscord($product->description));
+        $embed->setDescription(DiscordSyntax::htmlToDiscord($product->description));
 
         if ($downloadURL) {
             $embed->setURL($downloadURL);
@@ -116,8 +116,8 @@ class AccountMessageCreationListener
                 $divisionObject = new stdClass();
                 $divisionObject->has_title = !empty($family);
                 $divisionObject->title = !$divisionObject->has_title
-                    ? substr(self::htmlToDiscord($divisions[0]->name), 0, 100)
-                    : substr(self::htmlToDiscord($family), 0, 100);
+                    ? substr(DiscordSyntax::htmlToDiscord($divisions[0]->name), 0, 100)
+                    : substr(DiscordSyntax::htmlToDiscord($family), 0, 100);
                 $divisionObject->contents = $divisions;
 
                 unset($productDivisions[$family]);
@@ -139,8 +139,8 @@ class AccountMessageCreationListener
 
                 foreach ($division->contents as $division) {
                     $embed->addFieldValues(
-                        "__" . self::htmlToDiscord($division->name) . "__",
-                        self::htmlToDiscord($division->description),
+                        "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                        DiscordSyntax::htmlToDiscord($division->description),
                     );
                 }
                 $reply->addEmbed($embed);
@@ -163,35 +163,4 @@ class AccountMessageCreationListener
     }
 
     // Separator
-
-    private static function htmlToDiscord(string $string): string
-    {
-        return strip_tags(
-            str_replace("<h1>", DiscordSyntax::BIG_HEADER,
-                str_replace("</h1>", "\n",
-                    str_replace("<h2>", DiscordSyntax::MEDIUM_HEADER,
-                        str_replace("</h2>", "\n",
-                            str_replace("<h3>", DiscordSyntax::SMALL_HEADER,
-                                str_replace("</h3>", "\n",
-                                    str_replace("<br>", "\n",
-                                        str_replace("<u>", DiscordSyntax::UNDERLINE,
-                                            str_replace("</u>", DiscordSyntax::UNDERLINE,
-                                                str_replace("<i>", DiscordSyntax::ITALICS,
-                                                    str_replace("</i>", DiscordSyntax::ITALICS,
-                                                        str_replace("<b>", DiscordSyntax::BOLD,
-                                                            str_replace("</b>", DiscordSyntax::BOLD, $string)
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        );
-    }
 }

@@ -7,7 +7,8 @@ class DiscordListener
 {
     private DiscordPlan $plan;
     private const
-        IMPLEMENTATION = "/root/discord_bot/listeners/implementation/",
+        IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
+        IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/";
 
@@ -16,16 +17,29 @@ class DiscordListener
         $this->plan = $plan;
     }
 
-    public function callImplementation(Interaction     $interaction,
-                                       ?MessageBuilder $messageBuilder,
-                                       ?string         $class, ?string $method,
-                                       mixed           $objects = null): void
+    public function callMessageImplementation(Interaction    $interaction,
+                                              MessageBuilder $messageBuilder,
+                                              ?string        $class, ?string $method,
+                                              mixed          $objects = null): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder, $objects)
+            );
+        }
+    }
+
+    public function callModalImplementation(Interaction $interaction,
+                                            ?string     $class, ?string $method,
+                                            mixed       $objects = null): void
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::IMPLEMENTATION_MODAL . $this->plan->planID . "/" . $class . '.php');
+            call_user_func_array(
+                array($class, $method),
+                array($this->plan, $interaction, $objects)
             );
         }
     }
