@@ -97,7 +97,13 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            //todo
+            $account = $account->getObject();
+            $interaction->respondWithMessage(
+                MessageBuilder::new()->setContent(
+                    $account->getPassword()->requestChange()->getMessage()
+                ),
+                true
+            );
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
