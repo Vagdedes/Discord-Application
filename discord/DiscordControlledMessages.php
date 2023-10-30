@@ -30,20 +30,31 @@ class DiscordControlledMessages
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
+            ),
+            array(
+                "ASC",
+                "copy_of"
             )
         );
 
         if (!empty($this->messages)) {
             foreach ($this->messages as $arrayKey => $messageRow) {
+                $custom = $messageRow->copy_of !== null;
+
                 if ($messageRow->server_id !== null
                     && $messageRow->channel_id !== null) {
                     $channel = $this->plan->discord->getChannel($messageRow->channel_id);
 
                     if ($channel !== null
                         && $channel->guild_id == $messageRow->server_id) {
-                        if ($messageRow->message_id === null) {
+                        $oldMessageRow = $messageRow;
+
+                        if ($custom) {
+                            $messageRow = $this->messages[$messageRow->copy_of];
+                        }
+                        if ($oldMessageRow->message_id === null) {
                             $channel->sendMessage($this->build(null, $messageRow))->done(
-                                function (Message $message) use ($messageRow) {
+                                function (Message $message) use ($messageRow, $oldMessageRow) {
                                     $messageRow->message_id = $message->id;
                                     set_sql_query(
                                         BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
@@ -51,7 +62,7 @@ class DiscordControlledMessages
                                             "message_id" => $message->id
                                         ),
                                         array(
-                                            array("id", $messageRow->id)
+                                            array("id", $oldMessageRow->id)
                                         ),
                                         null,
                                         1
@@ -61,10 +72,14 @@ class DiscordControlledMessages
                         } else {
                             $channel->getMessageHistory([
                                 'limit' => 10,
-                            ])->done(function (Collection $messages) use ($messageRow) {
+                            ])->done(function (Collection $messages) use ($custom, $messageRow, $oldMessageRow) {
                                 foreach ($messages as $message) {
                                     if ($message->user_id == $this->plan->botID
-                                        && $message->id == $messageRow->message_id) {
+                                        && $message->id == $oldMessageRow->message_id) {
+
+                                        if ($custom) {
+                                            $messageRow->message_id = $message->id;
+                                        }
                                         $message->edit($this->build(null, $messageRow));
                                     }
                                 }
@@ -73,7 +88,10 @@ class DiscordControlledMessages
                     }
                 }
                 unset($this->messages[$arrayKey]);
-                $this->messages[$messageRow->name] = $messageRow;
+
+                if (!$custom && $messageRow->name !== null) {
+                    $this->messages[$messageRow->name] = $messageRow;
+                }
             }
         }
     }
@@ -97,12 +115,12 @@ class DiscordControlledMessages
         }
     }
 
-    public function get(string|object $key): ?MessageBuilder
+    public function get(?Interaction $interaction, string|object $key): ?MessageBuilder
     {
         $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
 
         if ($message !== null) {
-            return $this->build($message);
+            return $this->build($interaction, $message);
         } else {
             return null;
         }

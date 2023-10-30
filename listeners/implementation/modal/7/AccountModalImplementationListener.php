@@ -99,8 +99,7 @@ class AccountModalImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $objects = $objects->toArray();
-            $username = array_shift($objects)["value"];
+            $username = array_shift($objects->toArray())["value"];
 
             // Separator
 
@@ -124,8 +123,7 @@ class AccountModalImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $objects = $objects->toArray();
-            $email = array_shift($objects)["value"];
+            $email = array_shift($objects->toArray())["value"];
 
             $interaction->acknowledgeWithResponse(true);
             $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(

@@ -64,26 +64,27 @@ class DiscordSyntax
 
     public static function htmlToDiscord(string $string): string
     {
-        return strip_tags(
-            str_replace("<h1>", DiscordSyntax::BIG_HEADER,
-                str_replace("</h1>", "\n",
-                    str_replace("<h2>", DiscordSyntax::MEDIUM_HEADER,
-                        str_replace("</h2>", "\n",
-                            str_replace("<h3>", DiscordSyntax::SMALL_HEADER,
-                                str_replace("</h3>", "\n",
-                                    str_replace("<br>", "\n",
-                                        str_replace("<u>", DiscordSyntax::UNDERLINE,
-                                            str_replace("</u>", DiscordSyntax::UNDERLINE,
-                                                str_replace("<i>", DiscordSyntax::ITALICS,
-                                                    str_replace("</i>", DiscordSyntax::ITALICS,
-                                                        str_replace("<b>", DiscordSyntax::BOLD,
-                                                            str_replace("</b>", DiscordSyntax::BOLD, $string)
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        )
-                                    )
+        $string = str_replace("<h1>", DiscordSyntax::BIG_HEADER,
+            str_replace("</h1>", "\n",
+                str_replace("<h2>", DiscordSyntax::MEDIUM_HEADER,
+                    str_replace("</h2>", "\n",
+                        str_replace("<h3>", DiscordSyntax::SMALL_HEADER,
+                            str_replace("</h3>", "\n",
+                                $string
+                            )
+                        )
+                    )
+                )
+            )
+        );
+        $string = str_replace("<br>", "\n",
+            str_replace("</div>", "\n",
+                str_replace("<u>", DiscordSyntax::UNDERLINE,
+                    str_replace("</u>", DiscordSyntax::UNDERLINE,
+                        str_replace("<i>", DiscordSyntax::ITALICS,
+                            str_replace("</i>", DiscordSyntax::ITALICS,
+                                str_replace("<b>", DiscordSyntax::BOLD,
+                                    str_replace("</b>", DiscordSyntax::BOLD, $string)
                                 )
                             )
                         )
@@ -91,6 +92,34 @@ class DiscordSyntax
                 )
             )
         );
+        $string = str_replace("<li>", "\n",
+            str_replace("<p>", "\n",
+                str_replace("</ul>", "\n",
+                    $string
+                )
+            )
+        );
+        return strip_tags(self::htmlLinkToDiscordLink($string));
+    }
+
+    public static function htmlLinkToDiscordLink($string): string
+    {
+        $original = $string;
+        $string = explode("<a href='", $string, 2);
+
+        if (sizeof($string) === 1) {
+            return $string[0];
+        } else {
+            $string = explode("'>", $string[1], 2);
+            $url = $string[0];
+            $text = explode("</a>", $string[1], 2)[0];
+            $final = str_replace(
+                "<a href='" . $url . "'>" . $text . "</a>",
+                "[" . $text . "](" . $url . ")",
+                $original
+            );
+            return self::htmlLinkToDiscordLink($final);
+        }
     }
 }
 

@@ -1,8 +1,9 @@
 <?php
 
+use Discord\Builders\Components\ActionRow;
+use Discord\Builders\Components\Button;
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
-use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Embed\Embed;
@@ -19,7 +20,7 @@ class AccountMessageCreationListener
         $session = $application->getAccountSession();
         $account = $application->getAccount(0);
         $productObject = $account->getProduct();
-        $products = $productObject->find(null, false);
+        $products = $productObject->find(null, true);
 
         if ($products->isPositiveOutcome()) {
             $select = SelectMenu::new();
@@ -40,7 +41,7 @@ class AccountMessageCreationListener
             $select->setListener(function (Interaction $interaction, Collection $options)
             use ($productObject, $plan, $select, $session) {
                 if (!$plan->component->hasCooldown($select)) {
-                    $product = $productObject->find($options[0]->getValue(), false);
+                    $product = $productObject->find($options[0]->getValue(), true);
 
                     if ($product->isPositiveOutcome()) {
                         $interaction->respondWithMessage(
@@ -94,7 +95,7 @@ class AccountMessageCreationListener
 
         if ($downloadURL) {
             $embed->setURL($downloadURL);
-            $embed->setTitle("Click to download!");
+            $embed->setTitle("Click to Download");
         }
         if ($product->image !== null) {
             $embed->setImage($product->image);
@@ -108,46 +109,199 @@ class AccountMessageCreationListener
 
         // Separator
 
-        if (!empty($productDivisions)) {
-            $select = SelectMenu::new();
-            $select->setMinValues(1);
-            $select->setMaxValues(1);
-            $select->setPlaceholder("Select to Learn More");
+        $offer = $product->show_offer;
 
-            foreach ($productDivisions as $family => $divisions) {
-                $divisionObject = new stdClass();
-                $divisionObject->has_title = !empty($family);
-                $divisionObject->title = !$divisionObject->has_title
-                    ? substr(DiscordSyntax::htmlToDiscord($divisions[0]->name), 0, 100)
-                    : substr(DiscordSyntax::htmlToDiscord($family), 0, 100);
-                $divisionObject->contents = $divisions;
+        if ($offer === null) {
+            $productCompatibilities = $product->compatibilities;
 
-                unset($productDivisions[$family]);
-                $arrayKey = string_to_integer($divisionObject->title);
-                $productDivisions[$arrayKey] = $divisionObject;
-                $option = Option::new($divisionObject->title, $arrayKey);
-                $select->addOption($option);
+            if (!empty($productCompatibilities)) {
+                $validProducts = $account->getProduct()->find();
+                $validProducts = $validProducts->getObject();
+
+                if (sizeof($validProducts) > 1) { // One because we already are quering one
+                    foreach ($productCompatibilities as $compatibility) {
+                        //$product->compatibility_description
+                        $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
+
+                        if (is_object($compatibleProduct)) {
+                            $compatibleProductImage = $compatibleProduct->image;
+
+                            if ($compatibleProductImage != null) {
+                                $embed = new Embed($plan->discord);
+                                $embed->setTitle(strip_tags($compatibleProduct->name));
+
+                                if ($compatibleProduct->color !== null) {
+                                    $embed->setColor($compatibleProduct->color);
+                                }
+                                $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
+                                $embed->setAuthor(
+                                    $product->compatibility_description,
+                                    $compatibleProduct->image,
+                                );
+                                $messageBuilder->addEmbed($embed);
+                            }
+                        }
+                    }
+                }
             }
-            $messageBuilder->addComponent($select);
-            $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($plan, $productDivisions) {
-                $reply = MessageBuilder::new();
+        } else {
+            $offer = $account->getOffer()->find($offer == -1 ? null : $offer);
+
+            if ($offer->isPositiveOutcome()) {
+                $offer = $offer->getObject();
                 $embed = new Embed($plan->discord);
-                $division = $productDivisions[$options[0]->getValue()];
-
-                if ($division->has_title) {
-                    $embed->setTitle($division->title);
+                $embed->setAuthor(
+                    strip_tags($offer->name),
+                    $offer->image
+                );
+                if ($offer->description !== null) {
+                    $embed->setTitle(DiscordSyntax::htmlToDiscord($offer->description));
                 }
+                $contents = "";
 
-                foreach ($division->contents as $division) {
-                    $embed->addFieldValues(
-                        "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
-                        DiscordSyntax::htmlToDiscord($division->description),
-                    );
+                foreach ($offer->divisions as $divisions) {
+                    foreach ($divisions as $division) {
+                        $contents .= $division->description;
+                    }
                 }
-                $reply->addEmbed($embed);
-                $interaction->respondWithMessage($reply, true);
-            }, $plan->discord);
+                $embed->setDescription(DiscordSyntax::htmlToDiscord($contents));
+                $messageBuilder->addEmbed($embed);
+            } else {
+                $messageBuilder->setContent(json_encode($offer));
+            }
+        }
+
+        // Separator
+
+        if (!empty($productDivisions)) {
+            if (sizeof($productDivisions) === 1) {
+                foreach ($productDivisions as $family => $divisions) {
+                    $embed = new Embed($plan->discord);
+
+                    if ($family !== null) {
+                        $embed->setTitle($family);
+                    }
+                    foreach ($divisions as $division) {
+                        $embed->addFieldValues(
+                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                            DiscordSyntax::htmlToDiscord($division->description),
+                        );
+                    }
+                    $messageBuilder->addEmbed($embed);
+                }
+            } else {
+                $select = SelectMenu::new();
+                $select->setMinValues(1);
+                $select->setMaxValues(1);
+                $select->setPlaceholder("Select to Learn More");
+
+                foreach ($productDivisions as $family => $divisions) {
+                    $divisionObject = new stdClass();
+                    $divisionObject->has_title = !empty($family);
+                    $divisionObject->title = !$divisionObject->has_title
+                        ? substr(DiscordSyntax::htmlToDiscord($divisions[0]->name), 0, 100)
+                        : substr(DiscordSyntax::htmlToDiscord($family), 0, 100);
+                    $divisionObject->contents = $divisions;
+
+                    unset($productDivisions[$family]);
+                    $arrayKey = string_to_integer($divisionObject->title);
+                    $productDivisions[$arrayKey] = $divisionObject;
+                    $option = Option::new($divisionObject->title, $arrayKey);
+                    $select->addOption($option);
+                }
+                $messageBuilder->addComponent($select);
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($plan, $productDivisions) {
+                    $reply = MessageBuilder::new();
+                    $embed = new Embed($plan->discord);
+                    $division = $productDivisions[$options[0]->getValue()];
+
+                    if ($division->has_title) {
+                        $embed->setTitle($division->title);
+                    }
+
+                    foreach ($division->contents as $division) {
+                        $embed->addFieldValues(
+                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                            DiscordSyntax::htmlToDiscord($division->description),
+                        );
+                    }
+                    $reply->addEmbed($embed);
+                    $interaction->respondWithMessage($reply, true);
+                }, $plan->discord);
+            }
+        }
+
+        // Separator
+
+        $productButtons = $hasPurchased ? $product->buttons->post_purchase : $product->buttons->pre_purchase;
+
+        if (!empty($productButtons)) {
+            $actionRow = ActionRow::new();
+
+            foreach ($productButtons as $buttonObj) {
+                if ($isLoggedIn
+                    || $buttonObj->requires_account === null) {
+                    switch ($buttonObj->color) {
+                        case "red":
+                            $button = Button::new(Button::STYLE_DANGER)->setLabel(
+                                $buttonObj->name
+                            );
+                            break;
+                        case "green":
+                            $button = Button::new(Button::STYLE_SUCCESS)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        case "blue":
+                            $button = Button::new(Button::STYLE_PRIMARY)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        case "gray":
+                            $button = Button::new(Button::STYLE_SECONDARY)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        default:
+                            $button = null;
+                            break;
+                    }
+
+                    if ($button !== null) {
+                        $button->setListener(function (Interaction $interaction)
+                        use ($plan, $actionRow, $buttonObj) {
+                            if (!$plan->component->hasCooldown($actionRow)) {
+                                $interaction->respondWithMessage(
+                                    MessageBuilder::new()->setContent($buttonObj->url),
+                                    true
+                                );
+                            }
+                        }, $plan->discord);
+                        $actionRow->addComponent($button);
+                    }
+                }
+            }
+            $messageBuilder->addComponent($actionRow);
+        }
+
+        // Separator
+
+        $productCards = $hasPurchased ? $product->cards->post_purchase : $product->cards->pre_purchase;
+
+        if (!empty($productCards)) {
+            foreach ($productCards as $card) {
+                $embed = new Embed($plan->discord);
+                $embed->setAuthor(
+                    strip_tags($card->name),
+                    $card->image,
+                    $card->url
+                );
+                $messageBuilder->addEmbed($embed);
+            }
         }
         return $messageBuilder;
     }
@@ -161,19 +315,24 @@ class AccountMessageCreationListener
             $account = $account->getSession();
 
             if ($account->isPositiveOutcome()) {
+                $account = $account->getObject();
+
                 foreach ($messageBuilder->getComponents() as $component) {
-                    if ($component instanceof StringSelect) {
+                    if ($component instanceof SelectMenu) {
                         foreach ($component->getOptions() as $option) {
                             if ($option instanceof Option) {
-
+                                $option->setDescription(
+                                    $account->getSettings()->isEnabled($option->getValue())
+                                        ? "Enabled"
+                                        : "Disabled"
+                                );
                             }
                         }
                         break;
                     }
                 }
-                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
             } else {
-                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+                $messageBuilder = $plan->controlledMessages->get($interaction, "0-register_or_log_in");
             }
         }
         return $messageBuilder;
@@ -188,23 +347,69 @@ class AccountMessageCreationListener
             $account = $account->getSession();
 
             if ($account->isPositiveOutcome()) {
-                foreach ($messageBuilder->getComponents() as $component) {
-                    if ($component instanceof StringSelect) {
-                        foreach ($component->getOptions() as $option) {
-                            if ($option instanceof Option) {
+                $account = $account->getObject();
 
+                foreach ($messageBuilder->getComponents() as $component) {
+                    if ($component instanceof SelectMenu) {
+                        $accounts = $account->getAccounts()->getAvailable(array("id", "name"));
+
+                        foreach ($component->getOptions() as $option) {
+                            $component->removeOption($option);
+                        }
+                        if (!empty($accounts)) {
+                            foreach ($accounts as $accountObject) {
+                                $option = Option::new($accountObject->name, $accountObject->id);
+                                $description = $account->getAccounts()->getAdded($accountObject->id, 5);
+
+                                if (!empty($description)) {
+                                    $rows = array();
+
+                                    foreach ($description as $row) {
+                                        $rows[] = $row->credential;
+                                    }
+                                    $description = substr(implode(", ", $rows), 0, 100);
+                                } else {
+                                    $description = "No accounts added.";
+                                }
+                                $option->setDescription($description);
+                                $component->addOption($option);
                             }
+                        } else {
+                            $component->addOption(Option::new("No Accounts Available"));
                         }
                         break;
                     }
                 }
-                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
             } else {
-                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+                $messageBuilder = $plan->controlledMessages->get($interaction, "0-register_or_log_in");
             }
         }
         return $messageBuilder;
     }
 
-    // Separator
+    public static function logged_in(DiscordPlan    $plan,
+                                     ?Interaction   $interaction,
+                                     MessageBuilder $messageBuilder): MessageBuilder
+    {
+        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            global $website_domain;
+            $account = $account->getObject();
+            $embed = new Embed($plan->discord);
+            $embed->setTitle("Idealistic AI");
+            $embed->setURL($website_domain);
+            $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
+            $messageBuilder->addEmbed($embed);
+        }
+        return $messageBuilder;
+    }
+
+    public static function register_or_log_in(DiscordPlan    $plan,
+                                              ?Interaction   $interaction,
+                                              MessageBuilder $messageBuilder): MessageBuilder
+    {
+        return $messageBuilder;
+    }
 }
