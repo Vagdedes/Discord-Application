@@ -2,6 +2,7 @@
 
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
+use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Embed\Embed;
@@ -11,6 +12,7 @@ class AccountMessageCreationListener
 {
 
     public static function my_account(DiscordPlan    $plan,
+                                      ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
         $application = new Application($plan->applicationID);
@@ -151,14 +153,56 @@ class AccountMessageCreationListener
     }
 
     public static function toggle_settings(DiscordPlan    $plan,
+                                           ?Interaction   $interaction,
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
+        if ($interaction !== null) {
+            $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+            $account = $account->getSession();
+
+            if ($account->isPositiveOutcome()) {
+                foreach ($messageBuilder->getComponents() as $component) {
+                    if ($component instanceof StringSelect) {
+                        foreach ($component->getOptions() as $option) {
+                            if ($option instanceof Option) {
+
+                            }
+                        }
+                        break;
+                    }
+                }
+                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+            } else {
+                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+            }
+        }
         return $messageBuilder;
     }
 
     public static function connect_account(DiscordPlan    $plan,
+                                           ?Interaction   $interaction,
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
+        if ($interaction !== null) {
+            $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+            $account = $account->getSession();
+
+            if ($account->isPositiveOutcome()) {
+                foreach ($messageBuilder->getComponents() as $component) {
+                    if ($component instanceof StringSelect) {
+                        foreach ($component->getOptions() as $option) {
+                            if ($option instanceof Option) {
+
+                            }
+                        }
+                        break;
+                    }
+                }
+                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+            } else {
+                //$messageBuilder = $plan->controlledMessages->get("0-register_or_log_in");
+            }
+        }
         return $messageBuilder;
     }
 

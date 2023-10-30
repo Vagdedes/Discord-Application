@@ -42,7 +42,7 @@ class DiscordControlledMessages
                     if ($channel !== null
                         && $channel->guild_id == $messageRow->server_id) {
                         if ($messageRow->message_id === null) {
-                            $channel->sendMessage($this->build($messageRow))->done(
+                            $channel->sendMessage($this->build(null, $messageRow))->done(
                                 function (Message $message) use ($messageRow) {
                                     $messageRow->message_id = $message->id;
                                     set_sql_query(
@@ -65,7 +65,7 @@ class DiscordControlledMessages
                                 foreach ($messages as $message) {
                                     if ($message->user_id == $this->plan->botID
                                         && $message->id == $messageRow->message_id) {
-                                        $message->edit($this->build($messageRow));
+                                        $message->edit($this->build(null, $messageRow));
                                     }
                                 }
                             });
@@ -79,15 +79,32 @@ class DiscordControlledMessages
     }
 
     public function send(Interaction   $interaction,
-                         string|object $key, bool $ephemeral): bool
+                         string|object $key, bool $ephemeral,
+                         bool          $modal = false): bool
     {
         $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
 
         if ($message !== null) {
-            $interaction->respondWithMessage($this->build($message), $ephemeral);
+            if ($modal) {
+                $interaction->acknowledgeWithResponse(true);
+                $interaction->updateOriginalResponse($this->build($interaction, $message));
+            } else {
+                $interaction->respondWithMessage($this->build($interaction, $message), $ephemeral);
+            }
             return true;
         } else {
             return false;
+        }
+    }
+
+    public function get(string|object $key): ?MessageBuilder
+    {
+        $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
+
+        if ($message !== null) {
+            return $this->build($message);
+        } else {
+            return null;
         }
     }
 
@@ -164,21 +181,24 @@ class DiscordControlledMessages
         return true;
     }
 
-    private function build(object $messageRow): MessageBuilder
+    private function build(?Interaction $interaction, object $messageRow): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new()->setContent(
             empty($messageRow->message_content) ? ""
                 : $messageRow->message_content
         );
         $messageBuilder = $this->plan->component->addButtons(
+            $interaction,
             $messageBuilder,
             $messageRow->id
         );
         $messageBuilder = $this->plan->component->addSelection(
+            $interaction,
             $messageBuilder,
             $messageRow->id
         );
         return $this->plan->listener->callMessageBuilderCreation(
+            $interaction,
             $messageBuilder,
             $messageRow->listener_class,
             $messageRow->listener_method

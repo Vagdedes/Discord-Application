@@ -115,6 +115,7 @@ class DiscordComponent
                     $subQuery[$arrayKey] = $actionRow;
                 }
                 $subQuery = $this->plan->listener->callModalCreation(
+                    $interaction,
                     $subQuery,
                     $query->creation_listener_class,
                     $query->creation_listener_method
@@ -182,7 +183,8 @@ class DiscordComponent
 
     // Separator
 
-    public function addButtons(MessageBuilder $messageBuilder,
+    public function addButtons(?Interaction   $interaction,
+                               MessageBuilder $messageBuilder,
                                int|string     $componentID): MessageBuilder
     {
         set_sql_cache();
@@ -289,6 +291,7 @@ class DiscordComponent
                         }
                     }
                     $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                        $interaction,
                         $messageBuilder,
                         $buttonObject->creation_listener_class,
                         $buttonObject->creation_listener_method
@@ -321,7 +324,8 @@ class DiscordComponent
 
     // Separator
 
-    public function addSelection(MessageBuilder $messageBuilder,
+    public function addSelection(?Interaction   $interaction,
+                                 MessageBuilder $messageBuilder,
                                  int|string     $componentID): MessageBuilder
     {
         set_sql_cache();
@@ -387,6 +391,7 @@ class DiscordComponent
                 }
                 $messageBuilder->addComponent($select);
                 $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                    $interaction,
                     $messageBuilder,
                     $query->creation_listener_class,
                     $query->creation_listener_method

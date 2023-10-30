@@ -6,11 +6,11 @@ use Discord\Parts\Interactions\Interaction;
 class AccountMessageImplementationListener
 {
 
-    public static function getAccountSession(DiscordPlan $plan, Interaction $interaction): object
+    public static function getAccountSession(DiscordPlan $plan, int|string $userID): object
     {
         $application = new Application($plan->applicationID);
         $session = $application->getAccountSession();
-        $session->setCustomKey("discord", $interaction->user->id);
+        $session->setCustomKey("discord", $userID);
         return $session;
     }
 
@@ -19,7 +19,7 @@ class AccountMessageImplementationListener
                                       MessageBuilder $messageBuilder,
                                       mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -34,7 +34,7 @@ class AccountMessageImplementationListener
                                     MessageBuilder $messageBuilder,
                                     mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -49,7 +49,7 @@ class AccountMessageImplementationListener
                                   MessageBuilder $messageBuilder,
                                   mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -64,7 +64,7 @@ class AccountMessageImplementationListener
                                    MessageBuilder $messageBuilder,
                                    mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $interaction->respondWithMessage(
             MessageBuilder::new()->setContent(
                 $account->getSession()->getObject()->getActions()->logOut($account)->getMessage()
@@ -78,11 +78,11 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            //todo
+            $plan->component->showModal($interaction, "0-change_email");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -93,7 +93,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -114,11 +114,11 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            //todo
+            $plan->component->showModal($interaction, "0-change_username");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -129,7 +129,7 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -144,7 +144,7 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -159,7 +159,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -174,7 +174,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -189,7 +189,7 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -207,7 +207,7 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction);
+        $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {

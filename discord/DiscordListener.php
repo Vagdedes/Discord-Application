@@ -44,28 +44,30 @@ class DiscordListener
         }
     }
 
-    public function callMessageBuilderCreation(MessageBuilder $messageBuilder,
+    public function callMessageBuilderCreation(?Interaction   $interaction,
+                                               MessageBuilder $messageBuilder,
                                                ?string        $class, ?string $method): MessageBuilder
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $messageBuilder)
+                array($this->plan, $interaction, $messageBuilder)
             );
         } else {
             return $messageBuilder;
         }
     }
 
-    public function callModalCreation(array   $actionRows,
-                                      ?string $class, ?string $method): array
+    public function callModalCreation(Interaction $interaction,
+                                      array       $actionRows,
+                                      ?string     $class, ?string $method): array
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $actionRows)
+                array($this->plan, $interaction, $actionRows)
             );
         } else {
             return $actionRows;

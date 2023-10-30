@@ -104,6 +104,7 @@ if (!empty($files)) {
             $logger->logError(null, $error->getMessage());
         }
     }
+    $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
 }
 
 $discord->on('ready', function (Discord $discord) {
