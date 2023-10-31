@@ -29,7 +29,7 @@ class AccountModalImplementationListener
                 null,
                 null,
                 null,
-                AccountRegistry::DEFAULT_WEBHOOK
+                $session,
             )->getOutcome();
 
             if ($accountRegistry->isPositiveOutcome()) {

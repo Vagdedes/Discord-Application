@@ -9,6 +9,10 @@ use Discord\Parts\Interactions\Interaction;
 class AccountMessageImplementationListener
 {
 
+    public const
+        IDEALISTIC_NAME = "Idealistic AI",
+        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
+
     public static function getAccountSession(DiscordPlan $plan, int|string $userID): object
     {
         $application = new Application($plan->applicationID);

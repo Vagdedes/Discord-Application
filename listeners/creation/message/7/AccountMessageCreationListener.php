@@ -105,6 +105,22 @@ class AccountMessageCreationListener
             null,
             $downloadURL
         );
+        $release = $product->latest_version !== null ? $product->latest_version : null;
+        $hasTiers = sizeof($product->tiers->paid) > 1;
+        $tier = $product->tiers->paid[0];
+        $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
+        $activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
+
+        foreach (array(
+                     "On Development For" => get_date_days_difference($product->creation_date) . " Days",
+                     "Last Version Release" => $release,
+                     "Price" => $price,
+                     "Customers" => $activeCustomers,
+                 ) as $arrayKey => $arrayValue) {
+            if ($arrayValue !== null) {
+                $embed->addFieldValues($arrayKey, $arrayValue);
+            }
+        }
         $messageBuilder->addEmbed($embed);
 
         // Separator
@@ -396,9 +412,33 @@ class AccountMessageCreationListener
             global $website_domain;
             $account = $account->getObject();
             $embed = new Embed($plan->discord);
-            $embed->setTitle("Idealistic AI");
-            $embed->setURL($website_domain);
+            $embed->setAuthor(
+                AccountMessageImplementationListener::IDEALISTIC_NAME,
+                AccountMessageImplementationListener::IDEALISTIC_LOGO,
+                $website_domain
+            );
             $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
+
+            // Separator
+
+            $objectives = $account->getObjectives()->get();
+            $size = sizeof($objectives);
+
+            if ($size > 0) {
+                $embed->addFieldValues(
+                    "__**Objectives**__",
+                    "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete."
+                );
+                foreach ($objectives as $count => $objective) {
+                    $hasURL = !$objective->optional_url && $objective->url !== null;
+                    $embed->addFieldValues(
+                        "__" . ($count + 1) . "__ " . $objective->title,
+                        ($hasURL ? "[" : "")
+                        . $objective->description
+                        . ($hasURL ? "](" . $objective->url . ")" : "")
+                    );
+                }
+            }
             $messageBuilder->addEmbed($embed);
         }
         return $messageBuilder;
@@ -408,6 +448,22 @@ class AccountMessageCreationListener
                                               ?Interaction   $interaction,
                                               MessageBuilder $messageBuilder): MessageBuilder
     {
+        global $website_domain;
+        $application = new Application(null);
+        $accounts = $application->getAccountAmount();
+        $embed = new Embed($plan->discord);
+        $embed->setAuthor(
+            AccountMessageImplementationListener::IDEALISTIC_NAME,
+            AccountMessageImplementationListener::IDEALISTIC_LOGO,
+            $website_domain
+        );
+
+        if ($accounts > 0) {
+            $embed->setDescription("Join **" . $accounts . "** other **" . ($accounts === 1 ? "user" : "users") . "**!");
+        } else {
+            $embed->setDescription("Be the first to join!");
+        }
+        $messageBuilder->addEmbed($embed);
         return $messageBuilder;
     }
 }
