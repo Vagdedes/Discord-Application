@@ -166,8 +166,6 @@ class AccountMessageCreationListener
                 }
                 $embed->setDescription(DiscordSyntax::htmlToDiscord($contents));
                 $messageBuilder->addEmbed($embed);
-            } else {
-                $messageBuilder->setContent(json_encode($offer));
             }
         }
 
