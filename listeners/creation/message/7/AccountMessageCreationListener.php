@@ -389,7 +389,7 @@ class AccountMessageCreationListener
                                 $component->addOption($option);
                             }
                         } else {
-                            $component->addOption(Option::new("No Accounts Available"));
+                            $component->addOption(Option::new("No accounts available."));
                         }
                         break;
                     }
@@ -399,6 +399,13 @@ class AccountMessageCreationListener
             }
         }
         return $messageBuilder;
+    }
+
+    public static function disconnect_account(DiscordPlan    $plan,
+                                              ?Interaction   $interaction,
+                                              MessageBuilder $messageBuilder): MessageBuilder
+    {
+        return self::connect_account($plan, $interaction, $messageBuilder);
     }
 
     public static function logged_in(DiscordPlan    $plan,

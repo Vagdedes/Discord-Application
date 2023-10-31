@@ -133,4 +133,61 @@ class AccountModalImplementationListener
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
         }
     }
+
+    public static function contact_form(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        mixed       $objects): void
+    {
+        $application = new Application($plan->applicationID);
+        $session = $application->getAccountSession();
+        $session->setCustomKey("discord", $interaction->user->id);
+        $account = $session->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $account = $account->getObject();
+            $cacheKey = array(
+                get_client_ip_address(),
+                "contact-form"
+            );
+
+            if (has_memory_cooldown($cacheKey, null, false)) {
+                $response = "Please wait a few minutes before contacting us again.";
+            } else {
+                $objects = $objects->toArray();
+                $platformsString = null;
+                $accounts = $account->getAccounts()->getAdded();
+
+                if (!empty($accounts)) {
+                    $platformsString = "Accounts:\r\n";
+
+                    foreach ($accounts as $row) {
+                        $platformsString .= $row->accepted_account->name . ": " . $row->credential . "\r\n";
+                    }
+                    $platformsString .= "\r\n";
+                }
+                $id = rand(0, 2147483647);
+                $email = $account->getDetail("email_address");
+                $subject = strip_tags(array_shift($objects)["value"]);
+                $title = get_domain() . " - $subject [ID: $id]";
+                $content = "ID: $id" . "\r\n"
+                    . "Subject: $subject" . "\r\n"
+                    . "Email: $email" . "\r\n"
+                    . "\r\n"
+                    . ($platformsString !== null ? $platformsString : "")
+                    . strip_tags(array_shift($objects)["value"]);
+
+                if (services_self_email($email, $title, $content) === true) {
+                    has_memory_cooldown($cacheKey, "5 minutes");
+                    $response = "Thanks for taking the time to contact us.";
+                } else {
+                    global $email_default_email_name;
+                    $response = "An error occurred, please contact us at: " . $email_default_email_name;
+                }
+            }
+            $interaction->acknowledgeWithResponse(true);
+            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent($response));
+        } else {
+            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
+        }
+    }
 }

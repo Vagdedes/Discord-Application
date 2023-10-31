@@ -223,6 +223,12 @@ class DiscordInstructions
         $object->botID = $this->plan->botID;
         $object->botName = $botName;
         $object->domain = get_domain();
+        $object->date = get_current_date();
+        $object->year = date("Y");
+        $object->month = date("m");
+        $object->hour = date("H");
+        $object->minute = date("i");
+        $object->second = date("s");
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

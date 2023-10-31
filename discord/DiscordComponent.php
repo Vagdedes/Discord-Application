@@ -5,7 +5,6 @@ use Discord\Builders\Components\Button;
 use Discord\Builders\Components\Component;
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
-use Discord\Builders\Components\StringSelect;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;

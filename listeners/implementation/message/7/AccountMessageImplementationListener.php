@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Builders\Components\Option;
+use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
@@ -287,6 +289,59 @@ class AccountMessageImplementationListener
         }
     }
 
+    public static function disconnect_account(DiscordPlan    $plan,
+                                              Interaction    $interaction,
+                                              MessageBuilder $messageBuilder,
+                                              mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $account = $account->getObject();
+            $selectedAccountID = $objects[0]->getValue();
+            $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
+
+            if (!empty($selectedAccountName)) {
+                $accounts = $account->getAccounts()->getAdded($selectedAccountID, 25);
+
+                if (!empty($accounts)) {
+                    $selectedAccountName = $selectedAccountName[0]->name;
+                    $messageBuilder = MessageBuilder::new();
+                    $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
+                    $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
+
+                    foreach ($accounts as $row) {
+                        $option = Option::new(substr($row->credential, 0, 100), $row->id);
+                        $select->addOption($option);
+                    }
+                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    use ($account, $selectedAccountID) {
+                        $interaction->respondWithMessage(
+                            MessageBuilder::new()->setContent(
+                                $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                            ), true
+                        );
+                    }, $plan->discord);
+                    $messageBuilder->addComponent($select);
+                    $interaction->respondWithMessage($messageBuilder, true);
+                } else {
+                    $interaction->respondWithMessage(
+                        MessageBuilder::new()->setContent("No accounts found."),
+                        true
+                    );
+                }
+            } else {
+                $interaction->respondWithMessage(
+                    MessageBuilder::new()->setContent("Account not found."),
+                    true
+                );
+            }
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
     public static function toggle_settings_click(DiscordPlan    $plan,
                                                  Interaction    $interaction,
                                                  MessageBuilder $messageBuilder,
@@ -318,6 +373,39 @@ class AccountMessageImplementationListener
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts"),
                 true
             );
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function disconnect_account_click(DiscordPlan    $plan,
+                                                    Interaction    $interaction,
+                                                    MessageBuilder $messageBuilder,
+                                                    mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $interaction->respondWithMessage(
+                $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts"),
+                true
+            );
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function contact_form(DiscordPlan    $plan,
+                                        Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->component->showModal($interaction, "0-contact_form");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }

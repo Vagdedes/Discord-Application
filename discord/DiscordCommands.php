@@ -1,7 +1,5 @@
 <?php
 
-use Discord\Discord;
-
 class DiscordCommands
 {
     private DiscordPlan $plan;
