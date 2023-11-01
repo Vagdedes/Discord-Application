@@ -29,7 +29,7 @@ class AccountModalImplementationListener
                 null,
                 null,
                 null,
-                $session,
+                $session
             )->getOutcome();
 
             if ($accountRegistry->isPositiveOutcome()) {

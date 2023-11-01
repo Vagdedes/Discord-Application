@@ -64,6 +64,7 @@ use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
 //todo command-search
+//todo ticket system
 //todo images
 //todo sound
 //todo file logs
@@ -85,6 +86,7 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/polymart",
         "/var/www/.structure/library/patreon",
         "/var/www/.structure/library/paypal",
+        "/var/www/.structure/library/discord",
         "/var/www/.structure/library/stripe",
         "/var/www/.structure/library/builtbybit",
         "/var/www/.structure/library/phone",
