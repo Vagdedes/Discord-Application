@@ -65,10 +65,8 @@ use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
 //todo command-search
-//todo ticket system
-//todo images
+//todo dalle-3
 //todo sound
-//todo file logs
 
 $discord = new Discord([
     'token' => $token[0],
@@ -94,6 +92,7 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/email",
         "/var/www/.structure/library/gameCloud",
         "/var/www/.structure/library/base/encrypt.php",
+        "/var/www/.structure/library/memory/api/handlers/sharing.php"
     )
 );
 

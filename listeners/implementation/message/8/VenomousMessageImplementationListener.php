@@ -3,7 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Interaction;
 
-class  VenomousMessageImplementationListener
+class VenomousMessageImplementationListener
 {
     public static function initial_selection(DiscordPlan    $plan,
                                              Interaction    $interaction,

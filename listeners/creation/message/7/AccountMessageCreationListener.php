@@ -110,12 +110,16 @@ class AccountMessageCreationListener
         $tier = $product->tiers->paid[0];
         $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
         $activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
+        $legalInformation = $product->legal_information !== null
+            ? "[By purchasing/downloading, you acknowledge and accept this product/service's __legal information__](".$product->legal_information .")"
+            : null;
 
         foreach (array(
                      "On Development For" => get_date_days_difference($product->creation_date) . " Days",
                      "Last Version Release" => $release,
                      "Price" => $price,
                      "Customers" => $activeCustomers,
+                     "Legal Information" => $legalInformation
                  ) as $arrayKey => $arrayValue) {
             if ($arrayValue !== null) {
                 $embed->addFieldValues($arrayKey, $arrayValue);

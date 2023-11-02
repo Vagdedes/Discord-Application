@@ -89,12 +89,11 @@ function set_key_value_pair($key, $value = null, $futureTime = null): bool
 
 // Separator
 
-function clear_memory($keys, $abstractSearch = false, $stopAfterSuccessfulIterations = 0): void
+function clear_memory(array $keys, bool $abstractSearch = false,
+                      int   $stopAfterSuccessfulIterations = 0): void
 {
-    if (!is_array($keys)) {
-        return;
-    }
     if (!empty($keys)) {
+        share_clear_memory($keys, $abstractSearch);
         $hasLimit = $stopAfterSuccessfulIterations > 0;
 
         if ($hasLimit) {
