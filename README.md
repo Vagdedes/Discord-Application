@@ -1,1 +1,1 @@
-Discord bot designed to provide AI functionality along with command & application functionality.
+Discord Bot built with AI (Artificial Intelligence) in mind that implements countless of Discord functionalities.
