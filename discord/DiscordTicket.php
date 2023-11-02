@@ -27,7 +27,9 @@ class DiscordTicket
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
-            )
+            ),
+            null,
+            1
         );
 
         if (!empty($query)) {
@@ -74,9 +76,10 @@ class DiscordTicket
 
         // Separator
 
+        $components = $components->toArray();
+
         if ($query->post_server_id !== null
             && $query->post_channel_id !== null) {
-            $components = $components->toArray();
             $message = MessageBuilder::new();
             $embed = new Embed($this->plan->discord);
             $embed->setAuthor($interaction->user->username, $interaction->user->getAvatarAttribute());
@@ -105,6 +108,48 @@ class DiscordTicket
 
             if ($channel !== null) {
                 $channel->sendMessage($message);
+            }
+        }
+
+        // Separator
+        while (true) {
+            $ticketID = random_number(19);
+
+            if (empty(get_sql_query(
+                BotDatabaseTable::BOT_TICKET_CREATIONS,
+                array("ticket_id"),
+                array(
+                    array("ticket_creation_id", $ticketID)
+                ),
+                null,
+                1
+            ))) {
+                if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS,
+                    array(
+                        "ticket_id" => $query->id,
+                        "ticket_creation_id" => $ticketID,
+                        "server_id" => $interaction->guild_id,
+                        "channel_id" => $interaction->channel_id,
+                        "user_id" => $interaction->user->id,
+                        "creation_date" => get_current_date(),
+                    ))) {
+                    foreach ($components as $component) {
+                        sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                            array(
+                                "ticket_creation_id" => $ticketID,
+                                "input_key" => $component["custom_id"],
+                                "input_value" => $component["value"]
+                            )
+                        );
+                    }
+                } else {
+                    global $logger;
+                    $logger->logError(
+                        $this->plan->planID,
+                        "Failed to insert ticket creation of user: " . $interaction->user->id
+                    );
+                }
+                break;
             }
         }
     }
