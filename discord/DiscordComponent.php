@@ -21,7 +21,7 @@ class DiscordComponent
 
     // Separator
 
-    public function showModal(Interaction $interaction, string|object $key,
+    public function showModal(Interaction $interaction, int|string $key,
                               ?callable   $customListener = null): bool
     {
         set_sql_cache();
@@ -30,7 +30,7 @@ class DiscordComponent
             null,
             array(
                 array("deletion_date", null),
-                array("name", $key),
+                array(is_numeric($key) ? "id" : "name", $key),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -87,9 +87,9 @@ class DiscordComponent
                         $this->plan->instructions->replace(array($textInput->placeholder), $object)[0]
                     );
 
-                    if ($textInput->value) {
+                    if ($textInput->default_value) {
                         $input->setValue(
-                            $this->plan->instructions->replace(array($textInput->value), $object)[0]
+                            $this->plan->instructions->replace(array($textInput->default_value), $object)[0]
                         );
                     }
                     if ($textInput->min_length !== null) {

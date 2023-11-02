@@ -11,9 +11,17 @@ class  VenomousMessageImplementationListener
                                              mixed          $objects): void
     {
         $objects = $objects[0]->getValue();
-        $interaction->respondWithMessage(
-            MessageBuilder::new()->setContent($objects),
-            true
-        );
+
+        switch ($objects) {
+            case "purchase":
+                $plan->ticket->open($interaction, "8-order");
+                break;
+            default:
+                $interaction->respondWithMessage(
+                    MessageBuilder::new()->setContent($objects),
+                    true
+                );
+                break;
+        }
     }
 }
