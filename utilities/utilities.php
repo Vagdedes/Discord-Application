@@ -11,6 +11,7 @@ $min_59bit_Integer = -288230376151711744;
 $unsigned_59bit_full_Integer = 576460752303423488;
 
 $backup_domain = "www.idealistic.ai";
+$google_recaptcha_secret_key_directory = "/var/www/.structure/private/google_recaptcha";
 
 // Constants
 
@@ -21,7 +22,7 @@ function get_server_identifier($long = false): int
 
 // File
 
-function get_potential_directory(): string
+function get_domain_directory(): string
 {
     $directory = explode(".", get_domain());
     return $directory[sizeof($directory) - 2];
@@ -176,16 +177,16 @@ function send_file_download($file, $exit = true): void
     }
 }
 
-function copy_and_send_file_download($file, $exit = true)
+function copy_and_send_file_download($file, $directory, $exit = true)
 {
     if (json_decode($file)) {
-        $fileCopy = "/var/www/" . get_potential_directory() . "/.temporary/data.json";
+        $fileCopy = $directory . "data.json";
 
         if (@file_put_contents($fileCopy, $file) === false) {
             return "Failed to write to file.";
         }
     } else {
-        $fileCopy = "/var/www/" . get_potential_directory() . "/.temporary/" . $file;
+        $fileCopy = $directory . $file;
 
         if (!copy($file, $fileCopy)) {
             $errors = error_get_last();
@@ -449,16 +450,24 @@ function is_google_captcha_valid(): bool
     $key = "g-recaptcha-response";
 
     if (isset($_POST[$key])) {
+        global $google_recaptcha_secret_key_directory;
         $info = $_POST[$key];
-        $secret = "";
+        $secret = get_keys_from_file($google_recaptcha_secret_key_directory, 1);
+
+        if ($secret === null) {
+            return false;
+        }
         $ip = $_SERVER['REMOTE_ADDR'];
-        $response = timed_file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$secret&response=$info&remoteip=$ip", 3);
+        $response = timed_file_get_contents(
+            "https://www.google.com/recaptcha/api/siteverify?secret=$secret&response=$info&remoteip=$ip",
+            3
+        );
 
         if ($response === false) {
             return false;
         }
         $responseKeys = json_decode($response, true);
-        return intval($responseKeys["success"]) == 1;
+        return intval($responseKeys["success"]) === 1;
     }
     return false;
 }
