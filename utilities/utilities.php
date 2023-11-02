@@ -345,7 +345,7 @@ function get_user_agent(): string
     return $_SERVER['HTTP_USER_AGENT'] ?? "";
 }
 
-function get_domain($subdomains = true, $backup = null): string
+function get_domain($subdomains = true): string
 {
     if ($subdomains) {
         $domain = $_SERVER['SERVER_NAME'] ?? "";
@@ -457,6 +457,7 @@ function is_google_captcha_valid(): bool
         if ($secret === null) {
             return false;
         }
+        $secret = $secret[0];
         $ip = $_SERVER['REMOTE_ADDR'];
         $response = timed_file_get_contents(
             "https://www.google.com/recaptcha/api/siteverify?secret=$secret&response=$info&remoteip=$ip",
