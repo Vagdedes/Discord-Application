@@ -12,29 +12,17 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordComponent
 {
-
-    private array $listenerObjects;
-
     private DiscordPlan $plan;
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->listenerObjects = array();
-    }
-
-    public function clear(): void
-    {
-        if (!empty($this->listenerObjects)) {
-            foreach ($this->listenerObjects as $listenerObject) {
-                $listenerObject->removeListener();
-            }
-        }
     }
 
     // Separator
 
-    public function showModal(Interaction $interaction, string|object $key): bool
+    public function showModal(Interaction $interaction, string|object $key,
+                              ?callable   $customListener = null): bool
     {
         set_sql_cache();
         $query = get_sql_query(
@@ -124,11 +112,8 @@ class DiscordComponent
                     global $min_59bit_Integer, $max_59bit_Integer;
                     $query->custom_id = rand($min_59bit_Integer, $max_59bit_Integer);
                 }
-                $interaction->showModal(
-                    $query->title,
-                    $query->custom_id,
-                    $subQuery,
-                    function (Interaction $interaction, Collection $components) use ($query, $object) {
+                if ($customListener === null) {
+                    $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
                             $interaction->acknowledgeWithResponse($query->ephemeral !== null);
                             $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
@@ -142,7 +127,13 @@ class DiscordComponent
                                 $components
                             );
                         }
-                    }
+                    };
+                }
+                $interaction->showModal(
+                    $query->title,
+                    $query->custom_id,
+                    $subQuery,
+                    $customListener
                 );
                 return true;
             } else {
@@ -285,7 +276,6 @@ class DiscordComponent
                             use ($actionRow, $button, $buttonObject, $messageBuilder) {
                                 if (!$this->hasCooldown($actionRow)) {
                                     $this->extract($interaction, $messageBuilder, $buttonObject, $button);
-                                    $this->listenerObjects[] = $button;
                                 }
                             }, $this->plan->discord);
                         }
@@ -314,7 +304,6 @@ class DiscordComponent
                 $button->setListener(function (Interaction $interaction) use ($listener, $actionRow, $button) {
                     if (!$this->hasCooldown($actionRow)) {
                         $listener($interaction, $button);
-                        $this->listenerObjects[] = $button;
                     }
                 }, $this->plan->discord);
             }
@@ -402,7 +391,6 @@ class DiscordComponent
                     use ($query, $select, $messageBuilder) {
                         if (!$this->hasCooldown($select)) {
                             $this->extract($interaction, $messageBuilder, $query, $options);
-                            $this->listenerObjects[] = $select;
                         }
                     }, $this->plan->discord);
                 }
@@ -442,7 +430,6 @@ class DiscordComponent
             $select->setListener(function (Interaction $interaction, Collection $options) use ($listener, $select) {
                 if (!$this->hasCooldown($select)) {
                     $listener($interaction, $options);
-                    $this->listenerObjects[] = $select;
                 }
             }, $this->plan->discord);
         }

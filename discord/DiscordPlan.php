@@ -25,6 +25,7 @@ class DiscordPlan
     public DiscordListener $listener;
     public DiscordComponent $component;
     public DiscordControlledMessages $controlledMessages;
+    public DiscordTicket $ticket;
 
     public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
@@ -72,6 +73,7 @@ class DiscordPlan
         $this->listener = new DiscordListener($this);
         $this->component = new DiscordComponent($this);
         $this->controlledMessages = new DiscordControlledMessages($this);
+        $this->ticket = new DiscordTicket($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,

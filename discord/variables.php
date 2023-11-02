@@ -8,6 +8,9 @@ class BotDatabaseTable
         BOT_LOGS = "discord.botLogs",
         BOT_TARGETS = "discord.botTargets", //todo
         BOT_TARGET_EXECUTIONS = "discord.botTargetExecutions",
+        BOT_TICKETS = "discord.botTickets",
+        BOT_TICKET_CREATIONS = "discord.botTicketCreations",
+        BOT_TICKET_SUB_CREATIONS = "discord.botTicketSubCreations",
         BOT_MODAL_COMPONENTS = "discord.botModalComponents",
         BOT_MODAL_SUB_COMPONENTS = "discord.botModalSubComponents",
         BOT_BUTTON_COMPONENTS = "discord.botButtonComponents",
@@ -132,7 +135,7 @@ class DiscordProperties
         MAX_BUTTONS_PER_ACTION_ROW = 5,
         MESSAGE_MAX_LENGTH = 2000,
         MESSAGE_NITRO_MAX_LENGTH = 4000,
-        SYSTEM_REFRESH_MILLISECONDS = 300_000, // 5 minutes
+        SYSTEM_REFRESH_MILLISECONDS = 900_000, // 15 minutes
         NEW_LINE = "\n",
         DEFAULT_PLACEHOLDER_START = "%%__",
         DEFAULT_PLACEHOLDER_MIDDLE = "__",
