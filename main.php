@@ -106,6 +106,8 @@ if (!empty($files)) {
         }
     }
     $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
+    $patreon1_credentials_directory = "/root/discord_bot/private/credentials/patreon_1_credentials";
+    $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
 }
 
 $discord->on('ready', function (Discord $discord) {
