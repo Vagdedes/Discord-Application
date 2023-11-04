@@ -239,9 +239,4 @@ class DiscordConversation
             $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
         });
     }
-
-    public function replyToMessage(Message $message, MessageBuilder $messageBuilder): void
-    {
-        $message->reply($messageBuilder);
-    }
 }

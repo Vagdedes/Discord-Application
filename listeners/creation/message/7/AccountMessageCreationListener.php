@@ -41,21 +41,23 @@ class AccountMessageCreationListener
             $select->setListener(function (Interaction $interaction, Collection $options)
             use ($productObject, $plan, $select, $session) {
                 if (!$plan->component->hasCooldown($select)) {
-                    $product = $productObject->find($options[0]->getValue(), true);
+                    $interaction->acknowledge()->done(function ()
+                    use ($plan, $interaction, $session, $productObject, $options) {
+                        $product = $productObject->find($options[0]->getValue(), true);
 
-                    if ($product->isPositiveOutcome()) {
-                        $plan->conversation->acknowledgeMessage(
-                            $interaction,
-                            self::loadProduct(
-                                $interaction,
-                                MessageBuilder::new(),
-                                $plan,
-                                $session,
-                                $product->getObject()[0]
-                            ),
-                            true
-                        );
-                    }
+                        if ($product->isPositiveOutcome()) {
+                            $interaction->sendFollowUpMessage(
+                                self::loadProduct(
+                                    $interaction,
+                                    MessageBuilder::new(),
+                                    $plan,
+                                    $session,
+                                    $product->getObject()[0]
+                                ),
+                                true
+                            );
+                        }
+                    });
                 }
             }, $plan->discord);
             $messageBuilder->addComponent($select);
