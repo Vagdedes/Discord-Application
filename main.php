@@ -18,6 +18,7 @@ require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/runnable.php';
 require '/root/discord_bot/utilities/sql_connection.php';
 require '/root/discord_bot/utilities/communication.php';
+require '/root/discord_bot/utilities/encrypt.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
@@ -90,8 +91,7 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/builtbybit",
         "/var/www/.structure/library/phone",
         "/var/www/.structure/library/email",
-        "/var/www/.structure/library/gameCloud",
-        "/var/www/.structure/library/base/encrypt.php"
+        "/var/www/.structure/library/gameCloud"
     )
 );
 

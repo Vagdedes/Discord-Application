@@ -33,7 +33,7 @@ class AccountModalImplementationListener
             )->getOutcome();
 
             if ($accountRegistry->isPositiveOutcome()) {
-                $plan->controlledMessages->send($interaction, "0-logged_in", true);
+                $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
             } else {
                 $interaction->acknowledgeWithResponse(true);
                 $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
@@ -47,44 +47,48 @@ class AccountModalImplementationListener
                                   Interaction $interaction,
                                   mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
-        $session->setCustomKey("discord", $interaction->user->id);
-        $account = $session->getSession();
+        try {
+            $application = new Application($plan->applicationID);
+            $session = $application->getAccountSession();
+            $session->setCustomKey("discord", $interaction->user->id);
+            $account = $session->getSession();
 
-        if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $objects = $objects->toArray();
-            $email = array_shift($objects)["value"];
-            $password = array_shift($objects)["value"];
+            if ($account->isPositiveOutcome()) {
+                $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
+            } else {
+                $objects = $objects->toArray();
+                $email = array_shift($objects)["value"];
+                $password = array_shift($objects)["value"];
 
-            // Separator
+                // Separator
 
-            $account = $application->getAccount(null, $email);
+                $account = $application->getAccount(null, $email);
 
-            if ($account->exists()) {
-                $result = $account->getActions()->logIn($password, $session, false);
+                if ($account->exists()) {
+                    $result = $account->getActions()->logIn($password, $session, false);
 
-                if ($result->isPositiveOutcome()) {
-                    $response = null;
+                    if ($result->isPositiveOutcome()) {
+                        $response = null;
+                    } else {
+                        $response = $result->getMessage();
+                    }
                 } else {
-                    $response = $result->getMessage();
+                    $response = "Account with this email does not exist.";
                 }
-            } else {
-                $response = "Account with this email does not exist.";
-            }
 
-            // Separator
+                // Separator
 
-            if ($response === null) {
-                $plan->controlledMessages->send($interaction, "0-logged_in", true);
-            } else {
-                $interaction->acknowledgeWithResponse(true);
-                $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                    $response
-                ));
+                if ($response === null) {
+                    $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
+                } else {
+                    $interaction->acknowledgeWithResponse(true);
+                    $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
+                        $response
+                    ));
+                }
             }
+        } catch (Throwable $e) {
+            var_dump($e->getMessage());
         }
     }
 

@@ -48,11 +48,11 @@ class DiscordControlledMessages
                          string|object $key, bool $ephemeral,
                          bool          $modal = false): bool
     {
-        $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
+        $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
             if ($modal) {
-                $interaction->acknowledgeWithResponse(true);
+                $interaction->acknowledgeWithResponse($ephemeral);
                 $interaction->updateOriginalResponse($this->build($interaction, $message));
             } else {
                 $interaction->respondWithMessage($this->build($interaction, $message), $ephemeral);
