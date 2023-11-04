@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use Discord\Parts\Channel\Message;
 
@@ -173,84 +174,87 @@ class DiscordPlan
     public function canAssist(int|string $serverID, int|string $channelID, int|string $userID,
                               string     $messageContent): bool
     {
-        $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
-        $cache = get_key_value_pair($cacheKey);
+        if ($userID != $this->botID) {
+            $cacheKey = array(__METHOD__, $this->planID, $serverID, $channelID, $userID);
+            $cache = get_key_value_pair($cacheKey);
 
-        if ($cache !== null) {
-            $result = $cache;
-        } else {
-            $result = true;
+            if ($cache !== null) {
+                $result = $cache;
+            } else {
+                $result = true;
 
-            if ($this->requireStartingText !== null) {
-                $result = starts_with($messageContent, $this->requireStartingText);
-            }
-            if ($result && $this->requireContainedText !== null) {
-                $result = str_contains($messageContent, $this->requireContainedText);
-            }
-            if ($result && $this->requireEndingText !== null) {
-                $result = ends_with($messageContent, $this->requireEndingText);
-            }
-            if ($result && $this->minMessageLength !== null) {
-                $result = strlen($messageContent) >= $this->minMessageLength;
-            }
-            if ($result && $this->maxMessageLength !== null) {
-                $result = strlen($messageContent) <= $this->maxMessageLength;
-            }
-            if ($result && !empty($this->keywords)) {
-                foreach ($this->keywords as $keyword) {
-                    if ($keyword->keyword !== null) {
-                        if (str_contains($messageContent, $keyword->keyword)) {
-                            $result = true;
-                            break;
-                        }
-                    }
+                if ($this->requireStartingText !== null) {
+                    $result = starts_with($messageContent, $this->requireStartingText);
                 }
-            }
-            if ($result) {
-                $result = false;
-
-                if (!empty($this->channels)) {
-                    foreach ($this->channels as $channel) {
-                        if ($channel->server_id == $serverID
-                            && $channel->channel_id == $channelID) {
-                            $this->debug = $channel->debug !== null;
-
-                            if ($channel->whitelist === null) {
+                if ($result && $this->requireContainedText !== null) {
+                    $result = str_contains($messageContent, $this->requireContainedText);
+                }
+                if ($result && $this->requireEndingText !== null) {
+                    $result = ends_with($messageContent, $this->requireEndingText);
+                }
+                if ($result && $this->minMessageLength !== null) {
+                    $result = strlen($messageContent) >= $this->minMessageLength;
+                }
+                if ($result && $this->maxMessageLength !== null) {
+                    $result = strlen($messageContent) <= $this->maxMessageLength;
+                }
+                if ($result && !empty($this->keywords)) {
+                    foreach ($this->keywords as $keyword) {
+                        if ($keyword->keyword !== null) {
+                            if (str_contains($messageContent, $keyword->keyword)) {
                                 $result = true;
-                                break;
-                            } else if (!empty($this->whitelistContents)) {
-                                foreach ($this->whitelistContents as $whitelist) {
-                                    if ($whitelist->user_id == $userID
-                                        && ($whitelist->server_id === null
-                                            || $whitelist->server_id === $serverID
-                                            && ($whitelist->channel_id === null
-                                                || $whitelist->channel_id === $channelID))) {
-                                        $result = true;
-                                        break 2;
-                                    }
-                                }
-                            } else {
                                 break;
                             }
                         }
                     }
                 }
+                if ($result) {
+                    $result = false;
+
+                    if (!empty($this->channels)) {
+                        foreach ($this->channels as $channel) {
+                            if ($channel->server_id == $serverID
+                                && $channel->channel_id == $channelID) {
+                                $this->debug = $channel->debug !== null;
+
+                                if ($channel->whitelist === null) {
+                                    $result = true;
+                                    break;
+                                } else if (!empty($this->whitelistContents)) {
+                                    foreach ($this->whitelistContents as $whitelist) {
+                                        if ($whitelist->user_id == $userID
+                                            && ($whitelist->server_id === null
+                                                || $whitelist->server_id === $serverID
+                                                && ($whitelist->channel_id === null
+                                                    || $whitelist->channel_id === $channelID))) {
+                                            $result = true;
+                                            break 2;
+                                        }
+                                    }
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                set_key_value_pair($cacheKey, $result);
             }
-            set_key_value_pair($cacheKey, $result);
+            return $result;
+        } else {
+            return false;
         }
-        return $result;
     }
 
-    public function assist(Message $message,
+    public function assist(Message         $message,
                                            $mentions,
                            int|string      $serverID, string $serverName,
                            int|string      $channelID, string $channelName,
                            int|string|null $threadID, string|null $threadName,
                            int|string      $userID, string $userName, ?string $displayname,
                            int|string      $messageID, string $messageContent,
-                           string          $botName): ?string
+                           string          $botName): void
     {
-        $assistance = null;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
         $object = $this->instructions->getObject(
             $serverID,
@@ -269,7 +273,7 @@ class DiscordPlan
 
         if ($punishment !== null) {
             if ($punishment->notify !== null) {
-                $assistance = $this->instructions->replace(array($punishment->creation_reason), $object)[0];
+                $message->reply($this->instructions->replace(array($punishment->creation_reason), $object)[0]);
             }
         } else {
             $cooldownKey = array(__METHOD__, $this->planID, $userID);
@@ -288,7 +292,7 @@ class DiscordPlan
                     );
 
                     if ($assistance !== null) {
-                        $assistance = $this->instructions->replace(array($assistance), $object)[0];
+                        $message->reply($this->instructions->replace(array($assistance), $object)[0]);
                     } else {
                         if ($userID != $this->botID) {
                             if ($this->requireMention) {
@@ -329,94 +333,108 @@ class DiscordPlan
                             if (!empty($limits)) {
                                 foreach ($limits as $limit) {
                                     if ($limit->message !== null) {
-                                        $assistance = $this->instructions->replace(array($limit->message), $object)[0];
+                                        $message->reply($this->instructions->replace(array($limit->message), $object)[0]);
                                         break;
                                     }
                                 }
                             } else {
-                                if ($this->promptMessage !== null) {
-                                    $message->reply($this->instructions->replace(array($this->promptMessage), $object)[0]);
-                                }
                                 $cacheKey = array(__METHOD__, $this->planID, $userID, $messageContent);
                                 $cache = get_key_value_pair($cacheKey);
 
                                 if ($cache !== null) {
-                                    $assistance = $cache;
+                                    $message->reply($cache);
                                 } else {
-                                    $instructions = $this->instructions->build($object);
-                                    $parameters = array(
-                                        "messages" => array(
-                                            array(
-                                                "role" => "system",
-                                                "content" => $instructions
-                                            ),
-                                            array(
-                                                "role" => "user",
-                                                "content" => $messageContent
+                                    if ($this->promptMessage !== null) {
+                                        $promptMessage = $this->instructions->replace(array($this->promptMessage), $object)[0];
+                                    } else {
+                                        $promptMessage = "...";
+                                    }
+                                    $message->reply($promptMessage)->done(function (Message $message)
+                                    use (
+                                        $object, $messageContent, $userID, $serverID, $channelID,
+                                        $threadID, $messageID, $cacheKey, $logger
+                                    ) {
+                                        $instructions = $this->instructions->build($object);
+                                        $parameters = array(
+                                            "messages" => array(
+                                                array(
+                                                    "role" => "system",
+                                                    "content" => $instructions
+                                                ),
+                                                array(
+                                                    "role" => "user",
+                                                    "content" => $messageContent
+                                                )
                                             )
-                                        )
-                                    );
-                                    $reply = $this->chatAI->getResult(
-                                        overflow_long(overflow_long($this->planID * 31) + $userID),
-                                        $parameters
-                                    );
-                                    $modelReply = $reply[2];
+                                        );
+                                        $reply = $this->chatAI->getResult(
+                                            overflow_long(overflow_long($this->planID * 31) + $userID),
+                                            $parameters
+                                        );
+                                        $modelReply = $reply[2];
 
-                                    if ($this->debug) {
-                                        foreach (array($parameters, $modelReply) as $debug) {
-                                            foreach (str_split(json_encode($debug), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
-                                                $message->reply(str_replace("\\n", DiscordProperties::NEW_LINE, $split));
+                                        if ($this->debug) {
+                                            foreach (array($parameters, $modelReply) as $debug) {
+                                                foreach (str_split(json_encode($debug), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                                    $message->reply(str_replace("\\n", DiscordProperties::NEW_LINE, $split));
+                                                }
                                             }
                                         }
-                                    }
-                                    if ($reply[0]) {
-                                        $model = $reply[1];
-                                        $assistance = $this->chatAI->getText($model, $modelReply);
+                                        if ($reply[0]) {
+                                            $model = $reply[1];
+                                            $assistance = $this->chatAI->getText($model, $modelReply);
 
-                                        if ($assistance !== null) {
-                                            $this->conversation->addMessage(
-                                                $serverID,
-                                                $channelID,
-                                                $threadID,
-                                                $userID,
-                                                $messageID,
-                                                $messageContent,
-                                            );
-                                            $this->conversation->addReply(
-                                                $serverID,
-                                                $channelID,
-                                                $threadID,
-                                                $userID,
-                                                $messageID,
-                                                $assistance,
-                                                ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
-                                                $model->currency->code
-                                            );
-                                            set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
+                                            if ($assistance !== null) {
+                                                $this->conversation->addMessage(
+                                                    $serverID,
+                                                    $channelID,
+                                                    $threadID,
+                                                    $userID,
+                                                    $messageID,
+                                                    $messageContent,
+                                                );
+                                                $this->conversation->addReply(
+                                                    $serverID,
+                                                    $channelID,
+                                                    $threadID,
+                                                    $userID,
+                                                    $messageID,
+                                                    $assistance,
+                                                    ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
+                                                    $model->currency->code
+                                                );
+                                                set_key_value_pair($cacheKey, $assistance, $this->messageRetention);
+                                            } else {
+                                                $logger->logError($this->planID, "Failed to get text from chat-model for plan: " . $this->planID);
+                                            }
                                         } else {
-                                            $logger->logError($this->planID, "Failed to get text from chat-model for plan: " . $this->planID);
+                                            $assistance = null;
+                                            $logger->logError($this->planID, $modelReply);
                                         }
-                                    } else {
-                                        $logger->logError($this->planID, $modelReply);
-                                    }
 
-                                    if ($assistance === null && $this->failureMessage !== null) {
-                                        $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
-                                    }
+                                        if ($assistance === null) {
+                                            if ($this->failureMessage !== null) {
+                                                $message->edit($this->instructions->replace(array($this->failureMessage), $object)[0]);
+                                            } else {
+                                                $message->delete();
+                                            }
+                                        } else {
+                                            $message->edit(MessageBuilder::new()->setContent($assistance));
+                                        }
+                                    });
                                 }
                             }
                         }
                     }
                 } else if ($this->failureMessage !== null) {
                     $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
-                    $assistance = $this->instructions->replace(array($this->failureMessage), $object)[0];
+                    $message->reply($this->instructions->replace(array($this->failureMessage), $object)[0]);
                 }
                 set_key_value_pair($cooldownKey, true, $this->messageCooldown);
             } else if ($this->cooldownMessage !== null) {
-                $assistance = $this->instructions->replace(array($this->cooldownMessage), $object)[0];
+                $message->reply($this->instructions->replace(array($this->cooldownMessage), $object)[0]);
             }
         }
-        return $assistance;
     }
 
     public function welcome(int|string $serverID, int|string $userID): void

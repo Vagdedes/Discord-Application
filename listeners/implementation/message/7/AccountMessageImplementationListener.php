@@ -74,7 +74,8 @@ class AccountMessageImplementationListener
                                    mixed          $objects): void
     {
         $account = self::getAccountSession($plan, $interaction->user->id);
-        $interaction->respondWithMessage(
+        $plan->conversation->acknowledgeMessage(
+            $interaction,
             MessageBuilder::new()->setContent(
                 $account->getSession()->getObject()->getActions()->logOut($account)->getMessage()
             ),
@@ -107,7 +108,8 @@ class AccountMessageImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $interaction->respondWithMessage(
+            $plan->conversation->acknowledgeMessage(
+                $interaction,
                 MessageBuilder::new()->setContent(
                     $account->getPassword()->requestChange()->getMessage()
                 ),
@@ -178,9 +180,10 @@ class AccountMessageImplementationListener
                         }
                         $messageBuilder->addEmbed($embed);
                     }
-                    $interaction->respondWithMessage($messageBuilder, true);
+                    $plan->conversation->acknowledgeMessage($interaction, $messageBuilder, true);
                 } else {
-                    $interaction->respondWithMessage(
+                    $plan->conversation->acknowledgeMessage(
+                        $interaction,
                         MessageBuilder::new()->setContent(
                             "No account history found."
                         ),
@@ -188,7 +191,8 @@ class AccountMessageImplementationListener
                     );
                 }
             } else {
-                $interaction->respondWithMessage(
+                $plan->conversation->acknowledgeMessage(
+                    $interaction,
                     MessageBuilder::new()->setContent(
                         $history->getMessage()
                     ),
@@ -215,7 +219,7 @@ class AccountMessageImplementationListener
             $embed->setTitle($account->getIdentification()->get());
             $embed->setDescription("Send this code when asked by our team to help us identify you.");
             $messageBuilder->addEmbed($embed);
-            $interaction->respondWithMessage($messageBuilder, true);
+            $plan->conversation->acknowledgeMessage($interaction, $messageBuilder, true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -231,7 +235,8 @@ class AccountMessageImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $interaction->respondWithMessage(
+            $plan->conversation->acknowledgeMessage(
+                $interaction,
                 MessageBuilder::new()->setContent(
                     $account->getSettings()->toggle($objects[0]->getValue())->getMessage()
                 ), true
@@ -270,7 +275,8 @@ class AccountMessageImplementationListener
                         if (!$plan->component->hasCooldown($interaction)) {
                             $components = $components->toArray();
                             $credential = array_shift($components)["value"];
-                            $interaction->respondWithMessage(
+                            $plan->conversation->acknowledgeMessage(
+                                $interaction,
                                 MessageBuilder::new()->setContent(
                                     $account->getAccounts()->add($selectedAccountID, $credential)->getMessage()
                                 ), true
@@ -279,7 +285,8 @@ class AccountMessageImplementationListener
                     },
                 );
             } else {
-                $interaction->respondWithMessage(
+                $plan->conversation->acknowledgeMessage(
+                    $interaction,
                     MessageBuilder::new()->setContent("Account not found."),
                     true
                 );
@@ -316,23 +323,26 @@ class AccountMessageImplementationListener
                         $select->addOption($option);
                     }
                     $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($account, $selectedAccountID) {
-                        $interaction->respondWithMessage(
+                    use ($plan, $account, $selectedAccountID) {
+                        $plan->conversation->acknowledgeMessage(
+                            $interaction,
                             MessageBuilder::new()->setContent(
                                 $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
                             ), true
                         );
                     }, $plan->discord);
                     $messageBuilder->addComponent($select);
-                    $interaction->respondWithMessage($messageBuilder, true);
+                    $plan->conversation->acknowledgeMessage($interaction, $messageBuilder, true);
                 } else {
-                    $interaction->respondWithMessage(
+                    $plan->conversation->acknowledgeMessage(
+                        $interaction,
                         MessageBuilder::new()->setContent("No accounts found."),
                         true
                     );
                 }
             } else {
-                $interaction->respondWithMessage(
+                $plan->conversation->acknowledgeMessage(
+                    $interaction,
                     MessageBuilder::new()->setContent("Account not found."),
                     true
                 );
@@ -351,7 +361,8 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $interaction->respondWithMessage(
+            $plan->conversation->acknowledgeMessage(
+                $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-toggle_settings"),
                 true
             );
@@ -369,7 +380,8 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $interaction->respondWithMessage(
+            $plan->conversation->acknowledgeMessage(
+                $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts"),
                 true
             );
@@ -387,7 +399,8 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $interaction->respondWithMessage(
+            $plan->conversation->acknowledgeMessage(
+                $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts"),
                 true
             );

@@ -1,5 +1,9 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Interactions\Interaction;
+
 class DiscordConversation
 {
     private DiscordPlan $plan;
@@ -181,7 +185,7 @@ class DiscordConversation
 
     // Separator
 
-    public function addReply(int|string $serverID, int|string $channelID,
+    public function addReply(int|string      $serverID, int|string $channelID,
                              int|string|null $threadID,
                              int|string      $userID,
                              int|string      $messageID, string $messageContent,
@@ -206,7 +210,7 @@ class DiscordConversation
         );
     }
 
-    public function addMessage(int|string $serverID, int|string $channelID,
+    public function addMessage(int|string      $serverID, int|string $channelID,
                                int|string|null $threadID,
                                int|string      $userID,
                                int|string      $messageID, string $messageContent): void
@@ -225,5 +229,19 @@ class DiscordConversation
                 "creation_date" => get_current_date(),
             )
         );
+    }
+
+    public function acknowledgeMessage(Interaction    $interaction,
+                                       MessageBuilder $messageBuilder,
+                                       bool           $ephemeral): void
+    {
+        $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
+            $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
+        });
+    }
+
+    public function replyToMessage(Message $message, MessageBuilder $messageBuilder): void
+    {
+        $message->reply($messageBuilder);
     }
 }

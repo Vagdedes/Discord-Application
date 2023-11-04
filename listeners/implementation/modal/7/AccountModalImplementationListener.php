@@ -22,24 +22,30 @@ class AccountModalImplementationListener
             $email = array_shift($objects)["value"];
             $username = array_shift($objects)["value"];
             $password = array_shift($objects)["value"];
-            $accountRegistry = $application->getAccountRegistry(
-                $email,
-                $password,
-                $username,
-                null,
-                null,
-                null,
-                $session
-            )->getOutcome();
 
-            if ($accountRegistry->isPositiveOutcome()) {
-                $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
-            } else {
-                $interaction->acknowledgeWithResponse(true);
-                $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                    $accountRegistry->getMessage()
-                ));
-            }
+            $interaction->acknowledge()
+                ->done(function () use ($interaction, $plan, $application, $email, $password, $username, $session) {
+                    $accountRegistry = $application->getAccountRegistry(
+                        $email,
+                        $password,
+                        $username,
+                        null,
+                        null,
+                        null,
+                        $session
+                    )->getOutcome();
+
+                    if ($accountRegistry->isPositiveOutcome()) {
+                        $interaction->sendFollowUpMessage(
+                            $plan->controlledMessages->get($interaction, "0-logged_in"),
+                            true
+                        );
+                    } else {
+                        $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                            $accountRegistry->getMessage()
+                        ), true);
+                    }
+                });
         }
     }
 
@@ -47,21 +53,20 @@ class AccountModalImplementationListener
                                   Interaction $interaction,
                                   mixed       $objects): void
     {
-        try {
-            $application = new Application($plan->applicationID);
-            $session = $application->getAccountSession();
-            $session->setCustomKey("discord", $interaction->user->id);
-            $account = $session->getSession();
+        $application = new Application($plan->applicationID);
+        $session = $application->getAccountSession();
+        $session->setCustomKey("discord", $interaction->user->id);
+        $account = $session->getSession();
 
-            if ($account->isPositiveOutcome()) {
-                $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
-            } else {
-                $objects = $objects->toArray();
-                $email = array_shift($objects)["value"];
-                $password = array_shift($objects)["value"];
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
+        } else {
+            $objects = $objects->toArray();
+            $email = array_shift($objects)["value"];
+            $password = array_shift($objects)["value"];
 
-                // Separator
-
+            $interaction->acknowledge()->done(function ()
+            use ($interaction, $plan, $email, $password, $application, $session) {
                 $account = $application->getAccount(null, $email);
 
                 if ($account->exists()) {
@@ -79,16 +84,16 @@ class AccountModalImplementationListener
                 // Separator
 
                 if ($response === null) {
-                    $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
+                    $interaction->sendFollowUpMessage(
+                        $plan->controlledMessages->get($interaction, "0-logged_in"),
+                        true
+                    );
                 } else {
-                    $interaction->acknowledgeWithResponse(true);
-                    $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
+                    $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
                         $response
-                    ));
+                    ), true);
                 }
-            }
-        } catch (Throwable $e) {
-            var_dump($e->getMessage());
+            });
         }
     }
 
@@ -107,10 +112,11 @@ class AccountModalImplementationListener
 
             // Separator
 
-            $interaction->acknowledgeWithResponse(true);
-            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                $account->getActions()->changeName($username)->getMessage()
-            ));
+            $interaction->acknowledge()->done(function () use ($interaction, $account, $username) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $account->getActions()->changeName($username)->getMessage()
+                ), true);
+            });
         } else {
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
         }
@@ -129,10 +135,11 @@ class AccountModalImplementationListener
             $account = $account->getObject();
             $email = array_shift($objects->toArray())["value"];
 
-            $interaction->acknowledgeWithResponse(true);
-            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                $account->getEmail()->requestVerification($email)->getMessage()
-            ));
+            $interaction->acknowledge()->done(function () use ($interaction, $account, $email) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $account->getEmail()->requestVerification($email)->getMessage()
+                ), true);
+            });
         } else {
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
         }
@@ -188,8 +195,11 @@ class AccountModalImplementationListener
                     $response = "An error occurred, please contact us at: " . $email_default_email_name;
                 }
             }
-            $interaction->acknowledgeWithResponse(true);
-            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent($response));
+            $interaction->acknowledge()->done(function () use ($interaction, $response) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $response
+                ), true);
+            });
         } else {
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
         }

@@ -44,7 +44,8 @@ class AccountMessageCreationListener
                     $product = $productObject->find($options[0]->getValue(), true);
 
                     if ($product->isPositiveOutcome()) {
-                        $interaction->respondWithMessage(
+                        $plan->conversation->acknowledgeMessage(
+                            $interaction,
                             self::loadProduct(
                                 $interaction,
                                 MessageBuilder::new(),
@@ -111,7 +112,7 @@ class AccountMessageCreationListener
         $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
         $activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
-            ? "[By purchasing/downloading, you acknowledge and accept this product/service's __legal information__](".$product->legal_information .")"
+            ? "[By purchasing/downloading, you acknowledge and accept this product/service's __legal information__](" . $product->legal_information . ")"
             : null;
 
         foreach (array(
@@ -245,7 +246,7 @@ class AccountMessageCreationListener
                         );
                     }
                     $reply->addEmbed($embed);
-                    $interaction->respondWithMessage($reply, true);
+                    $plan->conversation->acknowledgeMessage($interaction, $reply, true);
                 }, $plan->discord);
             }
         }
@@ -293,7 +294,8 @@ class AccountMessageCreationListener
                         $button->setListener(function (Interaction $interaction)
                         use ($plan, $actionRow, $buttonObj) {
                             if (!$plan->component->hasCooldown($actionRow)) {
-                                $interaction->respondWithMessage(
+                                $plan->conversation->acknowledgeMessage(
+                                    $interaction,
                                     MessageBuilder::new()->setContent($buttonObj->url),
                                     true
                                 );

@@ -51,12 +51,11 @@ class DiscordControlledMessages
         $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
-            if ($modal) {
-                $interaction->acknowledgeWithResponse($ephemeral);
-                $interaction->updateOriginalResponse($this->build($interaction, $message));
-            } else {
-                $interaction->respondWithMessage($this->build($interaction, $message), $ephemeral);
-            }
+            $this->plan->conversation->acknowledgeMessage(
+                $interaction,
+                $this->build($interaction, $message),
+                $ephemeral
+            );
             return true;
         } else {
             return false;
@@ -65,7 +64,7 @@ class DiscordControlledMessages
 
     public function get(?Interaction $interaction, string|object $key): ?MessageBuilder
     {
-        $message = is_object($key) ? $key : ($this->messages[$key] ?? null);
+        $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
             return $this->build($interaction, $message);
@@ -143,7 +142,8 @@ class DiscordControlledMessages
             }
             $messageBuilder->addComponent($component);
         }
-        $interaction->respondWithMessage($messageBuilder, $ephemeral);
+
+        $this->plan->conversation->acknowledgeMessage($interaction, $messageBuilder, $ephemeral);
         return true;
     }
 

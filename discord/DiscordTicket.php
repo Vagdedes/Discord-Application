@@ -66,10 +66,13 @@ class DiscordTicket
                 $interaction->message->id,
                 $this->plan->discord->user->id
             );
-            $interaction->acknowledgeWithResponse($query->ephemeral_user_response !== null);
-            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                $this->plan->instructions->replace(array($query->user_response), $object)[0]
-            ));
+            $this->plan->conversation->acknowledgeMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    $this->plan->instructions->replace(array($query->user_response), $object)[0]
+                ),
+                $query->ephemeral_user_response !== null
+            );
         } else {
             $interaction->acknowledge();
         }

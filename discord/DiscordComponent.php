@@ -115,10 +115,13 @@ class DiscordComponent
                 if ($customListener === null) {
                     $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
-                            $interaction->acknowledgeWithResponse($query->ephemeral !== null);
-                            $interaction->updateOriginalResponse(MessageBuilder::new()->setContent(
-                                $this->plan->instructions->replace(array($query->response), $object)[0]
-                            ));
+                            $this->plan->conversation->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent(
+                                    $this->plan->instructions->replace(array($query->response), $object)[0]
+                                ),
+                                $query->ephemeral !== null
+                            );
                         } else {
                             $this->plan->listener->callModalImplementation(
                                 $interaction,
@@ -443,7 +446,8 @@ class DiscordComponent
                              object         $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
-            $interaction->respondWithMessage(
+            $this->plan->conversation->acknowledgeMessage(
+                $interaction,
                 MessageBuilder::new()->setContent(
                     $this->plan->instructions->replace(
                         array($databaseObject->response),
