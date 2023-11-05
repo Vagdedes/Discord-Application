@@ -12,6 +12,7 @@ class DiscordLogs
 
     public function logInfo(int|string|null $userID, ?string $action, mixed $object, mixed $oldObject = null): void
     {
+        check_clear_memory();
         sql_insert(
             BotDatabaseTable::BOT_LOGS,
             array(
