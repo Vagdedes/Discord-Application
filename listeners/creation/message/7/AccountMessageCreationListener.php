@@ -98,7 +98,10 @@ class AccountMessageCreationListener
 
         if ($downloadURL) {
             $embed->setURL($downloadURL);
-            $embed->setTitle("Click to Download");
+            $embed->setTitle("Click to Download"
+                . ($product->download_note !== null
+                    ? " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")"
+                    : ""));
         }
         if ($product->image !== null) {
             $embed->setImage($product->image);
