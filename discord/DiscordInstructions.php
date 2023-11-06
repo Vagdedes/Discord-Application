@@ -187,8 +187,9 @@ class DiscordInstructions
                 $information .= $replacements[0];
                 $disclaimer .= $replacements[1];
             }
-            if ($this->plan->strictReply) {
-                $information = ($this->plan->requireMention
+            if ($object->channel !== null
+                && $object->channel->strict_reply !== null) {
+                $information = ($object->channel->require_mention
                         ? DiscordProperties::STRICT_REPLY_INSTRUCTIONS_WITH_MENTION
                         : DiscordProperties::STRICT_REPLY_INSTRUCTIONS)
                     . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
@@ -206,7 +207,7 @@ class DiscordInstructions
                               int|string|null $threadID, string|null $threadName,
                               int|string      $userID, string $userName, ?string $displayName,
                               string          $messageContent, int|string $messageID,
-                              string $botName): object
+                              string          $botName): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -229,6 +230,7 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
+        $object->channel = $this->plan->getChannel($serverID, $channelID, $userID);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

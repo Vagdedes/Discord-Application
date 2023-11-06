@@ -123,28 +123,22 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {
             foreach ($discordBot->plans as $plan) {
-                if ($plan->canAssist(
+                if ($plan->assist(
+                    $message,
+                    $message->mentions,
                     $message->guild_id,
+                    $message->guild->name,
                     $message->channel_id,
+                    $message->channel->name,
+                    $message->thread?->id,
+                    $message->thread?->name,
                     $message->user_id,
-                    $message->content
+                    $message->author->displayname,
+                    $message->author->displayname,
+                    $message->id,
+                    $message->content,
+                    $discord->user->displayname,
                 )) {
-                    $assistance = $plan->assist(
-                        $message,
-                        $message->mentions,
-                        $message->guild_id,
-                        $message->guild->name,
-                        $message->channel_id,
-                        $message->channel->name,
-                        $message->thread?->id,
-                        $message->thread?->name,
-                        $message->user_id,
-                        $message->author->displayname,
-                        $message->author->displayname,
-                        $message->id,
-                        $message->content,
-                        $discord->user->displayname,
-                    );
                     break;
                 }
             }
@@ -160,15 +154,15 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
     });
 
-    // Event::MESSAGE_DELETE_BULK: Results in error
+// Event::MESSAGE_DELETE_BULK: Results in error
 
-    // Separator
+// Separator
 
     $discord->on(Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, function (CommandPermissions $commandPermission, Discord $discord, ?CommandPermissions $oldCommandPermission) use ($logger) {
         $logger->logInfo(null, Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, $commandPermission->getRawAttributes(), $oldCommandPermission?->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::AUTO_MODERATION_RULE_CREATE, function (Rule $rule, Discord $discord) use ($logger) {
         $logger->logInfo($rule->creator->id, Event::AUTO_MODERATION_RULE_CREATE, $rule->getRawAttributes());
@@ -186,7 +180,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($actionExecution->user_id, Event::AUTO_MODERATION_ACTION_EXECUTION, $actionExecution->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::CHANNEL_CREATE, function (Channel $channel, Discord $discord) use ($logger) {
         $logger->logInfo($channel->parent_id, Event::CHANNEL_CREATE, $channel->getRawAttributes());
@@ -204,7 +198,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::CHANNEL_PINS_UPDATE, $pins);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::THREAD_CREATE, $thread);
@@ -230,7 +224,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::THREAD_MEMBERS_UPDATE, $thread);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($logger) {
         if ($guild instanceof Guild) {
@@ -248,9 +242,9 @@ $discord->on('ready', function (Discord $discord) {
         }
     });
 
-    // Separator
+// Separator
 
-    // Event::GUILD_AUDIT_LOG_ENTRY_CREATE: Results in error
+// Event::GUILD_AUDIT_LOG_ENTRY_CREATE: Results in error
 
     $discord->on(Event::GUILD_BAN_ADD, function (Ban $ban, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::GUILD_BAN_ADD, $ban->getRawAttributes());
@@ -260,7 +254,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_BAN_REMOVE, $ban->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::GUILD_EMOJIS_UPDATE, function (Collection $emojis, Discord $discord, Collection $oldEmojis) use ($logger) {
         $logger->logInfo(null, Event::GUILD_EMOJIS_UPDATE, $emojis, $oldEmojis);
@@ -270,11 +264,11 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_STICKERS_UPDATE, $stickers, $oldStickers);
     });
 
-    // Separator
+// Separator
 
-    // Event::GUILD_MEMBER_UPDATE: Results in error
-    // Event::GUILD_MEMBER_REMOVE: Results in error
-    // Event::GUILD_MEMBER_UPDATE: Results in error
+// Event::GUILD_MEMBER_UPDATE: Results in error
+// Event::GUILD_MEMBER_REMOVE: Results in error
+// Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
@@ -283,7 +277,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::GUILD_ROLE_CREATE, function (Role $role, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::GUILD_ROLE_CREATE, $role->getRawAttributes());
@@ -297,7 +291,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_ROLE_DELETE, $role);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::GUILD_SCHEDULED_EVENT_CREATE, function (ScheduledEvent $scheduledEvent, Discord $discord) use ($logger) {
         $logger->logInfo($scheduledEvent->creator_id, Event::GUILD_SCHEDULED_EVENT_CREATE, $scheduledEvent->getRawAttributes());
@@ -319,7 +313,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::GUILD_INTEGRATIONS_UPDATE, function (object $guild, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
@@ -337,7 +331,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::INTEGRATION_DELETE, $integration);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger) {
         $logger->logInfo($invite->inviter->id, Event::INVITE_CREATE, $invite->getRawAttributes());
@@ -347,13 +341,13 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::INVITE_DELETE, $invite);
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::INTERACTION_CREATE, function (Interaction $interaction, Discord $discord) use ($logger) {
         $logger->logInfo($interaction->user->id, Event::INTERACTION_CREATE, $interaction->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::MESSAGE_REACTION_ADD, function (MessageReaction $reaction, Discord $discord) use ($logger) {
         $logger->logInfo($reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction->getRawAttributes());
@@ -371,9 +365,9 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::MESSAGE_REACTION_REMOVE_EMOJI, $reaction->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
-    // PRESENCE_UPDATE: Too many events and few useful information
+// PRESENCE_UPDATE: Too many events and few useful information
 
     $discord->on(Event::TYPING_START, function (TypingStart $typing, Discord $discord) use ($logger) {
         $logger->logInfo($typing->user_id, Event::TYPING_START, $typing->getRawAttributes());
@@ -383,7 +377,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::USER_UPDATE, $user->getRawAttributes(), $oldUser?->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::STAGE_INSTANCE_CREATE, function (StageInstance $stageInstance, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::STAGE_INSTANCE_CREATE, $stageInstance->getRawAttributes());
@@ -397,7 +391,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::STAGE_INSTANCE_DELETE, $stageInstance->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::VOICE_STATE_UPDATE, function (VoiceStateUpdate $state, Discord $discord, $oldstate) use ($logger) {
         $logger->logInfo($state->user_id, Event::VOICE_STATE_UPDATE, $state->getRawAttributes(), $oldstate);
@@ -407,7 +401,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::VOICE_SERVER_UPDATE, $guild->getRawAttributes());
     });
 
-    // Separator
+// Separator
 
     $discord->on(Event::WEBHOOKS_UPDATE, function (object $guild, Discord $discord, object $channel) use ($logger) {
         $logger->logInfo(null, Event::WEBHOOKS_UPDATE, $channel);
