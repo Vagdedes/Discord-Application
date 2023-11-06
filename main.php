@@ -69,7 +69,7 @@ use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
-//todo command-search
+//todo command-search/list
 //todo dalle-3
 //todo sound
 
@@ -100,13 +100,11 @@ $files = LoadBalancer::getFiles(
 );
 
 if (!empty($files)) {
-    global $logger;
-
     foreach ($files as $file) {
         try {
             eval($file);
         } catch (Throwable $error) {
-            $logger->logError(null, $error->getMessage());
+            $logger->logError(null, $file . ": " . $error->getMessage());
         }
     }
     $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
