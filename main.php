@@ -1,6 +1,10 @@
 <?php
 require '/root/discord_bot/utilities/utilities.php';
-$token = get_keys_from_file("/root/discord_bot/private/credentials/discord_token", 1);
+
+$token = get_keys_from_file(
+    "/root/discord_bot/private/credentials/discord_token"
+    . (!isset($argv[1]) || empty($argv[1]) || $argv[1] == 0 ? "" : "_" . $argv[1])
+);
 
 if ($token === null) {
     exit("No Discord token found");
