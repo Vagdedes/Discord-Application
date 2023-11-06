@@ -2,6 +2,7 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
@@ -53,21 +54,35 @@ class DiscordTicket
     private function store(Interaction $interaction, Collection $components,
                            object      $query): void
     {
+        $object = $this->plan->instructions->getObject(
+            $interaction->guild_id,
+            $interaction->guild->name,
+            $interaction->channel_id,
+            $interaction->channel->name,
+            $interaction->message?->thread?->id,
+            $interaction->message?->thread,
+            $interaction->user->id,
+            $interaction->user->username,
+            $interaction->user->displayname,
+            $interaction->message->content,
+            $interaction->message->id,
+            $this->plan->discord->user->id
+        );
+
+        if ($query->cooldown_time !== null
+            && $this->hasCooldown($query->id, $interaction->user->id, $query->cooldown_time)) {
+            if ($query->cooldown_message !== null) {
+                $this->plan->conversation->acknowledgeMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent(
+                        $this->plan->instructions->replace(array($query->cooldown_message), $object)[0]
+                    ),
+                    $query->ephemeral_user_response !== null
+                );
+                return;
+            }
+        }
         if ($query->user_response !== null) {
-            $object = $this->plan->instructions->getObject(
-                $interaction->guild_id,
-                $interaction->guild->name,
-                $interaction->channel_id,
-                $interaction->channel->name,
-                $interaction->message?->thread?->id,
-                $interaction->message?->thread,
-                $interaction->user->id,
-                $interaction->user->username,
-                $interaction->user->displayname,
-                $interaction->message->content,
-                $interaction->message->id,
-                $this->plan->discord->user->id
-            );
             $this->plan->conversation->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
@@ -169,9 +184,10 @@ class DiscordTicket
         }
     }
 
-    private function close()
+    public function close(Channel $channel): bool
     {
         //todo
+        return false;
     }
 
     private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool

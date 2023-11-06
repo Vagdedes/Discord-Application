@@ -79,12 +79,33 @@ class DiscordCommands
                     && ($command->channel_id === null || $command->channel_id == $channelID)
                     && ($command->user_id === null || $command->user_id == $userID)
                     && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
+                    $arguments = explode($command->argument_separator ?? " ", $message->content);
+                    unset($arguments[0]);
+                    $argumentSize = sizeof($arguments);
+
                     switch ($command->command_identification) {
                         case "close-ticket":
-                            //todo
+                            $this->plan->ticket->close($message->channel);
                             break;
                         case "get-tickets":
-                            //todo
+                            $arguments = explode($command->argument_separator, $message->content);
+
+                            if ($argumentSize === 0) {
+                                $message->reply("Missing user argument.");
+                            } else {
+                                $findUserID = $arguments[1];
+
+                                if (!is_numeric($findUserID)) {
+                                    $findUserID = substr($findUserID, 2, -1);
+                                }
+                                $tickets = $this->plan->ticket->get($findUserID);
+
+                                if (empty($tickets)) {
+                                    $message->reply("No tickets found for user.");
+                                } else {
+                                    //todo
+                                }
+                            }
                             break;
                         default:
                             break;
