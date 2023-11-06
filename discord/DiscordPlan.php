@@ -23,6 +23,7 @@ class DiscordPlan
     public DiscordComponent $component;
     public DiscordControlledMessages $controlledMessages;
     public DiscordTicket $ticket;
+    public DiscordMessageRefresh $messageRefresh;
 
     public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
@@ -59,6 +60,7 @@ class DiscordPlan
         $this->component = new DiscordComponent($this);
         $this->controlledMessages = new DiscordControlledMessages($this);
         $this->ticket = new DiscordTicket($this);
+        $this->messageRefresh = new DiscordMessageRefresh($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -230,11 +232,10 @@ class DiscordPlan
             $botName
         );
         $command = $this->commands->process(
+            $message,
             $serverID,
             $channelID,
-            $userID,
-            $messageID,
-            $messageContent
+            $userID
         );
 
         if ($command !== null) {

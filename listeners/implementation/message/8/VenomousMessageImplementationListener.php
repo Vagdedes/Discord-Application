@@ -14,7 +14,7 @@ class VenomousMessageImplementationListener
 
         switch ($objects) {
             case "purchase":
-                $plan->ticket->open($interaction, "8-order");
+                $plan->ticket->call($interaction, "8-order");
                 break;
             default:
                 $plan->conversation->acknowledgeMessage(

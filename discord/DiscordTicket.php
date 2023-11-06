@@ -9,14 +9,16 @@ class DiscordTicket
 {
     private DiscordPlan $plan;
 
+    private const REFRESH_TIME = "15 seconds";
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
     }
 
-    public function open(Interaction $interaction, string $key): bool
+    public function call(Interaction $interaction, string $key): bool
     {
-        set_sql_cache();
+        set_sql_cache(null, self::class);
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKETS,
             null,
@@ -80,9 +82,11 @@ class DiscordTicket
         // Separator
 
         $components = $components->toArray();
+        $post = $query->post_server_id !== null
+            && $query->post_channel_id !== null;
+        $create = $query->create_channel_category_id !== null;
 
-        if ($query->post_server_id !== null
-            && $query->post_channel_id !== null) {
+        if ($post || $create) {
             $message = MessageBuilder::new();
             $embed = new Embed($this->plan->discord);
             $embed->setAuthor($interaction->user->username, $interaction->user->getAvatarAttribute());
@@ -107,11 +111,19 @@ class DiscordTicket
                 );
             }
             $message->addEmbed($embed);
+        } else {
+            $message = null;
+        }
+
+        if ($post) {
             $channel = $this->plan->discord->getChannel($query->post_channel_id);
 
             if ($channel !== null) {
                 $channel->sendMessage($message);
             }
+        }
+        if ($create) {
+            //todo
         }
 
         // Separator
@@ -157,6 +169,31 @@ class DiscordTicket
         }
     }
 
+    private function close()
+    {
+        //todo
+    }
+
+    private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
+    {
+        set_sql_cache(self::REFRESH_TIME, self::class);
+        return !empty(get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("id"),
+            array(
+                array("ticket_id", $ticketID),
+                array("user_id", $userID),
+                array("deletion_date", null),
+                array("creation_date", ">", get_past_date($pastLookup)),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            1
+        ));
+    }
+
     public function get(int|string $userID, int|string|null $pastLookup = null): array
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
@@ -190,7 +227,7 @@ class DiscordTicket
                     );
                 }
             }
-            set_key_value_pair($cacheKey, $query, "15 seconds");
+            set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
             return $query;
         }
     }

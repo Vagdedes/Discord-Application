@@ -39,6 +39,7 @@ require '/root/discord_bot/discord/DiscordListener.php';
 require '/root/discord_bot/discord/DiscordComponent.php';
 require '/root/discord_bot/discord/DiscordControlledMessages.php';
 require '/root/discord_bot/discord/DiscordTicket.php';
+require '/root/discord_bot/discord/DiscordMessageRefresh.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';

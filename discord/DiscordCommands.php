@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Parts\Channel\Message;
+
 class DiscordCommands
 {
     private DiscordPlan $plan;
@@ -42,11 +44,11 @@ class DiscordCommands
         );
     }
 
-    public function process(int|string $serverID, int|string $channelID, int|string $userID,
-                            int|string $messageID, string $messageContent): ?string
+    public function process(Message    $message,
+                            int|string $serverID, int|string $channelID, int|string $userID): ?string
     {
         if (!empty($this->staticCommands)) {
-            $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $messageContent);
+            $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $message->content);
             $cache = get_key_value_pair($cacheKey);
 
             if ($cache !== null) {
@@ -62,7 +64,7 @@ class DiscordCommands
                     if (($command->server_id === null || $command->server_id == $serverID)
                         && ($command->channel_id === null || $command->channel_id == $channelID)
                         && ($command->user_id === null || $command->user_id == $userID)
-                        && $messageContent == ($command->command_placeholder . $command->command_identification)) {
+                        && $message->content == ($command->command_placeholder . $command->command_identification)) {
                         $reply = $command->command_reply;
                         set_key_value_pair($cacheKey, array($command, $reply));
                         $this->getCooldown($serverID, $channelID, $userID, $command);
@@ -76,8 +78,14 @@ class DiscordCommands
                 if (($command->server_id === null || $command->server_id == $serverID)
                     && ($command->channel_id === null || $command->channel_id == $channelID)
                     && ($command->user_id === null || $command->user_id == $userID)
-                    && starts_with($messageContent, $command->command_placeholder . $command->command_identification)) {
+                    && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
                     switch ($command->command_identification) {
+                        case "close-ticket":
+                            //todo
+                            break;
+                        case "get-tickets":
+                            //todo
+                            break;
                         default:
                             break;
                     }
