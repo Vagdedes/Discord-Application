@@ -1,6 +1,8 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 
 class DiscordCommands
 {
@@ -92,18 +94,42 @@ class DiscordCommands
 
                             if ($argumentSize === 0) {
                                 $message->reply("Missing user argument.");
+                            } else if ($argumentSize > 1) {
+                                $message->reply("Too many arguments.");
                             } else {
                                 $findUserID = $arguments[1];
 
                                 if (!is_numeric($findUserID)) {
                                     $findUserID = substr($findUserID, 2, -1);
+
+                                    if (!is_numeric($findUserID)) {
+                                        $message->reply("Invalid user argument.");
+                                        break;
+                                    }
                                 }
-                                $tickets = $this->plan->ticket->get($findUserID);
+                                $tickets = $this->plan->ticket->get($findUserID, null, 25);
 
                                 if (empty($tickets)) {
                                     $message->reply("No tickets found for user.");
                                 } else {
-                                    //todo
+                                    $messageBuilder = MessageBuilder::new();
+                                    $messageBuilder->setContent("Showing last 25 tickets of user.");
+
+                                    foreach ($tickets as $ticket) {
+                                        $embed = new Embed($this->plan->discord);
+                                        $embed->setTitle($ticket->ticket->title);
+                                        $embed->setDescription("ID: " . $ticket->id);
+
+                                        foreach ($ticket->key_value_pairs as $ticketProperties) {
+                                            $embed->addFieldValues(
+                                                strtoupper($ticketProperties->input_key),
+                                                "```" . $ticketProperties->input_value . "```"
+                                            );
+                                            $embed->setTimestamp(strtotime($ticket->creation_date));
+                                        }
+                                        $messageBuilder->addEmbed($embed);
+                                    }
+                                    $message->reply($messageBuilder);
                                 }
                             }
                             break;

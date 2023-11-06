@@ -137,8 +137,29 @@ class DiscordTicket
                 $channel->sendMessage($message);
             }
         }
-        if ($create) {
-            //todo
+        if (false && $create) {
+            $interaction->guild->channels->create(
+                array(
+                    "name" => $query->create_channel_name,
+                    "type" => "GUILD_TEXT",
+                    "parent_id" => $query->create_channel_category_id,
+                    "topic" => $query->create_channel_topic,
+                    "permission_overwrites" => array(
+                        array(
+                            "id" => $interaction->guild_id,
+                            "type" => "role",
+                            "allow" => 0,
+                            "deny" => 1024
+                        ),
+                        array(
+                            "id" => $interaction->user->id,
+                            "type" => "member",
+                            "allow" => 1024,
+                            "deny" => 0
+                        )
+                    )
+                )
+            );
         }
 
         // Separator
@@ -210,7 +231,7 @@ class DiscordTicket
         ));
     }
 
-    public function get(int|string $userID, int|string|null $pastLookup = null): array
+    public function get(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null): array
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -229,16 +250,26 @@ class DiscordTicket
                 array(
                     "DESC",
                     "id"
-                )
+                ),
+                $limit
             );
 
             if (!empty($query)) {
                 foreach ($query as $row) {
+                    $row->ticket = get_sql_query(
+                        BotDatabaseTable::BOT_TICKETS,
+                        null,
+                        array(
+                            array("id", $row->ticket_id),
+                        ),
+                        null,
+                        1
+                    )[0];
                     $row->key_value_pairs = get_sql_query(
                         BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
                         null,
                         array(
-                            array("ticket_creation_id", $row->ticket_id),
+                            array("ticket_creation_id", $row->ticket_creation_id),
                         )
                     );
                 }

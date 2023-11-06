@@ -8,6 +8,7 @@ use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class DiscordComponent
@@ -115,11 +116,11 @@ class DiscordComponent
                 if ($customListener === null) {
                     $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
+                            $embed = new Embed($this->plan->discord);
+                            $embed->setDescription($this->plan->instructions->replace(array($query->response), $object)[0]);
                             $this->plan->conversation->acknowledgeMessage(
                                 $interaction,
-                                MessageBuilder::new()->setContent(
-                                    $this->plan->instructions->replace(array($query->response), $object)[0]
-                                ),
+                                MessageBuilder::new()->addEmbed($embed),
                                 $query->ephemeral !== null
                             );
                         } else {
@@ -446,27 +447,27 @@ class DiscordComponent
                              object         $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
+            $embed = new Embed($this->plan->discord);
+            $embed->setDescription(
+                $this->plan->instructions->replace(array($databaseObject->response),
+                    $this->plan->instructions->getObject(
+                        $interaction->guild_id,
+                        $interaction->guild->name,
+                        $interaction->channel_id,
+                        $interaction->channel->name,
+                        $interaction->message?->thread?->id,
+                        $interaction->message?->thread,
+                        $interaction->user->id,
+                        $interaction->user->username,
+                        $interaction->user->displayname,
+                        $interaction->message->content,
+                        $interaction->message->id,
+                        $this->plan->discord->user->id
+                    ))[0]
+            );
             $this->plan->conversation->acknowledgeMessage(
                 $interaction,
-                MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(
-                        array($databaseObject->response),
-                        $this->plan->instructions->getObject(
-                            $interaction->guild_id,
-                            $interaction->guild->name,
-                            $interaction->channel_id,
-                            $interaction->channel->name,
-                            $interaction->message?->thread?->id,
-                            $interaction->message?->thread,
-                            $interaction->user->id,
-                            $interaction->user->username,
-                            $interaction->user->displayname,
-                            $interaction->message->content,
-                            $interaction->message->id,
-                            $this->plan->discord->user->id
-                        )
-                    )[0]
-                ),
+                MessageBuilder::new()->addEmbed($embed),
                 $databaseObject->ephemeral !== null
             );
         } else {
