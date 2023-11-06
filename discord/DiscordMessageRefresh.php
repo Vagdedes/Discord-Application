@@ -39,17 +39,25 @@ class DiscordMessageRefresh
                if ($channel !== null
                    && $channel->guild_id == $row->server_id) {
                    if ($row->thread_id === null) {
-                       $channel->sendMessage(MessageBuilder::new()->setContent($row->message))->done(
-                           function (Message $message) {
-                               $message->delete();
+                       $channel->sendMessage(MessageBuilder::new()->setContent($row->message_content))->done(
+                           function (Message $message) use ($row) {
+                               if ($row->milliseconds_retention === null) {
+                                   $message->delete();
+                               } else {
+                                   $message->delayedDelete($row->milliseconds_retention);
+                               }
                            }
                        );
                    } else {
                        foreach ($channel->threads->getIterator() as $thread) {
                            if ($thread instanceof Thread) {
-                               $thread->sendMessage(MessageBuilder::new()->setContent($row->message))->done(
-                                   function (Message $message) {
-                                       $message->delete();
+                               $thread->sendMessage(MessageBuilder::new()->setContent($row->message_content))->done(
+                                   function (Message $message) use ($row) {
+                                       if ($row->milliseconds_retention === null) {
+                                           $message->delete();
+                                       } else {
+                                           $message->delayedDelete($row->milliseconds_retention);
+                                       }
                                    }
                                );
                            }
