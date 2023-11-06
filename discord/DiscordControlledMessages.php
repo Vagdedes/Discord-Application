@@ -284,15 +284,19 @@ class DiscordControlledMessages
                                  array   $array, int $position): void
     {
         $channel->getMessageHistory(array("limit" => 10))->done(
-            function (Collection $messages) use ($custom, $messageRow, $oldMessageRow, $array, $position) {
+            function (Collection $messages) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
                 foreach ($messages as $message) {
                     if ($message instanceof Message
-                        && $message->user_id == $this->plan->botID
                         && $message->id == $oldMessageRow->message_id) {
-                        if ($custom) {
-                            $messageRow->message_id = $message->id;
+                        if ($message->user_id == $this->plan->botID) {
+                            if ($custom) {
+                                $messageRow->message_id = $message->id;
+                            }
+                            $message->edit($this->build(null, $messageRow));
+                        } else {
+                            $message->delete();
+                            $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
                         }
-                        $message->edit($this->build(null, $messageRow));
                         break;
                     }
                 }
