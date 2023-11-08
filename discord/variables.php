@@ -12,6 +12,7 @@ class BotDatabaseTable
         BOT_TICKETS = "discord.botTickets",
         BOT_TICKET_CREATIONS = "discord.botTicketCreations",
         BOT_TICKET_SUB_CREATIONS = "discord.botTicketSubCreations",
+        BOT_TICKET_MESSAGES = "discord.botTicketMessages",
         BOT_MODAL_COMPONENTS = "discord.botModalComponents",
         BOT_MODAL_SUB_COMPONENTS = "discord.botModalSubComponents",
         BOT_BUTTON_COMPONENTS = "discord.botButtonComponents",

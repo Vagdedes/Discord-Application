@@ -87,7 +87,13 @@ class DiscordCommands
 
                     switch ($command->command_identification) {
                         case "close-ticket":
-                            $this->plan->ticket->close($message->channel);
+                            $close = $this->plan->ticket->close($message->channel);
+
+                            if ($close === true) {
+                                $message->reply("Ticket closed.");
+                            } else {
+                                $message->reply("Ticket could not be closed: " . $close);
+                            }
                             break;
                         case "get-tickets":
                             $arguments = explode($command->argument_separator, $message->content);

@@ -207,8 +207,33 @@ class DiscordTicket
 
     public function close(Channel $channel): bool
     {
-        //todo
-        return false;
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("id"),
+            array(
+                array("created_channel_server_id", $channel->guild_id),
+                array("created_channel_id", $channel->id),
+                array("deletion_date", null),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            1
+        );
+
+        if (empty($query)) {
+            return "Not Found";
+        } else {
+            try {
+                $channel->guild->channels->delete($channel);
+                return true;
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($this->plan->planID, $exception->getMessage());
+                return "(Exception) " . $exception->getMessage();
+            }
+        }
     }
 
     private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool

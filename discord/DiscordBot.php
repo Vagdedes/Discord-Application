@@ -33,12 +33,6 @@ class DiscordBot
             $logger->logError(null, "Found no plans for bot with ID: " . $this->botID);
             // In case connection or database fails, log but do not exit
         } else {
-            if (!empty($this->plans)) {
-                foreach ($this->plans as $plan) {
-                    $plan->component->clear();
-                }
-                $this->plans = array();
-            }
             foreach ($query as $plan) {
                 $this->plans[] = new DiscordPlan($this->discord, $this->botID, $plan->id);
             }
