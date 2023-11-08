@@ -15,10 +15,11 @@ class AIModelFamily
 class AIModel
 {
     public const
-        CHAT_GPT_3_5_DIALOGUE = 1,
-        CHAT_GPT_3_5_INSTRUCTIONS = 2,
-        CHAT_GPT_4_COMPLEX = 3,
-        CHAT_GPT_4 = 4;
+        CHAT_GPT_3_5_DIALOGUE = 1, //16k
+        CHAT_GPT_3_5_INSTRUCTIONS = 2, //4k
+        CHAT_GPT_4_COMPLEX = 3, //32k
+        CHAT_GPT_4 = 4, //8k
+        CHAT_GPT_4_EXPANDED = 5; //128k
 }
 
 class AICurrency

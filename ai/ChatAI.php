@@ -23,10 +23,13 @@ class ChatAI
             array(
                 array("family", $modelFamily),
                 array("deletion_date", null),
-            )
+            ),
+            "sent_token_cost, received_token_cost DESC, context ASC"
         );
 
         if (!empty($query)) {
+            $this->models = array();
+
             foreach ($query as $row) {
                 $model = new ChatModel($row->id);
 
@@ -36,7 +39,6 @@ class ChatAI
             }
 
             if (!empty($this->models)) {
-                ksort($this->models);
                 $this->exists = true;
                 $this->apiKey = $apiKey;
                 $this->temperature = $temperature;
@@ -107,6 +109,7 @@ class ChatAI
             case AIModel::CHAT_GPT_3_5_INSTRUCTIONS:
             case AIModel::CHAT_GPT_4_COMPLEX:
             case AIModel::CHAT_GPT_4:
+            case AIModel::CHAT_GPT_4_EXPANDED:
                 $link = "https://api.openai.com/v1/chat/completions";
                 $parameters["model"] = $model->code;
 
@@ -221,6 +224,7 @@ class ChatAI
             case AIModel::CHAT_GPT_3_5_INSTRUCTIONS:
             case AIModel::CHAT_GPT_4_COMPLEX:
             case AIModel::CHAT_GPT_4:
+            case AIModel::CHAT_GPT_4_EXPANDED:
                 return $object?->choices[0]?->message->content;
             default:
                 return null;
