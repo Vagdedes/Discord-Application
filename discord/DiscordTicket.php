@@ -205,7 +205,7 @@ class DiscordTicket
         }
     }
 
-    public function close(Channel $channel): bool
+    public function close(Channel $channel, int|string $userID, ?string $reason = null): ?string
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
@@ -223,11 +223,26 @@ class DiscordTicket
         );
 
         if (empty($query)) {
-            return "Not Found";
+            return "Not found";
         } else {
             try {
-                $channel->guild->channels->delete($channel);
-                return true;
+                if (set_sql_query(
+                    BotDatabaseTable::BOT_TICKET_CREATIONS,
+                    array(
+                        "deletion_date" => get_current_date(),
+                        "deletion_reason" => $reason,
+                        "deleted_by" => $userID
+                    ),
+                    array(
+                        array("id", $query[0]->id)
+                    ),
+                    1
+                )) {
+                    $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                    return null;
+                } else {
+                    return "Database query failed";
+                }
             } catch (Throwable $exception) {
                 global $logger;
                 $logger->logError($this->plan->planID, $exception->getMessage());
@@ -235,6 +250,8 @@ class DiscordTicket
             }
         }
     }
+
+    // Separator
 
     private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
     {
@@ -256,9 +273,64 @@ class DiscordTicket
         ));
     }
 
-    public function get(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null): array
+    // Separator
+
+    public function getSingle(int|string $ticketID): ?object
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup);
+        $cacheKey = array(__METHOD__, $this->plan->planID, $ticketID);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache === false ? null : $cache;
+        } else {
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_TICKET_CREATIONS,
+                null,
+                array(
+                    array("ticket_creation_id", $ticketID),
+                ),
+                null,
+                1
+            );
+
+            if (!empty($query)) {
+                $query = $query[0];
+                $query->ticket = get_sql_query(
+                    BotDatabaseTable::BOT_TICKETS,
+                    null,
+                    array(
+                        array("id", $query->ticket_id),
+                    ),
+                    null,
+                    1
+                )[0];
+                $query->key_value_pairs = get_sql_query(
+                    BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                    null,
+                    array(
+                        array("ticket_creation_id", $ticketID),
+                    )
+                );
+                $query->messages = get_sql_query(
+                    BotDatabaseTable::BOT_TICKET_MESSAGES,
+                    null,
+                    array(
+                        array("ticket_creation_id", $ticketID),
+                    )
+                );
+                set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
+                return $query;
+            } else {
+                set_key_value_pair($cacheKey, false, self::REFRESH_TIME);
+                return null;
+            }
+        }
+    }
+
+    public function getMultiple(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null,
+                                bool       $messages = true): array
+    {
+        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -269,7 +341,6 @@ class DiscordTicket
                 null,
                 array(
                     array("user_id", $userID),
-                    array("deletion_date", null),
                     $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
                 ),
                 array(
@@ -297,10 +368,94 @@ class DiscordTicket
                             array("ticket_creation_id", $row->ticket_creation_id),
                         )
                     );
+                    if ($messages) {
+                        $row->messages = get_sql_query(
+                            BotDatabaseTable::BOT_TICKET_MESSAGES,
+                            null,
+                            array(
+                                array("ticket_creation_id", $row->ticket_creation_id),
+                            )
+                        );
+                    }
                 }
             }
             set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
             return $query;
         }
+    }
+
+    // Separator
+
+    public function loadSingleTicketMessage(object $ticket): MessageBuilder
+    {
+        $messageBuilder = MessageBuilder::new();
+        $messageBuilder->setContent("Showing ticket with ID: " . $ticket->id);
+
+        $embed = new Embed($this->plan->discord);
+        $embed->setTitle($ticket->ticket->title);
+        $embed->setDescription("ID: " . $ticket->id . " | "
+            . ($ticket->deletion_date === null
+                ? "Open"
+                : "Closed on " . get_full_date($ticket->deletion_date)));
+
+        foreach ($ticket->key_value_pairs as $ticketProperties) {
+            $embed->addFieldValues(
+                strtoupper($ticketProperties->input_key),
+                "```" . $ticketProperties->input_value . "```"
+            );
+            $embed->setTimestamp(strtotime($ticket->creation_date));
+        }
+        $messageBuilder->addEmbed($embed);
+
+        if (!empty($ticket->messages)) {
+            $max = 24;
+            foreach ($ticket->messages as $counter => $message) {
+                $add = $counter % 25 === 0;
+
+                if ($add) {
+                    $messageBuilder->addEmbed($embed);
+                }
+                $embed = new Embed($this->plan->discord);
+                $embed->addFieldValues(
+                    $message->user_id,
+                    "```" . $message->message_content . "```"
+                );
+
+                if ($add) {
+                    $messageBuilder->addEmbed($embed);
+                    $max -= 1;
+
+                    if ($max === 0) {
+                        break;
+                    }
+                }
+            }
+        }
+        return $messageBuilder;
+    }
+
+    public function loadTicketsMessage(array $tickets): MessageBuilder
+    {
+        $messageBuilder = MessageBuilder::new();
+        $messageBuilder->setContent("Showing last " . sizeof($tickets) . " tickets of user.");
+
+        foreach ($tickets as $ticket) {
+            $embed = new Embed($this->plan->discord);
+            $embed->setTitle($ticket->ticket->title);
+            $embed->setDescription("ID: " . $ticket->id . " | "
+                . ($ticket->deletion_date === null
+                    ? "Open"
+                    : "Closed on " . get_full_date($ticket->deletion_date)));
+
+            foreach ($ticket->key_value_pairs as $ticketProperties) {
+                $embed->addFieldValues(
+                    strtoupper($ticketProperties->input_key),
+                    "```" . $ticketProperties->input_value . "```"
+                );
+                $embed->setTimestamp(strtotime($ticket->creation_date));
+            }
+            $messageBuilder->addEmbed($embed);
+        }
+        return $messageBuilder;
     }
 }

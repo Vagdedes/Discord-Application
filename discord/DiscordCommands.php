@@ -1,8 +1,6 @@
 <?php
 
-use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
-use Discord\Parts\Embed\Embed;
 
 class DiscordCommands
 {
@@ -87,11 +85,9 @@ class DiscordCommands
 
                     switch ($command->command_identification) {
                         case "close-ticket":
-                            $close = $this->plan->ticket->close($message->channel);
+                            $close = $this->plan->ticket->close($message->channel, $userID);
 
-                            if ($close === true) {
-                                $message->reply("Ticket closed.");
-                            } else {
+                            if ($close !== null) {
                                 $message->reply("Ticket could not be closed: " . $close);
                             }
                             break;
@@ -113,29 +109,39 @@ class DiscordCommands
                                         break;
                                     }
                                 }
-                                $tickets = $this->plan->ticket->get($findUserID, null, 25);
+                                $tickets = $this->plan->ticket->getMultiple(
+                                    $findUserID,
+                                    null,
+                                    25,
+                                    false
+                                );
 
                                 if (empty($tickets)) {
                                     $message->reply("No tickets found for user.");
                                 } else {
-                                    $messageBuilder = MessageBuilder::new();
-                                    $messageBuilder->setContent("Showing last 25 tickets of user.");
+                                    $message->reply($this->plan->ticket->loadTicketsMessage($tickets));
+                                }
+                            }
+                            break;
+                        case "get-ticket":
+                            $arguments = explode($command->argument_separator, $message->content);
 
-                                    foreach ($tickets as $ticket) {
-                                        $embed = new Embed($this->plan->discord);
-                                        $embed->setTitle($ticket->ticket->title);
-                                        $embed->setDescription("ID: " . $ticket->id);
+                            if ($argumentSize === 0) {
+                                $message->reply("Missing ticket-id argument.");
+                            } else if ($argumentSize > 1) {
+                                $message->reply("Too many arguments.");
+                            } else {
+                                $ticketID = $arguments[1];
 
-                                        foreach ($ticket->key_value_pairs as $ticketProperties) {
-                                            $embed->addFieldValues(
-                                                strtoupper($ticketProperties->input_key),
-                                                "```" . $ticketProperties->input_value . "```"
-                                            );
-                                            $embed->setTimestamp(strtotime($ticket->creation_date));
-                                        }
-                                        $messageBuilder->addEmbed($embed);
-                                    }
-                                    $message->reply($messageBuilder);
+                                if (!is_numeric($ticketID)) {
+                                    $message->reply("Invalid ticket-id argument.");
+                                }
+                                $ticket = $this->plan->ticket->getSingle($ticketID);
+
+                                if ($ticket === null) {
+                                    $message->reply("Ticket not found.");
+                                } else {
+                                    $message->reply($this->plan->ticket->loadSingleTicketMessage($ticket));
                                 }
                             }
                             break;
