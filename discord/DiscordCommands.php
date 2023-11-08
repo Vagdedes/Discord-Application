@@ -135,7 +135,7 @@ class DiscordCommands
                                     $tickets = $this->plan->ticket->getMultiple(
                                         $findUserID,
                                         null,
-                                        25,
+                                        DiscordProperties::MAX_EMBED_PER_MESSAGE,
                                         false
                                     );
 

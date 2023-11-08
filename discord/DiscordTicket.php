@@ -454,16 +454,16 @@ class DiscordTicket
         $messageBuilder->addEmbed($embed);
 
         if (!empty($ticket->messages)) {
-            $max = 24; // Minus one due to previous embed
+            $max = DiscordProperties::MAX_EMBED_PER_MESSAGE - 1; // Minus one due to previous embed
 
             foreach ($ticket->messages as $counter => $message) {
-                $add = $counter % 25 === 0;
+                $add = $counter % DiscordProperties::MAX_EMBED_PER_MESSAGE === 0;
 
                 if ($add) {
                     $messageBuilder->addEmbed($embed);
                 }
                 $embed->addFieldValues(
-                    $message->user_id,
+                    $message->user_id . " | " . get_full_date($message->creation_date),
                     "```" . $message->message_content . "```"
                 );
 
