@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 
 class DiscordCommands
@@ -45,110 +46,109 @@ class DiscordCommands
     }
 
     public function process(Message    $message,
-                            int|string $serverID, int|string $channelID, int|string $userID): ?string
+                            int|string $serverID, int|string $channelID, int|string $userID): string|null|MessageBuilder
     {
-        if (!empty($this->staticCommands)) {
-            $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $message->content);
-            $cache = get_key_value_pair($cacheKey);
+        if ($userID !== $this->plan->botID) {
+            if (!empty($this->staticCommands)) {
+                $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $message->content);
+                $cache = get_key_value_pair($cacheKey);
 
-            if ($cache !== null) {
-                $cooldown = $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
+                if ($cache !== null) {
+                    $cooldown = $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
 
-                if ($cooldown[0]) {
-                    return $cooldown[1];
+                    if ($cooldown[0]) {
+                        return $cooldown[1];
+                    } else {
+                        return $cache[1];
+                    }
                 } else {
-                    return $cache[1];
-                }
-            } else {
-                foreach ($this->staticCommands as $command) {
-                    if (($command->server_id === null || $command->server_id == $serverID)
-                        && ($command->channel_id === null || $command->channel_id == $channelID)
-                        && ($command->user_id === null || $command->user_id == $userID)
-                        && $message->content == ($command->command_placeholder . $command->command_identification)) {
-                        $reply = $command->command_reply;
-                        set_key_value_pair($cacheKey, array($command, $reply));
-                        $this->getCooldown($serverID, $channelID, $userID, $command);
-                        return $reply;
+                    foreach ($this->staticCommands as $command) {
+                        if (($command->server_id === null || $command->server_id == $serverID)
+                            && ($command->channel_id === null || $command->channel_id == $channelID)
+                            && ($command->user_id === null || $command->user_id == $userID)
+                            && $message->content == ($command->command_placeholder . $command->command_identification)) {
+                            $reply = $command->command_reply;
+                            set_key_value_pair($cacheKey, array($command, $reply));
+                            $this->getCooldown($serverID, $channelID, $userID, $command);
+                            return $reply;
+                        }
                     }
                 }
             }
-        }
-        if (!empty($this->dynamicCommands)) {
-            foreach ($this->dynamicCommands as $command) {
-                if (($command->server_id === null || $command->server_id == $serverID)
-                    && ($command->channel_id === null || $command->channel_id == $channelID)
-                    && ($command->user_id === null || $command->user_id == $userID)
-                    && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
-                    $arguments = explode($command->argument_separator ?? " ", $message->content);
-                    unset($arguments[0]);
-                    $argumentSize = sizeof($arguments);
+            if (!empty($this->dynamicCommands)) {
+                foreach ($this->dynamicCommands as $command) {
+                    if (($command->server_id === null || $command->server_id == $serverID)
+                        && ($command->channel_id === null || $command->channel_id == $channelID)
+                        && ($command->user_id === null || $command->user_id == $userID)
+                        && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
+                        $arguments = explode($command->argument_separator ?? " ", $message->content);
+                        unset($arguments[0]);
+                        $argumentSize = sizeof($arguments);
 
-                    switch ($command->command_identification) {
-                        case "close-ticket":
-                            $close = $this->plan->ticket->close($message->channel, $userID);
+                        switch ($command->command_identification) {
+                            case "close-ticket":
+                                $close = $this->plan->ticket->close($message->channel, $userID);
 
-                            if ($close !== null) {
-                                $message->reply("Ticket could not be closed: " . $close);
-                            }
-                            break;
-                        case "get-tickets":
-                            $arguments = explode($command->argument_separator, $message->content);
+                                if ($close !== null) {
+                                    return "Ticket could not be closed: " . $close;
+                                }
+                                break;
+                            case "get-tickets":
+                                $arguments = explode($command->argument_separator, $message->content);
 
-                            if ($argumentSize === 0) {
-                                $message->reply("Missing user argument.");
-                            } else if ($argumentSize > 1) {
-                                $message->reply("Too many arguments.");
-                            } else {
-                                $findUserID = $arguments[1];
-
-                                if (!is_numeric($findUserID)) {
-                                    $findUserID = substr($findUserID, 2, -1);
+                                if ($argumentSize === 0) {
+                                    return "Missing user argument.";
+                                } else if ($argumentSize > 1) {
+                                    return "Too many arguments.";
+                                } else {
+                                    $findUserID = $arguments[1];
 
                                     if (!is_numeric($findUserID)) {
-                                        $message->reply("Invalid user argument.");
-                                        break;
+                                        $findUserID = substr($findUserID, 2, -1);
+
+                                        if (!is_numeric($findUserID)) {
+                                            return "Invalid user argument.";
+                                        }
+                                    }
+                                    $tickets = $this->plan->ticket->getMultiple(
+                                        $findUserID,
+                                        null,
+                                        25,
+                                        false
+                                    );
+
+                                    if (empty($tickets)) {
+                                        return "No tickets found for user.";
+                                    } else {
+                                        return $this->plan->ticket->loadTicketsMessage($tickets);
                                     }
                                 }
-                                $tickets = $this->plan->ticket->getMultiple(
-                                    $findUserID,
-                                    null,
-                                    25,
-                                    false
-                                );
+                            case "get-ticket":
+                                $arguments = explode($command->argument_separator, $message->content);
 
-                                if (empty($tickets)) {
-                                    $message->reply("No tickets found for user.");
+                                if ($argumentSize === 0) {
+                                    return "Missing ticket-id argument.";
+                                } else if ($argumentSize > 1) {
+                                    return "Too many arguments.";
                                 } else {
-                                    $message->reply($this->plan->ticket->loadTicketsMessage($tickets));
-                                }
-                            }
-                            break;
-                        case "get-ticket":
-                            $arguments = explode($command->argument_separator, $message->content);
+                                    $ticketID = $arguments[1];
 
-                            if ($argumentSize === 0) {
-                                $message->reply("Missing ticket-id argument.");
-                            } else if ($argumentSize > 1) {
-                                $message->reply("Too many arguments.");
-                            } else {
-                                $ticketID = $arguments[1];
+                                    if (!is_numeric($ticketID)) {
+                                        return "Invalid ticket-id argument.";
+                                    }
+                                    $ticket = $this->plan->ticket->getSingle($ticketID);
 
-                                if (!is_numeric($ticketID)) {
-                                    $message->reply("Invalid ticket-id argument.");
+                                    if ($ticket === null) {
+                                        return "Ticket not found.";
+                                    } else {
+                                        return $this->plan->ticket->loadSingleTicketMessage($ticket);
+                                    }
                                 }
-                                $ticket = $this->plan->ticket->getSingle($ticketID);
-
-                                if ($ticket === null) {
-                                    $message->reply("Ticket not found.");
-                                } else {
-                                    $message->reply($this->plan->ticket->loadSingleTicketMessage($ticket));
-                                }
-                            }
-                            break;
-                        default:
-                            break;
+                            default:
+                                break;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }

@@ -389,7 +389,7 @@ class DiscordTicket
     public function loadSingleTicketMessage(object $ticket): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing ticket with ID: " . $ticket->id);
+        $messageBuilder->setContent("Showing ticket with ID: " . $ticket->ticket_creation_id);
 
         $embed = new Embed($this->plan->discord);
         $embed->setTitle($ticket->ticket->title);
@@ -408,14 +408,14 @@ class DiscordTicket
         $messageBuilder->addEmbed($embed);
 
         if (!empty($ticket->messages)) {
-            $max = 24;
+            $max = 24; // Minus one due to previous embed
+
             foreach ($ticket->messages as $counter => $message) {
                 $add = $counter % 25 === 0;
 
                 if ($add) {
                     $messageBuilder->addEmbed($embed);
                 }
-                $embed = new Embed($this->plan->discord);
                 $embed->addFieldValues(
                     $message->user_id,
                     "```" . $message->message_content . "```"
@@ -423,7 +423,7 @@ class DiscordTicket
 
                 if ($add) {
                     $messageBuilder->addEmbed($embed);
-                    $max -= 1;
+                    $max--;
 
                     if ($max === 0) {
                         break;
@@ -442,7 +442,7 @@ class DiscordTicket
         foreach ($tickets as $ticket) {
             $embed = new Embed($this->plan->discord);
             $embed->setTitle($ticket->ticket->title);
-            $embed->setDescription("ID: " . $ticket->id . " | "
+            $embed->setDescription("ID: " . $ticket->ticket_creation_id . " | "
                 . ($ticket->deletion_date === null
                     ? "Open"
                     : "Closed on " . get_full_date($ticket->deletion_date)));

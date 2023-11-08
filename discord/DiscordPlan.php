@@ -243,6 +243,8 @@ class DiscordPlan
                 if ($punishment->notify !== null) {
                     $message->reply($this->instructions->replace(array($punishment->creation_reason), $object)[0]);
                 }
+            } else if ($command instanceof MessageBuilder) {
+                $message->reply($command);
             } else {
                 $message->reply($this->instructions->replace(array($command), $object)[0]);
             }
