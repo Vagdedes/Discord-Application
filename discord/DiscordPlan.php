@@ -24,6 +24,7 @@ class DiscordPlan
     public DiscordControlledMessages $controlledMessages;
     public DiscordTicket $ticket;
     public DiscordMessageRefresh $messageRefresh;
+    public DiscordPermissions $permissions;
 
     public function __construct(Discord $discord, int|string $botID, int|string $planID)
     {
@@ -61,6 +62,7 @@ class DiscordPlan
         $this->controlledMessages = new DiscordControlledMessages($this);
         $this->ticket = new DiscordTicket($this);
         $this->messageRefresh = new DiscordMessageRefresh($this);
+        $this->permissions = new DiscordPermissions($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,

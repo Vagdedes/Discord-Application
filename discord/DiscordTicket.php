@@ -205,7 +205,13 @@ class DiscordTicket
         }
     }
 
-    public function close(Channel $channel, int|string $userID, ?string $reason = null): ?string
+    // Separator
+
+    public function closeByID() {
+
+    }
+
+    public function closeByChannel(Channel $channel, int|string $userID, ?string $reason = null): ?string
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
