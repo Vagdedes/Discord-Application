@@ -207,11 +207,11 @@ class DiscordTicket
 
     // Separator
 
-    public function closeByID(int|string $ticketID): ?string
+    public function closeByID(int|string $ticketID, int|string $userID, ?string $reason = null): ?string
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
-            array("id"),
+            array("id", "created_channel_id", "created_channel_server_id", "deletion_date"),
             array(
                 array("ticket_creation_id", $ticketID),
             ),
@@ -222,28 +222,39 @@ class DiscordTicket
         if (empty($query)) {
             return "Not found";
         } else {
-            try {
-                if (set_sql_query(
-                    BotDatabaseTable::BOT_TICKET_CREATIONS,
-                    array(
-                        "deletion_date" => get_current_date(),
-                        "deletion_reason" => $reason,
-                        "deleted_by" => $userID
-                    ),
-                    array(
-                        array("id", $query[0]->id)
-                    ),
-                    1
-                )) {
-                    $channel->guild->channels->delete($channel, $userID . ": " . $reason);
-                    return null;
-                } else {
-                    return "Database query failed";
+            $query = $query[0];
+
+            if ($query->deletion_date !== null) {
+                return "Already closed";
+            } else {
+                try {
+                    if (set_sql_query(
+                        BotDatabaseTable::BOT_TICKET_CREATIONS,
+                        array(
+                            "deletion_date" => get_current_date(),
+                            "deletion_reason" => $reason,
+                            "deleted_by" => $userID
+                        ),
+                        array(
+                            array("id", $query[0]->id)
+                        ),
+                        1
+                    )) {
+                        $channel = $this->plan->discord->getChannel($query->created_channel_id);
+
+                        if ($channel !== null
+                            && $channel->guild_id == $query->created_channel_server_id) {
+                            $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                        }
+                        return null;
+                    } else {
+                        return "Database query failed";
+                    }
+                } catch (Throwable $exception) {
+                    global $logger;
+                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    return "(Exception) " . $exception->getMessage();
                 }
-            } catch (Throwable $exception) {
-                global $logger;
-                $logger->logError($this->plan->planID, $exception->getMessage());
-                return "(Exception) " . $exception->getMessage();
             }
         }
     }
@@ -252,68 +263,48 @@ class DiscordTicket
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
-            array("id"),
+            array("id", "deletion_date"),
             array(
                 array("created_channel_server_id", $channel->guild_id),
                 array("created_channel_id", $channel->id),
-                array("deletion_date", null),
             ),
-            array(
-                "DESC",
-                "id"
-            ),
+            null,
             1
         );
 
         if (empty($query)) {
             return "Not found";
         } else {
-            try {
-                if (set_sql_query(
-                    BotDatabaseTable::BOT_TICKET_CREATIONS,
-                    array(
-                        "deletion_date" => get_current_date(),
-                        "deletion_reason" => $reason,
-                        "deleted_by" => $userID
-                    ),
-                    array(
-                        array("id", $query[0]->id)
-                    ),
-                    1
-                )) {
-                    $channel->guild->channels->delete($channel, $userID . ": " . $reason);
-                    return null;
-                } else {
-                    return "Database query failed";
+            $query = $query[0];
+
+            if ($query->deletion_date !== null) {
+                return "Already closed";
+            } else {
+                try {
+                    if (set_sql_query(
+                        BotDatabaseTable::BOT_TICKET_CREATIONS,
+                        array(
+                            "deletion_date" => get_current_date(),
+                            "deletion_reason" => $reason,
+                            "deleted_by" => $userID
+                        ),
+                        array(
+                            array("id", $query[0]->id)
+                        ),
+                        1
+                    )) {
+                        $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                        return null;
+                    } else {
+                        return "Database query failed";
+                    }
+                } catch (Throwable $exception) {
+                    global $logger;
+                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    return "(Exception) " . $exception->getMessage();
                 }
-            } catch (Throwable $exception) {
-                global $logger;
-                $logger->logError($this->plan->planID, $exception->getMessage());
-                return "(Exception) " . $exception->getMessage();
             }
         }
-    }
-
-    // Separator
-
-    private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
-    {
-        set_sql_cache(self::REFRESH_TIME, self::class);
-        return !empty(get_sql_query(
-            BotDatabaseTable::BOT_TICKET_CREATIONS,
-            array("id"),
-            array(
-                array("ticket_id", $ticketID),
-                array("user_id", $userID),
-                array("deletion_date", null),
-                array("creation_date", ">", get_past_date($pastLookup)),
-            ),
-            array(
-                "DESC",
-                "id"
-            ),
-            1
-        ));
     }
 
     // Separator
@@ -359,8 +350,14 @@ class DiscordTicket
                     null,
                     array(
                         array("ticket_creation_id", $ticketID),
+                        array("deletion_date", null)
+                    ),
+                    array(
+                        "DESC",
+                        "id"
                     )
                 );
+                rsort($query->messages);
                 set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
                 return $query;
             } else {
@@ -417,8 +414,14 @@ class DiscordTicket
                             null,
                             array(
                                 array("ticket_creation_id", $row->ticket_creation_id),
+                                array("deletion_date", null)
+                            ),
+                            array(
+                                "DESC",
+                                "id"
                             )
                         );
+                        rsort($row->messages);
                     }
                 }
             }
@@ -500,5 +503,27 @@ class DiscordTicket
             $messageBuilder->addEmbed($embed);
         }
         return $messageBuilder;
+    }
+
+    // Separator
+
+    private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
+    {
+        set_sql_cache(self::REFRESH_TIME, self::class);
+        return !empty(get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("id"),
+            array(
+                array("ticket_id", $ticketID),
+                array("user_id", $userID),
+                array("deletion_date", null),
+                array("creation_date", ">", get_past_date($pastLookup)),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            1
+        ));
     }
 }

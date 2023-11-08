@@ -102,19 +102,17 @@ class DiscordCommands
                                     if ($close !== null) {
                                         return "Ticket could not be closed: " . $close;
                                     }
-                                } else if ($argumentSize === 1) {
+                                } else {
                                     $ticketID = $arguments[1];
 
                                     if (!is_numeric($ticketID)) {
                                         return "Invalid ticket-id argument.";
                                     }
-                                    $close = $this->plan->ticket->closeByID($ticketID);
+                                    $close = $this->plan->ticket->closeByID($ticketID, $userID);
 
                                     if ($close !== null) {
                                         return "Ticket could not be closed: " . $close;
                                     }
-                                } else {
-                                    return "Invalid amount of arguments.";
                                 }
                                 break;
                             case "get-tickets":
