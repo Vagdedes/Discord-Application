@@ -414,7 +414,7 @@ class DiscordPlan
                                                 $logger->logError($this->planID, $modelReply);
                                             }
 
-                                            if ($assistance === null) {
+                                            if ($assistance === null || $assistance == DiscordProperties::NO_REPLY) {
                                                 if ($channel->failure_message !== null) {
                                                     $message->edit($this->instructions->replace(array($channel->failure_message), $object)[0]);
                                                 } else {
