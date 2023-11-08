@@ -137,7 +137,7 @@ class DiscordTicket
                 $channel->sendMessage($message);
             }
         }
-        if (false && $create) {
+        if (false && $create) { //todo
             $interaction->guild->channels->create(
                 array(
                     "name" => $query->create_channel_name,

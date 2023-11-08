@@ -88,7 +88,8 @@ class DiscordCommands
                             )) {
                             return "You do not have permission to use this command.";
                         }
-                        $arguments = explode($command->argument_separator ?? " ", $message->content);
+                        $commandSeparator = $command->argument_separator ?? " ";
+                        $arguments = explode($commandSeparator, $message->content);
                         unset($arguments[0]);
                         $argumentSize = sizeof($arguments);
 
@@ -103,15 +104,30 @@ class DiscordCommands
                                         return "Ticket could not be closed: " . $close;
                                     }
                                 } else {
+                                    $hasReason = $argumentSize > 1;
                                     $ticketID = $arguments[1];
 
-                                    if (!is_numeric($ticketID)) {
-                                        return "Invalid ticket-id argument.";
-                                    }
-                                    $close = $this->plan->ticket->closeByID($ticketID, $userID);
+                                    if (is_numeric($ticketID)) {
+                                        if ($hasReason) {
+                                            unset($arguments[1]);
+                                            $close = $this->plan->ticket->closeByID(
+                                                $ticketID,
+                                                $userID,
+                                                implode($commandSeparator, $arguments)
+                                            );
+                                        } else {
+                                            $close = $this->plan->ticket->closeByID($ticketID, $userID);
+                                        }
 
-                                    if ($close !== null) {
-                                        return "Ticket could not be closed: " . $close;
+                                        if ($close !== null) {
+                                            return "Ticket could not be closed: " . $close;
+                                        }
+                                    } else {
+                                        $close = $this->plan->ticket->closeByChannel($message->channel, $userID);
+
+                                        if ($close !== null) {
+                                            return "Ticket could not be closed: " . $close;
+                                        }
                                     }
                                 }
                                 break;
