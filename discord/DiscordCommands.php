@@ -81,16 +81,40 @@ class DiscordCommands
                         && ($command->channel_id === null || $command->channel_id == $channelID)
                         && ($command->user_id === null || $command->user_id == $userID)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
+                        if ($command->required_permission !== null
+                            && !$this->plan->permissions->userHasPermission(
+                                $userID,
+                                $command->required_permission
+                            )) {
+                            return "You do not have permission to use this command.";
+                        }
                         $arguments = explode($command->argument_separator ?? " ", $message->content);
                         unset($arguments[0]);
                         $argumentSize = sizeof($arguments);
 
                         switch ($command->command_identification) {
                             case "close-ticket":
-                                $close = $this->plan->ticket->close($message->channel, $userID);
+                                $arguments = explode($command->argument_separator, $message->content);
 
-                                if ($close !== null) {
-                                    return "Ticket could not be closed: " . $close;
+                                if ($argumentSize === 0) {
+                                    $close = $this->plan->ticket->closeByChannel($message->channel, $userID);
+
+                                    if ($close !== null) {
+                                        return "Ticket could not be closed: " . $close;
+                                    }
+                                } else if ($argumentSize === 1) {
+                                    $ticketID = $arguments[1];
+
+                                    if (!is_numeric($ticketID)) {
+                                        return "Invalid ticket-id argument.";
+                                    }
+                                    $close = $this->plan->ticket->closeByID($ticketID);
+
+                                    if ($close !== null) {
+                                        return "Ticket could not be closed: " . $close;
+                                    }
+                                } else {
+                                    return "Invalid amount of arguments.";
                                 }
                                 break;
                             case "get-tickets":

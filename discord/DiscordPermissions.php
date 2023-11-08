@@ -1,4 +1,5 @@
 <?php
+
 class DiscordPermissions
 {
     private DiscordPlan $plan;
@@ -8,15 +9,18 @@ class DiscordPermissions
         $this->plan = $plan;
     }
 
-    public function getRolePermissions(int|string $roleID) {
-
+    public function getRolePermissions(int|string $roleID): bool
+    {
+        return true;
     }
 
-    public function roleHasPermission(int|string $roleID) {
-
+    public function roleHasPermission(int|string $roleID, string $permission): bool
+    {
+        return true;
     }
 
-    public function userHasPermission(int|string $userID) {
-
+    public function userHasPermission(int|string $userID, string $permission): bool
+    {
+        return true;
     }
 }

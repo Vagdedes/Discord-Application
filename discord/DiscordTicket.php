@@ -207,8 +207,45 @@ class DiscordTicket
 
     // Separator
 
-    public function closeByID() {
+    public function closeByID(int|string $ticketID): ?string
+    {
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("id"),
+            array(
+                array("ticket_creation_id", $ticketID),
+            ),
+            null,
+            1
+        );
 
+        if (empty($query)) {
+            return "Not found";
+        } else {
+            try {
+                if (set_sql_query(
+                    BotDatabaseTable::BOT_TICKET_CREATIONS,
+                    array(
+                        "deletion_date" => get_current_date(),
+                        "deletion_reason" => $reason,
+                        "deleted_by" => $userID
+                    ),
+                    array(
+                        array("id", $query[0]->id)
+                    ),
+                    1
+                )) {
+                    $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                    return null;
+                } else {
+                    return "Database query failed";
+                }
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($this->plan->planID, $exception->getMessage());
+                return "(Exception) " . $exception->getMessage();
+            }
+        }
     }
 
     public function closeByChannel(Channel $channel, int|string $userID, ?string $reason = null): ?string
