@@ -41,6 +41,7 @@ require '/root/discord_bot/discord/DiscordControlledMessages.php';
 require '/root/discord_bot/discord/DiscordTicket.php';
 require '/root/discord_bot/discord/DiscordMessageRefresh.php';
 require '/root/discord_bot/discord/DiscordPermissions.php';
+require '/root/discord_bot/discord/DiscordUtilities.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
@@ -110,7 +111,6 @@ if (!empty($files)) {
         }
     }
     $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
-    $patreon1_credentials_directory = "/root/discord_bot/private/credentials/patreon_1_credentials";
     $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
 }
 
@@ -119,7 +119,6 @@ $discord->on('ready', function (Discord $discord) {
     $botID = $discord->id;
     $discordBot = new DiscordBot($discord, $botID);
     $logger = new DiscordLogs($discordBot);
-    //var_dump($discord->users->cacheGet());
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {

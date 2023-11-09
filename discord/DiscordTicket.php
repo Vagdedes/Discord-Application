@@ -242,8 +242,9 @@ class DiscordTicket
                             "deleted_by" => $userID
                         ),
                         array(
-                            array("id", $query[0]->id)
+                            array("id", $query->id)
                         ),
+                        null,
                         1
                     )) {
                         $channel = $this->plan->discord->getChannel($query->created_channel_id);
@@ -441,14 +442,14 @@ class DiscordTicket
     public function loadSingleTicketMessage(object $ticket): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing ticket with ID: " . $ticket->ticket_creation_id);
+        $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
         $embed = new Embed($this->plan->discord);
+        $embed->setAuthor($this->plan->utilities->getUsername($ticket->user_id));
         $embed->setTitle($ticket->ticket->title);
-        $embed->setDescription("ID: " . $ticket->id . " | "
-            . ($ticket->deletion_date === null
-                ? "Open"
-                : "Closed on " . get_full_date($ticket->deletion_date)));
+        $embed->setDescription($ticket->deletion_date === null
+            ? "Open"
+            : "Closed on " . get_full_date($ticket->deletion_date));
 
         foreach ($ticket->key_value_pairs as $ticketProperties) {
             $embed->addFieldValues(
@@ -469,7 +470,8 @@ class DiscordTicket
                     $messageBuilder->addEmbed($embed);
                 }
                 $embed->addFieldValues(
-                    $message->user_id . " | " . get_full_date($message->creation_date),
+                    $this->plan->utilities->getUsername($message->user_id)
+                    . " | " . get_full_date($message->creation_date),
                     "```" . $message->message_content . "```"
                 );
 
@@ -486,10 +488,10 @@ class DiscordTicket
         return $messageBuilder;
     }
 
-    public function loadTicketsMessage(array $tickets): MessageBuilder
+    public function loadTicketsMessage(int|string $userID, array $tickets): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing last " . sizeof($tickets) . " tickets of user.");
+        $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
 
         foreach ($tickets as $ticket) {
             $embed = new Embed($this->plan->discord);

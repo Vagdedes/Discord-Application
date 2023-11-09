@@ -101,8 +101,6 @@ class DiscordCommands
 
                         switch ($command->command_identification) {
                             case "close-ticket":
-                                $arguments = explode($command->argument_separator, $message->content);
-
                                 if ($argumentSize === 0) {
                                     $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
 
@@ -119,7 +117,7 @@ class DiscordCommands
                                             $close = $this->plan->ticket->closeByID(
                                                 $ticketID,
                                                 $user->id,
-                                                implode($commandSeparator, $arguments)
+                                                implode(" ", $arguments)
                                             );
                                         } else {
                                             $close = $this->plan->ticket->closeByID($ticketID, $user->id);
@@ -127,6 +125,8 @@ class DiscordCommands
 
                                         if ($close !== null) {
                                             return "Ticket could not be closed: " . $close;
+                                        } else {
+                                            return "Ticket successfully closed";
                                         }
                                     } else {
                                         $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
@@ -138,8 +138,6 @@ class DiscordCommands
                                 }
                                 break;
                             case "get-tickets":
-                                $arguments = explode($command->argument_separator, $message->content);
-
                                 if ($argumentSize === 0) {
                                     return "Missing user argument.";
                                 } else if ($argumentSize > 1) {
@@ -164,12 +162,10 @@ class DiscordCommands
                                     if (empty($tickets)) {
                                         return "No tickets found for user.";
                                     } else {
-                                        return $this->plan->ticket->loadTicketsMessage($tickets);
+                                        return $this->plan->ticket->loadTicketsMessage($findUserID, $tickets);
                                     }
                                 }
                             case "get-ticket":
-                                $arguments = explode($command->argument_separator, $message->content);
-
                                 if ($argumentSize === 0) {
                                     return "Missing ticket-id argument.";
                                 } else if ($argumentSize > 1) {
