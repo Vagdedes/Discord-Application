@@ -2,6 +2,7 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 
 class DiscordCommands
@@ -46,7 +47,7 @@ class DiscordCommands
         );
     }
 
-    public function process(Message $message, User $user): string|null|MessageBuilder
+    public function process(Message $message, Member $user): string|null|MessageBuilder
     {
         if ($user->id !== $this->plan->botID) {
             if (!empty($this->staticCommands)) {

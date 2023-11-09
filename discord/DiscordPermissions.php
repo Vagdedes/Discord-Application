@@ -1,18 +1,19 @@
 <?php
 
-use Discord\Parts\User\User;
+use Discord\Parts\User\Member;
 
 class DiscordPermissions
 {
     private DiscordPlan $plan;
     private array $permissions;
+    private const REFRESH_TIME = "3 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
         $this->permissions = get_sql_query(
             BotDatabaseTable::BOT_ROLE_PERMISSIONS,
-            array("role_id", "permission"),
+            array("server_id", "role_id", "permission"),
             array(
                 array("deletion_date", null),
                 null,
@@ -28,24 +29,60 @@ class DiscordPermissions
 
         if (!empty($this->permissions)) {
             foreach ($this->permissions as $row) {
-                $this->permissions[$row->role_id] = $row->permission;
+                $hash = $this->hash($row->server_id, $row->role_id);
+
+                if (array_key_exists($hash, $this->permissions)) {
+                    $this->permissions[$hash][] = $row->permission;
+                } else {
+                    $this->permissions[$hash] = array($row->permission);
+                }
             }
         }
     }
 
-    public function getRolePermissions(int|string $roleID): array
+    public function getRolePermissions(int|string $serverID, int|string $roleID): array
     {
-        return $this->permissions[$roleID] ?? array();
+        return $this->permissions[$this->hash($serverID, $roleID)] ?? array();
     }
 
-    public function roleHasPermission(int|string $roleID, string $permission): bool
+    public function roleHasPermission(int|string $serverID, int|string $roleID,
+                                      string     $permission): bool
     {
-        return array_key_exists($roleID, $this->permissions)
-            && in_array($permission, $this->permissions[$roleID]);
+        $hash = $this->hash($serverID, $roleID);
+        return array_key_exists($hash, $this->permissions)
+            && in_array($permission, $this->permissions[$hash]);
     }
 
-    public function userHasPermission(User $user, string $permission): bool
+    public function userHasPermission(Member $member, string $permission): bool
     {
-        return true; // todo
+        $cacheKey = array(
+            __METHOD__,
+            $this->plan->planID,
+            $member->id,
+            $permission
+        );
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        } else {
+            $result = false;
+
+            if (!empty($member->roles->getIterator())) {
+                foreach ($member->roles as $role) {
+                    if ($this->roleHasPermission($role->guild_id, $role->id, $permission)) {
+                        $result = true;
+                        break;
+                    }
+                }
+            }
+            set_key_value_pair($cacheKey, $result, self::REFRESH_TIME);
+            return $result;
+        }
+    }
+
+    private function hash(int|string $serverID, int|string $roleID): int
+    {
+        return string_to_integer($serverID . $roleID);
     }
 }

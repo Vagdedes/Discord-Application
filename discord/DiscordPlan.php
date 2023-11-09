@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 
 class DiscordPlan
@@ -213,6 +214,7 @@ class DiscordPlan
 
     public function assist(Message         $message,
                            User            $user,
+                           Member          $member,
                            string          $serverName,
                            string          $channelName,
                            int|string|null $threadID, string|null $threadName,
@@ -236,7 +238,7 @@ class DiscordPlan
         );
         $command = $this->commands->process(
             $message,
-            $user
+            $member
         );
 
         if ($command !== null) {
