@@ -46,6 +46,6 @@ class DiscordPermissions
 
     public function userHasPermission(User $user, string $permission): bool
     {
-        return true;
+        return true; // todo
     }
 }

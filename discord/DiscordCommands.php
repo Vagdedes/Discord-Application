@@ -71,7 +71,6 @@ class DiscordCommands
                     foreach ($this->staticCommands as $command) {
                         if (($command->server_id === null || $command->server_id == $message->guild_id)
                             && ($command->channel_id === null || $command->channel_id == $message->channel_id)
-                            && ($command->user_id === null || $command->user_id == $user->id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
                             $reply = $command->command_reply;
                             set_key_value_pair($cacheKey, array($command, $reply));
@@ -85,7 +84,6 @@ class DiscordCommands
                 foreach ($this->dynamicCommands as $command) {
                     if (($command->server_id === null || $command->server_id == $message->guild_id)
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
-                        && ($command->user_id === null || $command->user_id == $user->id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
                         if ($command->required_permission !== null
                             && !$this->plan->permissions->userHasPermission(
