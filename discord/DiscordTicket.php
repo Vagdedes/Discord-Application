@@ -208,13 +208,39 @@ class DiscordTicket
 
     public function track(Message $message): void
     {
-        //todo
+        $channel = $message->channel;
+        set_sql_cache("1 second");
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("ticket_creation_id"),
+            array(
+                array("deletion_date", null),
+                array("created_channel_server_id", $channel->guild_id),
+                array("created_channel_id", $channel->id),
+            ),
+            null,
+            1
+        );
+
+        if (!empty($query)) {
+            sql_insert(
+                BotDatabaseTable::BOT_TICKET_MESSAGES,
+                array(
+                    "ticket_creation_id" => $query[0]->ticket_creation_id,
+                    "user_id" => $message->author->id,
+                    "message_id" => $message->id,
+                    "message_content" => $message->content,
+                    "creation_date" => get_current_date(),
+                )
+            );
+        }
     }
 
     // Separator
 
     public function closeByID(int|string $ticketID, int|string $userID, ?string $reason = null): ?string
     {
+        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id", "created_channel_id", "created_channel_server_id", "deletion_date"),
@@ -268,6 +294,7 @@ class DiscordTicket
 
     public function closeByChannel(Channel $channel, int|string $userID, ?string $reason = null): ?string
     {
+        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id", "deletion_date"),
