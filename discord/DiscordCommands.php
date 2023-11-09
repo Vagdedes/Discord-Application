@@ -2,6 +2,7 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\User\User;
 
 class DiscordCommands
 {
@@ -45,16 +46,21 @@ class DiscordCommands
         );
     }
 
-    public function process(Message    $message,
-                            int|string $serverID, int|string $channelID, int|string $userID): string|null|MessageBuilder
+    public function process(Message $message, User $user): string|null|MessageBuilder
     {
-        if ($userID !== $this->plan->botID) {
+        if ($user->id !== $this->plan->botID) {
             if (!empty($this->staticCommands)) {
-                $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $message->content);
+                $cacheKey = array(
+                    __METHOD__,
+                    $this->plan->planID,
+                    $message->guild_id,
+                    $message->channel_id,
+                    $user->id, $message->content
+                );
                 $cache = get_key_value_pair($cacheKey);
 
                 if ($cache !== null) {
-                    $cooldown = $this->getCooldown($serverID, $channelID, $userID, $cache[0]);
+                    $cooldown = $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $cache[0]);
 
                     if ($cooldown[0]) {
                         return $cooldown[1];
@@ -63,13 +69,13 @@ class DiscordCommands
                     }
                 } else {
                     foreach ($this->staticCommands as $command) {
-                        if (($command->server_id === null || $command->server_id == $serverID)
-                            && ($command->channel_id === null || $command->channel_id == $channelID)
-                            && ($command->user_id === null || $command->user_id == $userID)
+                        if (($command->server_id === null || $command->server_id == $message->guild_id)
+                            && ($command->channel_id === null || $command->channel_id == $message->channel_id)
+                            && ($command->user_id === null || $command->user_id == $user->id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
                             $reply = $command->command_reply;
                             set_key_value_pair($cacheKey, array($command, $reply));
-                            $this->getCooldown($serverID, $channelID, $userID, $command);
+                            $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $command);
                             return $reply;
                         }
                     }
@@ -77,13 +83,13 @@ class DiscordCommands
             }
             if (!empty($this->dynamicCommands)) {
                 foreach ($this->dynamicCommands as $command) {
-                    if (($command->server_id === null || $command->server_id == $serverID)
-                        && ($command->channel_id === null || $command->channel_id == $channelID)
-                        && ($command->user_id === null || $command->user_id == $userID)
+                    if (($command->server_id === null || $command->server_id == $message->guild_id)
+                        && ($command->channel_id === null || $command->channel_id == $message->channel_id)
+                        && ($command->user_id === null || $command->user_id == $user->id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
                         if ($command->required_permission !== null
                             && !$this->plan->permissions->userHasPermission(
-                                $userID,
+                                $user,
                                 $command->required_permission
                             )) {
                             return "You do not have permission to use this command.";
@@ -98,7 +104,7 @@ class DiscordCommands
                                 $arguments = explode($command->argument_separator, $message->content);
 
                                 if ($argumentSize === 0) {
-                                    $close = $this->plan->ticket->closeByChannel($message->channel, $userID);
+                                    $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
 
                                     if ($close !== null) {
                                         return "Ticket could not be closed: " . $close;
@@ -112,18 +118,18 @@ class DiscordCommands
                                             unset($arguments[1]);
                                             $close = $this->plan->ticket->closeByID(
                                                 $ticketID,
-                                                $userID,
+                                                $user->id,
                                                 implode($commandSeparator, $arguments)
                                             );
                                         } else {
-                                            $close = $this->plan->ticket->closeByID($ticketID, $userID);
+                                            $close = $this->plan->ticket->closeByID($ticketID, $user->id);
                                         }
 
                                         if ($close !== null) {
                                             return "Ticket could not be closed: " . $close;
                                         }
                                     } else {
-                                        $close = $this->plan->ticket->closeByChannel($message->channel, $userID);
+                                        $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
 
                                         if ($close !== null) {
                                             return "Ticket could not be closed: " . $close;

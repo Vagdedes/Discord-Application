@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
@@ -203,6 +204,11 @@ class DiscordTicket
                 break;
             }
         }
+    }
+
+    public function track(Message $message): void
+    {
+        //todo
     }
 
     // Separator

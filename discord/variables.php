@@ -34,6 +34,7 @@ class BotDatabaseTable
         BOT_KEYWORDS = "discord.botKeywords",
         BOT_CHAT_MODEL = "discord.botChatModel",
         CURRENCIES = "discord.currencies",
+        BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
         BOT_COMMANDS = "discord.botCommands";
 }
 

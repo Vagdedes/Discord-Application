@@ -119,26 +119,20 @@ $discord->on('ready', function (Discord $discord) {
     $botID = $discord->id;
     $discordBot = new DiscordBot($discord, $botID);
     $logger = new DiscordLogs($discordBot);
+    //var_dump($discord->users->cacheGet());
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {
             foreach ($discordBot->plans as $plan) {
                 if ($plan->assist(
-                    $message,
-                    $message->mentions,
-                    $message->guild_id,
-                    $message->guild->name,
-                    $message->channel_id,
-                    $message->channel->name,
-                    $message->thread?->id,
-                    $message->thread?->name,
-                    $message->user_id,
-                    $message->author->displayname,
-                    $message->author->displayname,
-                    $message->id,
-                    $message->content,
-                    $discord->user->displayname,
-                )) {
+                        $message,
+                        $message->author,
+                        $message->guild->name,
+                        $message->channel->name,
+                        $message->thread?->id, $message->thread?->name,
+                        $message->content,
+                    )
+                    || $plan->ticket->track($message)) {
                     break;
                 }
             }

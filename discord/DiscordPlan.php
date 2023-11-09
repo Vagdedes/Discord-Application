@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Discord;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\User\User;
 
 class DiscordPlan
 {
@@ -209,35 +210,31 @@ class DiscordPlan
     }
 
     public function assist(Message         $message,
-                                           $mentions,
-                           int|string      $serverID, string $serverName,
-                           int|string      $channelID, string $channelName,
+                           User            $user,
+                           string          $serverName,
+                           string          $channelName,
                            int|string|null $threadID, string|null $threadName,
-                           int|string      $userID, string $userName, ?string $displayname,
-                           int|string      $messageID, string $messageContent,
-                           string          $botName): bool
+                           string          $messageContent): bool
     {
         global $logger;
-        $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $userID);
+        $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $user->id);
         $object = $this->instructions->getObject(
-            $serverID,
+            $message->guild_id,
             $serverName,
-            $channelID,
+            $message->channel_id,
             $channelName,
             $threadID,
             $threadName,
-            $userID,
-            $userName,
-            $displayname,
+            $user->id,
+            $user->username,
+            $user->displayname,
             $messageContent,
-            $messageID,
-            $botName
+            $message->id,
+            $this->discord->user->displayname
         );
         $command = $this->commands->process(
             $message,
-            $serverID,
-            $channelID,
-            $userID
+            $user
         );
 
         if ($command !== null) {
@@ -252,7 +249,7 @@ class DiscordPlan
             }
             return true;
         } else {
-            $channel = $this->getChannel($serverID, $channelID, $userID);
+            $channel = $this->getChannel($message->guild_id, $message->channel_id, $user->id);
 
             if ($channel !== null) {
                 if ($this->chatAI !== null
@@ -262,17 +259,17 @@ class DiscordPlan
                             $message->reply($this->instructions->replace(array($punishment->creation_reason), $object)[0]);
                         }
                     } else {
-                        $cooldownKey = array(__METHOD__, $this->planID, $userID);
+                        $cooldownKey = array(__METHOD__, $this->planID, $user->id);
 
                         if (get_key_value_pair($cooldownKey) === null) {
                             set_key_value_pair($cooldownKey, true);
-                            if ($userID != $this->botID) {
+                            if ($user->id != $this->botID) {
                                 if ($channel->require_mention) {
                                     $mention = false;
 
-                                    if (!empty($mentions)) {
-                                        foreach ($mentions as $user) {
-                                            if ($user->id == $this->botID) {
+                                    if (!empty($message->mentions->getIterator())) {
+                                        foreach ($message->mentions as $userObj) {
+                                            if ($userObj->id == $this->botID) {
                                                 $mention = true;
                                                 break;
                                             }
@@ -282,8 +279,8 @@ class DiscordPlan
                                             $messageContent = str_replace("<@" . $this->botID . ">", "", $messageContent);
                                         } else if (!empty($this->mentions)) {
                                             foreach ($this->mentions as $alternativeMention) {
-                                                foreach ($mentions as $user) {
-                                                    if ($user->id == $alternativeMention->user_id) {
+                                                foreach ($message->mentions as $userObj) {
+                                                    if ($userObj->id == $alternativeMention->user_id) {
                                                         $mention = true;
                                                         $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
                                                         break 2;
@@ -300,7 +297,7 @@ class DiscordPlan
                             }
 
                             if ($mention) {
-                                $limits = $this->limits->isLimited($serverID, $channelID, $userID);
+                                $limits = $this->limits->isLimited($message->guild_id, $message->channel_id, $user->id);
 
                                 if (!empty($limits)) {
                                     foreach ($limits as $limit) {
@@ -310,7 +307,7 @@ class DiscordPlan
                                         }
                                     }
                                 } else {
-                                    $cacheKey = array(__METHOD__, $this->planID, $userID, $messageContent);
+                                    $cacheKey = array(__METHOD__, $this->planID, $user->id, $messageContent);
                                     $cache = get_key_value_pair($cacheKey);
 
                                     if ($cache !== null) {
@@ -357,8 +354,8 @@ class DiscordPlan
                                         }
                                         $message->reply($promptMessage)->done(function (Message $message)
                                         use (
-                                            $object, $messageContent, $userID, $serverID, $channelID,
-                                            $threadID, $messageID, $cacheKey, $logger, $channel
+                                            $object, $messageContent, $user,
+                                            $threadID, $cacheKey, $logger, $channel
                                         ) {
                                             $instructions = $this->instructions->build($object);
                                             $parameters = array(
@@ -374,7 +371,7 @@ class DiscordPlan
                                                 )
                                             );
                                             $reply = $this->chatAI->getResult(
-                                                overflow_long(overflow_long($this->planID * 31) + $userID),
+                                                overflow_long(overflow_long($this->planID * 31) + (int)($user->id)),
                                                 $parameters
                                             );
                                             $modelReply = $reply[2];
@@ -392,19 +389,19 @@ class DiscordPlan
 
                                                 if ($assistance !== null) {
                                                     $this->conversation->addMessage(
-                                                        $serverID,
-                                                        $channelID,
+                                                        $message->guild_id,
+                                                        $message->channel_id,
                                                         $threadID,
-                                                        $userID,
-                                                        $messageID,
+                                                        $user->id,
+                                                        $message->id,
                                                         $messageContent,
                                                     );
                                                     $this->conversation->addReply(
-                                                        $serverID,
-                                                        $channelID,
+                                                        $message->guild_id,
+                                                        $message->channel_id,
                                                         $threadID,
-                                                        $userID,
-                                                        $messageID,
+                                                        $user->id,
+                                                        $message->id,
                                                         $assistance,
                                                         ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
                                                         $model->currency->code
