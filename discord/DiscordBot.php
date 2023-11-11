@@ -8,16 +8,18 @@ class DiscordBot
     public array $plans;
     private string $refreshDate;
     private Discord $discord;
+    public bool $processing;
 
     public function __construct(Discord $discord, int|string $botID)
     {
+        $this->processing = false;
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
         $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
-            array("id"),
+            array("id", "account_id"),
             array(
                 array("bot_id", $this->botID),
                 array("deletion_date", null),
@@ -30,11 +32,31 @@ class DiscordBot
 
         if (empty($query)) {
             global $logger;
-            $logger->logError(null, "Found no plans for bot with ID: " . $this->botID);
+            $logger->logError(null, "(1) Found no plans for bot with ID: " . $this->botID);
             // In case connection or database fails, log but do not exit
         } else {
-            foreach ($query as $plan) {
-                $this->plans[] = new DiscordPlan($this->discord, $this->botID, $plan->id);
+            $permission = "patreon.subscriber.discord.bot";
+            $application = new Application(null);
+
+            foreach ($query as $arrayKey => $plan) {
+                if ($plan->account_id !== null) {
+                    $account = $application->getAccount($plan->account_id);
+
+                    if (!$account->exists() || !$account->getPermissions()->hasPermission($permission)) {
+                        unset($query[$arrayKey]);
+                        continue;
+                    }
+                }
+                $this->plans[] = new DiscordPlan(
+                    $this->discord,
+                    $this->botID,
+                    $plan->id
+                );
+            }
+
+            if (empty($query)) {
+                global $logger;
+                $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
             }
         }
     }

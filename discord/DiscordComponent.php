@@ -211,6 +211,8 @@ class DiscordComponent
                     $rows[$buttonObject->row_id] = array($buttonObject);
                 }
             }
+            ksort($rows);
+
             foreach ($rows as $row) {
                 $actionRow = ActionRow::new();
 

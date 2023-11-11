@@ -113,7 +113,7 @@ class AccountMessageCreationListener
         );
         $release = $product->latest_version !== null ? $product->latest_version : null;
         $hasTiers = sizeof($product->tiers->paid) > 1;
-        $tier = $product->tiers->paid[0];
+        $tier = array_shift($product->tiers->paid);
         $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
         $activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
