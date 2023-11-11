@@ -6,8 +6,9 @@ class BotDatabaseTable
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
-        BOT_TARGETS = "discord.botTargets", //todo
-        BOT_TARGET_EXECUTIONS = "discord.botTargetExecutions", //todo
+        BOT_GOALS = "discord.botGoals",
+        BOT_GOAL_EXECUTIONS = "discord.botGoalExecutions",
+        BOT_GOAL_MESSAGES = "discord.botGoalMessages",
         BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",
         BOT_TICKETS = "discord.botTickets",
         BOT_TICKET_CREATIONS = "discord.botTicketCreations",

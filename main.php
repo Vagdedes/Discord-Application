@@ -42,6 +42,7 @@ require '/root/discord_bot/discord/DiscordTicket.php';
 require '/root/discord_bot/discord/DiscordMessageRefresh.php';
 require '/root/discord_bot/discord/DiscordPermissions.php';
 require '/root/discord_bot/discord/DiscordUtilities.php';
+require '/root/discord_bot/discord/DiscordGoal.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';

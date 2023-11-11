@@ -29,6 +29,7 @@ class DiscordPlan
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
     private DiscordBot $bot;
+    private DiscordGoal $goal;
 
     public function __construct(Discord $discord,
                                 DiscordBot $bot,
@@ -58,6 +59,7 @@ class DiscordPlan
         $this->expirationReason = $query->expiration_reason;
         $this->debug = false;
 
+        $this->bot = $bot;
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
@@ -70,7 +72,7 @@ class DiscordPlan
         $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
-        $this->bot = $bot;
+        $this->goal = new DiscordGoal($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
