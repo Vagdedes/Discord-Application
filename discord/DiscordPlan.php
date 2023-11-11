@@ -30,8 +30,12 @@ class DiscordPlan
     public DiscordUtilities $utilities;
     private DiscordBot $bot;
     private DiscordGoal $goal;
+    private DiscordCounting $counting;
+    private DiscordPoll $poll;
+    private DiscordLevel $level;
+    private DiscordCheaperChatAI $cheaperChatAI;
 
-    public function __construct(Discord $discord,
+    public function __construct(Discord    $discord,
                                 DiscordBot $bot,
                                 int|string $botID, int|string $planID)
     {
@@ -73,6 +77,10 @@ class DiscordPlan
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
         $this->goal = new DiscordGoal($this);
+        $this->counting = new DiscordCounting($this);
+        $this->poll = new DiscordPoll($this);
+        $this->level = new DiscordLevel($this);
+        $this->cheaperChatAI = new DiscordCheaperChatAI($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,

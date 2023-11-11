@@ -44,4 +44,6 @@ class DiscordLogs
             var_dump($object);
         }
     }
+    //todo expand to channels
+
 }

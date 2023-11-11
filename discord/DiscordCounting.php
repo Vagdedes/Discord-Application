@@ -1,5 +1,5 @@
 <?php
-class DiscordGoal
+class DiscordCounting
 {
     private DiscordPlan $plan;
 

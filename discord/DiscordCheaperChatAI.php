@@ -1,5 +1,6 @@
 <?php
-class DiscordGoal
+class
+DiscordCheaperChatAI
 {
     private DiscordPlan $plan;
 
