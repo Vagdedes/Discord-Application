@@ -17,8 +17,8 @@ class AccountMessageImplementationListener
 
     public static function getAccountSession(DiscordPlan $plan, int|string $userID): object
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $userID);
         return $session;
     }

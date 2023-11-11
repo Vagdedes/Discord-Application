@@ -16,9 +16,8 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
-        $account = $application->getAccount(0);
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $productObject = $account->getProduct();
         $products = $productObject->find(null, true);
 
@@ -467,8 +466,8 @@ class AccountMessageCreationListener
                                               MessageBuilder $messageBuilder): MessageBuilder
     {
         global $website_domain;
-        $application = new Application(null);
-        $accounts = $application->getAccountAmount();
+        $account = new Account($plan->applicationID);
+        $accounts = $account->getAccountAmount();
         $embed = new Embed($plan->discord);
         $embed->setAuthor(
             AccountMessageImplementationListener::IDEALISTIC_NAME,

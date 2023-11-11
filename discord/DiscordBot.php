@@ -1,5 +1,26 @@
 <?php
 
+/*
+ * Features:
+ * Chat & Image AI
+ * Custom Commands
+ * Ticket Management
+ * Persistent Messages
+ * Refresh Messages
+ * Reminder Messages
+ * Admin Goals
+ * Counting Channels
+ * Temporary Channels
+ * Moderation Channels
+ * Reaction Polls
+ * User Levels
+ * Cheaper Chat AI
+ * Invite Tracker
+ * Reaction Roles
+ * Social Alerts
+ * Welcome & Goodbye
+ */
+
 use Discord\Discord;
 
 class DiscordBot
@@ -9,6 +30,7 @@ class DiscordBot
     private string $refreshDate;
     private Discord $discord;
     public int $processing;
+    private $account;
 
     public function __construct(Discord $discord, int|string $botID)
     {
@@ -36,16 +58,17 @@ class DiscordBot
             // In case connection or database fails, log but do not exit
         } else {
             $permission = "patreon.subscriber.discord.bot";
-            $application = new Application(null);
+            $account = new Account();
 
             foreach ($query as $arrayKey => $plan) {
                 if ($plan->account_id !== null) {
-                    $account = $application->getAccount($plan->account_id);
+                    $account = $account->getNew($plan->account_id);
 
                     if (!$account->exists() || !$account->getPermissions()->hasPermission($permission)) {
                         unset($query[$arrayKey]);
                         continue;
                     }
+                    $this->account = $account;
                 }
                 $this->plans[] = new DiscordPlan(
                     $this->discord,
@@ -68,5 +91,10 @@ class DiscordBot
             && $this->processing === 0) {
             $this->discord->close(true);
         }
+    }
+
+    public function getAccount(): ?object
+    {
+        return $this->account;
     }
 }

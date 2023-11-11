@@ -47,6 +47,11 @@ require '/root/discord_bot/discord/DiscordLevel.php';
 require '/root/discord_bot/discord/DiscordCounting.php';
 require '/root/discord_bot/discord/DiscordPoll.php';
 require '/root/discord_bot/discord/DiscordCheaperChatAI.php';
+require '/root/discord_bot/discord/DiscordTemporaryChannel.php';
+require '/root/discord_bot/discord/DiscordInviteTracker.php';
+require '/root/discord_bot/discord/DiscordReactionRoles.php';
+require '/root/discord_bot/discord/DiscordSocialAlerts.php';
+require '/root/discord_bot/discord/DiscordMessageReminders.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
@@ -85,6 +90,11 @@ use Discord\WebSockets\Intents;
 //todo discord-level
 //todo discord-goal
 //todo discord-cheaper-ai
+//todo discord-reaction-roles
+//todo discord-invite-tracker
+//todo discord-temporary-channels
+//todo discord-social-alerts
+//todo discord-message-reminders
 
 $discord = new Discord([
     'token' => $token[0],
@@ -98,7 +108,6 @@ $discord = new Discord([
 $logger = new DiscordLogs(null);
 $files = LoadBalancer::getFiles(
     array(
-        "/var/www/.structure/library/application/api",
         "/var/www/.structure/library/account",
         "/var/www/.structure/library/polymart",
         "/var/www/.structure/library/patreon",

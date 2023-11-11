@@ -10,8 +10,8 @@ class AccountModalImplementationListener
                                     Interaction $interaction,
                                     mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->user->id);
         $account = $session->getSession();
 
@@ -24,8 +24,8 @@ class AccountModalImplementationListener
             $password = array_shift($objects)["value"];
 
             $interaction->acknowledge()
-                ->done(function () use ($interaction, $plan, $application, $email, $password, $username, $session) {
-                    $accountRegistry = $application->getAccountRegistry(
+                ->done(function () use ($interaction, $plan, $account, $email, $password, $username, $session) {
+                    $accountRegistry = $account->getRegistry()->create(
                         $email,
                         $password,
                         $username,
@@ -33,7 +33,7 @@ class AccountModalImplementationListener
                         null,
                         null,
                         $session
-                    )->getOutcome();
+                    );
 
                     if ($accountRegistry->isPositiveOutcome()) {
                         $interaction->sendFollowUpMessage(
@@ -53,8 +53,8 @@ class AccountModalImplementationListener
                                   Interaction $interaction,
                                   mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->user->id);
         $account = $session->getSession();
 
@@ -66,8 +66,8 @@ class AccountModalImplementationListener
             $password = array_shift($objects)["value"];
 
             $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $email, $password, $application, $session) {
-                $account = $application->getAccount(null, $email);
+            use ($interaction, $plan, $email, $password, $account, $session) {
+                $account = $account->getNew(null, $email);
 
                 if ($account->exists()) {
                     $result = $account->getActions()->logIn($password, $session, false);
@@ -101,8 +101,8 @@ class AccountModalImplementationListener
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->user->id);
         $account = $session->getSession();
 
@@ -126,8 +126,8 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->user->id);
         $account = $session->getSession();
 
@@ -149,8 +149,8 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $application = new Application($plan->applicationID);
-        $session = $application->getAccountSession();
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->user->id);
         $account = $session->getSession();
 

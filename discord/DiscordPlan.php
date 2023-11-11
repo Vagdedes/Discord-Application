@@ -34,6 +34,11 @@ class DiscordPlan
     private DiscordPoll $poll;
     private DiscordLevel $level;
     private DiscordCheaperChatAI $cheaperChatAI;
+    private DiscordInviteTracker $inviteTracker;
+    private DiscordReactionRoles $reactionRoles;
+    private DiscordTemporaryChannel $temporaryChannel;
+    private DiscordSocialAlerts $socialAlerts;
+    private DiscordMessageReminders $messageReminders;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,
@@ -81,6 +86,11 @@ class DiscordPlan
         $this->poll = new DiscordPoll($this);
         $this->level = new DiscordLevel($this);
         $this->cheaperChatAI = new DiscordCheaperChatAI($this);
+        $this->inviteTracker = new DiscordInviteTracker($this);
+        $this->reactionRoles = new DiscordReactionRoles($this);
+        $this->temporaryChannel = new DiscordTemporaryChannel($this);
+        $this->socialAlerts = new DiscordSocialAlerts($this);
+        $this->messageReminders = new DiscordMessageReminders($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -512,5 +522,4 @@ class DiscordPlan
         }
         $this->bot->processing--;
     }
-
 }

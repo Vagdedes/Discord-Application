@@ -3,7 +3,6 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member;
-use Discord\Parts\User\User;
 
 class DiscordCommands
 {
