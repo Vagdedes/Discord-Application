@@ -28,8 +28,11 @@ class DiscordPlan
     public DiscordMessageRefresh $messageRefresh;
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
+    private DiscordBot $bot;
 
-    public function __construct(Discord $discord, int|string $botID, int|string $planID)
+    public function __construct(Discord $discord,
+                                DiscordBot $bot,
+                                int|string $botID, int|string $planID)
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
@@ -67,6 +70,7 @@ class DiscordPlan
         $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
+        $this->bot = $bot;
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,
@@ -220,6 +224,7 @@ class DiscordPlan
                            int|string|null $threadID, string|null $threadName,
                            string          $messageContent): bool
     {
+        $this->bot->processing++;
         global $logger;
         $punishment = $this->moderation->hasPunishment(DiscordPunishment::CUSTOM_BLACKLIST, $user->id);
         $object = $this->instructions->getObject(
@@ -251,6 +256,7 @@ class DiscordPlan
             } else {
                 $message->reply($this->instructions->replace(array($command), $object)[0]);
             }
+            $this->bot->processing--;
             return true;
         } else {
             $channel = $this->getChannel($message->guild_id, $message->channel_id, $user->id);
@@ -330,6 +336,7 @@ class DiscordPlan
                                             if ($channel->failure_message !== null) {
                                                 $message->reply($this->instructions->replace(array($channel->failure_message), $object)[0]);
                                             }
+                                            $this->bot->processing--;
                                             return true;
                                         }
                                         if (!empty($this->keywords)) {
@@ -348,6 +355,7 @@ class DiscordPlan
                                                 if ($channel->failure_message !== null) {
                                                     $message->reply($this->instructions->replace(array($channel->failure_message), $object)[0]);
                                                 }
+                                                $this->bot->processing--;
                                                 return true;
                                             }
                                         }
@@ -445,14 +453,18 @@ class DiscordPlan
                 } else {
                     $logger->logError($this->planID, "Failed to find chat-model for plan: " . $this->planID);
                 }
+                $this->bot->processing--;
                 return true;
             }
         }
+        $this->bot->processing--;
         return false;
     }
 
     public function welcome(int|string $serverID, int|string $userID): void
     {
+        $this->bot->processing++;
+
         if (!has_memory_limit(
                 array(__METHOD__, $this->planID, $serverID, $userID),
                 1
@@ -488,5 +500,7 @@ class DiscordPlan
                 }
             }
         }
+        $this->bot->processing--;
     }
+
 }

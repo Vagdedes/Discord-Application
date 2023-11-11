@@ -8,11 +8,11 @@ class DiscordBot
     public array $plans;
     private string $refreshDate;
     private Discord $discord;
-    public bool $processing;
+    public int $processing;
 
     public function __construct(Discord $discord, int|string $botID)
     {
-        $this->processing = false;
+        $this->processing = 0;
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
@@ -49,6 +49,7 @@ class DiscordBot
                 }
                 $this->plans[] = new DiscordPlan(
                     $this->discord,
+                    $this,
                     $this->botID,
                     $plan->id
                 );
@@ -63,7 +64,8 @@ class DiscordBot
 
     public function refresh(): void
     {
-        if (get_current_date() > $this->refreshDate) {
+        if (get_current_date() > $this->refreshDate
+            && $this->processing === 0) {
             $this->discord->close(true);
         }
     }
