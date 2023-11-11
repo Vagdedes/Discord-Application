@@ -18,6 +18,7 @@ class AccountModalImplementationListener
         if ($account->isPositiveOutcome()) {
             $plan->controlledMessages->send($interaction, "0-logged_in", true);
         } else {
+            $account = $account->getObject();
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
             $username = array_shift($objects)["value"];
@@ -61,6 +62,7 @@ class AccountModalImplementationListener
         if ($account->isPositiveOutcome()) {
             $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
         } else {
+            $account = $account->getObject();
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
             $password = array_shift($objects)["value"];

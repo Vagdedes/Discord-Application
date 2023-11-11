@@ -170,7 +170,7 @@ class AccountMessageCreationListener
                 }
             }
         } else {
-            $offer = $account->getOffer()->find($offer == -1 ? null : $offer);
+            $offer = $account->getProductOffer()->find($offer == -1 ? null : $offer);
 
             if ($offer->isPositiveOutcome()) {
                 $offer = $offer->getObject();
@@ -467,7 +467,7 @@ class AccountMessageCreationListener
     {
         global $website_domain;
         $account = new Account($plan->applicationID);
-        $accounts = $account->getAccountAmount();
+        $accounts = $account->getRegistry()->getAccountAmount();
         $embed = new Embed($plan->discord);
         $embed->setAuthor(
             AccountMessageImplementationListener::IDEALISTIC_NAME,
