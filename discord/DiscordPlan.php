@@ -472,7 +472,16 @@ class DiscordPlan
                                                     $message->delete();
                                                 }
                                             } else {
-                                                $message->edit(MessageBuilder::new()->setContent($assistance));
+                                                $pieces = str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH);
+                                                $message->edit(MessageBuilder::new()->setContent(
+                                                    array_shift($pieces)
+                                                ));
+
+                                                if (!empty($pieces)) {
+                                                    foreach (str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                                        $message->reply(MessageBuilder::new()->setContent($split));
+                                                    }
+                                                }
                                             }
                                         });
                                     }
