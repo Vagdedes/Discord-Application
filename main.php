@@ -142,6 +142,8 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
         if ($message->guild_id !== null) {
             foreach ($discordBot->plans as $plan) {
+                $plan->ticket->track($message);
+
                 if ($plan->assist(
                         $message,
                         $message->author,
@@ -150,8 +152,7 @@ $discord->on('ready', function (Discord $discord) {
                         $message->channel->name,
                         $message->thread?->id, $message->thread?->name,
                         $message->content,
-                    )
-                    || $plan->ticket->track($message)) {
+                    )) {
                     break;
                 }
             }

@@ -100,7 +100,8 @@ class DiscordTicket
         $components = $components->toArray();
         $post = $query->post_server_id !== null
             && $query->post_channel_id !== null;
-        $create = $query->create_channel_category_id !== null;
+        $create = $query->create_channel_category_id !== null
+            && $query->create_channel_name !== null;
 
         if ($post || $create) {
             $message = MessageBuilder::new();
@@ -138,30 +139,6 @@ class DiscordTicket
                 $channel->sendMessage($message);
             }
         }
-        if (false && $create) { //todo
-            $interaction->guild->channels->create(
-                array(
-                    "name" => $query->create_channel_name,
-                    "type" => "GUILD_TEXT",
-                    "parent_id" => $query->create_channel_category_id,
-                    "topic" => $query->create_channel_topic,
-                    "permission_overwrites" => array(
-                        array(
-                            "id" => $interaction->guild_id,
-                            "type" => "role",
-                            "allow" => 0,
-                            "deny" => 1024
-                        ),
-                        array(
-                            "id" => $interaction->user->id,
-                            "type" => "member",
-                            "allow" => 1024,
-                            "deny" => 0
-                        )
-                    )
-                )
-            );
-        }
 
         // Separator
         while (true) {
@@ -176,30 +153,74 @@ class DiscordTicket
                 null,
                 1
             ))) {
-                if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS,
-                    array(
-                        "ticket_id" => $query->id,
-                        "ticket_creation_id" => $ticketID,
-                        "server_id" => $interaction->guild_id,
-                        "channel_id" => $interaction->channel_id,
-                        "user_id" => $interaction->user->id,
-                        "creation_date" => get_current_date(),
-                    ))) {
-                    foreach ($components as $component) {
-                        sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
-                            array(
-                                "ticket_creation_id" => $ticketID,
-                                "input_key" => $component["custom_id"],
-                                "input_value" => $component["value"]
-                            )
+                $insert = array(
+                    "ticket_id" => $query->id,
+                    "ticket_creation_id" => $ticketID,
+                    "server_id" => $interaction->guild_id,
+                    "channel_id" => $interaction->channel_id,
+                    "user_id" => $interaction->user->id,
+                    "creation_date" => get_current_date(),
+                );
+
+                if ($create) {
+                    $memberPermissions = array(
+                        array(
+                            "id" => $interaction->user->id,
+                            "type" => "member",
+                            "allow" => 964220536896,
+                            "deny" => 120259227648
+                        )
+                    );
+                    $rolePermissions = array();
+                    $this->plan->utilities->createChannel(
+                        $interaction->guild,
+                        Channel::TYPE_TEXT,
+                        $query->create_channel_category_id,
+                        $query->create_channel_name . "-" . $ticketID,
+                        $query->create_channel_topic,
+                        $rolePermissions,
+                        $memberPermissions
+                    )->done(function (Channel $channel) use ($components, $ticketID, $insert, $interaction, $message) {
+                        $insert["created_channel_id"] = $channel->id;
+                        $insert["created_channel_server_id"] = $channel->guild_id;
+
+                        if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                            foreach ($components as $component) {
+                                sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                                    array(
+                                        "ticket_creation_id" => $ticketID,
+                                        "input_key" => $component["custom_id"],
+                                        "input_value" => $component["value"]
+                                    )
+                                );
+                            }
+                            $channel->sendMessage($message);
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                $this->plan->planID,
+                                "(1) Failed to insert ticket creation of user: " . $interaction->user->id
+                            );
+                        }
+                    });
+                } else {
+                    if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                        foreach ($components as $component) {
+                            sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                                array(
+                                    "ticket_creation_id" => $ticketID,
+                                    "input_key" => $component["custom_id"],
+                                    "input_value" => $component["value"]
+                                )
+                            );
+                        }
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "(2) Failed to insert ticket creation of user: " . $interaction->user->id
                         );
                     }
-                } else {
-                    global $logger;
-                    $logger->logError(
-                        $this->plan->planID,
-                        "Failed to insert ticket creation of user: " . $interaction->user->id
-                    );
                 }
                 break;
             }
@@ -264,7 +285,7 @@ class DiscordTicket
                         BotDatabaseTable::BOT_TICKET_CREATIONS,
                         array(
                             "deletion_date" => get_current_date(),
-                            "deletion_reason" => $reason,
+                            "deletion_reason" => empty($reason) ? null : $reason,
                             "deleted_by" => $userID
                         ),
                         array(
@@ -277,7 +298,10 @@ class DiscordTicket
 
                         if ($channel !== null
                             && $channel->guild_id == $query->created_channel_server_id) {
-                            $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                            $channel->guild->channels->delete(
+                                $channel,
+                                empty($reason) ? null : $userID . ": " . $reason
+                            );
                         }
                         return null;
                     } else {
@@ -319,15 +343,19 @@ class DiscordTicket
                         BotDatabaseTable::BOT_TICKET_CREATIONS,
                         array(
                             "deletion_date" => get_current_date(),
-                            "deletion_reason" => $reason,
+                            "deletion_reason" => empty($reason) ? null : $reason,
                             "deleted_by" => $userID
                         ),
                         array(
-                            array("id", $query[0]->id)
+                            array("id", $query->id)
                         ),
+                        null,
                         1
                     )) {
-                        $channel->guild->channels->delete($channel, $userID . ": " . $reason);
+                        $channel->guild->channels->delete(
+                            $channel,
+                            empty($reason) ? null : $userID . ": " . $reason
+                        );
                         return null;
                     } else {
                         return "Database query failed";

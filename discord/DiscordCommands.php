@@ -127,7 +127,11 @@ class DiscordCommands
                                             return "Ticket successfully closed";
                                         }
                                     } else {
-                                        $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
+                                        $close = $this->plan->ticket->closeByChannel(
+                                            $message->channel,
+                                            $user->id,
+                                            implode(" ", $arguments)
+                                        );
 
                                         if ($close !== null) {
                                             return "Ticket could not be closed: " . $close;

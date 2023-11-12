@@ -269,12 +269,16 @@ class DiscordPlan
         if ($command !== null) {
             if ($punishment !== null) {
                 if ($punishment->notify !== null) {
-                    $message->reply($this->instructions->replace(array($punishment->creation_reason), $object)[0]);
+                    $message->reply(MessageBuilder::new()->setContent(
+                        $this->instructions->replace(array($punishment->creation_reason), $object)[0]
+                    ));
                 }
             } else if ($command instanceof MessageBuilder) {
                 $message->reply($command);
             } else {
-                $message->reply($this->instructions->replace(array($command), $object)[0]);
+                $message->reply(MessageBuilder::new()->setContent(
+                    $this->instructions->replace(array($command), $object)[0]
+                ));
             }
             $this->bot->processing--;
             return true;
@@ -286,7 +290,9 @@ class DiscordPlan
                     && $this->chatAI->exists) {
                     if ($punishment !== null) {
                         if ($punishment->notify !== null) {
-                            $message->reply($this->instructions->replace(array($punishment->creation_reason), $object)[0]);
+                            $message->reply(MessageBuilder::new()->setContent(
+                                $this->instructions->replace(array($punishment->creation_reason), $object)[0]
+                            ));
                         }
                     } else {
                         $cooldownKey = array(__METHOD__, $this->planID, $user->id);
@@ -332,7 +338,9 @@ class DiscordPlan
                                 if (!empty($limits)) {
                                     foreach ($limits as $limit) {
                                         if ($limit->message !== null) {
-                                            $message->reply($this->instructions->replace(array($limit->message), $object)[0]);
+                                            $message->reply(MessageBuilder::new()->setContent(
+                                                $this->instructions->replace(array($limit->message), $object)[0]
+                                            ));
                                             break;
                                         }
                                     }
@@ -341,7 +349,7 @@ class DiscordPlan
                                     $cache = get_key_value_pair($cacheKey);
 
                                     if ($cache !== null) {
-                                        $message->reply($cache);
+                                        $message->reply(MessageBuilder::new()->setContent($cache));
                                     } else {
                                         if ($channel->require_starting_text !== null
                                             && !starts_with($messageContent, $channel->require_starting_text)
@@ -354,7 +362,9 @@ class DiscordPlan
                                             || $channel->max_message_length !== null
                                             && strlen($messageContent) > $channel->max_message_length) {
                                             if ($channel->failure_message !== null) {
-                                                $message->reply($this->instructions->replace(array($channel->failure_message), $object)[0]);
+                                                $message->reply(MessageBuilder::new()->setContent(
+                                                    $this->instructions->replace(array($channel->failure_message), $object)[0]
+                                                ));
                                             }
                                             $this->bot->processing--;
                                             return true;
@@ -373,7 +383,9 @@ class DiscordPlan
 
                                             if (!$result) {
                                                 if ($channel->failure_message !== null) {
-                                                    $message->reply($this->instructions->replace(array($channel->failure_message), $object)[0]);
+                                                    $message->reply(MessageBuilder::new()->setContent(
+                                                        $this->instructions->replace(array($channel->failure_message), $object)[0]
+                                                    ));
                                                 }
                                                 $this->bot->processing--;
                                                 return true;
@@ -384,7 +396,9 @@ class DiscordPlan
                                         } else {
                                             $promptMessage = "...";
                                         }
-                                        $message->reply($promptMessage)->done(function (Message $message)
+                                        $message->reply(MessageBuilder::new()->setContent(
+                                            $promptMessage
+                                        ))->done(function (Message $message)
                                         use (
                                             $object, $messageContent, $user,
                                             $threadID, $cacheKey, $logger, $channel
@@ -411,7 +425,9 @@ class DiscordPlan
                                             if ($this->debug) {
                                                 foreach (array($parameters, $modelReply) as $debug) {
                                                     foreach (str_split(json_encode($debug), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
-                                                        $message->reply(str_replace("\\n", DiscordProperties::NEW_LINE, $split));
+                                                        $message->reply(MessageBuilder::new()->setContent(
+                                                            str_replace("\\n", DiscordProperties::NEW_LINE, $split)
+                                                        ));
                                                     }
                                                 }
                                             }
@@ -449,7 +465,9 @@ class DiscordPlan
 
                                             if ($assistance === null || $assistance == DiscordProperties::NO_REPLY) {
                                                 if ($channel->failure_message !== null) {
-                                                    $message->edit($this->instructions->replace(array($channel->failure_message), $object)[0]);
+                                                    $message->edit(MessageBuilder::new()->setContent(
+                                                        $this->instructions->replace(array($channel->failure_message), $object)[0]
+                                                    ));
                                                 } else {
                                                     $message->delete();
                                                 }
@@ -467,7 +485,9 @@ class DiscordPlan
                             }
                         } else if ($channel->cooldown_message !== null
                             && $channel->message_cooldown !== null) {
-                            $message->reply($this->instructions->replace(array($channel->cooldown_message), $object)[0]);
+                            $message->reply(MessageBuilder::new()->setContent(
+                                $this->instructions->replace(array($channel->cooldown_message), $object)[0]
+                            ));
                         }
                     }
                 } else {

@@ -1,5 +1,8 @@
 <?php
 
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\Guild\Guild;
+
 class DiscordUtilities
 {
 
@@ -14,5 +17,35 @@ class DiscordUtilities
     {
         $users = $this->plan->discord->users->getIterator();
         return $users[$userID]?->username ?? $userID;
+    }
+
+    public function createChannel(Guild  $guild,
+                                  int    $type, int|string $parent,
+                                  string $name, string $topic,
+                                  array  $rolePermissions = null, array $memberPermissions = null): \React\Promise\ExtendedPromiseInterface
+    {
+        $permissions = array();
+
+        if (!empty($rolePermissions)) {
+            foreach ($rolePermissions as $permission) {
+                $permissions[] = $permission;
+            }
+        }
+        if (!empty($memberPermissions)) {
+            foreach ($memberPermissions as $permission) {
+                $permissions[] = $permission;
+            }
+        }
+        return $guild->channels->save(
+            $guild->channels->create(
+                array(
+                    "name" => $name,
+                    "type" => $type,
+                    "parent_id" => $parent,
+                    "topic" => $topic,
+                    "permission_overwrites" => $permissions
+                )
+            )
+        );
     }
 }
