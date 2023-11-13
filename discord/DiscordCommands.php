@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\CommandBuilder;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member;
@@ -7,7 +8,7 @@ use Discord\Parts\User\Member;
 class DiscordCommands
 {
     private DiscordPlan $plan;
-    private array $staticCommands, $dynamicCommands;
+    private array $staticCommands, $dynamicCommands, $nativeCommands;
 
     public function __construct(DiscordPlan $plan)
     {
@@ -34,6 +35,7 @@ class DiscordCommands
             array(
                 array("deletion_date", null),
                 array("command_reply", null),
+                array("command_placeholder", "!=", "/"),
                 null,
                 array("plan_id", "IS", null, 0),
                 array("plan_id", $this->plan->planID),
@@ -44,6 +46,41 @@ class DiscordCommands
                 null
             )
         );
+        $this->nativeCommands = get_sql_query(
+            BotDatabaseTable::BOT_COMMANDS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("command_reply", null),
+                array("command_placeholder", "/"),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
+        if (!empty($this->nativeCommands)) {
+            foreach ($this->nativeCommands as $command) {
+                $commandBuilder = CommandBuilder::new()
+                    ->setName($command->command_identification)
+                    ->setDescription($command->command_description);
+                $this->plan->discord->application->commands->save(
+                    $this->plan->discord->application->commands->create(
+                        $commandBuilder->toArray()
+                    )
+                );
+                $this->plan->listener->callCommandImplementation(
+                    $command,
+                    $command->listener_class,
+                    $command->listener_method
+                );
+            }
+        }
     }
 
     public function process(Message $message, Member $user): string|null|MessageBuilder
@@ -77,12 +114,13 @@ class DiscordCommands
                                     $user,
                                     $command->required_permission
                                 )) {
-                                return "You do not have permission to use this command.";
+                                return $command->no_permission_message;
+                            } else {
+                                $reply = $command->command_reply;
+                                set_key_value_pair($cacheKey, array($command, $reply));
+                                $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $command);
+                                return $reply;
                             }
-                            $reply = $command->command_reply;
-                            set_key_value_pair($cacheKey, array($command, $reply));
-                            $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $command);
-                            return $reply;
                         }
                     }
                 }
@@ -92,15 +130,22 @@ class DiscordCommands
                     if (($command->server_id === null || $command->server_id == $message->guild_id)
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
-                        $outcome = $this->customProcess(
-                            $command,
-                            $message,
-                            $user,
-                            substr($message->content, strlen($command->command_placeholder . $command->command_identification))
-                        );
+                        if ($command->required_permission !== null
+                            && !$this->plan->permissions->userHasPermission(
+                                $user,
+                                $command->required_permission
+                            )) {
+                            return $command->no_permission_message;
+                        } else {
+                            $outcome = $this->customProcess(
+                                $command,
+                                $message,
+                                $user
+                            );
 
-                        if ($outcome !== null) {
-                            return $outcome;
+                            if ($outcome !== null) {
+                                return $outcome;
+                            }
                         }
                     }
                 }
@@ -110,20 +155,10 @@ class DiscordCommands
     }
 
     private function customProcess(object  $command,
-                                   Message $message, Member $user,
-                                   ?string  $arguments = null): string|null|MessageBuilder
+                                   Message $message, Member $user): string|null|MessageBuilder
     {
-        if ($command->required_permission !== null
-            && !$this->plan->permissions->userHasPermission(
-                $user,
-                $command->required_permission
-            )) {
-            return "You do not have permission to use this command.";
-        }
-        if ($arguments === null) {
-            $arguments = explode($command->argument_separator ?? " ", $message->content);
-            unset($arguments[0]);
-        }
+        $arguments = explode($command->argument_separator ?? " ", $message->content);
+        unset($arguments[0]);
         $argumentSize = sizeof($arguments);
 
         switch ($command->command_identification) {

@@ -2,7 +2,7 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
-use \Discord\Parts\Thread\Thread;
+use Discord\Parts\Thread\Thread;
 
 class DiscordMessageRefresh
 {

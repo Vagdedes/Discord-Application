@@ -3,7 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Interaction;
 
-class TestingModalImplementationListener // Name can be changed
+class TestingTicketImplementationListener // Name can be changed
 {
 
     public static function test_method(DiscordPlan $plan,

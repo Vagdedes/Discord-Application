@@ -69,12 +69,12 @@ class DiscordPlan
         $this->debug = false;
 
         $this->bot = $bot;
+        $this->listener = new DiscordListener($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
         $this->moderation = new DiscordModeration($this);
         $this->limits = new DiscordLimits($this);
         $this->commands = new DiscordCommands($this);
-        $this->listener = new DiscordListener($this);
         $this->component = new DiscordComponent($this);
         $this->controlledMessages = new DiscordControlledMessages($this);
         $this->ticket = new DiscordTicket($this);

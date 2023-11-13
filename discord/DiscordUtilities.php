@@ -1,7 +1,8 @@
 <?php
 
-use Discord\Parts\Channel\Channel;
+use Discord\Builders\MessageBuilder;
 use Discord\Parts\Guild\Guild;
+use Discord\Parts\Interactions\Interaction;
 
 class DiscordUtilities
 {
@@ -47,5 +48,14 @@ class DiscordUtilities
                 )
             )
         );
+    }
+
+    public function acknowledgeMessage(Interaction    $interaction,
+                                       MessageBuilder $messageBuilder,
+                                       bool           $ephemeral): void
+    {
+        $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
+            $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
+        });
     }
 }

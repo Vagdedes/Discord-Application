@@ -250,7 +250,7 @@ class AccountMessageCreationListener
                         );
                     }
                     $reply->addEmbed($embed);
-                    $plan->conversation->acknowledgeMessage($interaction, $reply, true);
+                    $plan->utilities->acknowledgeMessage($interaction, $reply, true);
                 }, $plan->discord);
             }
         }
@@ -298,7 +298,7 @@ class AccountMessageCreationListener
                         $button->setListener(function (Interaction $interaction)
                         use ($plan, $actionRow, $buttonObj) {
                             if (!$plan->component->hasCooldown($actionRow)) {
-                                $plan->conversation->acknowledgeMessage(
+                                $plan->utilities->acknowledgeMessage(
                                     $interaction,
                                     MessageBuilder::new()->setContent($buttonObj->url),
                                     true

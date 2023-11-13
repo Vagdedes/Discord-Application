@@ -17,7 +17,7 @@ class VenomousMessageImplementationListener
                 $plan->ticket->call($interaction, "8-order");
                 break;
             default:
-                $plan->conversation->acknowledgeMessage(
+                $plan->utilities->acknowledgeMessage(
                     $interaction,
                     MessageBuilder::new()->setContent($objects),
                     true

@@ -10,7 +10,9 @@ class DiscordListener
         IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
         IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
-        CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/";
+        CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
+        IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
+        IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -81,6 +83,52 @@ class DiscordListener
             return $outcome;
         } else {
             return $actionRows;
+        }
+    }
+
+    public function callCommandImplementation(object  $command,
+                                              ?string $class, ?string $method): void
+    {
+        if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
+            require_once(self::IMPLEMENTATION_COMMAND . $this->plan->planID . "/" . $class . '.php');
+            $this->plan->discord->listenCommand(
+                $command->command_identification,
+                function (Interaction $interaction) use ($class, $method, $command) {
+                    if ($command->required_permission !== null
+                        && !$this->plan->permissions->userHasPermission(
+                            $interaction->member,
+                            $command->required_permission
+                        )) {
+                        $this->plan->utilities->acknowledgeMessage(
+                            $interaction,
+                            MessageBuilder::new()->setContent($command->no_permission_message),
+                            $command->ephemeral !== null
+                        );
+                    } else {
+                        call_user_func_array(
+                            array($class, $method),
+                            array($this->plan, $interaction)
+                        );
+                    }
+                }
+            );
+            $this->plan->bot->processing--;
+        }
+    }
+
+    public function callTicketImplementation(Interaction $interaction,
+                                             ?string     $class, ?string $method,
+                                             mixed       $objects = null): void
+    {
+        if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
+            require_once(self::IMPLEMENTATION_TICKET . $this->plan->planID . "/" . $class . '.php');
+            call_user_func_array(
+                array($class, $method),
+                array($this->plan, $interaction, $objects)
+            );
+            $this->plan->bot->processing--;
         }
     }
 }

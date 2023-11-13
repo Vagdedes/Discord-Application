@@ -11,7 +11,7 @@ class TestingMessageImplementationListener // Name can be changed
                                        MessageBuilder $messageBuilder,
                                        mixed          $objects): void // Name can be changed
     {
-        $plan->conversation->acknowledgeMessage(
+        $plan->utilities->acknowledgeMessage(
             $interaction,
             MessageBuilder::new()->setContent(json_encode($objects)),
             true

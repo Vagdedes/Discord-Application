@@ -118,7 +118,7 @@ class DiscordComponent
                         if ($query->response !== null) {
                             $embed = new Embed($this->plan->discord);
                             $embed->setDescription($this->plan->instructions->replace(array($query->response), $object)[0]);
-                            $this->plan->conversation->acknowledgeMessage(
+                            $this->plan->utilities->acknowledgeMessage(
                                 $interaction,
                                 MessageBuilder::new()->addEmbed($embed),
                                 $query->ephemeral !== null
@@ -467,7 +467,7 @@ class DiscordComponent
                         $this->plan->discord->user->id
                     ))[0]
             );
-            $this->plan->conversation->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->addEmbed($embed),
                 $databaseObject->ephemeral !== null

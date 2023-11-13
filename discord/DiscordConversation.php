@@ -1,9 +1,5 @@
 <?php
 
-use Discord\Builders\MessageBuilder;
-use Discord\Parts\Channel\Message;
-use Discord\Parts\Interactions\Interaction;
-
 class DiscordConversation
 {
     private DiscordPlan $plan;
@@ -229,14 +225,5 @@ class DiscordConversation
                 "creation_date" => get_current_date(),
             )
         );
-    }
-
-    public function acknowledgeMessage(Interaction    $interaction,
-                                       MessageBuilder $messageBuilder,
-                                       bool           $ephemeral): void
-    {
-        $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
-            $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
-        });
     }
 }

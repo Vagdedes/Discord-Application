@@ -51,7 +51,7 @@ class DiscordControlledMessages
         $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
-            $this->plan->conversation->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeMessage(
                 $interaction,
                 $this->build($interaction, $message),
                 $ephemeral
@@ -143,7 +143,7 @@ class DiscordControlledMessages
             $messageBuilder->addComponent($component);
         }
 
-        $this->plan->conversation->acknowledgeMessage($interaction, $messageBuilder, $ephemeral);
+        $this->plan->utilities->acknowledgeMessage($interaction, $messageBuilder, $ephemeral);
         return true;
     }
 

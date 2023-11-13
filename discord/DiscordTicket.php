@@ -73,7 +73,7 @@ class DiscordTicket
         if ($query->cooldown_time !== null
             && $this->hasCooldown($query->id, $interaction->user->id, $query->cooldown_time)) {
             if ($query->cooldown_message !== null) {
-                $this->plan->conversation->acknowledgeMessage(
+                $this->plan->utilities->acknowledgeMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         $this->plan->instructions->replace(array($query->cooldown_message), $object)[0]
@@ -84,7 +84,7 @@ class DiscordTicket
             }
         }
         if ($query->user_response !== null) {
-            $this->plan->conversation->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     $this->plan->instructions->replace(array($query->user_response), $object)[0]
@@ -92,7 +92,12 @@ class DiscordTicket
                 $query->ephemeral_user_response !== null
             );
         } else {
-            $interaction->acknowledge();
+            $this->plan->listener->callTicketImplementation(
+                $interaction,
+                $query->listener_class,
+                $query->listener_method,
+                $components
+            );
         }
 
         // Separator
@@ -249,31 +254,33 @@ class DiscordTicket
 
     public function track(Message $message): void
     {
-        $channel = $message->channel;
-        set_sql_cache("1 second");
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_TICKET_CREATIONS,
-            array("ticket_creation_id"),
-            array(
-                array("deletion_date", null),
-                array("created_channel_server_id", $channel->guild_id),
-                array("created_channel_id", $channel->id),
-            ),
-            null,
-            1
-        );
-
-        if (!empty($query)) {
-            sql_insert(
-                BotDatabaseTable::BOT_TICKET_MESSAGES,
+        if (!empty($message->content)) {
+            $channel = $message->channel;
+            set_sql_cache("1 second");
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_TICKET_CREATIONS,
+                array("ticket_creation_id"),
                 array(
-                    "ticket_creation_id" => $query[0]->ticket_creation_id,
-                    "user_id" => $message->author->id,
-                    "message_id" => $message->id,
-                    "message_content" => $message->content,
-                    "creation_date" => get_current_date(),
-                )
+                    array("deletion_date", null),
+                    array("created_channel_server_id", $channel->guild_id),
+                    array("created_channel_id", $channel->id),
+                ),
+                null,
+                1
             );
+
+            if (!empty($query)) {
+                sql_insert(
+                    BotDatabaseTable::BOT_TICKET_MESSAGES,
+                    array(
+                        "ticket_creation_id" => $query[0]->ticket_creation_id,
+                        "user_id" => $message->author->id,
+                        "message_id" => $message->id,
+                        "message_content" => $message->content,
+                        "creation_date" => get_current_date(),
+                    )
+                );
+            }
         }
     }
 
@@ -538,25 +545,21 @@ class DiscordTicket
         if (!empty($ticket->messages)) {
             $max = DiscordProperties::MAX_EMBED_PER_MESSAGE - 1; // Minus one due to previous embed
 
-            foreach ($ticket->messages as $counter => $message) {
-                $add = $counter % DiscordProperties::MAX_EMBED_PER_MESSAGE === 0;
+            foreach (array_chunk($ticket->messages, DiscordProperties::MAX_EMBED_PER_MESSAGE) as $chunk) {
+                $embed = new Embed($this->plan->discord);
 
-                if ($add) {
-                    $messageBuilder->addEmbed($embed);
+                foreach ($chunk as $message) {
+                    $embed->addFieldValues(
+                        $this->plan->utilities->getUsername($message->user_id)
+                        . " | " . $message->creation_date,
+                        "```" . $message->message_content . "```"
+                    );
                 }
-                $embed->addFieldValues(
-                    $this->plan->utilities->getUsername($message->user_id)
-                    . " | " . get_full_date($message->creation_date),
-                    "```" . $message->message_content . "```"
-                );
+                $messageBuilder->addEmbed($embed);
+                $max--;
 
-                if ($add) {
-                    $messageBuilder->addEmbed($embed);
-                    $max--;
-
-                    if ($max === 0) {
-                        break;
-                    }
+                if ($max === 0) {
+                    break;
                 }
             }
         }
@@ -609,4 +612,6 @@ class DiscordTicket
             1
         ));
     }
+
+    // todo max open tickets
 }
