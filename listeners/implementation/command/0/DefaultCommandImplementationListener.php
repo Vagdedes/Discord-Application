@@ -26,7 +26,6 @@ class DefaultCommandImplementationListener // Name can be changed
         } else {
             $hasReason = $argumentSize > 1;
             $ticketID = array_shift($arguments)["value"];
-            var_dump($ticketID);
 
             if (is_numeric($ticketID)) {
                 if ($hasReason) {
@@ -90,19 +89,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 true
             );
         } else {
-            $findUserID = array_shift($arguments)["value"];
-
-            if (!is_numeric($findUserID)) {
-                $findUserID = substr($findUserID, 2, -1);
-
-                if (!is_numeric($findUserID)) {
-                    $plan->utilities->acknowledgeMessage(
-                        $interaction,
-                        MessageBuilder::new()->setContent("Invalid user argument."),
-                        true
-                    );
-                }
-            }
+            $findUserID = $interaction->data->resolved->users->first()->id;
             $tickets = $plan->ticket->getMultiple(
                 $findUserID,
                 null,

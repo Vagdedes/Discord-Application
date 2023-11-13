@@ -569,7 +569,10 @@ class DiscordTicket
 
         $embed = new Embed($this->plan->discord);
         $embed->setAuthor($this->plan->utilities->getUsername($ticket->user_id));
-        $embed->setTitle($ticket->ticket->title);
+
+        if (!empty($ticket->ticket->title)) {
+            $embed->setTitle($ticket->ticket->title);
+        }
         $embed->setDescription($ticket->deletion_date === null
             ? ($ticket->expiration_date !== null && get_current_date() > $ticket->expiration_date
                 ? "Expired on " . get_full_date($ticket->expiration_date)
@@ -617,7 +620,10 @@ class DiscordTicket
 
         foreach ($tickets as $ticket) {
             $embed = new Embed($this->plan->discord);
-            $embed->setTitle($ticket->ticket->title);
+
+            if (!empty($ticket->ticket->title)) {
+                $embed->setTitle($ticket->ticket->title);
+            }
             $embed->setDescription("ID: " . $ticket->ticket_creation_id . " | "
                 . ($ticket->deletion_date === null
                     ? ($ticket->expiration_date !== null && $date > $ticket->expiration_date
