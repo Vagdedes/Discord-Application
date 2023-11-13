@@ -139,6 +139,8 @@ class DiscordProperties
 
     public const
         MAX_EMBED_PER_MESSAGE = 25,
+        MAX_ARGUMENTS_PER_COMMAND = 25,
+        MAX_FIELDS_PER_EMBED = 25,
         MAX_BUTTONS_PER_ACTION_ROW = 5,
         MESSAGE_MAX_LENGTH = 2000,
         MESSAGE_NITRO_MAX_LENGTH = 4000,

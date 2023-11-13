@@ -10,6 +10,7 @@ class DiscordCommands
 {
     private DiscordPlan $plan;
     private array $staticCommands, $dynamicCommands, $nativeCommands;
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -51,7 +52,6 @@ class DiscordCommands
             null,
             array(
                 array("deletion_date", null),
-                array("command_reply", null),
                 array("command_placeholder", "/"),
                 null,
                 array("plan_id", "IS", null, 0),
@@ -72,19 +72,69 @@ class DiscordCommands
                     array(
                         array("deletion_date", null),
                         array("command_id", $command->id)
-                    )
+                    ),
+                    array(
+                        "DESC",
+                        "priority"
+                    ),
+                    DiscordProperties::MAX_ARGUMENTS_PER_COMMAND
                 );
                 $commandBuilder = CommandBuilder::new()
                     ->setName($command->command_identification)
                     ->setDescription($command->command_description);
 
                 if (!empty($command->arguments)) {
+                    global $logger;
+
                     foreach ($command->arguments as $argument) {
                         $option = new Option($this->plan->discord);
-                        $option->setType($argument->type);
-                        $option->setName($argument->name);
-                        $option->setRequired($argument->required !== null);
+                        $option->setName(
+                            $argument->name
+                        )->setRequired(
+                            $argument->required !== null
+                        );
 
+                        switch ($argument->type) {
+                            case "string":
+                                $option->setType(Option::STRING);
+                                break;
+                            case "integer":
+                                $option->setType(Option::INTEGER);
+                                break;
+                            case "boolean":
+                                $option->setType(Option::BOOLEAN);
+                                break;
+                            case "user":
+                                $option->setType(Option::USER);
+                                break;
+                            case "channel":
+                                $option->setType(Option::CHANNEL);
+                                break;
+                            case "role":
+                                $option->setType(Option::ROLE);
+                                break;
+                            case "mentionable":
+                                $option->setType(Option::MENTIONABLE);
+                                break;
+                            case "double":
+                                $option->setType(Option::NUMBER);
+                                break;
+                            case "sub-command":
+                                $option->setType(Option::SUB_COMMAND);
+                                break;
+                            case "sub-command-group":
+                                $option->setType(Option::SUB_COMMAND_GROUP);
+                                break;
+                            case "attachment":
+                                $option->setType(Option::ATTACHMENT);
+                                break;
+                            default:
+                                $logger->logError(
+                                    $this->plan->planID,
+                                    "Invalid argument '" . $argument->id . "' in command with ID: " . $command->id
+                                );
+                                break;
+                        }
                         if ($argument->description !== null) {
                             $option->setDescription($argument->description);
                         }
@@ -196,94 +246,6 @@ class DiscordCommands
         $argumentSize = sizeof($arguments);
 
         switch ($command->command_identification) {
-            case "close-ticket":
-                if ($argumentSize === 0) {
-                    $close = $this->plan->ticket->closeByChannel($message->channel, $user->id);
-
-                    if ($close !== null) {
-                        return "Ticket could not be closed: " . $close;
-                    }
-                } else {
-                    $hasReason = $argumentSize > 1;
-                    $ticketID = $arguments[1];
-
-                    if (is_numeric($ticketID)) {
-                        if ($hasReason) {
-                            unset($arguments[1]);
-                            $close = $this->plan->ticket->closeByID(
-                                $ticketID,
-                                $user->id,
-                                implode(" ", $arguments)
-                            );
-                        } else {
-                            $close = $this->plan->ticket->closeByID($ticketID, $user->id);
-                        }
-
-                        if ($close !== null) {
-                            return "Ticket could not be closed: " . $close;
-                        } else {
-                            return "Ticket successfully closed";
-                        }
-                    } else {
-                        $close = $this->plan->ticket->closeByChannel(
-                            $message->channel,
-                            $user->id,
-                            implode(" ", $arguments)
-                        );
-
-                        if ($close !== null) {
-                            return "Ticket could not be closed: " . $close;
-                        }
-                    }
-                }
-                break;
-            case "get-tickets":
-                if ($argumentSize === 0) {
-                    return "Missing user argument.";
-                } else if ($argumentSize > 1) {
-                    return "Too many arguments.";
-                } else {
-                    $findUserID = $arguments[1];
-
-                    if (!is_numeric($findUserID)) {
-                        $findUserID = substr($findUserID, 2, -1);
-
-                        if (!is_numeric($findUserID)) {
-                            return "Invalid user argument.";
-                        }
-                    }
-                    $tickets = $this->plan->ticket->getMultiple(
-                        $findUserID,
-                        null,
-                        DiscordProperties::MAX_EMBED_PER_MESSAGE,
-                        false
-                    );
-
-                    if (empty($tickets)) {
-                        return "No tickets found for user.";
-                    } else {
-                        return $this->plan->ticket->loadTicketsMessage($findUserID, $tickets);
-                    }
-                }
-            case "get-ticket":
-                if ($argumentSize === 0) {
-                    return "Missing ticket-id argument.";
-                } else if ($argumentSize > 1) {
-                    return "Too many arguments.";
-                } else {
-                    $ticketID = $arguments[1];
-
-                    if (!is_numeric($ticketID)) {
-                        return "Invalid ticket-id argument.";
-                    }
-                    $ticket = $this->plan->ticket->getSingle($ticketID);
-
-                    if ($ticket === null) {
-                        return "Ticket not found.";
-                    } else {
-                        return $this->plan->ticket->loadSingleTicketMessage($ticket);
-                    }
-                }
             default:
                 break;
         }

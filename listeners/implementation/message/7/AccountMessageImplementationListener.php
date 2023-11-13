@@ -155,7 +155,7 @@ class AccountMessageImplementationListener
                 $size = sizeof($history);
 
                 if ($size > 0) {
-                    $limit = 25.0;
+                    $limit = DiscordProperties::MAX_FIELDS_PER_EMBED;
                     $messageBuilder = MessageBuilder::new();
 
                     for ($i = 0; $i < ceil($size / $limit); $i++) {

@@ -91,7 +91,11 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             $this->plan->bot->processing++;
-            require_once(self::IMPLEMENTATION_COMMAND . $this->plan->planID . "/" . $class . '.php');
+            require_once(
+                self::IMPLEMENTATION_COMMAND
+                . (empty($command->plan_id) ? "0" : $command->plan_id)
+                . "/" . $class . '.php'
+            );
             $this->plan->discord->listenCommand(
                 $command->command_identification,
                 function (Interaction $interaction) use ($class, $method, $command) {
@@ -103,6 +107,12 @@ class DiscordListener
                         $this->plan->utilities->acknowledgeMessage(
                             $interaction,
                             MessageBuilder::new()->setContent($command->no_permission_message),
+                            $command->ephemeral !== null
+                        );
+                    } else if ($command->command_reply !== null) {
+                        $this->plan->utilities->acknowledgeMessage(
+                            $interaction,
+                            MessageBuilder::new()->setContent($command->command_reply),
                             $command->ephemeral !== null
                         );
                     } else {

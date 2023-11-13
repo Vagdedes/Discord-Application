@@ -29,6 +29,11 @@ class DiscordLogs
 
     public function logError(int|string|null $planID, mixed $object, bool $exit = false): void
     {
+        $hasBot = $this->bot !== null;
+
+        if ($hasBot) {
+            $this->bot->processing++;
+        }
         sql_insert(
             BotDatabaseTable::BOT_ERRORS,
             array(
@@ -42,6 +47,9 @@ class DiscordLogs
             exit($object);
         } else {
             var_dump($object);
+        }
+        if ($hasBot) {
+            $this->bot->processing--;
         }
     }
     //todo expand to channels
