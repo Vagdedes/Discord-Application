@@ -3,13 +3,13 @@
 use Discord\Builders\CommandBuilder;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Interactions\Command\Option;
 use Discord\Parts\User\Member;
 
 class DiscordCommands
 {
     private DiscordPlan $plan;
     private array $staticCommands, $dynamicCommands, $nativeCommands;
-
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -66,9 +66,43 @@ class DiscordCommands
 
         if (!empty($this->nativeCommands)) {
             foreach ($this->nativeCommands as $command) {
+                $command->arguments = get_sql_query(
+                    BotDatabaseTable::BOT_COMMAND_ARGUMENTS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("command_id", $command->id)
+                    )
+                );
                 $commandBuilder = CommandBuilder::new()
                     ->setName($command->command_identification)
                     ->setDescription($command->command_description);
+
+                if (!empty($command->arguments)) {
+                    foreach ($command->arguments as $argument) {
+                        $option = new Option($this->plan->discord);
+                        $option->setType($argument->type);
+                        $option->setName($argument->name);
+                        $option->setRequired($argument->required !== null);
+
+                        if ($argument->description !== null) {
+                            $option->setDescription($argument->description);
+                        }
+                        if ($argument->min_value !== null) {
+                            $option->setMinValue($argument->min_value);
+                        }
+                        if ($argument->max_value !== null) {
+                            $option->setMaxValue($argument->max_value);
+                        }
+                        if ($argument->min_length !== null) {
+                            $option->setMinLength($argument->min_length);
+                        }
+                        if ($argument->max_length !== null) {
+                            $option->setMaxLength($argument->max_length);
+                        }
+                        $commandBuilder->addOption($option);
+                    }
+                }
                 $this->plan->discord->application->commands->save(
                     $this->plan->discord->application->commands->create(
                         $commandBuilder->toArray()

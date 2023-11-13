@@ -7,11 +7,12 @@ class VenomousCommandImplementationListener // Name can be changed
 {
 
     public static function test_method(DiscordPlan $plan,
-                                       Interaction $interaction): void // Name can be changed
+                                       Interaction $interaction,
+                                       object      $command): void // Name can be changed
     {
         $plan->utilities->acknowledgeMessage(
             $interaction,
-            MessageBuilder::new()->setContent("test"),
+            MessageBuilder::new()->setContent(json_encode($command)),
             true
         );
     }

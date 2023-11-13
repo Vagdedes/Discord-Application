@@ -16,6 +16,9 @@ class VenomousMessageImplementationListener
             case "purchase":
                 $plan->ticket->call($interaction, "8-order");
                 break;
+            case "support":
+                $plan->ticket->call($interaction, "8-ai");
+                break;
             default:
                 $plan->utilities->acknowledgeMessage(
                     $interaction,

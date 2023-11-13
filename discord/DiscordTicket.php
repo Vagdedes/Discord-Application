@@ -55,6 +55,7 @@ class DiscordTicket
     private function store(Interaction $interaction, Collection $components,
                            object      $query): void
     {
+        $date = get_current_date();
         $object = $this->plan->instructions->getObject(
             $interaction->guild_id,
             $interaction->guild->name,
@@ -80,8 +81,21 @@ class DiscordTicket
                     ),
                     $query->ephemeral_user_response !== null
                 );
-                return;
             }
+            return;
+        }
+        if ($query->max_open !== null
+            && $this->hasMaxOpen($query->id, $interaction->user->id, $query->max_open)) {
+            if ($query->max_open_message !== null) {
+                $this->plan->utilities->acknowledgeMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent(
+                        $this->plan->instructions->replace(array($query->max_open_message), $object)[0]
+                    ),
+                    $query->ephemeral_user_response !== null
+                );
+            }
+            return;
         }
         if ($query->user_response !== null) {
             $this->plan->utilities->acknowledgeMessage(
@@ -105,8 +119,7 @@ class DiscordTicket
         $components = $components->toArray();
         $post = $query->post_server_id !== null
             && $query->post_channel_id !== null;
-        $create = $query->create_channel_category_id !== null
-            && $query->create_channel_name !== null;
+        $create = $query->create_channel_category_id !== null;
 
         if ($post || $create) {
             $message = MessageBuilder::new();
@@ -133,14 +146,13 @@ class DiscordTicket
                 );
             }
             $message->addEmbed($embed);
-        } else {
-            $message = null;
         }
 
         if ($post) {
             $channel = $this->plan->discord->getChannel($query->post_channel_id);
 
-            if ($channel !== null) {
+            if ($channel !== null
+                && $channel->guild_id == $query->post_server_id) {
                 $channel->sendMessage($message);
             }
         }
@@ -164,7 +176,8 @@ class DiscordTicket
                     "server_id" => $interaction->guild_id,
                     "channel_id" => $interaction->channel_id,
                     "user_id" => $interaction->user->id,
-                    "creation_date" => get_current_date(),
+                    "creation_date" => $date,
+                    "deletion_date" => $post || $create ? null : $date
                 );
 
                 if ($create) {
@@ -172,7 +185,8 @@ class DiscordTicket
                         BotDatabaseTable::BOT_TICKET_ROLES,
                         array("allow", "deny", "role_id"),
                         array(
-                            array("ticket_id", $query->id),
+                            array("deletion_date", null),
+                            array("ticket_id", $query->id)
                         )
                     );
 
@@ -199,8 +213,8 @@ class DiscordTicket
                         Channel::TYPE_TEXT,
                         $query->create_channel_category_id,
                         (empty($query->create_channel_name)
-                            ? $query->create_channel_name
-                            : $this->plan->utilities->getUsername($interaction->user->id))
+                            ? $this->plan->utilities->getUsername($interaction->user->id)
+                            : $query->create_channel_name)
                         . "-" . $ticketID,
                         $query->create_channel_topic,
                         $rolePermissions,
@@ -613,5 +627,22 @@ class DiscordTicket
         ));
     }
 
-    // todo max open tickets
+    private function hasMaxOpen(int|string $ticketID, int|string $userID, int|string $limit): bool
+    {
+        set_sql_cache(self::REFRESH_TIME, self::class);
+        return sizeof(get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            array("id"),
+            array(
+                array("ticket_id", $ticketID),
+                array("user_id", $userID),
+                array("deletion_date", null),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            $limit
+        )) < $limit;
+    }
 }

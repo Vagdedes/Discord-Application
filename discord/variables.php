@@ -37,7 +37,8 @@ class BotDatabaseTable
         BOT_CHAT_MODEL = "discord.botChatModel",
         CURRENCIES = "discord.currencies",
         BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
-        BOT_COMMANDS = "discord.botCommands";
+        BOT_COMMANDS = "discord.botCommands",
+        BOT_COMMAND_ARGUMENTS = "discord.botCommandArguments";
 }
 
 class DiscordPunishment
