@@ -16,6 +16,7 @@ class DiscordTicket
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->checkExpired();
     }
 
     public function call(Interaction $interaction, string $key): bool
@@ -55,7 +56,8 @@ class DiscordTicket
     private function store(Interaction $interaction, Collection $components,
                            object      $query): void
     {
-        $date = get_current_date();
+        $date = get_current_date(); // Always first
+        $this->checkExpired();
         $object = $this->plan->instructions->getObject(
             $interaction->guild_id,
             $interaction->guild->name,
@@ -81,11 +83,15 @@ class DiscordTicket
                     ),
                     $query->ephemeral_user_response !== null
                 );
+            } else {
+                $interaction->acknowledge();
             }
             return;
         }
-        if ($query->max_open !== null
-            && $this->hasMaxOpen($query->id, $interaction->user->id, $query->max_open)) {
+        if ($query->max_open_per_user !== null
+            && $this->hasMaxOpen($query->id, $interaction->user->id, $query->max_open_per_user)
+            || $query->max_open_general !== null
+            && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
             if ($query->max_open_message !== null) {
                 $this->plan->utilities->acknowledgeMessage(
                     $interaction,
@@ -94,6 +100,8 @@ class DiscordTicket
                     ),
                     $query->ephemeral_user_response !== null
                 );
+            } else {
+                $interaction->acknowledge();
             }
             return;
         }
@@ -273,9 +281,8 @@ class DiscordTicket
             set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
-                array("ticket_creation_id"),
+                array("id", "ticket_creation_id", "expiration_date"),
                 array(
-                    array("deletion_date", null),
                     array("created_channel_server_id", $channel->guild_id),
                     array("created_channel_id", $channel->id),
                 ),
@@ -284,16 +291,36 @@ class DiscordTicket
             );
 
             if (!empty($query)) {
-                sql_insert(
-                    BotDatabaseTable::BOT_TICKET_MESSAGES,
-                    array(
-                        "ticket_creation_id" => $query[0]->ticket_creation_id,
-                        "user_id" => $message->author->id,
-                        "message_id" => $message->id,
-                        "message_content" => $message->content,
-                        "creation_date" => get_current_date(),
-                    )
-                );
+                $query = $query[0];
+
+                if ($query->deletion_date !== null) {
+                    $channel->guild->channels->delete($channel);
+                } else if ($query->expiration_date !== null
+                    && get_current_date() > $query->expiration_date) {
+                    set_sql_query(
+                        BotDatabaseTable::BOT_TICKET_CREATIONS,
+                        array(
+                            "expired" => 1
+                        ),
+                        array(
+                            array("id", $query->id)
+                        ),
+                        null,
+                        1
+                    );
+                    $channel->guild->channels->delete($channel);
+                } else {
+                    sql_insert(
+                        BotDatabaseTable::BOT_TICKET_MESSAGES,
+                        array(
+                            "ticket_creation_id" => $query->ticket_creation_id,
+                            "user_id" => $message->author->id,
+                            "message_id" => $message->id,
+                            "message_content" => $message->content,
+                            "creation_date" => get_current_date(),
+                        )
+                    );
+                }
             }
         }
     }
@@ -544,7 +571,9 @@ class DiscordTicket
         $embed->setAuthor($this->plan->utilities->getUsername($ticket->user_id));
         $embed->setTitle($ticket->ticket->title);
         $embed->setDescription($ticket->deletion_date === null
-            ? "Open"
+            ? ($ticket->expiration_date !== null && get_current_date() > $ticket->expiration_date
+                ? "Expired on " . get_full_date($ticket->expiration_date)
+                : "Open")
             : "Closed on " . get_full_date($ticket->deletion_date));
 
         foreach ($ticket->key_value_pairs as $ticketProperties) {
@@ -582,6 +611,7 @@ class DiscordTicket
 
     public function loadTicketsMessage(int|string $userID, array $tickets): MessageBuilder
     {
+        $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
 
@@ -590,7 +620,9 @@ class DiscordTicket
             $embed->setTitle($ticket->ticket->title);
             $embed->setDescription("ID: " . $ticket->ticket_creation_id . " | "
                 . ($ticket->deletion_date === null
-                    ? "Open"
+                    ? ($ticket->expiration_date !== null && $date > $ticket->expiration_date
+                        ? "Expired on " . get_full_date($ticket->expiration_date)
+                        : "Open")
                     : "Closed on " . get_full_date($ticket->deletion_date)));
 
             foreach ($ticket->key_value_pairs as $ticketProperties) {
@@ -616,7 +648,6 @@ class DiscordTicket
             array(
                 array("ticket_id", $ticketID),
                 array("user_id", $userID),
-                array("deletion_date", null),
                 array("creation_date", ">", get_past_date($pastLookup)),
             ),
             array(
@@ -627,15 +658,15 @@ class DiscordTicket
         ));
     }
 
-    private function hasMaxOpen(int|string $ticketID, int|string $userID, int|string $limit): bool
+    private function hasMaxOpen(int|string $ticketID, int|string|null $userID, int|string $limit): bool
     {
         set_sql_cache(self::REFRESH_TIME, self::class);
-        return sizeof(get_sql_query(
+        var_dump(sizeof(get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id"),
             array(
                 array("ticket_id", $ticketID),
-                array("user_id", $userID),
+                $userID === null ? "" : array("user_id", $userID),
                 array("deletion_date", null),
             ),
             array(
@@ -643,6 +674,65 @@ class DiscordTicket
                 "id"
             ),
             $limit
-        )) < $limit;
+        )));
+        return sizeof(get_sql_query(
+                BotDatabaseTable::BOT_TICKET_CREATIONS,
+                array("id"),
+                array(
+                    array("ticket_id", $ticketID),
+                    $userID === null ? "" : array("user_id", $userID),
+                    array("deletion_date", null),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ),
+                array(
+                    "DESC",
+                    "id"
+                ),
+                $limit
+            )) == $limit;
+    }
+
+    private function checkExpired(): void
+    {
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("expired", null),
+                array("expiration_date", "IS NOT", null),
+                array("expiration_date", ">", get_current_date())
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            100 // Limit so we don't ping Discord too much
+        );
+
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                set_sql_query(
+                    BotDatabaseTable::BOT_TICKET_CREATIONS,
+                    array(
+                        "expired" => 1
+                    ),
+                    array(
+                        array("id", $row->id)
+                    ),
+                    null,
+                    1
+                );
+                $channel = $this->plan->discord->getChannel($row->created_channel_id);
+
+                if ($channel !== null
+                    && $channel->guild_id == $row->created_channel_server_id) {
+                    $channel->guild->channels->delete($channel);
+                }
+            }
+        }
     }
 }
