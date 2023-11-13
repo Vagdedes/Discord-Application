@@ -52,6 +52,7 @@ require '/root/discord_bot/discord/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/DiscordReactionRoles.php';
 require '/root/discord_bot/discord/DiscordSocialAlerts.php';
 require '/root/discord_bot/discord/DiscordMessageReminders.php';
+require '/root/discord_bot/discord/DiscordNotes.php';
 require '/root/discord_bot/discord/DiscordBot.php';
 
 require '/root/discord_bot/ai/variables.php';
@@ -95,6 +96,7 @@ use Discord\WebSockets\Intents;
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-message-reminders
+//todo discord-notes
 
 $discord = new Discord([
     'token' => $token[0],

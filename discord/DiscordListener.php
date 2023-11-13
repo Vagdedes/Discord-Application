@@ -23,11 +23,13 @@ class DiscordListener
                                               mixed          $objects = null): void
     {
         if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder, $objects)
             );
+            $this->plan->bot->processing--;
         }
     }
 
@@ -36,11 +38,13 @@ class DiscordListener
                                             mixed       $objects = null): void
     {
         if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_MODAL . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $objects)
             );
+            $this->plan->bot->processing--;
         }
     }
 
@@ -49,11 +53,14 @@ class DiscordListener
                                                ?string        $class, ?string $method): MessageBuilder
     {
         if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
             require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
-            return call_user_func_array(
+            $outcome = call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder)
             );
+            $this->plan->bot->processing--;
+            return $outcome;
         } else {
             return $messageBuilder;
         }
@@ -64,11 +71,14 @@ class DiscordListener
                                       ?string     $class, ?string $method): array
     {
         if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
             require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
-            return call_user_func_array(
+            $outcome = call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $actionRows)
             );
+            $this->plan->bot->processing--;
+            return $outcome;
         } else {
             return $actionRows;
         }

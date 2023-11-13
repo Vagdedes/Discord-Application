@@ -163,20 +163,40 @@ class DiscordTicket
                 );
 
                 if ($create) {
+                    $rolePermissions = get_sql_query(
+                        BotDatabaseTable::BOT_TICKET_ROLES,
+                        array("allow", "deny", "role_id"),
+                        array(
+                            array("ticket_id", $query->id),
+                        )
+                    );
+
+                    if (!empty($rolePermissions)) {
+                        foreach ($rolePermissions as $arrayKey => $role) {
+                            $rolePermissions[$arrayKey] = array(
+                                "id" => $role->role_id,
+                                "type" => "role",
+                                "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
+                                "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
+                            );
+                        }
+                    }
                     $memberPermissions = array(
                         array(
                             "id" => $interaction->user->id,
                             "type" => "member",
-                            "allow" => 964220536896,
-                            "deny" => 120259227648
+                            "allow" => $query->allow_permission,
+                            "deny" => $query->allow_permission
                         )
                     );
-                    $rolePermissions = array();
                     $this->plan->utilities->createChannel(
                         $interaction->guild,
                         Channel::TYPE_TEXT,
                         $query->create_channel_category_id,
-                        $query->create_channel_name . "-" . $ticketID,
+                        (empty($query->create_channel_name)
+                            ? $query->create_channel_name
+                            : $this->plan->utilities->getUsername($interaction->user->id))
+                        . "-" . $ticketID,
                         $query->create_channel_topic,
                         $rolePermissions,
                         $memberPermissions

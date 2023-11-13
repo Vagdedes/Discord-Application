@@ -28,17 +28,17 @@ class DiscordPlan
     public DiscordMessageRefresh $messageRefresh;
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
-    private DiscordBot $bot;
-    private DiscordGoal $goal;
-    private DiscordCounting $counting;
-    private DiscordPoll $poll;
-    private DiscordLevel $level;
-    private DiscordCheaperChatAI $cheaperChatAI;
-    private DiscordInviteTracker $inviteTracker;
-    private DiscordReactionRoles $reactionRoles;
-    private DiscordTemporaryChannel $temporaryChannel;
-    private DiscordSocialAlerts $socialAlerts;
-    private DiscordMessageReminders $messageReminders;
+    public DiscordBot $bot;
+    public DiscordGoal $goal;
+    public DiscordCounting $counting;
+    public DiscordPoll $poll;
+    public DiscordLevel $level;
+    public DiscordCheaperChatAI $cheaperChatAI;
+    public DiscordInviteTracker $inviteTracker;
+    public DiscordReactionRoles $reactionRoles;
+    public DiscordTemporaryChannel $temporaryChannel;
+    public DiscordSocialAlerts $socialAlerts;
+    public DiscordMessageReminders $messageReminders;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,

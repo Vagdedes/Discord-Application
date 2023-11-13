@@ -11,6 +11,7 @@ class BotDatabaseTable
         BOT_GOAL_MESSAGES = "discord.botGoalMessages",
         BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",
         BOT_TICKETS = "discord.botTickets",
+        BOT_TICKET_ROLES = "discord.botTicketRoles",
         BOT_TICKET_CREATIONS = "discord.botTicketCreations",
         BOT_TICKET_SUB_CREATIONS = "discord.botTicketSubCreations",
         BOT_TICKET_MESSAGES = "discord.botTicketMessages",

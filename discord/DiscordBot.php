@@ -19,6 +19,7 @@
  * Reaction Roles
  * Social Alerts
  * Welcome & Goodbye
+ * User Notes
  */
 
 use Discord\Discord;
