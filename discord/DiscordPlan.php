@@ -39,6 +39,7 @@ class DiscordPlan
     public DiscordTemporaryChannel $temporaryChannel;
     public DiscordSocialAlerts $socialAlerts;
     public DiscordMessageReminders $messageReminders;
+    public DiscordQuestionnaire $questionnaire;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,
@@ -91,6 +92,7 @@ class DiscordPlan
         $this->temporaryChannel = new DiscordTemporaryChannel($this);
         $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->messageReminders = new DiscordMessageReminders($this);
+        $this->questionnaire = new DiscordQuestionnaire($this);
 
         $this->keywords = get_sql_query(
             BotDatabaseTable::BOT_KEYWORDS,

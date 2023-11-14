@@ -20,6 +20,7 @@
  * Social Alerts
  * Welcome & Goodbye
  * User Notes
+ * Message Questionnaire
  */
 
 use Discord\Discord;

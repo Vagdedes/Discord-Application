@@ -96,33 +96,36 @@ class DiscordListener
                 . (empty($command->plan_id) ? "0" : $command->plan_id)
                 . "/" . $class . '.php'
             );
-            $this->plan->discord->listenCommand(
-                $command->command_identification,
-                function (Interaction $interaction) use ($class, $method, $command) {
-                    if ($command->required_permission !== null
-                        && !$this->plan->permissions->userHasPermission(
-                            $interaction->member,
-                            $command->required_permission
-                        )) {
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent($command->no_permission_message),
-                            $command->ephemeral !== null
-                        );
-                    } else if ($command->command_reply !== null) {
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent($command->command_reply),
-                            $command->ephemeral !== null
-                        );
-                    } else {
-                        call_user_func_array(
-                            array($class, $method),
-                            array($this->plan, $interaction, $command)
-                        );
+            try {
+                $this->plan->discord->listenCommand(
+                    $command->command_identification,
+                    function (Interaction $interaction) use ($class, $method, $command) {
+                        if ($command->required_permission !== null
+                            && !$this->plan->permissions->userHasPermission(
+                                $interaction->member,
+                                $command->required_permission
+                            )) {
+                            $this->plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($command->no_permission_message),
+                                $command->ephemeral !== null
+                            );
+                        } else if ($command->command_reply !== null) {
+                            $this->plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($command->command_reply),
+                                $command->ephemeral !== null
+                            );
+                        } else {
+                            call_user_func_array(
+                                array($class, $method),
+                                array($this->plan, $interaction, $command)
+                            );
+                        }
                     }
-                }
-            );
+                );
+            } catch (Throwable $ignored) {
+            }
             $this->plan->bot->processing--;
         }
     }
