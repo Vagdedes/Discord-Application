@@ -178,7 +178,7 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
     });
 
-// Event::MESSAGE_DELETE_BULK: Results in error
+    // Event::MESSAGE_DELETE_BULK: Results in error
 
 // Separator
 
@@ -268,7 +268,7 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-// Event::GUILD_AUDIT_LOG_ENTRY_CREATE: Results in error
+    // Event::GUILD_AUDIT_LOG_ENTRY_CREATE: Results in error
 
     $discord->on(Event::GUILD_BAN_ADD, function (Ban $ban, Discord $discord) use ($logger) {
         $logger->logInfo(null, Event::GUILD_BAN_ADD, $ban->getRawAttributes());
@@ -291,8 +291,18 @@ $discord->on('ready', function (Discord $discord) {
     // Separator
 
     // Event::GUILD_MEMBER_UPDATE: Results in error
-    // Event::GUILD_MEMBER_REMOVE: Results in error
     // Event::GUILD_MEMBER_UPDATE: Results in error
+
+    $discord->on(Event::GUILD_MEMBER_REMOVE, function (mixed $member, Discord $discord) use ($logger, $discordBot) {
+        if ($member instanceof Member) {
+            foreach ($discordBot->plans as $plan) {
+                $plan->status->goodbye($member->guild_id, $member->id);
+            }
+            $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
+        } else {
+            $logger->logInfo(null, Event::GUILD_MEMBER_ADD, $member);
+        }
+    });
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
