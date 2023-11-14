@@ -21,10 +21,7 @@ class DiscordMessageRefresh
            null,
            array(
                array("deletion_date", null),
-               null,
-               array("plan_id", "IS", null, 0),
                array("plan_id", $this->plan->planID),
-               null,
                null,
                array("expiration_date", "IS", null, 0),
                array("expiration_date", ">", get_current_date()),

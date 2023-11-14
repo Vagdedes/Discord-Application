@@ -18,10 +18,7 @@ class DiscordConversation
             array(
                 array("user_id", $userID),
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
                 array("plan_id", $this->plan->planID),
-                null,
             ),
             array(
                 "DESC",
@@ -49,10 +46,7 @@ class DiscordConversation
             array(
                 array("user_id", $userID),
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
                 array("plan_id", $this->plan->planID),
-                null,
             ),
             array(
                 "DESC",
@@ -126,10 +120,7 @@ class DiscordConversation
                     $userID !== null ? array("user_id", $userID) : "",
                     array("deletion_date", null),
                     array("creation_date", ">", get_past_date($pastLookup)),
-                    null,
-                    array("plan_id", "IS", null, 0),
                     array("plan_id", $this->plan->planID),
-                    null,
                 ),
                 array(
                     "DESC",
@@ -163,10 +154,7 @@ class DiscordConversation
                     $userID !== null ? array("user_id", $userID) : "",
                     array("deletion_date", null),
                     array("creation_date", ">", get_past_date($pastLookup)),
-                    null,
-                    array("plan_id", "IS", null, 0),
                     array("plan_id", $this->plan->planID),
-                    null,
                 ),
                 array(
                     "DESC",
