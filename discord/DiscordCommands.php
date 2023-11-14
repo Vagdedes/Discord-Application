@@ -194,7 +194,7 @@ class DiscordCommands
                             && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
                             if ($command->required_permission !== null
-                                && !$this->plan->permissions->userHasPermission(
+                                && !$this->plan->permissions->hasPermission(
                                     $user,
                                     $command->required_permission
                                 )) {
@@ -215,7 +215,7 @@ class DiscordCommands
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
                         if ($command->required_permission !== null
-                            && !$this->plan->permissions->userHasPermission(
+                            && !$this->plan->permissions->hasPermission(
                                 $user,
                                 $command->required_permission
                             )) {

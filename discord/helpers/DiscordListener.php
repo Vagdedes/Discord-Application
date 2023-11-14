@@ -101,7 +101,7 @@ class DiscordListener
                     $command->command_identification,
                     function (Interaction $interaction) use ($class, $method, $command) {
                         if ($command->required_permission !== null
-                            && !$this->plan->permissions->userHasPermission(
+                            && !$this->plan->permissions->hasPermission(
                                 $interaction->member,
                                 $command->required_permission
                             )) {

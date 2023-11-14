@@ -90,9 +90,8 @@ use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
 
-//todo command-search/list
-//todo dalle-3
-//todo sound
+//todo dalle-3 to discord-ai
+//todo sound to discord-ai
 //todo discord-poll
 //todo discord-counting
 //todo discord-level
