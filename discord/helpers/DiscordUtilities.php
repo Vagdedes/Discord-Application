@@ -58,4 +58,11 @@ class DiscordUtilities
             $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
         });
     }
+
+    public function acknowledgeCommandMessage(Interaction    $interaction,
+                                              MessageBuilder $messageBuilder,
+                                              bool           $ephemeral): void
+    {
+        $interaction->respondWithMessage($messageBuilder, $ephemeral);
+    }
 }

@@ -17,7 +17,7 @@ class DefaultCommandImplementationListener // Name can be changed
             $close = $plan->ticket->closeByChannel($interaction->channel, $interaction->user->id);
 
             if ($close !== null) {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent("Ticket could not be closed: " . $close),
                     true
@@ -39,13 +39,13 @@ class DefaultCommandImplementationListener // Name can be changed
                 }
 
                 if ($close !== null) {
-                    $plan->utilities->acknowledgeMessage(
+                    $plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent("Ticket could not be closed: " . $close),
                         true
                     );
                 } else {
-                    $plan->utilities->acknowledgeMessage(
+                    $plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent("Ticket successfully closed"),
                         true
@@ -59,7 +59,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 );
 
                 if ($close !== null) {
-                    $plan->utilities->acknowledgeMessage(
+                    $plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent("Ticket could not be closed: " . $close),
                         true
@@ -77,13 +77,13 @@ class DefaultCommandImplementationListener // Name can be changed
         $argumentSize = sizeof($arguments);
 
         if ($argumentSize === 0) {
-            $plan->utilities->acknowledgeMessage(
+            $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Missing user argument."),
                 true
             );
         } else if ($argumentSize > 1) {
-            $plan->utilities->acknowledgeMessage(
+            $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Too many arguments."),
                 true
@@ -98,13 +98,13 @@ class DefaultCommandImplementationListener // Name can be changed
             );
 
             if (empty($tickets)) {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent("No tickets found for user."),
                     true
                 );
             } else {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     $plan->ticket->loadTicketsMessage($findUserID, $tickets),
                     true
@@ -121,13 +121,13 @@ class DefaultCommandImplementationListener // Name can be changed
         $argumentSize = sizeof($arguments);
 
         if ($argumentSize === 0) {
-            $plan->utilities->acknowledgeMessage(
+            $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Missing ticket-id argument."),
                 true
             );
         } else if ($argumentSize > 1) {
-            $plan->utilities->acknowledgeMessage(
+            $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Too many arguments."),
                 true
@@ -136,7 +136,7 @@ class DefaultCommandImplementationListener // Name can be changed
             $ticketID = array_shift($arguments)["value"];
 
             if (!is_numeric($ticketID)) {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent("Invalid ticket-id argument."),
                     true
@@ -145,18 +145,52 @@ class DefaultCommandImplementationListener // Name can be changed
             $ticket = $plan->ticket->getSingle($ticketID);
 
             if ($ticket === null) {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent("Ticket not found."),
                     true
                 );
             } else {
-                $plan->utilities->acknowledgeMessage(
+                $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     $plan->ticket->loadSingleTicketMessage($ticket),
                     true
                 );
             }
         }
+    }
+
+    public static function list_commands(DiscordPlan $plan,
+                                         Interaction $interaction,
+                                         object      $command): void // Name can be changed
+    {
+        $content = "";
+
+        foreach (array(
+                     $plan->commands->staticCommands,
+                     $plan->commands->dynamicCommands,
+                     $plan->commands->nativeCommands
+                 ) as $commands) {
+            if (!empty($commands)) {
+                foreach ($commands as $command) {
+                    if ($command->required_permission !== null
+                        && $plan->permissions->hasPermission(
+                            $interaction->member,
+                            $command->required_permission
+                        )) {
+                        $content .= "__" . $command->id . "__ "
+                            . $command->command_placeholder
+                            . $command->command_identification . "\n";
+                    }
+                }
+            }
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent(
+                empty($content) ? "No commands found." : $content
+            ),
+            true
+        );
     }
 }

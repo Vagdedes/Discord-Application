@@ -42,7 +42,7 @@ class DiscordPermissions
         }
         $query = get_sql_query(
             BotDatabaseTable::BOT_USER_PERMISSIONS,
-            array("server_id", "role_id", "permission"),
+            array("server_id", "user_id", "permission"),
             array(
                 array("deletion_date", null),
                 null,
@@ -60,7 +60,7 @@ class DiscordPermissions
             foreach ($query as $row) {
                 $hash = $this->hash($row->server_id, $row->user_id);
 
-                if (array_key_exists($hash, $this->rolePermissions)) {
+                if (array_key_exists($hash, $this->userPermissions)) {
                     $this->userPermissions[$hash][] = $row->permission;
                 } else {
                     $this->userPermissions[$hash] = array($row->permission);
@@ -69,12 +69,12 @@ class DiscordPermissions
         }
     }
 
-    public function getRolePermissions(int|string $serverID, int|string $roleID): array
+    public function getRolePermissions(int|string|null $serverID, int|string $roleID): array
     {
         return $this->rolePermissions[$this->hash($serverID, $roleID)] ?? array();
     }
 
-    public function getUserPermissions(int|string $serverID, int|string $userID): array
+    public function getUserPermissions(int|string|null $serverID, int|string|null $userID): array
     {
         return $this->userPermissions[$this->hash($serverID, $userID)] ?? array();
     }
@@ -87,13 +87,14 @@ class DiscordPermissions
             && in_array($permission, $this->rolePermissions[$hash]);
     }
 
-    public function userHasPermission(int|string $serverID, int|string $userID,
-                                      string     $permission, bool $recursive = true): bool
+    public function userHasPermission(int|string|null $serverID, int|string|null $userID,
+                                      string          $permission, bool $recursive = true): bool
     {
         $hash = $this->hash($serverID, $userID);
         return array_key_exists($hash, $this->userPermissions)
             && in_array($permission, $this->userPermissions[$hash])
-            || $recursive && $this->userHasPermission($serverID, null, $permission, false);
+            || $recursive && ($this->userHasPermission($serverID, null, $permission, false)
+                || $this->userHasPermission(null, null, $permission, false));
     }
 
     public function hasPermission(Member $member, string $permission): bool
@@ -126,7 +127,7 @@ class DiscordPermissions
         }
     }
 
-    private function hash(int|string $serverID, int|string $specificID): int
+    private function hash(int|string|null $serverID, int|string|null $specificID): int
     {
         return string_to_integer(
             (empty($serverID) ? "" : $serverID)

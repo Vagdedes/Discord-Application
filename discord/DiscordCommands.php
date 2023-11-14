@@ -9,7 +9,7 @@ use Discord\Parts\User\Member;
 class DiscordCommands
 {
     private DiscordPlan $plan;
-    private array $staticCommands, $dynamicCommands, $nativeCommands;
+    public array $staticCommands, $dynamicCommands, $nativeCommands;
 
     public function __construct(DiscordPlan $plan)
     {
