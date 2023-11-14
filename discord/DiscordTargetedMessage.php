@@ -1,5 +1,5 @@
 <?php
-class DiscordGoal
+class DiscordTargetedMessage
 {
     private DiscordPlan $plan;
 

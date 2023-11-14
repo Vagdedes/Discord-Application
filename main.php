@@ -27,26 +27,17 @@ require '/root/discord_bot/utilities/encrypt.php';
 require '/root/discord_bot/web/LoadBalancer.php';
 
 require '/root/discord_bot/discord/variables.php';
-require '/root/discord_bot/discord/DiscordPlan.php';
-require '/root/discord_bot/discord/DiscordInstructions.php';
-require '/root/discord_bot/discord/DiscordLogs.php';
 require '/root/discord_bot/discord/DiscordModeration.php';
 require '/root/discord_bot/discord/DiscordConversation.php';
 require '/root/discord_bot/discord/DiscordLimits.php';
 require '/root/discord_bot/discord/DiscordCommands.php';
-require '/root/discord_bot/discord/DiscordCurrency.php';
-require '/root/discord_bot/discord/DiscordListener.php';
-require '/root/discord_bot/discord/DiscordComponent.php';
 require '/root/discord_bot/discord/DiscordControlledMessages.php';
 require '/root/discord_bot/discord/DiscordTicket.php';
 require '/root/discord_bot/discord/DiscordMessageRefresh.php';
-require '/root/discord_bot/discord/DiscordPermissions.php';
-require '/root/discord_bot/discord/DiscordUtilities.php';
-require '/root/discord_bot/discord/DiscordGoal.php';
+require '/root/discord_bot/discord/DiscordTargetedMessage.php';
 require '/root/discord_bot/discord/DiscordLevel.php';
 require '/root/discord_bot/discord/DiscordCounting.php';
 require '/root/discord_bot/discord/DiscordPoll.php';
-require '/root/discord_bot/discord/DiscordCheaperChatAI.php';
 require '/root/discord_bot/discord/DiscordTemporaryChannel.php';
 require '/root/discord_bot/discord/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/DiscordReactionRoles.php';
@@ -54,7 +45,22 @@ require '/root/discord_bot/discord/DiscordSocialAlerts.php';
 require '/root/discord_bot/discord/DiscordMessageReminders.php';
 require '/root/discord_bot/discord/DiscordNotes.php';
 require '/root/discord_bot/discord/DiscordQuestionnaire.php';
-require '/root/discord_bot/discord/DiscordBot.php';
+require '/root/discord_bot/discord/DiscordControlledChannels.php';
+require '/root/discord_bot/discord/DiscordAI.php';
+require '/root/discord_bot/discord/DiscordStatus.php';
+
+require '/root/discord_bot/discord/helpers/DiscordPlan.php';
+require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
+require '/root/discord_bot/discord/helpers/DiscordBot.php';
+require '/root/discord_bot/discord/helpers/DiscordListener.php';
+require '/root/discord_bot/discord/helpers/DiscordUtilities.php';
+require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
+require '/root/discord_bot/discord/helpers/DiscordLogs.php';
+require '/root/discord_bot/discord/helpers/DiscordComponent.php';
+require '/root/discord_bot/discord/helpers/DiscordCurrency.php';
+require '/root/discord_bot/discord/helpers/DiscordLocations.php';
+
+require '/root/discord_bot/discord/user/DiscordCheaperChatAI.php';
 
 require '/root/discord_bot/ai/variables.php';
 require '/root/discord_bot/ai/ChatModel.php';
@@ -90,7 +96,6 @@ use Discord\WebSockets\Intents;
 //todo discord-poll
 //todo discord-counting
 //todo discord-level
-//todo discord-goal
 //todo discord-cheaper-ai
 //todo discord-reaction-roles
 //todo discord-invite-tracker
@@ -99,6 +104,7 @@ use Discord\WebSockets\Intents;
 //todo discord-message-reminders
 //todo discord-notes
 //todo discord-questionnaire
+//todo discord-controlled-channels
 
 $discord = new Discord([
     'token' => $token[0],
@@ -148,15 +154,15 @@ $discord->on('ready', function (Discord $discord) {
             foreach ($discordBot->plans as $plan) {
                 $plan->ticket->track($message);
 
-                if ($plan->assist(
-                        $message,
-                        $message->author,
-                        $message->member,
-                        $message->guild->name,
-                        $message->channel->name,
-                        $message->thread?->id, $message->thread?->name,
-                        $message->content,
-                    )) {
+                if ($plan->ai->textAssistance(
+                    $message,
+                    $message->author,
+                    $message->member,
+                    $message->guild->name,
+                    $message->channel->name,
+                    $message->thread?->id, $message->thread?->name,
+                    $message->content,
+                )) {
                     break;
                 }
             }
@@ -282,15 +288,15 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_STICKERS_UPDATE, $stickers, $oldStickers);
     });
 
-// Separator
+    // Separator
 
-// Event::GUILD_MEMBER_UPDATE: Results in error
-// Event::GUILD_MEMBER_REMOVE: Results in error
-// Event::GUILD_MEMBER_UPDATE: Results in error
+    // Event::GUILD_MEMBER_UPDATE: Results in error
+    // Event::GUILD_MEMBER_REMOVE: Results in error
+    // Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
-            $plan->welcome($member->guild_id, $member->id);
+            $plan->status->welcome($member->guild_id, $member->id);
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });

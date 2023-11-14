@@ -6,9 +6,10 @@ class BotDatabaseTable
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
-        BOT_GOALS = "discord.botGoals",
-        BOT_GOAL_EXECUTIONS = "discord.botGoalExecutions",
-        BOT_GOAL_MESSAGES = "discord.botGoalMessages",
+        BOT_TARGETED_MESSAGES = "discord.botTargetedMessages",
+        BOT_TARGETED_MESSAGE_MESSAGES = "discord.botTargetedMessageMessages",
+        BOT_TARGETED_MESSAGE_ROLES = "discord.botTargetedMessageRoles",
+        BOT_TARGETED_MESSAGE_CREATIONS = "discord.botTargetedMessageCreations",
         BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",
         BOT_TICKETS = "discord.botTickets",
         BOT_TICKET_ROLES = "discord.botTicketRoles",
@@ -47,7 +48,7 @@ class DiscordPunishment
         DISCORD_BAN = 1,
         DISCORD_KICK = 2,
         DISCORD_TIMEOUT = 3,
-        CUSTOM_BLACKLIST = 4;
+        AI_BLACKLIST = 4;
 }
 
 class DiscordSyntax

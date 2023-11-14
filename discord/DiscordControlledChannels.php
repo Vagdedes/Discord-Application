@@ -1,6 +1,5 @@
 <?php
-class
-DiscordCheaperChatAI
+class DiscordControlledChannels
 {
     private DiscordPlan $plan;
 

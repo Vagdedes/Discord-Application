@@ -1,26 +1,33 @@
 <?php
 
 /*
- * Features:
+ * User Features:
+ * Cheaper Chat AI
+ *
+ * Bot Features:
  * Chat & Image AI
  * Custom Commands
- * Ticket Management
- * Persistent Messages
- * Refresh Messages
- * Reminder Messages
- * Admin Goals
- * Counting Channels
- * Temporary Channels
- * Moderation Channels
- * Reaction Polls
- * User Levels
- * Cheaper Chat AI
+ * Anti-Expiration Threads
+ * Admin Targets
+ * Moderation Logs
  * Invite Tracker
- * Reaction Roles
  * Social Alerts
  * Welcome & Goodbye
+ * -
+ * Persistent Messages
+ * Reminder Messages
+ * -
+ * Counting Channels
+ * Persistent Channels
+ * Temporary Channels
+ * -
+ * Reaction Polls
+ * Reaction Roles
+ * -
+ * User Tickets
+ * User Levels
  * User Notes
- * Message Questionnaire
+ * User Questionnaire
  */
 
 use Discord\Discord;
@@ -32,7 +39,7 @@ class DiscordBot
     private string $refreshDate;
     private Discord $discord;
     public int $processing;
-    private $account;
+    private mixed $account;
 
     public function __construct(Discord $discord, int|string $botID)
     {
@@ -95,7 +102,7 @@ class DiscordBot
         }
     }
 
-    public function getAccount(): ?object
+    public function getAccount(): mixed
     {
         return $this->account;
     }

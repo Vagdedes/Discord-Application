@@ -230,7 +230,7 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
-        $object->channel = $this->plan->getChannel($serverID, $channelID, $userID);
+        $object->channel = $this->plan->locations->getChannel($serverID, $channelID, $userID);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;
