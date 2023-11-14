@@ -93,7 +93,7 @@ class DefaultCommandImplementationListener // Name can be changed
             $tickets = $plan->ticket->getMultiple(
                 $findUserID,
                 null,
-                DiscordProperties::MAX_EMBED_PER_MESSAGE,
+                DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
                 false
             );
 

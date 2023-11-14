@@ -30,7 +30,7 @@ class DiscordAI
             $this->chatAI = new ChatAI(
                 $query->model_family,
                 $AI_key[0],
-                DiscordProperties::MESSAGE_MAX_LENGTH,
+                DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
                 $query->temperature,
                 $query->frequency_penalty,
                 $query->presence_penalty,
@@ -200,7 +200,7 @@ class DiscordAI
                                         if ($channel->prompt_message !== null) {
                                             $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
                                         } else {
-                                            $promptMessage = "...";
+                                            $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
                                         }
                                         $message->reply(MessageBuilder::new()->setContent(
                                             $promptMessage
@@ -230,7 +230,7 @@ class DiscordAI
 
                                             if ($channel->debug !== null) {
                                                 foreach (array($parameters, $modelReply) as $debug) {
-                                                    foreach (str_split(json_encode($debug), DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                                    foreach (str_split(json_encode($debug), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                                                         $message->reply(MessageBuilder::new()->setContent(
                                                             str_replace("\\n", DiscordProperties::NEW_LINE, $split)
                                                         ));
@@ -278,13 +278,13 @@ class DiscordAI
                                                     $message->delete();
                                                 }
                                             } else {
-                                                $pieces = str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH);
+                                                $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
                                                 $message->edit(MessageBuilder::new()->setContent(
                                                     array_shift($pieces)
                                                 ));
 
                                                 if (!empty($pieces)) {
-                                                    foreach (str_split($assistance, DiscordProperties::MESSAGE_MAX_LENGTH) as $split) {
+                                                    foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                                                         $message->reply(MessageBuilder::new()->setContent($split));
                                                     }
                                                 }

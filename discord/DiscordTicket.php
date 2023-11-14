@@ -150,7 +150,7 @@ class DiscordTicket
             foreach ($components as $component) {
                 $embed->addFieldValues(
                     strtoupper($component["custom_id"]),
-                    "```" . $component["value"] . "```"
+                    DiscordSyntax::HEAVY_CODE_BLOCK . $component["value"] . DiscordSyntax::HEAVY_CODE_BLOCK
                 );
             }
             $message->addEmbed($embed);
@@ -582,23 +582,23 @@ class DiscordTicket
         foreach ($ticket->key_value_pairs as $ticketProperties) {
             $embed->addFieldValues(
                 strtoupper($ticketProperties->input_key),
-                "```" . $ticketProperties->input_value . "```"
+                DiscordSyntax::HEAVY_CODE_BLOCK . $ticketProperties->input_value . DiscordSyntax::HEAVY_CODE_BLOCK
             );
             $embed->setTimestamp(strtotime($ticket->creation_date));
         }
         $messageBuilder->addEmbed($embed);
 
         if (!empty($ticket->messages)) {
-            $max = DiscordProperties::MAX_EMBED_PER_MESSAGE - 1; // Minus one due to previous embed
+            $max = DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE - 1; // Minus one due to previous embed
 
-            foreach (array_chunk($ticket->messages, DiscordProperties::MAX_EMBED_PER_MESSAGE) as $chunk) {
+            foreach (array_chunk($ticket->messages, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
                 $embed = new Embed($this->plan->discord);
 
                 foreach ($chunk as $message) {
                     $embed->addFieldValues(
                         $this->plan->utilities->getUsername($message->user_id)
                         . " | " . $message->creation_date,
-                        "```" . $message->message_content . "```"
+                        DiscordSyntax::HEAVY_CODE_BLOCK . $message->message_content . DiscordSyntax::HEAVY_CODE_BLOCK
                     );
                 }
                 $messageBuilder->addEmbed($embed);
@@ -634,7 +634,7 @@ class DiscordTicket
             foreach ($ticket->key_value_pairs as $ticketProperties) {
                 $embed->addFieldValues(
                     strtoupper($ticketProperties->input_key),
-                    "```" . $ticketProperties->input_value . "```"
+                    DiscordSyntax::HEAVY_CODE_BLOCK . $ticketProperties->input_value . DiscordSyntax::HEAVY_CODE_BLOCK
                 );
                 $embed->setTimestamp(strtotime($ticket->creation_date));
             }

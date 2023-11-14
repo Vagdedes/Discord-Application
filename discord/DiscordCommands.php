@@ -77,7 +77,7 @@ class DiscordCommands
                         "DESC",
                         "priority"
                     ),
-                    DiscordProperties::MAX_ARGUMENTS_PER_COMMAND
+                    DiscordInheritedLimits::MAX_ARGUMENTS_PER_COMMAND
                 );
                 $commandBuilder = CommandBuilder::new()
                     ->setName($command->command_identification)

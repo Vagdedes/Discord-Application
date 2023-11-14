@@ -26,10 +26,7 @@ require '/root/discord_bot/utilities/encrypt.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
-require '/root/discord_bot/discord/variables.php';
 require '/root/discord_bot/discord/DiscordModeration.php';
-require '/root/discord_bot/discord/DiscordConversation.php';
-require '/root/discord_bot/discord/DiscordLimits.php';
 require '/root/discord_bot/discord/DiscordCommands.php';
 require '/root/discord_bot/discord/DiscordControlledMessages.php';
 require '/root/discord_bot/discord/DiscordTicket.php';
@@ -49,6 +46,9 @@ require '/root/discord_bot/discord/DiscordControlledChannels.php';
 require '/root/discord_bot/discord/DiscordAI.php';
 require '/root/discord_bot/discord/DiscordStatus.php';
 
+require '/root/discord_bot/discord/helpers/variables.php';
+require '/root/discord_bot/discord/helpers/DiscordConversation.php';
+require '/root/discord_bot/discord/helpers/DiscordLimits.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordBot.php';

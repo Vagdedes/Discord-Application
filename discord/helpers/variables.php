@@ -133,18 +133,24 @@ class DiscordSyntax
     }
 }
 
+class DiscordInheritedLimits
+{
+    public const
+        MAX_EMBEDS_PER_MESSAGE = 10,
+        MAX_ARGUMENTS_PER_COMMAND = 25,
+        MAX_FIELDS_PER_EMBED = 25,
+        MAX_BUTTONS_PER_ACTION_ROW = 5,
+        MESSAGE_MAX_LENGTH = 2000,
+        MESSAGE_NITRO_MAX_LENGTH = 4000;
+}
+
 class DiscordProperties
 {
     private const STRICT_REPLY_INSTRUCTIONS_DEFAULT = "MOST IMPORTANT: "
     . "IF YOU ARE NOT OVER 90% CERTAIN THE USER'S MESSAGE IS RELATED TO THE FOLLOWING INFORMATION";
 
     public const
-        MAX_EMBED_PER_MESSAGE = 10,
-        MAX_ARGUMENTS_PER_COMMAND = 25,
-        MAX_FIELDS_PER_EMBED = 25,
-        MAX_BUTTONS_PER_ACTION_ROW = 5,
-        MESSAGE_MAX_LENGTH = 2000,
-        MESSAGE_NITRO_MAX_LENGTH = 4000,
+        DEFAULT_PROMPT_MESSAGE = "...",
         SYSTEM_REFRESH_MILLISECONDS = 900_000, // 15 minutes
         NEW_LINE = "\n",
         DEFAULT_PLACEHOLDER_START = "%%__",

@@ -208,7 +208,7 @@ class DiscordComponent
                 if (array_key_exists($buttonObject->row_id, $rows)) {
                     $rows[$buttonObject->row_id][] = $buttonObject;
 
-                    if (count($rows[$buttonObject->row_id]) > DiscordProperties::MAX_BUTTONS_PER_ACTION_ROW) {
+                    if (count($rows[$buttonObject->row_id]) > DiscordInheritedLimits::MAX_BUTTONS_PER_ACTION_ROW) {
                         $logger->logError(
                             $this->plan->planID,
                             "More than allowed buttons per row in button with ID: " . $buttonObject->id,
