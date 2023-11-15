@@ -278,6 +278,7 @@ class DiscordTargetedMessage
                     } else {
                         $channel->guild->channels->delete($channel);
                     }
+                    $this->initiate($query->target_id);
                 } else if (get_current_date() > $query->expiration_date) {
                     if (set_sql_query(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
@@ -391,7 +392,9 @@ class DiscordTargetedMessage
         }
     }
 
-    public function closeByChannelOrThread(Channel $channel, int|string $userID, ?string $reason = null): ?string
+    public function closeByChannelOrThread(Channel         $channel,
+                                           int|string|null $userID = null,
+                                           ?string         $reason = null): ?string
     {
         set_sql_cache("1 second");
         $query = get_sql_query(

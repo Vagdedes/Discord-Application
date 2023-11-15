@@ -211,7 +211,11 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::CHANNEL_UPDATE, $channel->getRawAttributes(), $oldChannel?->getRawAttributes());
     });
 
-    $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger) {
+    $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->ticket->closeByChannel($channel);
+            $plan->target->closeByChannelOrThread($channel);
+        }
         $logger->logInfo(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
     });
 

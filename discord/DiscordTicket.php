@@ -394,7 +394,9 @@ class DiscordTicket
         }
     }
 
-    public function closeByChannel(Channel $channel, int|string $userID, ?string $reason = null): ?string
+    public function closeByChannel(Channel         $channel,
+                                   int|string|null $userID = null,
+                                   ?string         $reason = null): ?string
     {
         set_sql_cache("1 second");
         $query = get_sql_query(
