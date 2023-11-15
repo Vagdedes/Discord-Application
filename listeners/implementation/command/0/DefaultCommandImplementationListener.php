@@ -160,6 +160,8 @@ class DefaultCommandImplementationListener // Name can be changed
         }
     }
 
+    // Separator
+
     public static function list_commands(DiscordPlan $plan,
                                          Interaction $interaction,
                                          object      $command): void // Name can be changed
@@ -193,4 +195,161 @@ class DefaultCommandImplementationListener // Name can be changed
             true
         );
     }
+
+    // Separator
+
+    public static function close_target(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $argumentSize = sizeof($arguments);
+
+        if ($argumentSize === 0) {
+            $close = $plan->target->closeByChannel($interaction->channel, $interaction->user->id);
+
+            if ($close !== null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Target could not be closed: " . $close),
+                    true
+                );
+            }
+        } else {
+            $hasReason = $argumentSize > 1;
+            $targetID = array_shift($arguments)["value"];
+
+            if (is_numeric($targetID)) {
+                if ($hasReason) {
+                    $close = $plan->target->closeByID(
+                        $targetID,
+                        $interaction->user->id,
+                        implode(" ", $arguments)
+                    );
+                } else {
+                    $close = $plan->target->closeByID($targetID, $interaction->user->id);
+                }
+
+                if ($close !== null) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Target could not be closed: " . $close),
+                        true
+                    );
+                } else {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Target successfully closed"),
+                        true
+                    );
+                }
+            } else {
+                $close = $plan->target->closeByChannel(
+                    $interaction->channel,
+                    $interaction->user->id,
+                    implode(" ", $arguments)
+                );
+
+                if ($close !== null) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Target could not be closed: " . $close),
+                        true
+                    );
+                }
+            }
+        }
+    }
+
+    public static function get_targets(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $argumentSize = sizeof($arguments);
+
+        if ($argumentSize === 0) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Missing user argument."),
+                true
+            );
+        } else if ($argumentSize > 1) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Too many arguments."),
+                true
+            );
+        } else {
+            $findUserID = $interaction->data->resolved->users->first()->id;
+            $targets = $plan->target->getMultiple(
+                $findUserID,
+                null,
+                DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
+                false
+            );
+
+            if (empty($targets)) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("No targets found for user."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    $plan->target->loadTargetsMessage($findUserID, $targets),
+                    true
+                );
+            }
+        }
+    }
+
+    public static function get_target(DiscordPlan $plan,
+                                      Interaction $interaction,
+                                      object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $argumentSize = sizeof($arguments);
+
+        if ($argumentSize === 0) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Missing target-id argument."),
+                true
+            );
+        } else if ($argumentSize > 1) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Too many arguments."),
+                true
+            );
+        } else {
+            $targetID = array_shift($arguments)["value"];
+
+            if (!is_numeric($targetID)) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Invalid target-id argument."),
+                    true
+                );
+            }
+            $target = $plan->target->getSingle($targetID);
+
+            if ($target === null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Target not found."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    $plan->target->loadSingleTargetMessage($target),
+                    true
+                );
+            }
+        }
+    }
+
 }
