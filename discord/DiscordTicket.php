@@ -69,8 +69,7 @@ class DiscordTicket
             $interaction->user->username,
             $interaction->user->displayname,
             $interaction->message->content,
-            $interaction->message->id,
-            $this->plan->discord->user->id
+            $interaction->message->id
         );
 
         if ($query->cooldown_time !== null

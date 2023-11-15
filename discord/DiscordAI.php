@@ -64,8 +64,7 @@ class DiscordAI
             $user->username,
             $user->displayname,
             $messageContent,
-            $message->id,
-            $this->plan->discord->user->displayname
+            $message->id
         );
         $command = $this->plan->commands->process(
             $message,

@@ -9,49 +9,46 @@ use Discord\Parts\User\Member;
 class DiscordTargetedMessage
 {
     private DiscordPlan $plan;
+    private array $targetPlans;
 
     private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->targetPlans = get_sql_query(
+            BotDatabaseTable::BOT_TARGETED_MESSAGES,
+            null,
+            array(
+                array("plan_id", $plan->planID),
+                array("deletion_date", null),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
         $this->checkExpired();
     }
 
-    private function store(Member $member): void
+    private function initiate(Member $member): void
     {
         $date = get_current_date(); // Always first
         $this->checkExpired();
         $object = $this->plan->instructions->getObject(
-            $interaction->guild_id,
-            $interaction->guild->name,
-            $interaction->channel_id,
-            $interaction->channel->name,
-            $interaction->message?->thread?->id,
-            $interaction->message?->thread,
-            $interaction->user->id,
-            $interaction->user->username,
-            $interaction->user->displayname,
-            $interaction->message->content,
-            $interaction->message->id,
-            $this->plan->discord->user->id
+            $member->guild_id,
+            $member->guild->name,
+            null,
+            null,
+            null,
+            null,
+            $member->user->id,
+            $member->username,
+            $member->displayname,
+            null,
+            null
         );
 
-        if ($query->cooldown_time !== null
-            && $this->hasCooldown($query->id, $interaction->user->id, $query->cooldown_time)) {
-            if ($query->cooldown_message !== null) {
-                $this->plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($query->cooldown_message), $object)[0]
-                    ),
-                    $query->ephemeral_user_response !== null
-                );
-            } else {
-                $interaction->acknowledge();
-            }
-            return;
-        }
         if ($query->max_open_per_user !== null
             && $this->hasMaxOpen($query->id, $interaction->user->id, $query->max_open_per_user)
             || $query->max_open_general !== null
@@ -69,26 +66,9 @@ class DiscordTargetedMessage
             }
             return;
         }
-        if ($query->user_response !== null) {
-            $this->plan->utilities->acknowledgeMessage(
-                $interaction,
-                MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($query->user_response), $object)[0]
-                ),
-                $query->ephemeral_user_response !== null
-            );
-        } else {
-            $this->plan->listener->callTargetImplementation(
-                $interaction,
-                $query->listener_class,
-                $query->listener_method,
-                $components
-            );
-        }
 
         // Separator
 
-        $components = $components->toArray();
         $post = $query->post_server_id !== null
             && $query->post_channel_id !== null;
         $create = $query->create_channel_category_id !== null;
@@ -152,69 +132,48 @@ class DiscordTargetedMessage
                     "deletion_date" => $post || $create ? null : $date
                 );
 
-                if ($create) {
-                    $rolePermissions = get_sql_query(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
-                        array("allow", "deny", "role_id"),
-                        array(
-                            array("deletion_date", null),
-                            array("target_id", $query->id)
-                        )
-                    );
+                $rolePermissions = get_sql_query(
+                    BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
+                    array("allow", "deny", "role_id"),
+                    array(
+                        array("deletion_date", null),
+                        array("target_id", $query->id)
+                    )
+                );
 
-                    if (!empty($rolePermissions)) {
-                        foreach ($rolePermissions as $arrayKey => $role) {
-                            $rolePermissions[$arrayKey] = array(
-                                "id" => $role->role_id,
-                                "type" => "role",
-                                "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
-                            );
-                        }
+                if (!empty($rolePermissions)) {
+                    foreach ($rolePermissions as $arrayKey => $role) {
+                        $rolePermissions[$arrayKey] = array(
+                            "id" => $role->role_id,
+                            "type" => "role",
+                            "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
+                            "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
+                        );
                     }
-                    $memberPermissions = array(
-                        array(
-                            "id" => $interaction->user->id,
-                            "type" => "member",
-                            "allow" => $query->allow_permission,
-                            "deny" => $query->allow_permission
-                        )
-                    );
-                    $this->plan->utilities->createChannel(
-                        $interaction->guild,
-                        Channel::TYPE_TEXT,
-                        $query->create_channel_category_id,
-                        (empty($query->create_channel_name)
-                            ? $this->plan->utilities->getUsername($interaction->user->id)
-                            : $query->create_channel_name)
-                        . "-" . $targetID,
-                        $query->create_channel_topic,
-                        $rolePermissions,
-                        $memberPermissions
-                    )->done(function (Channel $channel) use ($components, $targetID, $insert, $interaction, $message) {
-                        $insert["created_channel_id"] = $channel->id;
-                        $insert["created_channel_server_id"] = $channel->guild_id;
+                }
+                $memberPermissions = array(
+                    array(
+                        "id" => $interaction->user->id,
+                        "type" => "member",
+                        "allow" => $query->allow_permission,
+                        "deny" => $query->allow_permission
+                    )
+                );
+                $this->plan->utilities->createChannel(
+                    $interaction->guild,
+                    Channel::TYPE_TEXT,
+                    $query->create_channel_category_id,
+                    (empty($query->create_channel_name)
+                        ? $this->plan->utilities->getUsername($interaction->user->id)
+                        : $query->create_channel_name)
+                    . "-" . $targetID,
+                    $query->create_channel_topic,
+                    $rolePermissions,
+                    $memberPermissions
+                )->done(function (Channel $channel) use ($components, $targetID, $insert, $interaction, $message) {
+                    $insert["created_channel_id"] = $channel->id;
+                    $insert["created_channel_server_id"] = $channel->guild_id;
 
-                        if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                            foreach ($components as $component) {
-                                sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
-                                    array(
-                                        "target_creation_id" => $targetID,
-                                        "input_key" => $component["custom_id"],
-                                        "input_value" => $component["value"]
-                                    )
-                                );
-                            }
-                            $channel->sendMessage($message);
-                        } else {
-                            global $logger;
-                            $logger->logError(
-                                $this->plan->planID,
-                                "(1) Failed to insert target creation of user: " . $interaction->user->id
-                            );
-                        }
-                    });
-                } else {
                     if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
                         foreach ($components as $component) {
                             sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
@@ -225,14 +184,15 @@ class DiscordTargetedMessage
                                 )
                             );
                         }
+                        $channel->sendMessage($message);
                     } else {
                         global $logger;
                         $logger->logError(
                             $this->plan->planID,
-                            "(2) Failed to insert target creation of user: " . $interaction->user->id
+                            "(1) Failed to insert target creation of user: " . $interaction->user->id
                         );
                     }
-                }
+                });
                 break;
             }
         }

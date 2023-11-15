@@ -203,11 +203,10 @@ class DiscordInstructions
     }
 
     public function getObject(int|string      $serverID, int|string $serverName,
-                              int|string      $channelID, string $channelName,
+                              int|string|null $channelID, string|null $channelName,
                               int|string|null $threadID, string|null $threadName,
                               int|string      $userID, string $userName, ?string $displayName,
-                              string          $messageContent, int|string $messageID,
-                              string          $botName): object
+                              string|null     $messageContent, int|string|null $messageID): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -222,7 +221,7 @@ class DiscordInstructions
         $object->messageContent = $messageContent;
         $object->messageID = $messageID;
         $object->botID = $this->plan->botID;
-        $object->botName = $botName;
+        $object->botName = $this->plan->discord->user->id;
         $object->domain = get_domain();
         $object->date = get_current_date();
         $object->year = date("Y");

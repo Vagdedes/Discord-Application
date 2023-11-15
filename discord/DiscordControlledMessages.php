@@ -87,8 +87,7 @@ class DiscordControlledMessages
             $interaction->user->username,
             $interaction->user->displayname,
             $interaction->message->content,
-            $interaction->message->id,
-            $this->plan->discord->user->id
+            $interaction->message->id
         );
         $messageBuilder = MessageBuilder::new()->setContent(
             $this->plan->instructions->replace(array($message), $object)[0]

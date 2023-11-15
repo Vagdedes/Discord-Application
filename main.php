@@ -92,10 +92,11 @@ use Discord\WebSockets\Intents;
 
 //todo dalle-3 to discord-ai
 //todo sound to discord-ai
+//todo discord-cheaper-ai
+
 //todo discord-poll
 //todo discord-counting
 //todo discord-level
-//todo discord-cheaper-ai
 //todo discord-reaction-roles
 //todo discord-invite-tracker
 //todo discord-temporary-channels

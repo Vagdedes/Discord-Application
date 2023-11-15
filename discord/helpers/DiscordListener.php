@@ -1,7 +1,9 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Thread\Thread;
 
 class DiscordListener
 {
@@ -147,6 +149,8 @@ class DiscordListener
     }
 
     public function callTargetImplementation(?string $class, ?string $method,
+                                             Channel $channel,
+                                             Thread  $thread,
                                              mixed   $object = null): void
     {
         if ($class !== null && $method !== null) {

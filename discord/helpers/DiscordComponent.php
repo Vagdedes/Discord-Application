@@ -73,8 +73,7 @@ class DiscordComponent
                     $interaction->user->username,
                     $interaction->user->displayname,
                     $interaction->message->content,
-                    $interaction->message->id,
-                    $this->plan->discord->user->id
+                    $interaction->message->id
                 );
 
                 foreach ($subQuery as $arrayKey => $textInput) {
@@ -471,8 +470,7 @@ class DiscordComponent
                         $interaction->user->username,
                         $interaction->user->displayname,
                         $interaction->message->content,
-                        $interaction->message->id,
-                        $this->plan->discord->user->id
+                        $interaction->message->id
                     ))[0]
             );
             $this->plan->utilities->acknowledgeMessage(
