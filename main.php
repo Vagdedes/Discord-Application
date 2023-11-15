@@ -152,6 +152,7 @@ $discord->on('ready', function (Discord $discord) {
         if ($message->guild_id !== null) {
             foreach ($discordBot->plans as $plan) {
                 $plan->ticket->track($message);
+                $plan->target->track($message);
 
                 if ($plan->ai->textAssistance(
                     $message,

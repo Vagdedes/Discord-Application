@@ -1,6 +1,5 @@
 # Build output
 # Build output
-target/
 *.class
 
 # Log file

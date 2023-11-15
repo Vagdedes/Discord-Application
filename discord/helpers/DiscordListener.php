@@ -12,7 +12,8 @@ class DiscordListener
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
-        IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/";
+        IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
+        IMPLEMENTATION_TARGET = "/root/discord_bot/listeners/implementation/target/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -140,6 +141,20 @@ class DiscordListener
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $objects)
+            );
+            $this->plan->bot->processing--;
+        }
+    }
+
+    public function callTargetImplementation(?string $class, ?string $method,
+                                             mixed   $object = null): void
+    {
+        if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
+            require_once(self::IMPLEMENTATION_TARGET . $this->plan->planID . "/" . $class . '.php');
+            call_user_func_array(
+                array($class, $method),
+                array($this->plan, $object)
             );
             $this->plan->bot->processing--;
         }

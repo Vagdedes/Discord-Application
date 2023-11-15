@@ -22,7 +22,7 @@ class DiscordPlan
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
     public DiscordBot $bot;
-    public DiscordTargetedMessage $goal;
+    public DiscordTargetedMessage $target;
     public DiscordCounting $counting;
     public DiscordPoll $poll;
     public DiscordLevel $level;
@@ -76,7 +76,7 @@ class DiscordPlan
         $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
-        $this->goal = new DiscordTargetedMessage($this);
+        $this->target = new DiscordTargetedMessage($this);
         $this->counting = new DiscordCounting($this);
         $this->poll = new DiscordPoll($this);
         $this->level = new DiscordLevel($this);
