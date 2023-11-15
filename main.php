@@ -9,11 +9,6 @@ $token = get_keys_from_file(
 if ($token === null) {
     exit("No Discord token found");
 }
-$AI_key = get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key", 1);
-
-if ($AI_key === null) {
-    exit("No AI API key found");
-}
 ini_set('memory_limit', '-1');
 require '/root/vendor/autoload.php';
 

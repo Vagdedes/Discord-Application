@@ -25,18 +25,26 @@ class DiscordAI
         );
 
         if (!empty($query)) {
-            global $AI_key;
             $query = $query[0];
-            $this->chatAI = new ChatAI(
-                $query->model_family,
-                $AI_key[0],
-                DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
-                $query->temperature,
-                $query->frequency_penalty,
-                $query->presence_penalty,
-                $query->completions,
-                $query->top_p,
-            );
+            $apiKey = $query->api_key !== null ? array($query->api_key) :
+                get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
+
+            if ($apiKey === null) {
+                global $logger;
+                $this->chatAI = null;
+                $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
+            } else {
+                $this->chatAI = new ChatAI(
+                    $query->model_family,
+                    $apiKey[0],
+                    DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
+                    $query->temperature,
+                    $query->frequency_penalty,
+                    $query->presence_penalty,
+                    $query->completions,
+                    $query->top_p,
+                );
+            }
         } else {
             $this->chatAI = null;
         }

@@ -9,14 +9,14 @@ use Discord\Parts\User\Member;
 class DiscordTargetedMessage
 {
     private DiscordPlan $plan;
-    private array $targetPlans;
+    private array $targets;
 
     private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->targetPlans = get_sql_query(
+        $this->targets = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGES,
             null,
             array(
@@ -68,46 +68,7 @@ class DiscordTargetedMessage
         }
 
         // Separator
-
-        $post = $query->post_server_id !== null
-            && $query->post_channel_id !== null;
-        $create = $query->create_channel_category_id !== null;
-
-        if ($post || $create) {
-            $message = MessageBuilder::new();
-            $embed = new Embed($this->plan->discord);
-            $embed->setAuthor($interaction->user->username, $interaction->user->getAvatarAttribute());
-            $embed->setTimestamp(time());
-
-            if ($query->post_title !== null) {
-                $embed->setTitle($query->post_title);
-            }
-            if ($query->post_description !== null) {
-                $embed->setDescription($query->post_description);
-            }
-            if ($query->post_color !== null) {
-                $embed->setColor($query->post_color);
-            }
-            if ($query->post_image_url !== null) {
-                $embed->setImage($query->post_image_url);
-            }
-            foreach ($components as $component) {
-                $embed->addFieldValues(
-                    strtoupper($component["custom_id"]),
-                    DiscordSyntax::HEAVY_CODE_BLOCK . $component["value"] . DiscordSyntax::HEAVY_CODE_BLOCK
-                );
-            }
-            $message->addEmbed($embed);
-        }
-
-        if ($post) {
-            $channel = $this->plan->discord->getChannel($query->post_channel_id);
-
-            if ($channel !== null
-                && $channel->guild_id == $query->post_server_id) {
-                $channel->sendMessage($message);
-            }
-        }
+        $message = MessageBuilder::new()->setContent($query->inception_message);
 
         // Separator
         while (true) {
@@ -128,71 +89,65 @@ class DiscordTargetedMessage
                     "server_id" => $interaction->guild_id,
                     "channel_id" => $interaction->channel_id,
                     "user_id" => $interaction->user->id,
-                    "creation_date" => $date,
-                    "deletion_date" => $post || $create ? null : $date
+                    "creation_date" => $date
                 );
 
-                $rolePermissions = get_sql_query(
-                    BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
-                    array("allow", "deny", "role_id"),
-                    array(
-                        array("deletion_date", null),
-                        array("target_id", $query->id)
-                    )
-                );
+                if ($query->create_channel_category_id !== null) {
+                    $rolePermissions = get_sql_query(
+                        BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
+                        array("allow", "deny", "role_id"),
+                        array(
+                            array("deletion_date", null),
+                            array("target_id", $query->id)
+                        )
+                    );
 
-                if (!empty($rolePermissions)) {
-                    foreach ($rolePermissions as $arrayKey => $role) {
-                        $rolePermissions[$arrayKey] = array(
-                            "id" => $role->role_id,
-                            "type" => "role",
-                            "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                            "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
-                        );
-                    }
-                }
-                $memberPermissions = array(
-                    array(
-                        "id" => $interaction->user->id,
-                        "type" => "member",
-                        "allow" => $query->allow_permission,
-                        "deny" => $query->allow_permission
-                    )
-                );
-                $this->plan->utilities->createChannel(
-                    $interaction->guild,
-                    Channel::TYPE_TEXT,
-                    $query->create_channel_category_id,
-                    (empty($query->create_channel_name)
-                        ? $this->plan->utilities->getUsername($interaction->user->id)
-                        : $query->create_channel_name)
-                    . "-" . $targetID,
-                    $query->create_channel_topic,
-                    $rolePermissions,
-                    $memberPermissions
-                )->done(function (Channel $channel) use ($components, $targetID, $insert, $interaction, $message) {
-                    $insert["created_channel_id"] = $channel->id;
-                    $insert["created_channel_server_id"] = $channel->guild_id;
-
-                    if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                        foreach ($components as $component) {
-                            sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
-                                array(
-                                    "target_creation_id" => $targetID,
-                                    "input_key" => $component["custom_id"],
-                                    "input_value" => $component["value"]
-                                )
+                    if (!empty($rolePermissions)) {
+                        foreach ($rolePermissions as $arrayKey => $role) {
+                            $rolePermissions[$arrayKey] = array(
+                                "id" => $role->role_id,
+                                "type" => "role",
+                                "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
+                                "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
                             );
                         }
-                        $channel->sendMessage($message);
-                    } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "(1) Failed to insert target creation of user: " . $interaction->user->id
-                        );
                     }
-                });
+                    $memberPermissions = array(
+                        array(
+                            "id" => $interaction->user->id,
+                            "type" => "member",
+                            "allow" => $query->allow_permission,
+                            "deny" => $query->allow_permission
+                        )
+                    );
+                    $this->plan->utilities->createChannel(
+                        $interaction->guild,
+                        Channel::TYPE_TEXT,
+                        $query->create_channel_category_id,
+                        (empty($query->create_channel_name)
+                            ? $this->plan->utilities->getUsername($interaction->user->id)
+                            : $query->create_channel_name)
+                        . "-" . $targetID,
+                        $query->create_channel_topic,
+                        $rolePermissions,
+                        $memberPermissions
+                    )->done(function (Channel $channel) use ($targetID, $insert, $interaction, $message) {
+                        $insert["created_channel_id"] = $channel->id;
+                        $insert["created_channel_server_id"] = $channel->guild_id;
+
+                        if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                            $channel->sendMessage($message);
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                $this->plan->planID,
+                                "(1) Failed to insert target creation of user: " . $interaction->user->id
+                            );
+                        }
+                    });
+                } else {
+                    //todo thread
+                }
                 break;
             }
         }
