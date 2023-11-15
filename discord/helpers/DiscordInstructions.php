@@ -206,7 +206,7 @@ class DiscordInstructions
                               int|string|null $channelID, string|null $channelName,
                               int|string|null $threadID, string|null $threadName,
                               int|string      $userID, string $userName, ?string $displayName,
-                              string|null     $messageContent, int|string|null $messageID): object
+                              string|null     $messageContent = null, int|string|null $messageID = null): object
     {
         $object = new stdClass();
         $object->serverID = $serverID;
@@ -229,7 +229,8 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
-        $object->channel = $this->plan->locations->getChannel($serverID, $channelID, $userID);
+        $object->channel = $channelID === null ? null
+            : $this->plan->locations->getChannel($serverID, $channelID, $userID);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

@@ -76,7 +76,6 @@ class DiscordPlan
         $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
-        $this->target = new DiscordTargetedMessage($this);
         $this->counting = new DiscordCounting($this);
         $this->poll = new DiscordPoll($this);
         $this->level = new DiscordLevel($this);
@@ -91,6 +90,7 @@ class DiscordPlan
         $this->ai = new DiscordAI($this);
         $this->status = new DiscordStatus($this);
         $this->locations = new DiscordLocations($this);
+        $this->target = new DiscordTargetedMessage($this);
     }
 
 }

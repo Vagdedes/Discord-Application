@@ -25,14 +25,14 @@ class DefaultCommandImplementationListener // Name can be changed
             }
         } else {
             $hasReason = $argumentSize > 1;
-            $ticketID = array_shift($arguments)["value"];
+            $ticketID = $arguments["ticket-id"]["value"] ?? null;
 
             if (is_numeric($ticketID)) {
                 if ($hasReason) {
                     $close = $plan->ticket->closeByID(
                         $ticketID,
                         $interaction->user->id,
-                        implode(" ", $arguments)
+                        $arguments["reason"]["value"] ?? null
                     );
                 } else {
                     $close = $plan->ticket->closeByID($ticketID, $interaction->user->id);
@@ -55,7 +55,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 $close = $plan->ticket->closeByChannel(
                     $interaction->channel,
                     $interaction->user->id,
-                    implode(" ", $arguments)
+                    $arguments["reason"]["value"] ?? null
                 );
 
                 if ($close !== null) {
@@ -133,7 +133,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 true
             );
         } else {
-            $ticketID = array_shift($arguments)["value"];
+            $ticketID = $arguments["ticket-id"]["value"] ?? null;
 
             if (!is_numeric($ticketID)) {
                 $plan->utilities->acknowledgeCommandMessage(
@@ -220,14 +220,14 @@ class DefaultCommandImplementationListener // Name can be changed
             }
         } else {
             $hasReason = $argumentSize > 1;
-            $targetID = array_shift($arguments)["value"];
+            $targetID = $arguments["target-id"]["value"] ?? null;
 
             if (is_numeric($targetID)) {
                 if ($hasReason) {
                     $close = $plan->target->closeByID(
                         $targetID,
                         $interaction->user->id,
-                        implode(" ", $arguments)
+                        $arguments["reason"]["value"] ?? null
                     );
                 } else {
                     $close = $plan->target->closeByID($targetID, $interaction->user->id);
@@ -250,7 +250,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 $close = $plan->target->closeByChannelOrThread(
                     $interaction->channel,
                     $interaction->user->id,
-                    implode(" ", $arguments)
+                    $arguments["reason"]["value"] ?? null
                 );
 
                 if ($close !== null) {
@@ -328,7 +328,7 @@ class DefaultCommandImplementationListener // Name can be changed
                 true
             );
         } else {
-            $targetID = array_shift($arguments)["value"];
+            $targetID = $arguments["target-id"]["value"] ?? null;
 
             if (!is_numeric($targetID)) {
                 $plan->utilities->acknowledgeCommandMessage(

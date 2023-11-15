@@ -226,7 +226,8 @@ class DiscordTicket
                         $query->create_channel_topic,
                         $rolePermissions,
                         $memberPermissions
-                    )->done(function (Channel $channel) use ($components, $ticketID, $insert, $interaction, $message) {
+                    )->done(function (Channel $channel)
+                    use ($components, $ticketID, $insert, $interaction, $message, $query) {
                         $insert["created_channel_id"] = $channel->id;
                         $insert["created_channel_server_id"] = $channel->guild_id;
 
@@ -245,7 +246,7 @@ class DiscordTicket
                             global $logger;
                             $logger->logError(
                                 $this->plan->planID,
-                                "(1) Failed to insert ticket creation of user: " . $interaction->user->id
+                                "(1) Failed to insert ticket creation with ID: " . $query->id
                             );
                         }
                     });
@@ -264,7 +265,7 @@ class DiscordTicket
                         global $logger;
                         $logger->logError(
                             $this->plan->planID,
-                            "(2) Failed to insert ticket creation of user: " . $interaction->user->id
+                            "(2) Failed to insert ticket creation with ID: " . $query->id
                         );
                     }
                 }
@@ -275,7 +276,7 @@ class DiscordTicket
 
     public function track(Message $message): void
     {
-        if (!empty($message->content)) {
+        if (strlen($message->content) > 0) {
             $channel = $message->channel;
             set_sql_cache("1 second");
             $query = get_sql_query(
@@ -285,7 +286,10 @@ class DiscordTicket
                     array("created_channel_server_id", $channel->guild_id),
                     array("created_channel_id", $channel->id),
                 ),
-                null,
+                array(
+                    "DESC",
+                    "id"
+                ),
                 1
             );
 
@@ -675,20 +679,6 @@ class DiscordTicket
     private function hasMaxOpen(int|string $ticketID, int|string|null $userID, int|string $limit): bool
     {
         set_sql_cache(self::REFRESH_TIME, self::class);
-        var_dump(sizeof(get_sql_query(
-            BotDatabaseTable::BOT_TICKET_CREATIONS,
-            array("id"),
-            array(
-                array("ticket_id", $ticketID),
-                $userID === null ? "" : array("user_id", $userID),
-                array("deletion_date", null),
-            ),
-            array(
-                "DESC",
-                "id"
-            ),
-            $limit
-        )));
         return sizeof(get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
                 array("id"),
@@ -718,7 +708,7 @@ class DiscordTicket
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "IS NOT", null),
-                array("expiration_date", ">", get_current_date())
+                array("expiration_date", "<", get_current_date())
             ),
             array(
                 "DESC",

@@ -156,7 +156,8 @@ $discord->on('ready', function (Discord $discord) {
                     $message->member,
                     $message->guild->name,
                     $message->channel->name,
-                    $message->thread?->id, $message->thread?->name,
+                    $message->thread?->id,
+                    $message->thread?->name,
                     $message->content,
                 )) {
                     break;
