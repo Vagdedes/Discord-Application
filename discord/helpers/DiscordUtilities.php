@@ -1,8 +1,10 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Thread\Thread;
 
 class DiscordUtilities
 {
@@ -49,6 +51,35 @@ class DiscordUtilities
             )
         );
     }
+
+    // Separator
+
+    public function deleteThread(int|string|Channel    $channel,
+                                 int|string|Thread     $thread,
+                                 string|null|float|int $reason = null): bool
+    {
+        if (!($channel instanceof Channel)) {
+            $channel = $this->plan->discord->getChannel($channel);
+
+            if ($channel === null) {
+                return false;
+            }
+        }
+        if (!($thread instanceof Thread)) {
+            $thread = $channel->threads->toArray()[$thread];
+
+            if ($thread === null) {
+                return false;
+            }
+        }
+        $channel->threads->delete(
+            $thread,
+            empty($reason) ? null : $reason
+        );
+        return true;
+    }
+
+    // Separator
 
     public function acknowledgeMessage(Interaction    $interaction,
                                        MessageBuilder $messageBuilder,

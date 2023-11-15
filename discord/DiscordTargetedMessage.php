@@ -115,7 +115,8 @@ class DiscordTargetedMessage
                         "target_id" => $query->id,
                         "target_creation_id" => $targetID,
                         "user_id" => $member->user->id,
-                        "creation_date" => $date
+                        "server_id" => $query->server_id,
+                        "creation_date" => $date,
                     );
 
                     if ($query->create_channel_category_id !== null) {
@@ -158,8 +159,7 @@ class DiscordTargetedMessage
                             $rolePermissions,
                             $memberPermissions
                         )->done(function (Channel $channel) use ($targetID, $insert, $member, $message) {
-                            $insert["created_channel_id"] = $channel->id;
-                            $insert["created_channel_server_id"] = $channel->guild_id;
+                            $insert["channel_id"] = $channel->id;
 
                             if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
                                 $channel->sendMessage($message);
@@ -171,8 +171,39 @@ class DiscordTargetedMessage
                                 );
                             }
                         });
+                    } else if ($query->create_channel_id !== null) {
+                        $channel = $this->plan->discord->getChannel($query->create_channel_id);
+
+                        if ($channel !== null
+                            && $channel->guild_id == $query->server_id) {
+
+                            if (true) { //todo create thread
+                                $insert["channel_id"] = $channel->id;
+                                $insert["created_thread_id"] = $channel->guild_id;
+
+                                if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                    $channel->sendMessage($message);
+                                } else {
+                                    global $logger;
+                                    $logger->logError(
+                                        $this->plan->planID,
+                                        "Failed to insert target creation of user: " . $member->user->id
+                                    );
+                                }
+                            }
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                $this->plan->planID,
+                                "Failed to find target channel with ID: " . $query->id
+                            );
+                        }
                     } else {
-                        //todo thread
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "(2) Invalid target with ID: " . $query->id
+                        );
                     }
                     break;
                 }
@@ -187,10 +218,10 @@ class DiscordTargetedMessage
             set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                array("id", "target_creation_id", "expiration_date"),
+                array("id", "target_creation_id", "expiration_date", "created_thread_id"),
                 array(
-                    array("created_channel_server_id", $channel->guild_id),
-                    array("created_channel_id", $channel->id),
+                    array("server_id", $channel->guild_id),
+                    array("channel_id", $channel->id),
                 ),
                 null,
                 1
@@ -200,12 +231,19 @@ class DiscordTargetedMessage
                 $query = $query[0];
 
                 if ($query->deletion_date !== null) {
-                    $channel->guild->channels->delete($channel);
+                    if ($query->created_thread_id !== null) {
+                        $this->plan->utilities->deleteThread(
+                            $channel,
+                            $query->created_thread_id
+                        );
+                    } else {
+                        $channel->guild->channels->delete($channel);
+                    }
                 } else if ($query->expiration_date !== null
                     && get_current_date() > $query->expiration_date
                     || $query->expiration_date !== null
                     && get_current_date() > $query->expiration_date) {
-                    set_sql_query(
+                    if (set_sql_query(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                         array(
                             "expired" => 1
@@ -215,8 +253,22 @@ class DiscordTargetedMessage
                         ),
                         null,
                         1
-                    );
-                    $channel->guild->channels->delete($channel);
+                    )) {
+                        if ($query->created_thread_id !== null) {
+                            $this->plan->utilities->deleteThread(
+                                $channel,
+                                $query->created_thread_id
+                            );
+                        } else {
+                            $channel->guild->channels->delete($channel);
+                        }
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "(1) Failed to close expired target with ID: " . $query->id
+                        );
+                    }
                 } else {
                     sql_insert(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
@@ -240,7 +292,8 @@ class DiscordTargetedMessage
         set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-            array("id", "created_channel_id", "created_channel_server_id", "deletion_date", "target_id"),
+            array("id", "server_id", "channel_id", "created_thread_id",
+                "deletion_date", "target_id"),
             array(
                 array("target_creation_id", $targetID),
             ),
@@ -270,14 +323,22 @@ class DiscordTargetedMessage
                         null,
                         1
                     )) {
-                        $channel = $this->plan->discord->getChannel($query->created_channel_id);
+                        $channel = $this->plan->discord->getChannel($query->channel_id);
 
                         if ($channel !== null
-                            && $channel->guild_id == $query->created_channel_server_id) {
-                            $channel->guild->channels->delete(
-                                $channel,
-                                empty($reason) ? null : $userID . ": " . $reason
-                            );
+                            && $channel->guild_id == $query->server_id) {
+                            if ($query->created_thread_id !== null) {
+                                $this->plan->utilities->deleteThread(
+                                    $channel,
+                                    $query->created_thread_id,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            } else {
+                                $channel->guild->channels->delete(
+                                    $channel,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            }
                         }
                         $this->initiate($query->target_id);
                         return null;
@@ -293,15 +354,15 @@ class DiscordTargetedMessage
         }
     }
 
-    public function closeByChannel(Channel $channel, int|string $userID, ?string $reason = null): ?string
+    public function closeByChannelOrThread(Channel $channel, int|string $userID, ?string $reason = null): ?string
     {
         set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-            array("id", "deletion_date", "target_id"),
+            array("id", "created_thread_id", "deletion_date", "target_id"),
             array(
-                array("created_channel_server_id", $channel->guild_id),
-                array("created_channel_id", $channel->id),
+                array("server_id", $channel->guild_id),
+                array("channel_id", $channel->id),
             ),
             null,
             1
@@ -329,10 +390,18 @@ class DiscordTargetedMessage
                         null,
                         1
                     )) {
-                        $channel->guild->channels->delete(
-                            $channel,
-                            empty($reason) ? null : $userID . ": " . $reason
-                        );
+                        if ($query->created_thread_id !== null) {
+                            $this->plan->utilities->deleteThread(
+                                $channel,
+                                $query->created_thread_id,
+                                empty($reason) ? null : $userID . ": " . $reason
+                            );
+                        } else {
+                            $channel->guild->channels->delete(
+                                $channel,
+                                empty($reason) ? null : $userID . ": " . $reason
+                            );
+                        }
                         $this->initiate($query->target_id);
                         return null;
                     } else {
@@ -351,7 +420,7 @@ class DiscordTargetedMessage
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-            array("id", "created_channel_id", "created_channel_server_id"),
+            array("id", "server_id", "channel_id", "created_thread_id"),
             array(
                 array("deletion_date", null),
                 array("expired", null),
@@ -378,11 +447,18 @@ class DiscordTargetedMessage
                 null,
                 1
             )) {
-                $channel = $this->plan->discord->getChannel($query->created_channel_id);
+                $channel = $this->plan->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
-                    && $channel->guild_id == $query->created_channel_server_id) {
-                    $channel->guild->channels->delete($channel);
+                    && $channel->guild_id == $query->server_id) {
+                    if ($query->created_thread_id !== null) {
+                        $this->plan->utilities->deleteThread(
+                            $channel,
+                            $query->created_thread_id
+                        );
+                    } else {
+                        $channel->guild->channels->delete($channel);
+                    }
                 }
                 return true;
             } else {
@@ -642,17 +718,24 @@ class DiscordTargetedMessage
                     1
                 )) {
                     $counter++;
-                    $channel = $this->plan->discord->getChannel($row->created_channel_id);
+                    $channel = $this->plan->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $channel->guild_id == $row->created_channel_server_id) {
-                        $channel->guild->channels->delete($channel);
+                        && $channel->guild_id == $row->server_id) {
+                        if ($row->created_thread_id !== null) {
+                            $this->plan->utilities->deleteThread(
+                                $channel,
+                                $row->created_thread_id
+                            );
+                        } else {
+                            $channel->guild->channels->delete($channel);
+                        }
                     }
                 } else {
                     global $logger;
                     $logger->logError(
                         $this->plan->planID,
-                        "Failed to close expired target with ID: " . $row->id
+                        "(2) Failed to close expired target with ID: " . $row->id
                     );
                 }
             }

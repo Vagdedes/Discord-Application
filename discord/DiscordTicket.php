@@ -296,7 +296,7 @@ class DiscordTicket
                     $channel->guild->channels->delete($channel);
                 } else if ($query->expiration_date !== null
                     && get_current_date() > $query->expiration_date) {
-                    set_sql_query(
+                    if (set_sql_query(
                         BotDatabaseTable::BOT_TICKET_CREATIONS,
                         array(
                             "expired" => 1
@@ -306,8 +306,15 @@ class DiscordTicket
                         ),
                         null,
                         1
-                    );
-                    $channel->guild->channels->delete($channel);
+                    )) {
+                        $channel->guild->channels->delete($channel);
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "(1) Failed to close expired ticket with ID: " . $query->id
+                        );
+                    }
                 } else {
                     sql_insert(
                         BotDatabaseTable::BOT_TICKET_MESSAGES,
@@ -743,7 +750,7 @@ class DiscordTicket
                     global $logger;
                     $logger->logError(
                         $this->plan->planID,
-                        "Failed to close expired ticket with ID: " . $row->id
+                        "(2) Failed to close expired ticket with ID: " . $row->id
                     );
                 }
             }

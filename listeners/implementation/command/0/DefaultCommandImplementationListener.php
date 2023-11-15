@@ -206,7 +206,10 @@ class DefaultCommandImplementationListener // Name can be changed
         $argumentSize = sizeof($arguments);
 
         if ($argumentSize === 0) {
-            $close = $plan->target->closeByChannel($interaction->channel, $interaction->user->id);
+            $close = $plan->target->closeByChannelOrThread(
+                $interaction->channel,
+                $interaction->user->id
+            );
 
             if ($close !== null) {
                 $plan->utilities->acknowledgeCommandMessage(
@@ -244,7 +247,7 @@ class DefaultCommandImplementationListener // Name can be changed
                     );
                 }
             } else {
-                $close = $plan->target->closeByChannel(
+                $close = $plan->target->closeByChannelOrThread(
                     $interaction->channel,
                     $interaction->user->id,
                     implode(" ", $arguments)
