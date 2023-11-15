@@ -282,7 +282,7 @@ class DiscordControlledMessages
                                  object  $messageRow, object $oldMessageRow,
                                  array   $array, int $position): void
     {
-        $channel->getMessageHistory(array("limit" => 10))->done(
+        $channel->getMessageHistory(array("limit" => (int)($oldMessageRow->past_messages ?? 10)))->done(
             function (Collection $messages) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
                 foreach ($messages as $message) {
                     if ($message instanceof Message

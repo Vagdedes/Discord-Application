@@ -4,7 +4,6 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
-use Discord\Parts\User\Member;
 
 class DiscordTargetedMessage
 {
@@ -28,127 +27,155 @@ class DiscordTargetedMessage
                 null
             )
         );
-        $this->checkExpired();
+
+        foreach ($this->targets as $target) {
+            $this->initiate($target);
+        }
     }
 
-    private function initiate(Member $member): void
+    private function initiate(object|string|int $query): void
     {
-        $date = get_current_date(); // Always first
-        $this->checkExpired();
-        $object = $this->plan->instructions->getObject(
-            $member->guild_id,
-            $member->guild->name,
-            null,
-            null,
-            null,
-            null,
-            $member->user->id,
-            $member->username,
-            $member->displayname,
-            null,
-            null
-        );
+        if (!is_object($query)) {
+            $query = null;
 
-        if ($query->max_open_per_user !== null
-            && $this->hasMaxOpen($query->id, $interaction->user->id, $query->max_open_per_user)
-            || $query->max_open_general !== null
-            && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
-            if ($query->max_open_message !== null) {
-                $this->plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($query->max_open_message), $object)[0]
-                    ),
-                    $query->ephemeral_user_response !== null
-                );
-            } else {
-                $interaction->acknowledge();
+            if (!empty($this->targets)) {
+                foreach ($this->targets as $target) {
+                    if ($target->target_id == $query) {
+                        $query = $target;
+                        break;
+                    }
+                }
             }
+
+            if ($query === null) {
+                return;
+            }
+        }
+        if ($query->max_open_general !== null
+            && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
             return;
         }
+        $members = null;
 
-        // Separator
-        $message = MessageBuilder::new()->setContent($query->inception_message);
-
-        // Separator
-        while (true) {
-            $targetID = random_number(19);
-
-            if (empty(get_sql_query(
-                BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                array("target_id"),
-                array(
-                    array("target_creation_id", $targetID)
-                ),
-                null,
-                1
-            ))) {
-                $insert = array(
-                    "target_id" => $query->id,
-                    "target_creation_id" => $targetID,
-                    "server_id" => $interaction->guild_id,
-                    "channel_id" => $interaction->channel_id,
-                    "user_id" => $interaction->user->id,
-                    "creation_date" => $date
-                );
-
-                if ($query->create_channel_category_id !== null) {
-                    $rolePermissions = get_sql_query(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
-                        array("allow", "deny", "role_id"),
-                        array(
-                            array("deletion_date", null),
-                            array("target_id", $query->id)
-                        )
-                    );
-
-                    if (!empty($rolePermissions)) {
-                        foreach ($rolePermissions as $arrayKey => $role) {
-                            $rolePermissions[$arrayKey] = array(
-                                "id" => $role->role_id,
-                                "type" => "role",
-                                "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
-                            );
-                        }
-                    }
-                    $memberPermissions = array(
-                        array(
-                            "id" => $interaction->user->id,
-                            "type" => "member",
-                            "allow" => $query->allow_permission,
-                            "deny" => $query->allow_permission
-                        )
-                    );
-                    $this->plan->utilities->createChannel(
-                        $interaction->guild,
-                        Channel::TYPE_TEXT,
-                        $query->create_channel_category_id,
-                        (empty($query->create_channel_name)
-                            ? $this->plan->utilities->getUsername($interaction->user->id)
-                            : $query->create_channel_name)
-                        . "-" . $targetID,
-                        $query->create_channel_topic,
-                        $rolePermissions,
-                        $memberPermissions
-                    )->done(function (Channel $channel) use ($targetID, $insert, $interaction, $message) {
-                        $insert["created_channel_id"] = $channel->id;
-                        $insert["created_channel_server_id"] = $channel->guild_id;
-
-                        if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                            $channel->sendMessage($message);
-                        } else {
-                            global $logger;
-                            $logger->logError(
-                                $this->plan->planID,
-                                "(1) Failed to insert target creation of user: " . $interaction->user->id
-                            );
-                        }
-                    });
-                } else {
-                    //todo thread
-                }
+        foreach ($this->plan->discord->guilds as $guild) {
+            if ($guild->id == $query->server_id) {
+                $members = $guild->members;
                 break;
+            }
+        }
+
+        if (!empty($members)) {
+            return;
+        } else {
+            $members = $members->toArray();
+            ksort($members);
+        }
+        $date = get_current_date(); // Always first
+
+        for ($i = 0; $i < max($this->checkExpired(), 1); $i++) {
+            $member = $members[rand(0, sizeof($members) - 1)];
+
+            if ($query->max_open_per_user !== null
+                && $this->hasMaxOpen($query->id, $member->user->id, $query->max_open_per_user)
+                && ($query->close_oldest_if_max_open === null || !$this->closeOldest($query))) {
+                return;
+            }
+            $message = MessageBuilder::new()->setContent(
+                $this->plan->instructions->replace(
+                    array($query->inception_message),
+                    $this->plan->instructions->getObject(
+                        $member->guild_id,
+                        $member->guild->name,
+                        null,
+                        null,
+                        null,
+                        null,
+                        $member->user->id,
+                        $member->username,
+                        $member->displayname,
+                        null,
+                        null
+                    )
+                )[0]
+            );
+
+            while (true) {
+                $targetID = random_number(19);
+
+                if (empty(get_sql_query(
+                    BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+                    array("target_id"),
+                    array(
+                        array("target_creation_id", $targetID)
+                    ),
+                    null,
+                    1
+                ))) {
+                    $insert = array(
+                        "target_id" => $query->id,
+                        "target_creation_id" => $targetID,
+                        "user_id" => $member->user->id,
+                        "creation_date" => $date
+                    );
+
+                    if ($query->create_channel_category_id !== null) {
+                        $rolePermissions = get_sql_query(
+                            BotDatabaseTable::BOT_TARGETED_MESSAGE_ROLES,
+                            array("allow", "deny", "role_id"),
+                            array(
+                                array("deletion_date", null),
+                                array("target_id", $query->id)
+                            )
+                        );
+
+                        if (!empty($rolePermissions)) {
+                            foreach ($rolePermissions as $arrayKey => $role) {
+                                $rolePermissions[$arrayKey] = array(
+                                    "id" => $role->role_id,
+                                    "type" => "role",
+                                    "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
+                                    "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
+                                );
+                            }
+                        }
+                        $memberPermissions = array(
+                            array(
+                                "id" => $member->user->id,
+                                "type" => "member",
+                                "allow" => $query->allow_permission,
+                                "deny" => $query->allow_permission
+                            )
+                        );
+                        $this->plan->utilities->createChannel(
+                            $member->guild,
+                            Channel::TYPE_TEXT,
+                            $query->create_channel_category_id,
+                            (empty($query->create_channel_name)
+                                ? $this->plan->utilities->getUsername($member->user->id)
+                                : $query->create_channel_name)
+                            . "-" . $targetID,
+                            $query->create_channel_topic,
+                            $rolePermissions,
+                            $memberPermissions
+                        )->done(function (Channel $channel) use ($targetID, $insert, $member, $message) {
+                            $insert["created_channel_id"] = $channel->id;
+                            $insert["created_channel_server_id"] = $channel->guild_id;
+
+                            if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                $channel->sendMessage($message);
+                            } else {
+                                global $logger;
+                                $logger->logError(
+                                    $this->plan->planID,
+                                    "Failed to insert target creation of user: " . $member->user->id
+                                );
+                            }
+                        });
+                    } else {
+                        //todo thread
+                    }
+                    break;
+                }
             }
         }
     }
@@ -175,6 +202,8 @@ class DiscordTargetedMessage
                 if ($query->deletion_date !== null) {
                     $channel->guild->channels->delete($channel);
                 } else if ($query->expiration_date !== null
+                    && get_current_date() > $query->expiration_date
+                    || $query->expiration_date !== null
                     && get_current_date() > $query->expiration_date) {
                     set_sql_query(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
@@ -211,7 +240,7 @@ class DiscordTargetedMessage
         set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-            array("id", "created_channel_id", "created_channel_server_id", "deletion_date"),
+            array("id", "created_channel_id", "created_channel_server_id", "deletion_date", "target_id"),
             array(
                 array("target_creation_id", $targetID),
             ),
@@ -250,6 +279,7 @@ class DiscordTargetedMessage
                                 empty($reason) ? null : $userID . ": " . $reason
                             );
                         }
+                        $this->initiate($query->target_id);
                         return null;
                     } else {
                         return "Database query failed";
@@ -268,7 +298,7 @@ class DiscordTargetedMessage
         set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-            array("id", "deletion_date"),
+            array("id", "deletion_date", "target_id"),
             array(
                 array("created_channel_server_id", $channel->guild_id),
                 array("created_channel_id", $channel->id),
@@ -303,6 +333,7 @@ class DiscordTargetedMessage
                             $channel,
                             empty($reason) ? null : $userID . ": " . $reason
                         );
+                        $this->initiate($query->target_id);
                         return null;
                     } else {
                         return "Database query failed";
@@ -314,6 +345,52 @@ class DiscordTargetedMessage
                 }
             }
         }
+    }
+
+    private function closeOldest(object $target): bool
+    {
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+            array("id", "created_channel_id", "created_channel_server_id"),
+            array(
+                array("deletion_date", null),
+                array("expired", null),
+                array("target_id", $target->target_id),
+            ),
+            array(
+                "ASC",
+                "creation_date"
+            ),
+            1
+        );
+
+        if (!empty($query)) {
+            $query = $query[0];
+
+            if (set_sql_query(
+                BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+                array(
+                    "deletion_date" => get_current_date(),
+                ),
+                array(
+                    array("id", $query->id)
+                ),
+                null,
+                1
+            )) {
+                $channel = $this->plan->discord->getChannel($query->created_channel_id);
+
+                if ($channel !== null
+                    && $channel->guild_id == $query->created_channel_server_id) {
+                    $channel->guild->channels->delete($channel);
+                }
+                return true;
+            } else {
+                global $logger;
+                $logger->logError($this->plan->planID, "Failed to close oldest target with ID: " . $query->id);
+            }
+        }
+        return false;
     }
 
     // Separator
@@ -429,6 +506,7 @@ class DiscordTargetedMessage
 
     public function loadSingleTargetMessage(object $target): MessageBuilder
     {
+        $this->checkExpired();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing target with ID **" . $target->target_creation_id . "**");
 
@@ -471,6 +549,7 @@ class DiscordTargetedMessage
 
     public function loadTargetsMessage(int|string $userID, array $targets): MessageBuilder
     {
+        $this->checkExpired();
         $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing last **" . sizeof($targets) . " targets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
@@ -496,7 +575,6 @@ class DiscordTargetedMessage
 
     private function hasMaxOpen(int|string $targetID, int|string|null $userID, int|string $limit): bool
     {
-        set_sql_cache(self::REFRESH_TIME, self::class);
         var_dump(sizeof(get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
             array("id"),
@@ -531,8 +609,9 @@ class DiscordTargetedMessage
             )) == $limit;
     }
 
-    private function checkExpired(): void
+    private function checkExpired(): int
     {
+        $counter = 0;
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
             null,
@@ -551,7 +630,7 @@ class DiscordTargetedMessage
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                set_sql_query(
+                if (set_sql_query(
                     BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                     array(
                         "expired" => 1
@@ -561,14 +640,23 @@ class DiscordTargetedMessage
                     ),
                     null,
                     1
-                );
-                $channel = $this->plan->discord->getChannel($row->created_channel_id);
+                )) {
+                    $counter++;
+                    $channel = $this->plan->discord->getChannel($row->created_channel_id);
 
-                if ($channel !== null
-                    && $channel->guild_id == $row->created_channel_server_id) {
-                    $channel->guild->channels->delete($channel);
+                    if ($channel !== null
+                        && $channel->guild_id == $row->created_channel_server_id) {
+                        $channel->guild->channels->delete($channel);
+                    }
+                } else {
+                    global $logger;
+                    $logger->logError(
+                        $this->plan->planID,
+                        "Failed to close expired target with ID: " . $row->id
+                    );
                 }
             }
         }
+        return $counter;
     }
 }

@@ -135,7 +135,7 @@ function create_and_close_curl_connection($url, $properties = null): bool|string
     );
 }
 
-function get_curl($url, $type, $headers, $arguments, $timeoutSeconds = 0)
+function get_curl($url, $type, $headers, $arguments, $timeoutSeconds = 25) // 5 because 30 is the max script time usually
 {
     $ch = curl_init();
 

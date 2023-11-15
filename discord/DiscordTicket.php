@@ -563,6 +563,7 @@ class DiscordTicket
 
     public function loadSingleTicketMessage(object $ticket): MessageBuilder
     {
+        $this->checkExpired();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
@@ -613,6 +614,7 @@ class DiscordTicket
 
     public function loadTicketsMessage(int|string $userID, array $tickets): MessageBuilder
     {
+        $this->checkExpired();
         $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
@@ -720,7 +722,7 @@ class DiscordTicket
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                set_sql_query(
+                if (set_sql_query(
                     BotDatabaseTable::BOT_TICKET_CREATIONS,
                     array(
                         "expired" => 1
@@ -730,12 +732,19 @@ class DiscordTicket
                     ),
                     null,
                     1
-                );
-                $channel = $this->plan->discord->getChannel($row->created_channel_id);
+                )) {
+                    $channel = $this->plan->discord->getChannel($row->created_channel_id);
 
-                if ($channel !== null
-                    && $channel->guild_id == $row->created_channel_server_id) {
-                    $channel->guild->channels->delete($channel);
+                    if ($channel !== null
+                        && $channel->guild_id == $row->created_channel_server_id) {
+                        $channel->guild->channels->delete($channel);
+                    }
+                } else {
+                    global $logger;
+                    $logger->logError(
+                        $this->plan->planID,
+                        "Failed to close expired ticket with ID: " . $row->id
+                    );
                 }
             }
         }

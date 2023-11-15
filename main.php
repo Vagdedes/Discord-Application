@@ -104,9 +104,9 @@ use Discord\WebSockets\Intents;
 $discord = new Discord([
     'token' => $token[0],
     'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::GUILD_PRESENCES | Intents::MESSAGE_CONTENT,
-    'storeMessages' => false,
+    'storeMessages' => true,
     'retrieveBans' => false,
-    'loadAllMembers' => false,
+    'loadAllMembers' => true,
     'disabledEvents' => [],
     'dnsConfig' => '1.1.1.1',
 ]);
