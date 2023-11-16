@@ -140,11 +140,10 @@ if (!empty($files)) {
 
 $discord->on('ready', function (Discord $discord) {
     global $logger;
-    $botID = $discord->id;
-    $discordBot = new DiscordBot($discord, $botID);
+    $discordBot = new DiscordBot($discord, $discord->id);
     $logger = new DiscordLogs($discordBot);
 
-    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
+    $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $logger) {
         foreach ($discordBot->plans as $plan) {
             if ($plan->ai->textAssistance(
                 $message,

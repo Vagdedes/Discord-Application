@@ -320,71 +320,88 @@ class DiscordTargetedMessage
                             "(1) Failed to close expired target with ID: " . $query->id
                         );
                     }
-                } else {
-                    if ($member->id == $this->plan->botID) {
-                        sql_insert(
-                            BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
-                            array(
-                                "target_creation_id" => $query->target_creation_id,
-                                "user_id" => $message->author->id,
-                                "message_id" => $message->id,
-                                "message_content" => $message->content,
-                                "creation_date" => get_current_date(),
-                            )
-                        );
+                } else if ($member->id != $this->plan->botID) {
+                    sql_insert(
+                        BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                        array(
+                            "target_creation_id" => $query->target_creation_id,
+                            "user_id" => $message->author->id,
+                            "message_id" => $message->id,
+                            "message_content" => $message->content,
+                            "creation_date" => get_current_date()
+                        )
+                    );
+                    $target = $this->targets[$query->target_id];
+
+                    if ($target->prompt_message !== null) {
+                        $promptMessage = $this->plan->instructions->replace(array($target->prompt_message), $object)[0];
                     } else {
-                        $target = $this->targets[$query->target_id];
-
-                        if ($target->prompt_message !== null) {
-                            $promptMessage = $this->plan->instructions->replace(array($target->prompt_message), $object)[0];
-                        } else {
-                            $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
-                        }
-                        $message->reply(MessageBuilder::new()->setContent(
-                            $promptMessage
-                        ))->done(function (Message $message) use ($member, $object, $target, $query) {
-                            $reply = $this->plan->ai->rawTextAssistance(
-                                $member,
-                                $this->plan->instructions->build($object, $target->instructions),
-                                $message->content,
-                                self::AI_HASH,
-                                "1 minute",
-                                $target->cooldown_message
-                            );
-
-                            if ($reply[0]) {
-                                $model = $reply[1];
-                                $modelReply = $reply[2];
-                                $isString = is_string($modelReply);
-                                $assistance = $isString
-                                    ? $modelReply
-                                    : $this->plan->ai->chatAI->getText($model, $modelReply);
-
-                                if ($assistance !== null) {
-                                    $message->edit(MessageBuilder::new()->setContent($assistance));
-                                } else {
-                                    $message->edit(MessageBuilder::new()->setContent(
-                                        $this->plan->instructions->replace(array($target->failure_message), $object)[0]
-                                    ));
-                                }
-                                sql_insert(
-                                    BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
-                                    array(
-                                        "target_creation_id" => $query->target_creation_id,
-                                        "user_id" => $message->author->id,
-                                        "message_id" => $message->id,
-                                        "message_content" => $message->content,
-                                        "cost" => $isString ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
-                                        "creation_date" => get_current_date()
-                                    )
-                                );
-                            } else {
-                                $message->edit(MessageBuilder::new()->setContent(
-                                    $this->plan->instructions->replace(array($target->failure_message), $object)[0]
-                                ));
-                            }
-                        });
+                        $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
                     }
+                    $message->reply(MessageBuilder::new()->setContent(
+                        $promptMessage
+                    ))->done(function (Message $message) use ($member, $object, $target, $query) {
+                        $reply = $this->plan->ai->rawTextAssistance(
+                            $member,
+                            $this->plan->instructions->build($object, $target->instructions),
+                            $message->content,
+                            self::AI_HASH,
+                            "1 minute",
+                            $target->cooldown_message
+                        );
+
+                        if ($reply[0]) {
+                            $model = $reply[1];
+                            $modelReply = $reply[2];
+                            $hasNoCost = is_string($modelReply);
+                            $assistance = $hasNoCost
+                                ? $modelReply
+                                : $this->plan->ai->chatAI->getText($model, $modelReply);
+                            $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
+
+                            if ($assistance !== null) {
+                                $messageContent = $assistance;
+                                $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
+                                $this->plan->utilities->editMessage(
+                                    $message,
+                                    array_shift($pieces)
+                                );
+
+                                if (!empty($pieces)) {
+                                    foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                        $message->reply(MessageBuilder::new()->setContent($split));
+                                    }
+                                }
+                            } else {
+                                $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
+                                $this->plan->utilities->editMessage(
+                                    $message,
+                                    $messageContent
+                                );
+                            }
+                        } else {
+                            $hasNoCost = true;
+                            $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
+                            $this->plan->utilities->editMessage(
+                                $message,
+                                $messageContent
+                            );
+                        }
+                        if (!$reply[3]) { // Not cached
+                            sql_insert(
+                                BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                                array(
+                                    "target_creation_id" => $query->target_creation_id,
+                                    "user_id" => $message->author->id,
+                                    "message_id" => $message->id,
+                                    "message_content" => $messageContent,
+                                    "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
+                                    "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null),
+                                    "creation_date" => get_current_date()
+                                )
+                            );
+                        }
+                    });
                     return true;
                 }
             }

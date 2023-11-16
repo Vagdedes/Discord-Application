@@ -90,7 +90,7 @@ class DiscordAI
             $this->plan->bot->processing--;
             return true;
         } else {
-            $channel = $this->plan->locations->getChannel($message->guild_id, $message->channel_id, $member->id);
+            $channel = $object->channel;
 
             if ($channel !== null) {
                 if ($this->chatAI !== null
@@ -260,17 +260,19 @@ class DiscordAI
 
                                             if ($assistance === null || $assistance == DiscordProperties::NO_REPLY) {
                                                 if ($channel->failure_message !== null) {
-                                                    $message->edit(MessageBuilder::new()->setContent(
+                                                    $this->plan->utilities->editMessage(
+                                                        $message,
                                                         $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
-                                                    ));
+                                                    );
                                                 } else {
-                                                    $message->delete();
+                                                    $this->plan->utilities->deleteMessage($message);
                                                 }
                                             } else {
                                                 $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
-                                                $message->edit(MessageBuilder::new()->setContent(
+                                                $this->plan->utilities->editMessage(
+                                                    $message,
                                                     array_shift($pieces)
-                                                ));
+                                                );
 
                                                 if (!empty($pieces)) {
                                                     foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
@@ -305,6 +307,7 @@ class DiscordAI
         return false;
     }
 
+    // 1: Success, 2: Model, 3: Reply, 4: Cache
     public function rawTextAssistance(User|Member $userObject,
                                       string      $instructions, string $user,
                                       ?int        $extraHash = null,
@@ -333,7 +336,7 @@ class DiscordAI
                 if ($cache !== null) {
                     return $cache;
                 } else {
-                    set_key_value_pair($simpleCacheKey, array(true, null, $cooldownMessage));
+                    set_key_value_pair($simpleCacheKey, array(true, null, $cooldownMessage, true));
                 }
             }
         }
@@ -358,8 +361,10 @@ class DiscordAI
             )
         );
         if ($useCache) {
+            $outcome[3] = true;
             set_key_value_pair($cacheKey, $outcome, $cacheTime);
             clear_memory(array(manipulate_memory_key($simpleCacheKey)));
+            $outcome[3] = false;
         }
         return $outcome;
     }

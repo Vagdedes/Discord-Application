@@ -2,6 +2,7 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
@@ -21,6 +22,8 @@ class DiscordUtilities
         $users = $this->plan->discord->users->getIterator();
         return $users[$userID]?->username ?? $userID;
     }
+
+    // Separator
 
     public function createChannel(Guild  $guild,
                                   int    $type, int|string $parent,
@@ -95,5 +98,36 @@ class DiscordUtilities
                                               bool           $ephemeral): void
     {
         $interaction->respondWithMessage($messageBuilder, $ephemeral);
+    }
+
+    // Separator
+
+    public function editMessage(Message|int|string $message, MessageBuilder|string $messageBuilder): void
+    {
+        try {
+            $message->channel?->messages->fetch(
+                $message instanceof Message ? $message->id : $message,
+                true
+            )->done(function (Message $message) use ($messageBuilder) {
+                $message->edit(
+                    $messageBuilder instanceof MessageBuilder ? $messageBuilder
+                        : MessageBuilder::new()->setContent($messageBuilder)
+                );
+            });
+        } catch (Throwable $ignored) {
+        }
+    }
+
+    public function deleteMessage(Message|int|string $message): void
+    {
+        try {
+            $message->channel->messages->fetch(
+                $message instanceof Message ? $message->id : $message,
+                true
+            )->done(function (Message $message) {
+                $message->delete();
+            });
+        } catch (Throwable $ignored) {
+        }
     }
 }

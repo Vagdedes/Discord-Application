@@ -223,8 +223,12 @@ class DiscordInstructions
         $object = new stdClass();
         $object->serverID = $server?->id;
         $object->serverName = $server?->name;
-        $object->channelID = $channel?->id;
-        $object->channelName = $channel?->name;
+        $object->channelID = $channel instanceof Thread
+            ? $channel->parent?->id
+            : $channel?->id;
+        $object->channelName = $channel instanceof Thread
+            ? $channel->parent?->name
+            : $channel?->name;
         $object->threadID = $thread?->id;
         $object->threadName = $thread?->name;
         $object->userID = $user?->id;
@@ -241,7 +245,7 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
-        $object->channel = $object->serverID === null || $object->channelID || $object->userID ? null
+        $object->channel = $object->serverID === null || $object->channelID === null || $object->userID === null ? null
             : $this->plan->locations->getChannel($object->serverID, $object->channelID, $object->userID);
 
         $object->placeholderArray = array();
