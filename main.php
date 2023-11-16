@@ -127,7 +127,7 @@ $files = LoadBalancer::getFiles(
 );
 
 if (!empty($files)) {
-    foreach ($files as $file) {
+    foreach ($files as $fileName => $file) {
         try {
             eval($file);
         } catch (Throwable $error) {
@@ -145,11 +145,12 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $logger) {
         foreach ($discordBot->plans as $plan) {
-            if ($plan->ai->textAssistance(
-                $message,
-                $message->member,
-                $message->content,
-            )) {
+            if ($message->member !== null
+                && $plan->ai->textAssistance(
+                    $message,
+                    $message->member,
+                    $message->content,
+                )) {
                 break;
             }
         }

@@ -220,10 +220,17 @@ class DiscordAI
                                             $modelReply = $reply[2];
 
                                             if ($channel->debug !== null) {
-                                                foreach (array($instructions, $modelReply) as $debug) {
-                                                    foreach (str_split($debug, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                                        $message->reply(MessageBuilder::new()->setContent($split));
-                                                    }
+                                                foreach (str_split($instructions, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                    $this->plan->utilities->replyMessage(
+                                                        $message,
+                                                        MessageBuilder::new()->setContent($split)
+                                                    );
+                                                }
+                                                foreach (str_split(json_encode($modelReply), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                    $this->plan->utilities->replyMessage(
+                                                        $message,
+                                                        MessageBuilder::new()->setContent($split)
+                                                    );
                                                 }
                                             }
                                             if ($reply[0]) {
@@ -276,7 +283,10 @@ class DiscordAI
 
                                                 if (!empty($pieces)) {
                                                     foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                                        $message->reply(MessageBuilder::new()->setContent($split));
+                                                        $this->plan->utilities->replyMessage(
+                                                            $message,
+                                                            MessageBuilder::new()->setContent($split)
+                                                        );
                                                     }
                                                 }
                                             }

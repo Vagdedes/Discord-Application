@@ -369,7 +369,10 @@ class DiscordTargetedMessage
 
                                 if (!empty($pieces)) {
                                     foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                        $message->reply(MessageBuilder::new()->setContent($split));
+                                        $this->plan->utilities->replyMessage(
+                                            $message,
+                                            MessageBuilder::new()->setContent($split)
+                                        );
                                     }
                                 }
                             } else {

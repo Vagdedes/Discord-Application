@@ -23,8 +23,8 @@ class LoadBalancer
                 $files = json_decode($files, true);
 
                 if (is_array($files)) {
-                    foreach ($files as $file) {
-                        $array[] = $file;
+                    foreach ($files as $fileName => $file) {
+                        $array[$fileName] = $file;
                     }
                 }
             }

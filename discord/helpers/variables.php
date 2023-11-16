@@ -89,14 +89,14 @@ class DiscordSyntax
                 )
             )
         );
-        $string = str_replace("<br>", "\n",
-            str_replace("</div>", "\n",
-                str_replace("<u>", DiscordSyntax::UNDERLINE,
-                    str_replace("</u>", DiscordSyntax::UNDERLINE,
-                        str_replace("<i>", DiscordSyntax::ITALICS,
-                            str_replace("</i>", DiscordSyntax::ITALICS,
-                                str_replace("<b>", DiscordSyntax::BOLD,
-                                    str_replace("</b>", DiscordSyntax::BOLD, $string)
+        $string = str_replace("</div>", "\n",
+            str_replace("<u>", DiscordSyntax::UNDERLINE,
+                str_replace("</u>", DiscordSyntax::UNDERLINE,
+                    str_replace("<i>", DiscordSyntax::ITALICS,
+                        str_replace("</i>", DiscordSyntax::ITALICS,
+                            str_replace("<b>", DiscordSyntax::BOLD,
+                                str_replace("</b>", DiscordSyntax::BOLD,
+                                    $string
                                 )
                             )
                         )
@@ -104,17 +104,19 @@ class DiscordSyntax
                 )
             )
         );
-        $string = str_replace("<li>", "\n",
-            str_replace("<p>", "\n",
-                str_replace("</ul>", "\n",
-                    $string
+        $string = str_replace("<br>", "\n",
+            str_replace("<li>", "\n",
+                str_replace("<p>", "\n",
+                    str_replace("</ul>", "\n",
+                        $string
+                    )
                 )
             )
         );
         return strip_tags(self::htmlLinkToDiscordLink($string));
     }
 
-    public static function htmlLinkToDiscordLink($string): string
+    public static function htmlLinkToDiscordLink(string $string): string
     {
         $original = $string;
         $string = explode("<a href='", $string, 2);
