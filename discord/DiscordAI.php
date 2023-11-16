@@ -359,7 +359,7 @@ class DiscordAI
         );
         if ($useCache) {
             set_key_value_pair($cacheKey, $outcome, $cacheTime);
-            clear_memory(array($simpleCacheKey));
+            clear_memory(array(manipulate_memory_key($simpleCacheKey)));
         }
         return $outcome;
     }
