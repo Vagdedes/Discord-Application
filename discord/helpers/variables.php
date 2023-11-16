@@ -8,6 +8,7 @@ class BotDatabaseTable
         BOT_LOGS = "discord.botLogs",
         BOT_TARGETED_MESSAGES = "discord.botTargetedMessages",
         BOT_TARGETED_MESSAGE_MESSAGES = "discord.botTargetedMessageMessages",
+        BOT_TARGETED_MESSAGE_INSTRUCTIONS = "discord.botTargetedMessageInstructions",
         BOT_TARGETED_MESSAGE_ROLES = "discord.botTargetedMessageRoles",
         BOT_TARGETED_MESSAGE_CREATIONS = "discord.botTargetedMessageCreations",
         BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",

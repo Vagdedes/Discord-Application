@@ -214,11 +214,11 @@ class DiscordInstructions
         return "";
     }
 
-    public function getObject(?Guild           $server = null,
-                              ?Channel         $channel = null,
-                              ?Thread          $thread = null,
-                              Member|User|null $user = null,
-                              ?Message         $message = null): object
+    public function getObject(?Guild              $server = null,
+                              Channel|Thread|null $channel = null,
+                              ?Thread             $thread = null,
+                              Member|User|null    $user = null,
+                              ?Message            $message = null): object
     {
         $object = new stdClass();
         $object->serverID = $server?->id;

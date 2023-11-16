@@ -12,7 +12,9 @@ class DiscordTargetedMessage
     private DiscordPlan $plan;
     private array $targets;
 
-    private const REFRESH_TIME = "15 seconds";
+    private const
+        REFRESH_TIME = "15 seconds",
+        AI_HASH = 528937509;
 
     public function __construct(DiscordPlan $plan)
     {
@@ -30,7 +32,27 @@ class DiscordTargetedMessage
             )
         );
 
-        foreach ($this->targets as $target) {
+        foreach ($this->targets as $arrayKey => $target) {
+            unset($this->targets[$arrayKey]);
+            $this->targets[$target->id] = $target;
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_TARGETED_MESSAGE_INSTRUCTIONS,
+                array("instruction_id"),
+                array(
+                    array("target_id", $target->id),
+                    array("deletion_date", null),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                )
+            );
+
+            if (!empty($query)) {
+                foreach ($query as $arrayChildKey => $row) {
+                    $target->instructions[$arrayChildKey] = $row->instruction_id;
+                }
+            }
             $this->initiate($target);
         }
     }
@@ -64,6 +86,7 @@ class DiscordTargetedMessage
             return;
         } else {
             $members = $members->toArray();
+            set_sql_cache(self::REFRESH_TIME, self::class);
             $removalList = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 array("user_id"),
@@ -101,7 +124,7 @@ class DiscordTargetedMessage
             }
             $message = MessageBuilder::new()->setContent(
                 $this->plan->instructions->replace(
-                    array($query->message),
+                    array($query->create_message),
                     $this->plan->instructions->getObject(
                         $member->guild,
                         null,
@@ -298,32 +321,70 @@ class DiscordTargetedMessage
                         );
                     }
                 } else {
-                    $instructions = $this->plan->instructions->build($object);
-                    $reply = $this->plan->ai->rawTextAssistance(
-                        $member,
-                        $instructions,
-                        $message->content,
-                    );
-                    $modelReply = $reply[2];
+                    if ($member->id == $this->plan->botID) {
+                        sql_insert(
+                            BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                            array(
+                                "target_creation_id" => $query->target_creation_id,
+                                "user_id" => $message->author->id,
+                                "message_id" => $message->id,
+                                "message_content" => $message->content,
+                                "creation_date" => get_current_date(),
+                            )
+                        );
+                    } else {
+                        $target = $this->targets[$query->target_id];
 
-                    if ($reply[0]) {
-                        $model = $reply[1];
-                        $assistance = $this->plan->ai->chatAI->getText($model, $modelReply);
-
-                        if ($assistance[0]) {
-
+                        if ($target->prompt_message !== null) {
+                            $promptMessage = $this->plan->instructions->replace(array($target->prompt_message), $object)[0];
+                        } else {
+                            $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
                         }
+                        $message->reply(MessageBuilder::new()->setContent(
+                            $promptMessage
+                        ))->done(function (Message $message) use ($member, $object, $target, $query) {
+                            $reply = $this->plan->ai->rawTextAssistance(
+                                $member,
+                                $this->plan->instructions->build($object, $target->instructions),
+                                $message->content,
+                                self::AI_HASH,
+                                "1 minute",
+                                $target->cooldown_message
+                            );
+
+                            if ($reply[0]) {
+                                $model = $reply[1];
+                                $modelReply = $reply[2];
+                                $isString = is_string($modelReply);
+                                $assistance = $isString
+                                    ? $modelReply
+                                    : $this->plan->ai->chatAI->getText($model, $modelReply);
+
+                                if ($assistance !== null) {
+                                    $message->edit(MessageBuilder::new()->setContent($assistance));
+                                } else {
+                                    $message->edit(MessageBuilder::new()->setContent(
+                                        $this->plan->instructions->replace(array($target->failure_message), $object)[0]
+                                    ));
+                                }
+                                sql_insert(
+                                    BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                                    array(
+                                        "target_creation_id" => $query->target_creation_id,
+                                        "user_id" => $message->author->id,
+                                        "message_id" => $message->id,
+                                        "message_content" => $message->content,
+                                        "cost" => $isString ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
+                                        "creation_date" => get_current_date()
+                                    )
+                                );
+                            } else {
+                                $message->edit(MessageBuilder::new()->setContent(
+                                    $this->plan->instructions->replace(array($target->failure_message), $object)[0]
+                                ));
+                            }
+                        });
                     }
-                    sql_insert(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
-                        array(
-                            "target_creation_id" => $query->target_creation_id,
-                            "user_id" => $message->author->id,
-                            "message_id" => $message->id,
-                            "message_content" => $message->content,
-                            "creation_date" => get_current_date(),
-                        )
-                    );
                     return true;
                 }
             }
@@ -539,15 +600,7 @@ class DiscordTargetedMessage
 
             if (!empty($query)) {
                 $query = $query[0];
-                $query->target = get_sql_query(
-                    BotDatabaseTable::BOT_TARGETED_MESSAGES,
-                    null,
-                    array(
-                        array("id", $query->target_id),
-                    ),
-                    null,
-                    1
-                )[0];
+                $query->target = $this->targets[$query->target_id];
                 $query->messages = get_sql_query(
                     BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
                     null,
@@ -595,15 +648,8 @@ class DiscordTargetedMessage
 
             if (!empty($query)) {
                 foreach ($query as $row) {
-                    $row->target = get_sql_query(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGES,
-                        null,
-                        array(
-                            array("id", $row->target_id),
-                        ),
-                        null,
-                        1
-                    )[0];
+                    $row->target = $this->targets[$row->target_id];
+
                     if ($messages) {
                         $row->messages = get_sql_query(
                             BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,

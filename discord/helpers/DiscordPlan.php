@@ -73,7 +73,6 @@ class DiscordPlan
         $this->component = new DiscordComponent($this);
         $this->controlledMessages = new DiscordControlledMessages($this);
         $this->ticket = new DiscordTicket($this);
-        $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
         $this->counting = new DiscordCounting($this);
@@ -91,6 +90,7 @@ class DiscordPlan
         $this->status = new DiscordStatus($this);
         $this->locations = new DiscordLocations($this);
         $this->target = new DiscordTargetedMessage($this);
+        $this->messageRefresh = new DiscordMessageRefresh($this);
     }
 
 }

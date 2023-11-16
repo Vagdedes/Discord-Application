@@ -145,15 +145,13 @@ $discord->on('ready', function (Discord $discord) {
     $logger = new DiscordLogs($discordBot);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $botID, $logger) {
-        if ($message->guild_id !== null) {
-            foreach ($discordBot->plans as $plan) {
-                if ($plan->ai->textAssistance(
-                    $message,
-                    $message->member,
-                    $message->content,
-                )) {
-                    break;
-                }
+        foreach ($discordBot->plans as $plan) {
+            if ($plan->ai->textAssistance(
+                $message,
+                $message->member,
+                $message->content,
+            )) {
+                break;
             }
         }
         $logger->logInfo($message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());

@@ -307,14 +307,42 @@ class DiscordAI
 
     public function rawTextAssistance(User|Member $userObject,
                                       string      $instructions, string $user,
-                                      ?int        $extraHash = null): array
+                                      ?int        $extraHash = null,
+                                      bool        $cacheTime = false,
+                                      string      $cooldownMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE): array
     {
+        $useCache = $cacheTime !== false;
+
+        if ($useCache) {
+            $simpleCacheKey = array(
+                __METHOD__,
+                $this->plan->planID,
+                $userObject->id,
+                $extraHash
+            );
+            $cache = get_key_value_pair($simpleCacheKey);
+
+            if ($cache !== null) {
+                return $cache;
+            } else {
+                $cacheKey = $simpleCacheKey;
+                $cacheKey[] = string_to_integer($instructions);
+                $cacheKey[] = string_to_integer($user);
+                $cache = get_key_value_pair($cacheKey);
+
+                if ($cache !== null) {
+                    return $cache;
+                } else {
+                    set_key_value_pair($simpleCacheKey, array(true, null, $cooldownMessage));
+                }
+            }
+        }
         $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)($userObject->id));
 
         if ($extraHash !== null) {
             $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
         }
-        return $this->chatAI->getResult(
+        $outcome = $this->chatAI->getResult(
             $hash,
             array(
                 "messages" => array(
@@ -329,6 +357,11 @@ class DiscordAI
                 )
             )
         );
+        if ($useCache) {
+            set_key_value_pair($cacheKey, $outcome, $cacheTime);
+            clear_memory(array($simpleCacheKey));
+        }
+        return $outcome;
     }
 
 }
