@@ -59,17 +59,11 @@ class DiscordTicket
         $date = get_current_date(); // Always first
         $this->checkExpired();
         $object = $this->plan->instructions->getObject(
-            $interaction->guild_id,
-            $interaction->guild->name,
-            $interaction->channel_id,
-            $interaction->channel->name,
-            $interaction->message?->thread?->id,
+            $interaction->guild,
+            $interaction->channel,
             $interaction->message?->thread,
-            $interaction->user->id,
-            $interaction->user->username,
-            $interaction->user->displayname,
-            $interaction->message->content,
-            $interaction->message->id
+            $interaction->user,
+            $interaction->message,
         );
 
         if ($query->cooldown_time !== null
@@ -274,7 +268,7 @@ class DiscordTicket
         }
     }
 
-    public function track(Message $message): void
+    public function track(Message $message): bool
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
@@ -330,9 +324,11 @@ class DiscordTicket
                             "creation_date" => get_current_date(),
                         )
                     );
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     // Separator
@@ -716,7 +712,7 @@ class DiscordTicket
                 "DESC",
                 "id"
             ),
-            100 // Limit so we don't ping Discord too much
+            DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS // Limit so we don't ping Discord too much
         );
 
         if (!empty($query)) {

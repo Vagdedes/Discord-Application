@@ -1,5 +1,12 @@
 <?php
 
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Guild\Guild;
+use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
+use Discord\Parts\User\User;
+
 class DiscordInstructions
 {
 
@@ -167,25 +174,30 @@ class DiscordInstructions
         return $messages;
     }
 
-    public function build(object $object): string
+    public function build(object $object, ?array $specific = null): string
     {
         if (!empty($this->localInstructions)) {
             $information = "";
             $disclaimer = "";
+            $hasSpecific = $specific !== null;
 
             foreach ($this->localInstructions as $instruction) {
-                $replacements = $this->replace(
-                    array(
-                        $instruction->information,
-                        $instruction->disclaimer
-                    ),
-                    $object,
-                    $instruction->placeholder_start,
-                    $instruction->placeholder_middle,
-                    $instruction->placeholder_end
-                );
-                $information .= $replacements[0];
-                $disclaimer .= $replacements[1];
+                if ($hasSpecific
+                    ? in_array($instruction->id, $specific)
+                    : $instruction->use !== null) {
+                    $replacements = $this->replace(
+                        array(
+                            $instruction->information,
+                            $instruction->disclaimer
+                        ),
+                        $object,
+                        $instruction->placeholder_start,
+                        $instruction->placeholder_middle,
+                        $instruction->placeholder_end
+                    );
+                    $information .= $replacements[0];
+                    $disclaimer .= $replacements[1];
+                }
             }
             if ($object->channel !== null
                 && $object->channel->strict_reply !== null) {
@@ -202,24 +214,24 @@ class DiscordInstructions
         return "";
     }
 
-    public function getObject(int|string      $serverID, int|string $serverName,
-                              int|string|null $channelID, string|null $channelName,
-                              int|string|null $threadID, string|null $threadName,
-                              int|string      $userID, string $userName, ?string $displayName,
-                              string|null     $messageContent = null, int|string|null $messageID = null): object
+    public function getObject(?Guild           $server = null,
+                              ?Channel         $channel = null,
+                              ?Thread          $thread = null,
+                              Member|User|null $user = null,
+                              ?Message         $message = null): object
     {
         $object = new stdClass();
-        $object->serverID = $serverID;
-        $object->serverName = $serverName;
-        $object->channelID = $channelID;
-        $object->channelName = $channelName;
-        $object->threadID = $threadID;
-        $object->threadName = $threadName;
-        $object->userID = $userID;
-        $object->userName = $userName;
-        $object->displayName = $displayName;
-        $object->messageContent = $messageContent;
-        $object->messageID = $messageID;
+        $object->serverID = $server?->id;
+        $object->serverName = $server?->name;
+        $object->channelID = $channel?->id;
+        $object->channelName = $channel?->name;
+        $object->threadID = $thread?->id;
+        $object->threadName = $thread?->name;
+        $object->userID = $user?->id;
+        $object->userName = $user?->username;
+        $object->displayName = $user?->displayname;
+        $object->messageContent = $message?->content;
+        $object->messageID = $message?->id;
         $object->botID = $this->plan->botID;
         $object->botName = $this->plan->discord->user->id;
         $object->domain = get_domain();
@@ -229,8 +241,8 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
-        $object->channel = $channelID === null ? null
-            : $this->plan->locations->getChannel($serverID, $channelID, $userID);
+        $object->channel = $object->serverID === null || $object->channelID || $object->userID ? null
+            : $this->plan->locations->getChannel($object->serverID, $object->channelID, $object->userID);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

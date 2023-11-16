@@ -50,29 +50,19 @@ class DiscordAI
         }
     }
 
-    public function textAssistance(Message         $message,
-                                   User            $user,
-                                   Member          $member,
-                                   string          $serverName,
-                                   string          $channelName,
-                                   int|string|null $threadID, string|null $threadName,
-                                   string          $messageContent): bool
+    public function textAssistance(Message $message,
+                                   Member  $member,
+                                   string  $messageContent): bool
     {
         $this->plan->bot->processing++;
         global $logger;
-        $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $user->id);
+        $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $member->id);
         $object = $this->plan->instructions->getObject(
-            $message->guild_id,
-            $serverName,
-            $message->channel_id,
-            $channelName,
-            $threadID,
-            $threadName,
-            $user->id,
-            $user->username,
-            $user->displayname,
-            $messageContent,
-            $message->id
+            $message->guild,
+            $message->channel,
+            $message->thread,
+            $member,
+            $message
         );
         $command = $this->plan->commands->process(
             $message,
@@ -95,8 +85,12 @@ class DiscordAI
             }
             $this->plan->bot->processing--;
             return true;
+        } else if ($this->plan->ticket->track($message)
+            || $this->plan->target->track($member, $message, $object)) {
+            $this->plan->bot->processing--;
+            return true;
         } else {
-            $channel = $this->plan->locations->getChannel($message->guild_id, $message->channel_id, $user->id);
+            $channel = $this->plan->locations->getChannel($message->guild_id, $message->channel_id, $member->id);
 
             if ($channel !== null) {
                 if ($this->chatAI !== null
@@ -108,11 +102,11 @@ class DiscordAI
                             ));
                         }
                     } else {
-                        $cooldownKey = array(__METHOD__, $this->plan->planID, $user->id);
+                        $cooldownKey = array(__METHOD__, $this->plan->planID, $member->id);
 
                         if (get_key_value_pair($cooldownKey) === null) {
                             set_key_value_pair($cooldownKey, true);
-                            if ($user->id != $this->plan->botID) {
+                            if ($member->id != $this->plan->botID) {
                                 if ($channel->require_mention) {
                                     $mention = false;
 
@@ -146,7 +140,7 @@ class DiscordAI
                             }
 
                             if ($mention) {
-                                $limits = $this->plan->limits->isLimited($message->guild_id, $message->channel_id, $user->id);
+                                $limits = $this->plan->limits->isLimited($message->guild_id, $message->channel_id, $member->id);
 
                                 if (!empty($limits)) {
                                     foreach ($limits as $limit) {
@@ -158,7 +152,7 @@ class DiscordAI
                                         }
                                     }
                                 } else {
-                                    $cacheKey = array(__METHOD__, $this->plan->planID, $user->id, $messageContent);
+                                    $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
                                     $cache = get_key_value_pair($cacheKey);
 
                                     if ($cache !== null) {
@@ -209,38 +203,26 @@ class DiscordAI
                                         } else {
                                             $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
                                         }
+                                        $threadID = $message->thread?->id;
                                         $message->reply(MessageBuilder::new()->setContent(
                                             $promptMessage
                                         ))->done(function (Message $message)
                                         use (
-                                            $object, $messageContent, $user,
+                                            $object, $messageContent, $member,
                                             $threadID, $cacheKey, $logger, $channel
                                         ) {
                                             $instructions = $this->plan->instructions->build($object);
-                                            $parameters = array(
-                                                "messages" => array(
-                                                    array(
-                                                        "role" => "system",
-                                                        "content" => $instructions
-                                                    ),
-                                                    array(
-                                                        "role" => "user",
-                                                        "content" => $messageContent
-                                                    )
-                                                )
-                                            );
-                                            $reply = $this->chatAI->getResult(
-                                                overflow_long(overflow_long($this->plan->planID * 31) + (int)($user->id)),
-                                                $parameters
+                                            $reply = $this->rawTextAssistance(
+                                                $member,
+                                                $instructions,
+                                                $messageContent,
                                             );
                                             $modelReply = $reply[2];
 
                                             if ($channel->debug !== null) {
-                                                foreach (array($parameters, $modelReply) as $debug) {
-                                                    foreach (str_split(json_encode($debug), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                                        $message->reply(MessageBuilder::new()->setContent(
-                                                            str_replace("\\n", DiscordProperties::NEW_LINE, $split)
-                                                        ));
+                                                foreach (array($instructions, $modelReply) as $debug) {
+                                                    foreach (str_split($debug, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                        $message->reply(MessageBuilder::new()->setContent($split));
                                                     }
                                                 }
                                             }
@@ -253,7 +235,7 @@ class DiscordAI
                                                         $message->guild_id,
                                                         $message->channel_id,
                                                         $threadID,
-                                                        $user->id,
+                                                        $member->id,
                                                         $message->id,
                                                         $messageContent,
                                                     );
@@ -261,7 +243,7 @@ class DiscordAI
                                                         $message->guild_id,
                                                         $message->channel_id,
                                                         $threadID,
-                                                        $user->id,
+                                                        $member->id,
                                                         $message->id,
                                                         $assistance,
                                                         ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
@@ -322,4 +304,31 @@ class DiscordAI
         $this->plan->bot->processing--;
         return false;
     }
+
+    public function rawTextAssistance(User|Member $userObject,
+                                      string      $instructions, string $user,
+                                      ?int        $extraHash = null): array
+    {
+        $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)($userObject->id));
+
+        if ($extraHash !== null) {
+            $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
+        }
+        return $this->chatAI->getResult(
+            $hash,
+            array(
+                "messages" => array(
+                    array(
+                        "role" => "system",
+                        "content" => $instructions
+                    ),
+                    array(
+                        "role" => "user",
+                        "content" => $user
+                    )
+                )
+            )
+        );
+    }
+
 }

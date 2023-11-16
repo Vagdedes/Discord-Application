@@ -134,6 +134,11 @@ class DiscordSyntax
     }
 }
 
+class DiscordPredictedLimits
+{
+    public const RAPID_CHANNEL_DELETIONS = 20;
+}
+
 class DiscordInheritedLimits
 {
     public const

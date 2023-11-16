@@ -5,6 +5,7 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
 
 class DiscordTargetedMessage
 {
@@ -37,22 +38,16 @@ class DiscordTargetedMessage
     private function initiate(object|string|int $query): void
     {
         if (!is_object($query)) {
-            $query = null;
-
             if (!empty($this->targets)) {
                 foreach ($this->targets as $target) {
                     if ($target->id == $query) {
-                        $query = $target;
+                        $this->initiate($target);
                         break;
                     }
                 }
             }
-
-            if ($query === null) {
-                return;
-            }
-        }
-        if ($query->max_open_general !== null
+            return;
+        } else if ($query->max_open_general !== null
             && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
             return;
         }
@@ -83,15 +78,15 @@ class DiscordTargetedMessage
                 }
             }
             unset($members[$this->plan->botID]);
-        }
-        $this->checkExpired();
-        $date = get_current_date(); // Always first
-        var_dump(min(sizeof($members), 100)); //todo
 
-        for ($i = 0; $i < min(sizeof($members), 100); $i++) {
             if (empty($members)) {
                 return;
             }
+        }
+        $this->checkExpired();
+        $date = get_current_date(); // Always first
+
+        for ($i = 0; $i < min(sizeof($members) + 1, DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS); $i++) {
             $member = null;
 
             while ($member === null) {
@@ -108,15 +103,10 @@ class DiscordTargetedMessage
                 $this->plan->instructions->replace(
                     array($query->message),
                     $this->plan->instructions->getObject(
-                        $member->guild_id,
-                        $member->guild->name,
+                        $member->guild,
                         null,
                         null,
-                        null,
-                        null,
-                        $member->user->id,
-                        $member->username,
-                        $member->displayname
+                        $member
                     )
                 )[0]
             );
@@ -246,7 +236,7 @@ class DiscordTargetedMessage
         }
     }
 
-    public function track(Message $message): void
+    public function track(Member $member, Message $message, object $object): bool
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
@@ -308,6 +298,22 @@ class DiscordTargetedMessage
                         );
                     }
                 } else {
+                    $instructions = $this->plan->instructions->build($object);
+                    $reply = $this->plan->ai->rawTextAssistance(
+                        $member,
+                        $instructions,
+                        $message->content,
+                    );
+                    $modelReply = $reply[2];
+
+                    if ($reply[0]) {
+                        $model = $reply[1];
+                        $assistance = $this->plan->ai->chatAI->getText($model, $modelReply);
+
+                        if ($assistance[0]) {
+
+                        }
+                    }
                     sql_insert(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
                         array(
@@ -318,9 +324,11 @@ class DiscordTargetedMessage
                             "creation_date" => get_current_date(),
                         )
                     );
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     // Separator
@@ -622,7 +630,7 @@ class DiscordTargetedMessage
 
     public function loadSingleTargetMessage(object $target): MessageBuilder
     {
-        $this->checkExpired();
+        $this->initiate($target->target_id);
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing target with ID **" . $target->target_creation_id . "**");
 
@@ -725,7 +733,7 @@ class DiscordTargetedMessage
                 "DESC",
                 "id"
             ),
-            100 // Limit so we don't ping Discord too much
+            DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS // Limit so we don't ping Discord too much
         );
 
         if (!empty($query)) {
@@ -763,10 +771,5 @@ class DiscordTargetedMessage
                 }
             }
         }
-    }
-
-    private function getFree(): int
-    {
-        return 100;
     }
 }

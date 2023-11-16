@@ -63,17 +63,11 @@ class DiscordComponent
 
             if (!empty($subQuery)) {
                 $object = $this->plan->instructions->getObject(
-                    $interaction->guild_id,
-                    $interaction->guild->name,
-                    $interaction->channel_id,
-                    $interaction->channel->name,
-                    $interaction->message?->thread?->id,
+                    $interaction->guild,
+                    $interaction->channel,
                     $interaction->message?->thread,
-                    $interaction->user->id,
-                    $interaction->user->username,
-                    $interaction->user->displayname,
-                    $interaction->message->content,
-                    $interaction->message->id
+                    $interaction->user,
+                    $interaction->message,
                 );
 
                 foreach ($subQuery as $arrayKey => $textInput) {
@@ -460,17 +454,11 @@ class DiscordComponent
             $embed->setDescription(
                 $this->plan->instructions->replace(array($databaseObject->response),
                     $this->plan->instructions->getObject(
-                        $interaction->guild_id,
-                        $interaction->guild->name,
-                        $interaction->channel_id,
-                        $interaction->channel->name,
-                        $interaction->message?->thread?->id,
+                        $interaction->guild,
+                        $interaction->channel,
                         $interaction->message?->thread,
-                        $interaction->user->id,
-                        $interaction->user->username,
-                        $interaction->user->displayname,
-                        $interaction->message->content,
-                        $interaction->message->id
+                        $interaction->user,
+                        $interaction->message,
                     ))[0]
             );
             $this->plan->utilities->acknowledgeMessage(

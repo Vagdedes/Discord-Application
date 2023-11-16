@@ -692,7 +692,7 @@ function string_to_integer($string, $long = false): int
     return $result;
 }
 
-function random_number($length = 9): int
+function random_number($length = 9): int|string
 {
     $characters = '0123456789';
     $charactersLength = strlen($characters);

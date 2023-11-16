@@ -77,17 +77,11 @@ class DiscordControlledMessages
                            string      $message, array $components, bool $ephemeral): bool
     {
         $object = $this->plan->instructions->getObject(
-            $interaction->guild_id,
-            $interaction->guild->name,
-            $interaction->channel_id,
-            $interaction->channel->name,
-            $interaction->message?->thread?->id,
+            $interaction->guild,
+            $interaction->channel,
             $interaction->message?->thread,
-            $interaction->user->id,
-            $interaction->user->username,
-            $interaction->user->displayname,
-            $interaction->message->content,
-            $interaction->message->id
+            $interaction->user,
+            $interaction->message,
         );
         $messageBuilder = MessageBuilder::new()->setContent(
             $this->plan->instructions->replace(array($message), $object)[0]
