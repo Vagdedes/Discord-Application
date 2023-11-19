@@ -92,7 +92,37 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->component->showModal($interaction, "0-change_email");
+            $plan->controlledMessages->send($interaction, "0-change_email", true);
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function new_email(DiscordPlan    $plan,
+                                     Interaction    $interaction,
+                                     MessageBuilder $messageBuilder,
+                                     mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->component->showModal($interaction, "0-new_email");
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function verify_email(DiscordPlan    $plan,
+                                        Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->component->showModal($interaction, "0-verify_email");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -425,9 +455,9 @@ class AccountMessageImplementationListener
     }
 
     public static function forgot_password(DiscordPlan    $plan,
-                                                 Interaction    $interaction,
-                                                 MessageBuilder $messageBuilder,
-                                                 mixed          $objects): void
+                                           Interaction    $interaction,
+                                           MessageBuilder $messageBuilder,
+                                           mixed          $objects): void
     {
         $account = self::getAccountSession($plan, $interaction->user->id);
         $account = $account->getSession();

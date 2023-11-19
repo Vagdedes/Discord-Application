@@ -124,9 +124,9 @@ class AccountModalImplementationListener
         }
     }
 
-    public static function change_email(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        mixed       $objects): void
+    public static function new_email(DiscordPlan $plan,
+                                     Interaction $interaction,
+                                     mixed       $objects): void
     {
         $account = new Account($plan->applicationID);
         $session = $account->getSession();
@@ -139,7 +139,30 @@ class AccountModalImplementationListener
 
             $interaction->acknowledge()->done(function () use ($interaction, $account, $email) {
                 $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getEmail()->requestVerification($email)->getMessage()
+                    $account->getEmail()->requestVerification($email, true)->getMessage()
+                ), true);
+            });
+        } else {
+            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
+        }
+    }
+
+    public static function verify_email(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        mixed       $objects): void
+    {
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
+        $session->setCustomKey("discord", $interaction->user->id);
+        $account = $session->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $account = $account->getObject();
+            $code = array_shift($objects->toArray())["value"];
+
+            $interaction->acknowledge()->done(function () use ($interaction, $account, $code) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $account->getEmail()->completeVerification($code, true)->getMessage()
                 ), true);
             });
         } else {
