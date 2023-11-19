@@ -83,7 +83,10 @@ class AccountMessageCreationListener
             : ($hasPurchased
                 ? $product->divisions->post_purchase
                 : $product->divisions->pre_purchase);
-        $downloadURL = $hasPurchased ? $product->download_url : null;
+        $downloadToken = $account->getDownloads()->getOrCreateValidToken($productID, 1, true);
+        $downloadURL = $hasPurchased && $downloadToken->isPositiveOutcome()
+            ? $product->download_placeholder . "?token=" . $downloadToken->getObject()
+            : null;
 
         // Separator
 
