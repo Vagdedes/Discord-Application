@@ -140,7 +140,37 @@ if (!empty($files)) {
 
 $discord->on('ready', function (Discord $discord) {
     global $logger;
-    $discordBot = new DiscordBot($discord, $discord->id);
+    $botID = $discord->id;
+
+    if (!empty($discord->guilds->getIterator())) {
+        foreach ($discord->guilds as $guild) {
+            if ($guild instanceof Guild) {
+                $member = $guild->members->getIterator()[$botID];
+
+                if ($member instanceof Member) {
+                    if (empty($member->roles->getIterator())) {
+                        $guild->leave();
+                        $logger->logError(null, "Bot left guild " . $guild->id . " because it has no roles and therefore no permissions.");
+                    } else {
+                        $admin = false;
+
+                        foreach ($member->roles as $role) {
+                            if ($role->permissions->administrator) {
+                                $admin = true;
+                                break;
+                            }
+                        }
+
+                        if (!$admin) {
+                            $guild->leave();
+                            $logger->logError(null, "Bot left guild " . $guild->id . " because it has no administrator permissions.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+    $discordBot = new DiscordBot($discord, $botID);
     $logger = new DiscordLogs($discordBot);
 
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $logger) {

@@ -5,7 +5,6 @@ use Discord\Builders\Components\Button;
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
-use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
@@ -276,25 +275,23 @@ class DiscordControlledMessages
                                  object  $messageRow, object $oldMessageRow,
                                  array   $array, int $position): void
     {
-        $channel->getMessageHistory(array("limit" => (int)($oldMessageRow->past_messages ?? 10)))->done(
-            function (Collection $messages) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
-                foreach ($messages as $message) {
-                    if ($message instanceof Message
-                        && $message->id == $oldMessageRow->message_id) {
-                        if ($message->user_id == $this->plan->botID) {
-                            if ($custom) {
-                                $messageRow->message_id = $message->id;
-                            }
-                            $message->edit($this->build(null, $messageRow));
-                        } else {
-                            $message->delete();
-                            $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
+        try {
+            $channel->messages->fetch($oldMessageRow->message_id)->done(
+                function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
+                    if ($message->user_id == $this->plan->botID) {
+                        if ($custom) {
+                            $messageRow->message_id = $message->id;
                         }
-                        break;
+                        $message->edit($this->build(null, $messageRow));
+                    } else {
+                        $message->delete();
+                        $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
                     }
+                    $this->process($array, $position + 1);
                 }
-                $this->process($array, $position + 1);
-            }
-        );
+            );
+        } catch (Throwable $ignored) {
+            $this->process($array, $position + 1);
+        }
     }
 }
