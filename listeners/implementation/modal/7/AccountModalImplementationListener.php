@@ -158,7 +158,10 @@ class AccountModalImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $cacheKey = "contact-form";
+            $cacheKey = array(
+                $interaction->user->id,
+                "contact-form"
+            );
 
             if (has_memory_cooldown($cacheKey, null, false)) {
                 $response = "Please wait a few minutes before contacting us again.";
