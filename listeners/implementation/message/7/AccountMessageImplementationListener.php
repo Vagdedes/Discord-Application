@@ -423,4 +423,19 @@ class AccountMessageImplementationListener
             $plan->component->showModal($interaction, "0-log_in");
         }
     }
+
+    public static function forgot_password(DiscordPlan    $plan,
+                                                 Interaction    $interaction,
+                                                 MessageBuilder $messageBuilder,
+                                                 mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $plan->component->showModal($interaction, "0-forgot_password");
+        }
+    }
 }

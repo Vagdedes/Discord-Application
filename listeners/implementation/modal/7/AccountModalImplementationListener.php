@@ -158,10 +158,7 @@ class AccountModalImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
-            $cacheKey = array(
-                get_client_ip_address(),
-                "contact-form"
-            );
+            $cacheKey = "contact-form";
 
             if (has_memory_cooldown($cacheKey, null, false)) {
                 $response = "Please wait a few minutes before contacting us again.";
@@ -204,6 +201,38 @@ class AccountModalImplementationListener
             });
         } else {
             $plan->controlledMessages->send($interaction, "0-register_or_log_in", true, true);
+        }
+    }
+
+    public static function forgot_password(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           mixed       $objects): void
+    {
+        $account = new Account($plan->applicationID);
+        $session = $account->getSession();
+        $session->setCustomKey("discord", $interaction->user->id);
+        $account = $session->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true, true);
+        } else {
+            $account = $account->getObject();
+            $objects = $objects->toArray();
+            $email = array_shift($objects)["value"];
+
+            $interaction->acknowledge()->done(function () use ($interaction, $email, $account) {
+                $account = $account->getNew(null, $email);
+
+                if ($account->exists()) {
+                    $response = $account->getPassword()->requestChange()->getMessage();
+                } else {
+                    $response = "Account with this email address does not exist";
+                }
+
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $response
+                ), true);
+            });
         }
     }
 }
