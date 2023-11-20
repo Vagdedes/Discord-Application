@@ -173,9 +173,9 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->component->showModal($interaction, "0-compete_password");
+            $plan->component->showModal($interaction, "0-complete_password");
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->controlledMessages->send($interaction, "0-log_in", true);
         }
     }
 
