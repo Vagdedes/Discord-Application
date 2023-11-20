@@ -240,9 +240,9 @@ class AccountModalImplementationListener
                 $account = $account->getNew(null, $email);
 
                 if ($account->exists()) {
-                    $response = $account->getPassword()->requestChange()->getMessage();
+                    $response = $account->getPassword()->requestChange(true)->getMessage();
                 } else {
-                    $response = "Account with this email address does not exist";
+                    $response = "Account with this email address does not exist.";
                 }
 
                 $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
@@ -253,9 +253,32 @@ class AccountModalImplementationListener
     }
 
     public static function complete_password(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           mixed       $objects): void
+                                             Interaction $interaction,
+                                             mixed       $objects): void
     {
-        //todo
+        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $account = $account->getObject();
+        } else {
+            $account = new Account($plan->applicationID);
+        }
+        $objects = $objects->toArray();
+        $code = array_shift($objects)["value"];
+        $password1 = array_shift($objects)["value"];
+        $password2 = array_shift($objects)["value"];
+
+        $interaction->acknowledge()->done(function () use ($interaction, $account, $password1, $password2, $code) {
+            if ($password1 == $password2) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $account->getPassword()->completeChange($code, $password1, true)->getMessage()
+                ), true);
+            } else {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    "Passwords do not match each other."
+                ), true);
+            }
+        });
     }
 }

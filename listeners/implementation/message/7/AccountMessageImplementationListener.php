@@ -194,6 +194,21 @@ class AccountMessageImplementationListener
         }
     }
 
+    public static function got_password_code(DiscordPlan    $plan,
+                                           Interaction    $interaction,
+                                           MessageBuilder $messageBuilder,
+                                           mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $plan->component->showModal($interaction, "0-complete_password");
+        }
+    }
+
     public static function change_username(DiscordPlan    $plan,
                                            Interaction    $interaction,
                                            MessageBuilder $messageBuilder,
