@@ -44,8 +44,7 @@ class DiscordControlledMessages
     }
 
     public function send(Interaction   $interaction,
-                         string|object $key, bool $ephemeral,
-                         bool          $modal = false): bool
+                         string|object $key, bool $ephemeral): bool
     {
         $message = $this->messages[$key] ?? null;
 

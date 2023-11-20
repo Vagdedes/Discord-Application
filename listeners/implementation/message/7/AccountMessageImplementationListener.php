@@ -137,16 +137,60 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
-            $plan->utilities->acknowledgeMessage(
-                $interaction,
-                MessageBuilder::new()->setContent(
-                    $account->getPassword()->requestChange()->getMessage()
-                ),
-                true
-            );
+            $plan->controlledMessages->send($interaction, "0-change_password", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function request_password(DiscordPlan    $plan,
+                                            Interaction    $interaction,
+                                            MessageBuilder $messageBuilder,
+                                            mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $account = $account->getObject();
+
+            $interaction->acknowledge()->done(function () use ($interaction, $account) {
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $account->getPassword()->requestChange()->getMessage()
+                ), true);
+            });
+        } else {
+            $plan->controlledMessages->send($interaction, "0-log_in", true);
+        }
+    }
+
+    public static function complete_password(DiscordPlan    $plan,
+                                             Interaction    $interaction,
+                                             MessageBuilder $messageBuilder,
+                                             mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->component->showModal($interaction, "0-compete_password");
+        } else {
+            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+        }
+    }
+
+    public static function forgot_password(DiscordPlan    $plan,
+                                           Interaction    $interaction,
+                                           MessageBuilder $messageBuilder,
+                                           mixed          $objects): void
+    {
+        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $plan->component->showModal($interaction, "0-forgot_password");
         }
     }
 
@@ -451,21 +495,6 @@ class AccountMessageImplementationListener
             $plan->component->showModal($interaction, "0-contact_form");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
-        }
-    }
-
-    public static function forgot_password(DiscordPlan    $plan,
-                                           Interaction    $interaction,
-                                           MessageBuilder $messageBuilder,
-                                           mixed          $objects): void
-    {
-        $account = self::getAccountSession($plan, $interaction->user->id);
-        $account = $account->getSession();
-
-        if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $plan->component->showModal($interaction, "0-forgot_password");
         }
     }
 }
