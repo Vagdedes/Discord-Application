@@ -156,7 +156,7 @@ class AccountMessageImplementationListener
 
             $interaction->acknowledge()->done(function () use ($interaction, $account) {
                 $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getPassword()->requestChange()->getMessage()
+                    $account->getPassword()->requestChange(true)->getMessage()
                 ), true);
             });
         } else {
