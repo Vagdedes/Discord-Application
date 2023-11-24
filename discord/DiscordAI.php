@@ -118,14 +118,11 @@ class DiscordAI
                                             }
                                         }
 
-                                        if ($mention) {
-                                            $messageContent = str_replace("<@" . $this->plan->botID . ">", "", $messageContent);
-                                        } else if (!empty($this->plan->locations->mentions)) {
+                                        if (!$mention && !empty($this->plan->locations->mentions)) {
                                             foreach ($this->plan->locations->mentions as $alternativeMention) {
                                                 foreach ($message->mentions as $userObj) {
                                                     if ($userObj->id == $alternativeMention->user_id) {
                                                         $mention = true;
-                                                        $messageContent = str_replace("<@" . $alternativeMention->user_id . ">", "", $messageContent);
                                                         break 2;
                                                     }
                                                 }
@@ -134,6 +131,17 @@ class DiscordAI
                                     }
                                 } else {
                                     $mention = true;
+                                }
+
+                                if (!$mention && !empty($this->plan->locations->keywords)) {
+                                    foreach ($this->plan->locations->keywords as $keyword) {
+                                        if ($keyword->keyword !== null) {
+                                            if (str_contains($messageContent, $keyword->keyword)) {
+                                                $mention = true;
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             } else {
                                 $mention = false;
@@ -176,28 +184,6 @@ class DiscordAI
                                             $this->plan->bot->processing--;
                                             return true;
                                         }
-                                        if (!empty($this->plan->locations->keywords)) {
-                                            $result = false;
-
-                                            foreach ($this->plan->locations->keywords as $keyword) {
-                                                if ($keyword->keyword !== null) {
-                                                    if (str_contains($messageContent, $keyword->keyword)) {
-                                                        $result = true;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-
-                                            if (!$result) {
-                                                if ($channel->failure_message !== null) {
-                                                    $message->reply(MessageBuilder::new()->setContent(
-                                                        $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
-                                                    ));
-                                                }
-                                                $this->plan->bot->processing--;
-                                                return true;
-                                            }
-                                        }
                                         if ($channel->prompt_message !== null) {
                                             $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
                                         } else {
@@ -214,13 +200,13 @@ class DiscordAI
                                             $instructions = $this->plan->instructions->build($object);
                                             $reply = $this->rawTextAssistance(
                                                 $member,
-                                                $instructions,
+                                                $instructions[0],
                                                 $messageContent,
                                             );
                                             $modelReply = $reply[2];
 
                                             if ($channel->debug !== null) {
-                                                foreach (str_split($instructions, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                foreach (str_split($instructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                                                     $this->plan->utilities->replyMessage(
                                                         $message,
                                                         MessageBuilder::new()->setContent($split)
@@ -238,6 +224,7 @@ class DiscordAI
                                                 $assistance = $this->chatAI->getText($model, $modelReply);
 
                                                 if ($assistance !== null) {
+                                                    $assistance .= $instructions[1];
                                                     $this->plan->conversation->addMessage(
                                                         $message->guild_id,
                                                         $message->channel_id,

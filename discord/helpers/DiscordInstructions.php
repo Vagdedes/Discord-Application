@@ -69,14 +69,14 @@ class DiscordInstructions
         );
     }
 
-    public function replace(array  $messages, ?object $object = null,
+    public function replace(array  $messages, ?object $object,
                             string $placeholderStart = DiscordProperties::DEFAULT_PLACEHOLDER_START,
                             string $placeholderMiddle = DiscordProperties::DEFAULT_PLACEHOLDER_MIDDLE,
                             string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END,
                             bool   $recursive = true): array
     {
-        if (!empty($this->placeholders) && !empty($object)) {
-            $replace = false;
+        if (!empty($this->placeholders)) {
+            $replaceFurther = false;
 
             foreach ($messages as $arrayKey => $message) {
                 if ($message === null) {
@@ -93,7 +93,7 @@ class DiscordInstructions
                     switch ($keyWord[0]) {
                         case "publicInstructions":
                             $value = $this->getPublic();
-                            $replace = true;
+                            $replaceFurther = $recursive;
                             break;
                         case "botReplies":
                             $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
@@ -114,24 +114,26 @@ class DiscordInstructions
 
                 if (is_array($value)) {
                     $array = $value;
+                    $size = sizeof($array);
                     $value = "";
 
-                    foreach ($array as $row) {
-                        if ($replace && $recursive) {
+                    foreach ($array as $arrayKey => $row) {
+                        if ($replaceFurther) {
                             $value .= $this->replace(
-                                    array($row),
-                                    $object,
-                                    $placeholderStart,
-                                    $placeholderMiddle,
-                                    $placeholderEnd,
-                                    false
-                                )[0] . DiscordProperties::NEW_LINE;
+                                array($row),
+                                $object,
+                                $placeholderStart,
+                                $placeholderMiddle,
+                                $placeholderEnd,
+                                false
+                            )[0];
                         } else {
-                            $value .= $row . DiscordProperties::NEW_LINE;
+                            $value .= $row;
                         }
-                    }
-                    if (!empty($value)) {
-                        $value = substr($value, 0, -strlen(DiscordProperties::NEW_LINE));
+
+                        if ($arrayKey !== ($size - 1)) {
+                            $value .= DiscordProperties::NEW_LINE;
+                        }
                     }
                 }
                 $object->placeholderArray[] = $value;
@@ -140,23 +142,17 @@ class DiscordInstructions
                     && $placeholder->include_previous > 0) {
                     $size = sizeof($object->placeholderArray);
 
-                    for ($position = 1; $position <= $placeholder->include_previous; $position++) {
-                        $modifiedPosition = $size - $position;
+                    for ($position = 1; $position <= min($placeholder->include_previous, $size); $position++) {
+                        $positionValue = $object->placeholderArray[$size - $position];
 
-                        if ($modifiedPosition >= 0) {
-                            $positionValue = $object->placeholderArray[$modifiedPosition];
-
-                            foreach ($messages as $arrayKey => $message) {
-                                if (!empty($message)) {
-                                    $messages[$arrayKey] = str_replace(
-                                        $placeholderStart . $placeholder->placeholder . $placeholderEnd,
-                                        $positionValue,
-                                        $message
-                                    );
-                                }
+                        foreach ($messages as $arrayKey => $message) {
+                            if (!empty($message)) {
+                                $messages[$arrayKey] = str_replace(
+                                    $placeholderStart . $placeholder->placeholder . $placeholderEnd,
+                                    $positionValue,
+                                    $message
+                                );
                             }
-                        } else {
-                            break;
                         }
                     }
                 }
@@ -174,7 +170,7 @@ class DiscordInstructions
         return $messages;
     }
 
-    public function build(object $object, ?array $specific = null): string
+    public function build(object $object, ?array $specific = null): array
     {
         if (!empty($this->localInstructions)) {
             $information = "";
@@ -206,12 +202,16 @@ class DiscordInstructions
                         : DiscordProperties::STRICT_REPLY_INSTRUCTIONS)
                     . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
             }
-            return $information
-                . (!empty($disclaimer)
-                    ? DiscordSyntax::HEAVY_CODE_BLOCK . $disclaimer . DiscordSyntax::HEAVY_CODE_BLOCK
-                    : "");
+            if (!empty($information)) {
+                return array(
+                    $information,
+                    (!empty($disclaimer)
+                        ? DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $disclaimer . DiscordSyntax::SPOILER
+                        : "")
+                );
+            }
         }
-        return "";
+        return array("", "");
     }
 
     public function getObject(?Guild              $server = null,

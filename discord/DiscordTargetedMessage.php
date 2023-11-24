@@ -341,9 +341,10 @@ class DiscordTargetedMessage
                     $message->reply(MessageBuilder::new()->setContent(
                         $promptMessage
                     ))->done(function (Message $message) use ($member, $object, $target, $query) {
+                        $instructions = $this->plan->instructions->build($object, $target->instructions);
                         $reply = $this->plan->ai->rawTextAssistance(
                             $member,
-                            $this->plan->instructions->build($object, $target->instructions),
+                            $instructions[0],
                             $message->content,
                             self::AI_HASH,
                             "1 minute",
@@ -360,6 +361,7 @@ class DiscordTargetedMessage
                             $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
 
                             if ($assistance !== null) {
+                                $assistance .= $instructions[1];
                                 $messageContent = $assistance;
                                 $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
                                 $this->plan->utilities->editMessage(
