@@ -201,7 +201,12 @@ class DiscordAI
                                             $reply = $this->rawTextAssistance(
                                                 $member,
                                                 $instructions[0],
-                                                $messageContent,
+                                                $messageContent
+                                                . DiscordProperties::NEW_LINE
+                                                . DiscordProperties::NEW_LINE
+                                                . "Reference Message:"
+                                                . DiscordProperties::NEW_LINE
+                                                . $message->message_reference?->content,
                                             );
                                             $modelReply = $reply[2];
 

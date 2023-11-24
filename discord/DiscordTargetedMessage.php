@@ -340,12 +340,17 @@ class DiscordTargetedMessage
                     }
                     $message->reply(MessageBuilder::new()->setContent(
                         $promptMessage
-                    ))->done(function (Message $message) use ($member, $object, $target, $query) {
+                    ))->done(function (Message $replyMessage) use ($message, $member, $object, $target, $query) {
                         $instructions = $this->plan->instructions->build($object, $target->instructions);
                         $reply = $this->plan->ai->rawTextAssistance(
                             $member,
                             $instructions[0],
-                            $message->content,
+                            ($message->content
+                            . DiscordProperties::NEW_LINE
+                            . DiscordProperties::NEW_LINE
+                            . "Reference Message:"
+                            . DiscordProperties::NEW_LINE
+                            . $message->message_reference?->content),
                             self::AI_HASH,
                             "1 minute",
                             $target->cooldown_message
@@ -365,14 +370,14 @@ class DiscordTargetedMessage
                                 $messageContent = $assistance;
                                 $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
                                 $this->plan->utilities->editMessage(
-                                    $message,
+                                    $replyMessage,
                                     array_shift($pieces)
                                 );
 
                                 if (!empty($pieces)) {
                                     foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                                         $this->plan->utilities->replyMessage(
-                                            $message,
+                                            $replyMessage,
                                             MessageBuilder::new()->setContent($split)
                                         );
                                     }
@@ -380,7 +385,7 @@ class DiscordTargetedMessage
                             } else {
                                 $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
                                 $this->plan->utilities->editMessage(
-                                    $message,
+                                    $replyMessage,
                                     $messageContent
                                 );
                             }
@@ -388,7 +393,7 @@ class DiscordTargetedMessage
                             $hasNoCost = true;
                             $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
                             $this->plan->utilities->editMessage(
-                                $message,
+                                $replyMessage,
                                 $messageContent
                             );
                         }
@@ -397,8 +402,8 @@ class DiscordTargetedMessage
                                 BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
                                 array(
                                     "target_creation_id" => $query->target_creation_id,
-                                    "user_id" => $message->author->id,
-                                    "message_id" => $message->id,
+                                    "user_id" => $replyMessage->author->id,
+                                    "message_id" => $replyMessage->id,
                                     "message_content" => $messageContent,
                                     "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
                                     "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null),
