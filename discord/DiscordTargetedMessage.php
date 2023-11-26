@@ -11,6 +11,7 @@ class DiscordTargetedMessage
 {
     private DiscordPlan $plan;
     private array $targets;
+    public int $ignoreChannelDeletion, $ignoreThreadDeletion;
 
     private const
         REFRESH_TIME = "15 seconds",
@@ -19,6 +20,8 @@ class DiscordTargetedMessage
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->ignoreChannelDeletion = 0;
+        $this->ignoreThreadDeletion = 0;
         $this->targets = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGES,
             null,
@@ -69,9 +72,13 @@ class DiscordTargetedMessage
                 }
             }
             return;
-        } else if ($query->max_open_general !== null
-            && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
-            return;
+        } else {
+            $this->checkExpired();
+
+            if ($query->max_open_general !== null
+                && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
+                return;
+            }
         }
         $members = null;
 
@@ -86,12 +93,17 @@ class DiscordTargetedMessage
             return;
         } else {
             $members = $members->toArray();
-            set_sql_cache(self::REFRESH_TIME, self::class);
+            unset($members[$this->plan->botID]);
             $removalList = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 array("user_id"),
                 array(
                     array("target_id", $query->id),
+                    array("creation_date", ">", get_past_date(
+                        $query->cooldown_duration !== null ? $query->cooldown_duration : "1 minute"
+                    ), 0),
+                    array("deletion_date", null),
+                    array("expired", null),
                 )
             );
 
@@ -100,39 +112,23 @@ class DiscordTargetedMessage
                     unset($members[$removal->user_id]);
                 }
             }
-            unset($members[$this->plan->botID]);
-
-            if (empty($members)) {
-                return;
-            }
         }
-        $this->checkExpired();
+
+        if (empty($members)) {
+            return;
+        }
         $date = get_current_date(); // Always first
 
-        for ($i = 0; $i < min(sizeof($members) + 1, DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS); $i++) {
-            $member = null;
+        for ($i = 0; $i < min(sizeof($members) + 1, DiscordPredictedLimits::RAPID_CHANNEL_MODIFICATIONS); $i++) {
+            $key = array_rand($members);
+            $member = $members[$key];
+            unset($members[$key]);
 
-            while ($member === null) {
-                $key = array_rand($members);
-                $member = $members[$key];
-                unset($members[$key]);
-            }
             if ($query->max_open_per_user !== null
                 && $this->hasMaxOpen($query->id, $member->user->id, $query->max_open_per_user)
                 && ($query->close_oldest_if_max_open === null || !$this->closeOldest($query))) {
                 return;
             }
-            $message = MessageBuilder::new()->setContent(
-                $this->plan->instructions->replace(
-                    array($query->create_message),
-                    $this->plan->instructions->getObject(
-                        $member->guild,
-                        null,
-                        null,
-                        $member
-                    )
-                )[0]
-            );
 
             while (true) {
                 $targetID = random_number(19);
@@ -152,7 +148,7 @@ class DiscordTargetedMessage
                         "user_id" => $member->user->id,
                         "server_id" => $query->server_id,
                         "creation_date" => $date,
-                        "expiration_date" => get_future_date($query->duration),
+                        "expiration_date" => get_future_date($query->target_duration),
                     );
 
                     if ($query->create_channel_category_id !== null) {
@@ -171,7 +167,7 @@ class DiscordTargetedMessage
                                     "id" => $role->role_id,
                                     "type" => "role",
                                     "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                    "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
+                                    "deny" => empty($role->deny) ? $query->deny_permission : $role->deny
                                 );
                             }
                         }
@@ -180,7 +176,7 @@ class DiscordTargetedMessage
                                 "id" => $member->user->id,
                                 "type" => "member",
                                 "allow" => $query->allow_permission,
-                                "deny" => $query->allow_permission
+                                "deny" => $query->deny_permission
                             )
                         );
                         $this->plan->utilities->createChannel(
@@ -195,10 +191,21 @@ class DiscordTargetedMessage
                             $rolePermissions,
                             $memberPermissions
                         )->done(function (Channel $channel)
-                        use ($targetID, $insert, $member, $message, $query) {
+                        use ($targetID, $insert, $member, $query) {
                             $insert["channel_id"] = $channel->id;
 
                             if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                $message = MessageBuilder::new()->setContent(
+                                    $this->plan->instructions->replace(
+                                        array($query->create_message),
+                                        $this->plan->instructions->getObject(
+                                            $member->guild,
+                                            $channel,
+                                            null,
+                                            $member
+                                        )
+                                    )[0]
+                                );
                                 $channel->sendMessage($message);
                             } else {
                                 global $logger;
@@ -213,6 +220,18 @@ class DiscordTargetedMessage
 
                         if ($channel !== null
                             && $channel->guild_id == $query->server_id) {
+                            $message = MessageBuilder::new()->setContent(
+                                $this->plan->instructions->replace(
+                                    array($query->create_message),
+                                    $this->plan->instructions->getObject(
+                                        $member->guild,
+                                        $channel,
+                                        null,
+                                        $member
+                                    )
+                                )[0]
+                            );
+
                             $channel->startThread($message, $targetID)->done(function (Thread $thread)
                             use ($insert, $member, $channel, $message, $query) {
                                 $insert["channel_id"] = $channel->id;
@@ -284,11 +303,13 @@ class DiscordTargetedMessage
 
                 if ($query->deletion_date !== null) {
                     if ($query->created_thread_id !== null) {
+                        $this->ignoreThreadDeletion++;
                         $this->plan->utilities->deleteThread(
                             $channel,
                             $query->created_thread_id
                         );
                     } else {
+                        $this->ignoreChannelDeletion++;
                         $channel->guild->channels->delete($channel);
                     }
                     $this->initiate($query->target_id);
@@ -305,11 +326,13 @@ class DiscordTargetedMessage
                         1
                     )) {
                         if ($query->created_thread_id !== null) {
+                            $this->ignoreThreadDeletion++;
                             $this->plan->utilities->deleteThread(
                                 $channel,
                                 $query->created_thread_id
                             );
                         } else {
+                            $this->ignoreChannelDeletion++;
                             $channel->guild->channels->delete($channel);
                         }
                         $this->initiate($query->target_id);
@@ -346,11 +369,11 @@ class DiscordTargetedMessage
                             $member,
                             $instructions[0],
                             ($message->content
-                            . DiscordProperties::NEW_LINE
-                            . DiscordProperties::NEW_LINE
-                            . "Reference Message:"
-                            . DiscordProperties::NEW_LINE
-                            . $message->message_reference?->content),
+                                . DiscordProperties::NEW_LINE
+                                . DiscordProperties::NEW_LINE
+                                . "Reference Message:"
+                                . DiscordProperties::NEW_LINE
+                                . $message->message_reference?->content),
                             self::AI_HASH,
                             "1 minute",
                             $target->cooldown_message
@@ -462,12 +485,14 @@ class DiscordTargetedMessage
                         if ($channel !== null
                             && $channel->guild_id == $query->server_id) {
                             if ($query->created_thread_id !== null) {
+                                $this->ignoreThreadDeletion++;
                                 $this->plan->utilities->deleteThread(
                                     $channel,
                                     $query->created_thread_id,
                                     empty($reason) ? null : $userID . ": " . $reason
                                 );
                             } else {
+                                $this->ignoreChannelDeletion++;
                                 $channel->guild->channels->delete(
                                     $channel,
                                     empty($reason) ? null : $userID . ": " . $reason
@@ -527,12 +552,14 @@ class DiscordTargetedMessage
                         1
                     )) {
                         if ($query->created_thread_id !== null) {
+                            $this->ignoreThreadDeletion++;
                             $this->plan->utilities->deleteThread(
                                 $channel,
                                 $query->created_thread_id,
                                 empty($reason) ? null : $userID . ": " . $reason
                             );
                         } else {
+                            $this->ignoreChannelDeletion++;
                             $channel->guild->channels->delete(
                                 $channel,
                                 empty($reason) ? null : $userID . ": " . $reason
@@ -588,11 +615,13 @@ class DiscordTargetedMessage
                 if ($channel !== null
                     && $channel->guild_id == $query->server_id) {
                     if ($query->created_thread_id !== null) {
+                        $this->ignoreThreadDeletion++;
                         $this->plan->utilities->deleteThread(
                             $channel,
                             $query->created_thread_id
                         );
                     } else {
+                        $this->ignoreChannelDeletion++;
                         $channel->guild->channels->delete($channel);
                     }
                 }
@@ -806,7 +835,7 @@ class DiscordTargetedMessage
                 "DESC",
                 "id"
             ),
-            DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS // Limit so we don't ping Discord too much
+            DiscordPredictedLimits::RAPID_CHANNEL_MODIFICATIONS // Limit so we don't ping Discord too much
         );
 
         if (!empty($query)) {
@@ -827,11 +856,13 @@ class DiscordTargetedMessage
                     if ($channel !== null
                         && $channel->guild_id == $row->server_id) {
                         if ($row->created_thread_id !== null) {
+                            $this->ignoreThreadDeletion++;
                             $this->plan->utilities->deleteThread(
                                 $channel,
                                 $row->created_thread_id
                             );
                         } else {
+                            $this->ignoreChannelDeletion++;
                             $channel->guild->channels->delete($channel);
                         }
                     }

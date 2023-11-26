@@ -10,12 +10,13 @@ use Discord\Parts\Interactions\Interaction;
 class DiscordTicket
 {
     private DiscordPlan $plan;
-
+    public int $ignoreDeletion;
     private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->ignoreDeletion = 0;
         $this->checkExpired();
     }
 
@@ -197,7 +198,7 @@ class DiscordTicket
                                 "id" => $role->role_id,
                                 "type" => "role",
                                 "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                "deny" => empty($role->deny) ? $query->allow_permission : $role->deny
+                                "deny" => empty($role->deny) ? $query->deny_permission : $role->deny
                             );
                         }
                     }
@@ -206,7 +207,7 @@ class DiscordTicket
                             "id" => $interaction->user->id,
                             "type" => "member",
                             "allow" => $query->allow_permission,
-                            "deny" => $query->allow_permission
+                            "deny" => $query->deny_permission
                         )
                     );
                     $this->plan->utilities->createChannel(
@@ -291,6 +292,7 @@ class DiscordTicket
                 $query = $query[0];
 
                 if ($query->deletion_date !== null) {
+                    $this->ignoreDeletion++;
                     $channel->guild->channels->delete($channel);
                 } else if ($query->expiration_date !== null
                     && get_current_date() > $query->expiration_date) {
@@ -305,6 +307,7 @@ class DiscordTicket
                         null,
                         1
                     )) {
+                        $this->ignoreDeletion++;
                         $channel->guild->channels->delete($channel);
                     } else {
                         global $logger;
@@ -372,6 +375,7 @@ class DiscordTicket
 
                         if ($channel !== null
                             && $channel->guild_id == $query->created_channel_server_id) {
+                            $this->ignoreDeletion++;
                             $channel->guild->channels->delete(
                                 $channel,
                                 empty($reason) ? null : $userID . ": " . $reason
@@ -428,6 +432,7 @@ class DiscordTicket
                         null,
                         1
                     )) {
+                        $this->ignoreDeletion++;
                         $channel->guild->channels->delete(
                             $channel,
                             empty($reason) ? null : $userID . ": " . $reason
@@ -657,7 +662,7 @@ class DiscordTicket
 
     private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
     {
-        set_sql_cache(self::REFRESH_TIME, self::class);
+        set_sql_cache("1 second");
         return !empty(get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id"),
@@ -676,7 +681,7 @@ class DiscordTicket
 
     private function hasMaxOpen(int|string $ticketID, int|string|null $userID, int|string $limit): bool
     {
-        set_sql_cache(self::REFRESH_TIME, self::class);
+        set_sql_cache("1 second");
         return sizeof(get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
                 array("id"),
@@ -712,7 +717,7 @@ class DiscordTicket
                 "DESC",
                 "id"
             ),
-            DiscordPredictedLimits::RAPID_CHANNEL_DELETIONS // Limit so we don't ping Discord too much
+            DiscordPredictedLimits::RAPID_CHANNEL_MODIFICATIONS // Limit so we don't ping Discord too much
         );
 
         if (!empty($query)) {
@@ -732,6 +737,7 @@ class DiscordTicket
 
                     if ($channel !== null
                         && $channel->guild_id == $row->created_channel_server_id) {
+                        $this->ignoreDeletion++;
                         $channel->guild->channels->delete($channel);
                     }
                 } else {

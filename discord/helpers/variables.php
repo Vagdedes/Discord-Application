@@ -3,6 +3,16 @@
 class BotDatabaseTable
 {
     public const
+        BOT_COUNTING = "discord.botCounting",
+        BOT_COUNTING_MESSAGES = "discord.botCountingMessages",
+        BOT_COUNTING_GOALS = "discord.botCountingGoals",
+        BOT_COUNTING_GOAL_STORAGE = "discord.botCountingGoalStorage",
+        BOT_MESSAGE_REMINDERS = "discord.botMessageReminders",
+        BOT_MESSAGE_REMINDER_TRACKING = "discord.botMessageReminderTracking",
+        BOT_NOTES = "discord.botNotes",
+        BOT_NOTE_CHANGES = "discord.botNoteChanges",
+        BOT_NOTE_SETTINGS = "discord.botNoteSettings",
+        BOT_NOTE_PARTICIPANTS = "discord.botNoteParticipants",
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_LOGS = "discord.botLogs",
@@ -139,7 +149,7 @@ class DiscordSyntax
 
 class DiscordPredictedLimits
 {
-    public const RAPID_CHANNEL_DELETIONS = 20;
+    public const RAPID_CHANNEL_MODIFICATIONS = 20;
 }
 
 class DiscordInheritedLimits

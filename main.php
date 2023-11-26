@@ -84,20 +84,18 @@ use Discord\Parts\WebSockets\VoiceServerUpdate;
 use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
+use \Discord\Parts\Thread\Thread;
 
 //todo dalle-3 to discord-ai
 //todo sound to discord-ai
 //todo discord-cheaper-ai
 
 //todo discord-poll
-//todo discord-counting
 //todo discord-level
 //todo discord-reaction-roles
 //todo discord-invite-tracker
 //todo discord-temporary-channels
 //todo discord-social-alerts
-//todo discord-message-reminders
-//todo discord-notes
 //todo discord-questionnaire
 //todo discord-controlled-channels
 
@@ -233,8 +231,16 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
-            $plan->ticket->closeByChannel($channel);
-            $plan->target->closeByChannelOrThread($channel);
+            if ($plan->ticket->ignoreDeletion === 0) {
+                $plan->ticket->closeByChannel($channel);
+            } else {
+                $plan->ticket->ignoreDeletion++;
+            }
+            if ($plan->target->ignoreChannelDeletion === 0) {
+                $plan->target->closeByChannelOrThread($channel);
+            } else {
+                $plan->target->ignoreChannelDeletion++;
+            }
         }
         $logger->logInfo(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
     });
@@ -253,7 +259,16 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::THREAD_UPDATE, $thread, $oldThread);
     });
 
-    $discord->on(Event::THREAD_DELETE, function (object $thread, Discord $discord) use ($logger) {
+    $discord->on(Event::THREAD_DELETE, function (object $thread, Discord $discord) use ($logger, $discordBot) {
+        if ($thread instanceof Thread) {
+            foreach ($discordBot->plans as $plan) {
+                if ($plan->target->ignoreThreadDeletion === 0) {
+                    $plan->target->closeByChannelOrThread($thread->parent);
+                } else {
+                    $plan->target->ignoreThreadDeletion++;
+                }
+            }
+        }
         $logger->logInfo(null, Event::THREAD_DELETE, $thread);
     });
 
