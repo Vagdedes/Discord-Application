@@ -75,6 +75,7 @@ use Discord\Parts\Guild\Integration;
 use Discord\Parts\Guild\Role;
 use Discord\Parts\Guild\ScheduledEvent;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 use Discord\Parts\WebSockets\AutoModerationActionExecution;
@@ -84,7 +85,6 @@ use Discord\Parts\WebSockets\VoiceServerUpdate;
 use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
-use \Discord\Parts\Thread\Thread;
 
 //todo dalle-3 to discord-ai
 //todo sound to discord-ai
@@ -185,7 +185,16 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());
     });
 
-    $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger) {
+    $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            if ($plan->counting->ignoreDeletion === 0) {
+                if ($plan->counting->restore($message)) {
+                    break;
+                }
+            } else {
+                $plan->counting->ignoreDeletion--;
+            }
+        }
         $logger->logInfo(null, Event::MESSAGE_DELETE, $message);
     });
 
@@ -234,12 +243,12 @@ $discord->on('ready', function (Discord $discord) {
             if ($plan->ticket->ignoreDeletion === 0) {
                 $plan->ticket->closeByChannel($channel);
             } else {
-                $plan->ticket->ignoreDeletion++;
+                $plan->ticket->ignoreDeletion--;
             }
             if ($plan->target->ignoreChannelDeletion === 0) {
                 $plan->target->closeByChannelOrThread($channel);
             } else {
-                $plan->target->ignoreChannelDeletion++;
+                $plan->target->ignoreChannelDeletion--;
             }
         }
         $logger->logInfo(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
@@ -265,7 +274,7 @@ $discord->on('ready', function (Discord $discord) {
                 if ($plan->target->ignoreThreadDeletion === 0) {
                     $plan->target->closeByChannelOrThread($thread->parent);
                 } else {
-                    $plan->target->ignoreThreadDeletion++;
+                    $plan->target->ignoreThreadDeletion--;
                 }
             }
         }

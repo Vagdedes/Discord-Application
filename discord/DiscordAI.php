@@ -86,7 +86,8 @@ class DiscordAI
             $this->plan->bot->processing--;
             return true;
         } else if ($this->plan->ticket->track($message)
-            || $this->plan->target->track($member, $message, $object)) {
+            || $this->plan->target->track($member, $message, $object)
+            || $this->plan->counting->track($message)) {
             $this->plan->bot->processing--;
             return true;
         } else {
