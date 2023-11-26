@@ -48,39 +48,51 @@ class DiscordMessageReminders
 
     private function execute(Channel|Thread $channel, object $row, $checkPrevious = true): void
     {
-        if ($checkPrevious && $row->check_previous !== null) {
-            $channel->getMessageHistory(array("limit" => (int)$row->check_previous))->done(
-                function (Collection $messages) use ($channel, $row) {
-                    if (!empty($messages)) {
-                        foreach ($messages as $message) {
-                            if ($message->id == $row->message_id) {
-                                return;
+        if (empty(get_sql_query(
+            BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
+            array("id"),
+            array(
+                array("deletion_date", null),
+                array("reminder_id", $row->id),
+                array("creation_date", ">", get_past_date($row->cooldown)),
+            ),
+            null,
+            1
+        ))) {
+            if ($checkPrevious && $row->check_previous !== null) {
+                $channel->getMessageHistory(array("limit" => (int)$row->check_previous))->done(
+                    function (Collection $messages) use ($channel, $row) {
+                        if (!empty($messages)) {
+                            foreach ($messages as $message) {
+                                if ($message->id == $row->message_id) {
+                                    return;
+                                }
+                            }
+                        }
+                        $this->execute($channel, $row, false);
+                    }
+                );
+            } else {
+                $channel->sendMessage(MessageBuilder::new()->setContent($row->message_content))->done(
+                    function (Message $message) use ($row) {
+                        if (sql_insert(
+                            BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
+                            array(
+                                "server_id" => $message->guild_id,
+                                "channel_id" => $message->channel_id,
+                                "thread_id" => $message->thread?->id,
+                                "message_id" => $message->id,
+                                "message_content" => $row->message_content,
+                                "creation_date" => get_current_date()
+                            ),
+                        )) {
+                            if ($row->milliseconds_retention !== null) {
+                                $message->delayedDelete($row->milliseconds_retention);
                             }
                         }
                     }
-                    $this->execute($channel, $row, false);
-                }
-            );
-        } else {
-            $channel->sendMessage(MessageBuilder::new()->setContent($row->message_content))->done(
-                function (Message $message) use ($row) {
-                    if (sql_insert(
-                        BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
-                        array(
-                            "server_id" => $message->guild_id,
-                            "channel_id" => $message->channel_id,
-                            "thread_id" => $message->thread?->id,
-                            "message_id" => $message->id,
-                            "message_content" => $row->message_content,
-                            "creation_date" => get_current_date()
-                        ),
-                    )) {
-                        if ($row->milliseconds_retention !== null) {
-                            $message->delayedDelete($row->milliseconds_retention);
-                        }
-                    }
-                }
-            );
+                );
+            }
         }
     }
 }
