@@ -1,9 +1,8 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
-use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
-use Discord\Parts\Thread\Thread;
 
 class DiscordListener
 {
@@ -15,7 +14,7 @@ class DiscordListener
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
         IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
-        IMPLEMENTATION_TARGET = "/root/discord_bot/listeners/implementation/target/";
+        IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -135,7 +134,7 @@ class DiscordListener
 
     public function callTicketImplementation(Interaction $interaction,
                                              ?string     $class, ?string $method,
-                                             mixed       $objects = null): void
+                                             mixed       $objects): void
     {
         if ($class !== null && $method !== null) {
             $this->plan->bot->processing++;
@@ -148,17 +147,16 @@ class DiscordListener
         }
     }
 
-    public function callTargetImplementation(?string $class, ?string $method,
-                                             Channel $channel,
-                                             Thread  $thread,
-                                             mixed   $object = null): void
+    public function callCountingGoalImplementation(?string $class, ?string $method,
+                                                   Message $message,
+                                                   mixed   $object): void
     {
         if ($class !== null && $method !== null) {
             $this->plan->bot->processing++;
-            require_once(self::IMPLEMENTATION_TARGET . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_COUNTING_GOAL . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $object)
+                array($this->plan, $message, $object)
             );
             $this->plan->bot->processing--;
         }

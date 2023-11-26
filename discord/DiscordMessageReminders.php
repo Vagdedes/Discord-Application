@@ -74,53 +74,7 @@ class DiscordMessageReminders
                     }
                 );
             } else {
-                $messageBuilder = MessageBuilder::new()->setContent(
-                    empty($messageRow->message_content) ? ""
-                        : $messageRow->message_content
-                );
-                $embed = new Embed($this->plan->discord);
-                $addEmbed = false;
-
-                if (!empty($messageRow->embed_title)) {
-                    $embed->setTitle($messageRow->embed_title);
-                    $addEmbed = true;
-                }
-                if (!empty($messageRow->embed_description)) {
-                    $embed->setDescription($messageRow->embed_description);
-                    $addEmbed = true;
-                }
-                if (!empty($messageRow->embed_url)) {
-                    $embed->setUrl($messageRow->embed_url);
-                    $addEmbed = true;
-                }
-                if ($messageRow->embed_color !== null) {
-                    $embed->setColor($messageRow->embed_color);
-                    $addEmbed = true;
-                }
-                if ($messageRow->embed_image !== null) {
-                    $embed->setImage($messageRow->embed_image);
-                    $addEmbed = true;
-                }
-                if ($messageRow->embed_timestamp !== null) {
-                    $embed->setTimestamp(strtotime($messageRow->embed_timestamp));
-                    $addEmbed = true;
-                }
-                if ($messageRow->embed_footer !== null) {
-                    $embed->setFooter($messageRow->embed_footer);
-                    $addEmbed = true;
-                }
-                if (!empty($messageRow->embed_author_name)) {
-                    $embed->setAuthor(
-                        $messageRow->embed_author_name,
-                        $messageRow->embed_author_icon_url,
-                        $messageRow->embed_author_url,
-                    );
-                    $addEmbed = true;
-                }
-                if ($addEmbed) {
-                    $messageBuilder->addEmbed($embed);
-                }
-                $channel->sendMessage($messageBuilder)->done(
+                $channel->sendMessage($this->plan->utilities->buildMessageFromObject($row))->done(
                     function (Message $message) use ($row) {
                         if (sql_insert(
                             BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,

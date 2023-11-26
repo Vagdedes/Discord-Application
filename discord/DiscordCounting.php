@@ -10,6 +10,8 @@ class DiscordCounting
     private array $countingPlaces;
     public int $ignoreDeletion;
 
+    //todo counting-goal commands to list goals of users
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -26,6 +28,23 @@ class DiscordCounting
                 null
             )
         );
+
+        if (!empty($this->countingPlaces)) {
+            foreach ($this->countingPlaces as $row) {
+                $row->goals = get_sql_query(
+                    BotDatabaseTable::BOT_COUNTING_GOALS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("counting_id", $row->id),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+            }
+        }
     }
 
     public function track(Message $message): bool
@@ -36,86 +55,91 @@ class DiscordCounting
             if ($rowArray !== null) {
                 $row = $rowArray[1];
 
-                if (is_numeric($message->content)) {
-                    if ($row->allow_decimals !== null || is_int($message->content)) {
-                        if ($message->content > $row->current_number) {
-                            if ($message->content <= $row->max_number) {
-                                $pattern = $row->number_pattern !== null ? $row->number_pattern : 1;
+                if (strlen($message->content) <= 20) {
+                    if (is_numeric($message->content)) {
+                        if ($row->allow_decimals !== null || is_int($message->content)) {
+                            if ($message->content > $row->current_number) {
+                                if ($message->content <= $row->max_number) {
+                                    $pattern = $row->number_pattern !== null ? $row->number_pattern : 1;
 
-                                if ($message->content == ($row->current_number + $pattern)) {
-                                    $maxRepetitions = $row->max_repetitions !== null ? $row->max_repetitions : 1;
-                                    $query = get_sql_query(
-                                        BotDatabaseTable::BOT_COUNTING_MESSAGES,
-                                        array("user_id"),
-                                        array(
-                                            array("counting_id", $row->id),
-                                            array("deletion_date", null),
-                                        ),
-                                        array(
-                                            "DESC",
-                                            "id"
-                                        ),
-                                        $maxRepetitions
-                                    );
-                                    $querySize = sizeof($query);
+                                    if ($message->content == ($row->current_number + $pattern)) {
+                                        $maxRepetitions = $row->max_repetitions !== null ? $row->max_repetitions : 1;
+                                        $query = get_sql_query(
+                                            BotDatabaseTable::BOT_COUNTING_MESSAGES,
+                                            array("user_id"),
+                                            array(
+                                                array("counting_id", $row->id),
+                                                array("deletion_date", null),
+                                            ),
+                                            array(
+                                                "DESC",
+                                                "id"
+                                            ),
+                                            $maxRepetitions
+                                        );
+                                        $querySize = sizeof($query);
 
-                                    if ($querySize == $maxRepetitions) {
-                                        $count = 0;
+                                        if ($querySize == $maxRepetitions) {
+                                            $count = 0;
 
-                                        foreach ($query as $row) {
-                                            if ($row->user_id == $message->author->id) {
-                                                $count++;
+                                            foreach ($query as $row) {
+                                                if ($row->user_id == $message->author->id) {
+                                                    $count++;
+                                                }
+                                            }
+
+                                            if ($count >= $maxRepetitions) {
+                                                $this->sendNotification($row, $message, "Too Many Repetitions");
+                                                return true;
                                             }
                                         }
-
-                                        if ($count >= $maxRepetitions) {
-                                            $this->sendNotification($row, $message, "Too Many Repetitions");
-                                            return true;
-                                        }
-                                    }
-                                    if (sql_insert(
-                                        BotDatabaseTable::BOT_COUNTING_MESSAGES,
-                                        array(
-                                            "counting_id" => $row->id,
-                                            "user_id" => $message->author->id,
-                                            "message_id" => $message->id,
-                                            "sent_number" => $message->content,
-                                            "creation_date" => get_current_date()
-                                        )
-                                    )) {
-                                        if (set_sql_query(
-                                            BotDatabaseTable::BOT_COUNTING,
+                                        if (sql_insert(
+                                            BotDatabaseTable::BOT_COUNTING_MESSAGES,
                                             array(
-                                                "current_number" => $message->content
-                                            ),
-                                            array(
-                                                array("id", $row->id),
-                                            ),
-                                            null,
-                                            1
+                                                "counting_id" => $row->id,
+                                                "user_id" => $message->author->id,
+                                                "message_id" => $message->id,
+                                                "sent_number" => $message->content,
+                                                "creation_date" => get_current_date()
+                                            )
                                         )) {
-                                            $row->current_number = $message->content;
-                                            $this->countingPlaces[$rowArray[0]] = $row;
+                                            if (set_sql_query(
+                                                BotDatabaseTable::BOT_COUNTING,
+                                                array(
+                                                    "current_number" => $message->content
+                                                ),
+                                                array(
+                                                    array("id", $row->id),
+                                                ),
+                                                null,
+                                                1
+                                            )) {
+                                                $row->current_number = $message->content;
+                                                $this->countingPlaces[$rowArray[0]] = $row;
+                                                $this->triggerGoal($message, $row);
+                                            } else {
+                                                $this->sendNotification($row, $message, "Database Error (2)");
+                                            }
                                         } else {
-                                            $this->sendNotification($row, $message, "Database Error (2)");
+                                            $this->sendNotification($row, $message, "Database Error (1)");
                                         }
                                     } else {
-                                        $this->sendNotification($row, $message, "Database Error (1)");
+                                        $this->sendNotification($row, $message, "Wrong Number Pattern");
                                     }
                                 } else {
-                                    $this->sendNotification($row, $message, "Wrong Number Pattern");
+                                    $this->sendNotification($row, $message, "Bigger Number");
                                 }
                             } else {
-                                $this->sendNotification($row, $message, "Bigger Number");
+                                $this->sendNotification($row, $message, "Smaller or Equal Number");
                             }
                         } else {
-                            $this->sendNotification($row, $message, "Smaller or Equal Number");
+                            $this->sendNotification($row, $message, "Decimal Number");
                         }
                     } else {
-                        $this->sendNotification($row, $message, "Decimal Number");
+                        $this->sendNotification($row, $message, "Not a Number");
                     }
                 } else {
-                    $this->sendNotification($row, $message, "Not a Number");
+                    $this->sendNotification($row, $message, "Too Long Number");
                 }
                 return true;
             }
@@ -132,7 +156,37 @@ class DiscordCounting
         return false;
     }
 
-    // Utilities
+    private function triggerGoal(Message $message, object $row): void
+    {
+        if (!empty($row->goals)) {
+            foreach ($row->goals as $goal) {
+                if ($goal->target_number == $message->content) {
+                    if (sql_insert(
+                        BotDatabaseTable::BOT_COUNTING_GOAL_STORAGE,
+                        array(
+                            "counting_id" => $row->id,
+                            "goal_id" => $goal->id,
+                            "server_id" => $message->guild_id,
+                            "user_id" => $message->author->id,
+                            "creation_date" => get_current_date()
+                        )
+                    )) {
+                        if ($goal->user_message !== null) {
+                            $message->reply($this->plan->utilities->buildMessageFromObject($goal));
+                        } else {
+                            $this->plan->listener->callCountingGoalImplementation(
+                                $goal->listener_class,
+                                $goal->listener_method,
+                                $message,
+                                $row
+                            );
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
     private function getCountingChannelObject(Message $message): ?array
     {

@@ -140,4 +140,55 @@ class DiscordUtilities
         } catch (Throwable $ignored) {
         }
     }
+
+    public function buildMessageFromObject(object $object): MessageBuilder
+    {
+        $messageBuilder = MessageBuilder::new()->setContent(
+            empty($object->message_content) ? ""
+                : $object->message_content
+        );
+        $embed = new Embed($this->plan->discord);
+        $addEmbed = false;
+
+        if (!empty($object->embed_title)) {
+            $embed->setTitle($object->embed_title);
+            $addEmbed = true;
+        }
+        if (!empty($object->embed_description)) {
+            $embed->setDescription($object->embed_description);
+            $addEmbed = true;
+        }
+        if (!empty($object->embed_url)) {
+            $embed->setUrl($object->embed_url);
+            $addEmbed = true;
+        }
+        if ($object->embed_color !== null) {
+            $embed->setColor($object->embed_color);
+            $addEmbed = true;
+        }
+        if ($object->embed_image !== null) {
+            $embed->setImage($object->embed_image);
+            $addEmbed = true;
+        }
+        if ($object->embed_timestamp !== null) {
+            $embed->setTimestamp(strtotime($object->embed_timestamp));
+            $addEmbed = true;
+        }
+        if ($object->embed_footer !== null) {
+            $embed->setFooter($object->embed_footer);
+            $addEmbed = true;
+        }
+        if (!empty($object->embed_author_name)) {
+            $embed->setAuthor(
+                $object->embed_author_name,
+                $object->embed_author_icon_url,
+                $object->embed_author_url,
+            );
+            $addEmbed = true;
+        }
+        if ($addEmbed) {
+            $messageBuilder->addEmbed($embed);
+        }
+        return $messageBuilder;
+    }
 }
