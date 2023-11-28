@@ -1,6 +1,5 @@
 <?php
 
-use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;

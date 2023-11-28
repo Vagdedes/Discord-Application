@@ -7,8 +7,8 @@ use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
-use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Thread\Thread;
 
 class DiscordControlledMessages
 {
@@ -181,6 +181,16 @@ class DiscordControlledMessages
 
                 if ($channel !== null
                     && $channel->guild_id == $messageRow->server_id) {
+                    if ($messageRow->thread_id !== null) {
+                        foreach ($channel->threads->getIterator() as $thread) {
+                            if ($thread instanceof Thread && $messageRow->thread_id == $thread->id) {
+                                $finalChannel = $thread;
+                                break;
+                            }
+                        }
+                    } else {
+                        $finalChannel = $channel;
+                    }
                     $oldMessageRow = $messageRow;
                     $custom = $messageRow->copy_of !== null;
 
@@ -199,9 +209,9 @@ class DiscordControlledMessages
                         $this->messages[$messageRow->name] = $messageRow;
                     }
                     if ($oldMessageRow->message_id === null) {
-                        $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
+                        $this->newMessage($finalChannel, $messageRow, $oldMessageRow, $array, $position);
                     } else {
-                        $this->editMessage($channel, $custom, $messageRow, $oldMessageRow, $array, $position);
+                        $this->editMessage($finalChannel, $custom, $messageRow, $oldMessageRow, $array, $position);
                     }
                 }
             } else if ($messageRow->name !== null) {
@@ -211,7 +221,7 @@ class DiscordControlledMessages
         }
     }
 
-    private function newMessage(Channel $channel,
+    private function newMessage(Thread|Channel $channel,
                                 object  $messageRow, object $oldMessageRow,
                                 array   $array, int $position): void
     {
@@ -234,10 +244,10 @@ class DiscordControlledMessages
         );
     }
 
-    private function editMessage(Channel $channel,
-                                 bool    $custom,
-                                 object  $messageRow, object $oldMessageRow,
-                                 array   $array, int $position): void
+    private function editMessage(Thread|Channel $channel,
+                                 bool           $custom,
+                                 object         $messageRow, object $oldMessageRow,
+                                 array          $array, int $position): void
     {
         try {
             $channel->messages->fetch($oldMessageRow->message_id)->done(
