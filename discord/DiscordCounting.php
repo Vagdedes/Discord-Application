@@ -152,7 +152,7 @@ class DiscordCounting
     public function restore(Message $message): bool
     {
         if ($this->getCountingChannelObject($message) !== null) {
-            $message->channel->sendMessage("<@{$message->author->id}> " . $message->content);
+            $message->channel->sendMessage("<@{$message->author->id}> " . strip_tags($message->content));
             return true;
         }
         return false;
@@ -160,10 +160,12 @@ class DiscordCounting
 
     public function moderate(Message $message): bool
     {
-        if ($this->getCountingChannelObject($message) !== null) {
+        $rowArray = $this->getCountingChannelObject($message);
+
+        if ($rowArray !== null) {
             $this->ignoreDeletion++;
             $message->delete();
-            $message->channel->sendMessage("<@{$message->author->id}> " . $message->content);
+            $message->channel->sendMessage("<@{$message->author->id}> " . $rowArray[1]->current_number);
             return true;
         }
         return false;

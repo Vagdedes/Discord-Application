@@ -91,13 +91,11 @@ use Discord\WebSockets\Intents;
 //todo discord-cheaper-ai
 
 //todo discord-poll (private via command, public via reactions)
-//todo discord-level [rate by message length, attachment count, reaction count, invite count, etc. (with cooldown)]
 //todo discord-reaction-roles (make it via list, buttons and reactions)
 //todo discord-invite-tracker
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
-//todo discord-controlled-channels
 
 $discord = new Discord([
     'token' => $token[0],
