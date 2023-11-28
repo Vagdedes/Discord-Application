@@ -25,7 +25,7 @@ class DiscordNotes
     }
 
     public function get() {
-        
+
     }
 
     public function changeSetting()

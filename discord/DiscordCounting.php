@@ -199,7 +199,11 @@ class DiscordCounting
         foreach ($goals as $goal) {
             $embed = new Embed($this->plan->discord);
             $embed->setTitle($goal->title);
-            $embed->setDescription($goal->description);
+
+            if ($goal->description !== null) {
+                $embed->setDescription($goal->description);
+            }
+            $embed->setTimestamp(strtotime($goal->creation_date));
             $messageBuilder->addEmbed($embed);
         }
         return $messageBuilder;
