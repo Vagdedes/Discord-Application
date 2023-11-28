@@ -22,8 +22,11 @@ class DiscordNotes
     public function create(Interaction      $interaction,
                            int|float|string $key, ?string $creationReason = null): void
     {
+        if ($this->hasCooldown($interaction, $key, null)) {
+            return;
+        }
         if ($this->get($interaction, $key, $interaction->user->id) !== null) {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     "A note with that key already exists."
@@ -45,8 +48,9 @@ class DiscordNotes
                 function (Interaction $interaction, Collection $components) use ($key, $creationReason) {
                     if (!$this->plan->component->hasCooldown($interaction)) {
                         $components = $components->toArray();
-                        $title = array_shift($components)["title"];
-                        $description = array_shift($components)["description"];
+                        $title = array_shift($components)["value"];
+                        $description = array_shift($components)["value"];
+                        $date = get_current_date();
 
                         while (true) {
                             $noteID = random_number(19);
@@ -65,8 +69,9 @@ class DiscordNotes
                                         array(
                                             "note_id" => $noteID,
                                             "note_key" => $key,
+                                            "server_id" => $interaction->guild_id,
                                             "user_id" => $interaction->user->id,
-                                            "creation_date" => get_current_date(),
+                                            "creation_date" => $date,
                                             "creation_reason" => $creationReason
                                         )
                                     )
@@ -77,8 +82,16 @@ class DiscordNotes
                                             "user_id" => $interaction->user->id,
                                             "title" => $title,
                                             "description" => $description,
-                                            "creation_date" => get_current_date(),
+                                            "creation_date" => $date,
                                             "creation_reason" => $creationReason
+                                        )
+                                    )
+                                    && sql_insert(
+                                        BotDatabaseTable::BOT_NOTE_SETTINGS,
+                                        array(
+                                            "note_id" => $noteID,
+                                            "user_id" => $interaction->user->id,
+                                            "creation_date" => $date,
                                         )
                                     )) {
                                     $this->plan->utilities->acknowledgeMessage(
@@ -113,6 +126,9 @@ class DiscordNotes
                          int|float|string $key, int|string|null $userID,
                          ?string          $creationReason = null): void
     {
+        if ($this->hasCooldown($interaction, $key, $userID)) {
+            return;
+        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -123,8 +139,8 @@ class DiscordNotes
                 $proceed = false;
 
                 foreach ($object->participants as $participant) {
-                    if ($participant->user_id == $interaction->user->id) {
-                        $proceed = $participant->write !== null;
+                    if ($participant->participant_id == $interaction->user->id) {
+                        $proceed = $participant->write_permission !== null;
                         break;
                     }
                 }
@@ -150,12 +166,13 @@ class DiscordNotes
                     function (Interaction $interaction, Collection $components) use ($key, $creationReason, $object) {
                         if (!$this->plan->component->hasCooldown($interaction)) {
                             $components = $components->toArray();
-                            $title = array_shift($components)["title"];
-                            $description = array_shift($components)["description"];
+                            $title = array_shift($components)["value"];
+                            $description = array_shift($components)["value"];
 
                             if (sql_insert(
                                 BotDatabaseTable::BOT_NOTE_CHANGES,
                                 array(
+                                    "note_id" => $object->note_id,
                                     "user_id" => $interaction->user->id,
                                     "title" => $title,
                                     "description" => $description,
@@ -186,7 +203,7 @@ class DiscordNotes
                     },
                 );
             } else {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to edit this note."
@@ -194,7 +211,7 @@ class DiscordNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -207,6 +224,9 @@ class DiscordNotes
                            int|float|string $key, int|string|null $userID,
                            ?string          $deletionReason = null): void
     {
+        if ($this->hasCooldown($interaction, $key, $userID)) {
+            return;
+        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -217,8 +237,8 @@ class DiscordNotes
                 $proceed = false;
 
                 foreach ($object->participants as $participant) {
-                    if ($participant->user_id == $interaction->user->id) {
-                        $proceed = $participant->delete !== null;
+                    if ($participant->participant_id == $interaction->user->id) {
+                        $proceed = $participant->delete_permission !== null;
                         break;
                     }
                 }
@@ -231,13 +251,14 @@ class DiscordNotes
                     BotDatabaseTable::BOT_NOTES,
                     array(
                         "deletion_date" => get_current_date(),
-                        "deletion_reason" => $deletionReason
+                        "deletion_reason" => $deletionReason,
+                        "deleted_by" => $interaction->user->id
                     ),
                     array(
                         array("id", $object->id),
                     )
                 )) {
-                    $this->plan->utilities->acknowledgeMessage(
+                    $this->plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "Successfully deleted the note."
@@ -249,7 +270,7 @@ class DiscordNotes
                         $this->plan->planID,
                         "An database error occurred while deleting a note with ID: " . $object->id
                     );
-                    $this->plan->utilities->acknowledgeMessage(
+                    $this->plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "An database error occurred while deleting the note."
@@ -257,7 +278,7 @@ class DiscordNotes
                     );
                 }
             } else {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to delete this note."
@@ -265,7 +286,7 @@ class DiscordNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -274,8 +295,8 @@ class DiscordNotes
         }
     }
 
-    public function get(Interaction $interaction, int|float|string $key, int|string|null $userID,
-                        int|string  $past = 1): ?object
+    private function get(Interaction $interaction, int|float|string $key, int|string|null $userID,
+                         int|string  $past = 1): ?object
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_NOTES,
@@ -296,7 +317,7 @@ class DiscordNotes
                 BotDatabaseTable::BOT_NOTE_CHANGES,
                 null,
                 array(
-                    array("note_id", $key),
+                    array("note_id", $query->note_id),
                     array("deletion_date", null)
                 ),
                 array(
@@ -313,7 +334,7 @@ class DiscordNotes
                     BotDatabaseTable::BOT_NOTE_SETTINGS,
                     null,
                     array(
-                        array("note_id", $key),
+                        array("note_id", $query->note_id),
                     ),
                     array(
                         "DESC",
@@ -325,15 +346,16 @@ class DiscordNotes
                     BotDatabaseTable::BOT_NOTE_PARTICIPANTS,
                     null,
                     array(
-                        array("note_id", $key),
+                        array("note_id", $query->note_id),
                         array("ignore_date", null),
                     ),
                     null,
                     1
-                )[0];
+                );
 
                 if ($past != 1) {
-                    if ($interaction->user->id == $query->user_id) {
+                    if ($query->settings->read_history !== null
+                        || $interaction->user->id == $query->user_id) {
                         $proceed = true;
                     } else if (!empty($query->participants)) {
                         $proceed = false;
@@ -352,7 +374,7 @@ class DiscordNotes
                 }
 
                 if ($proceed) {
-                    if ($query->settings->view_public
+                    if ($query->settings->view_public !== null
                         || $interaction->user->id == $query->user_id) {
                         return $query;
                     } else if (!empty($query->participants)) {
@@ -371,6 +393,9 @@ class DiscordNotes
     public function send(Interaction      $interaction,
                          int|float|string $key, int|string|null $userID = null): void
     {
+        if ($this->hasCooldown($interaction, $key, $userID)) {
+            return;
+        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -389,8 +414,8 @@ class DiscordNotes
                 $manage = false;
 
                 foreach ($object->participants as $participant) {
-                    if ($participant->user_id == $interaction->user->id) {
-                        $manage = $participant->manage !== null;
+                    if ($participant->participant_id == $interaction->user->id) {
+                        $manage = $participant->manage_permission !== null;
                         break;
                     }
                 }
@@ -404,12 +429,12 @@ class DiscordNotes
                     ->setPlaceholder("Remove a Participant");
 
                 foreach ($object->participants as $participant) {
-                    $choice = Option::new($this->plan->utilities->getUsername($participant->user_id), $participant->id)
+                    $choice = Option::new($this->plan->utilities->getUsername($participant->participant_id), $participant->id)
                         ->setDescription(
                             "Permissions: "
-                            . ($participant->write !== null ? "Write" : "Read")
-                            . ($participant->delete !== null ? " | Delete" : "")
-                            . ($participant->manage !== null ? " | Manage" : "")
+                            . ($participant->write_permission !== null ? "Write" : "Read")
+                            . ($participant->delete_permission !== null ? " | Delete" : "")
+                            . ($participant->manage_permission !== null ? " | Manage" : "")
                         );
                     $select->addOption($choice);
                 }
@@ -428,7 +453,7 @@ class DiscordNotes
                         null,
                         1
                     )) {
-                        $this->plan->utilities->acknowledgeMessage(
+                        $this->plan->utilities->acknowledgeCommandMessage(
                             $interaction,
                             MessageBuilder::new()->setContent(
                                 "Successfully deleted the note's participant."
@@ -440,7 +465,7 @@ class DiscordNotes
                             $this->plan->planID,
                             "An database error occurred while deleting a note participant with ID: " . $rowID
                         );
-                        $this->plan->utilities->acknowledgeMessage(
+                        $this->plan->utilities->acknowledgeCommandMessage(
                             $interaction,
                             MessageBuilder::new()->setContent(
                                 "An database error occurred while deleting the note participant."
@@ -450,10 +475,17 @@ class DiscordNotes
                 }, $this->plan->discord, true);
                 $messageBuilder->addComponent($select);
             }
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 $messageBuilder,
                 true
+            );
+        } else {
+            $this->plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    self::NOT_EXISTS
+                ), true
             );
         }
     }
@@ -463,6 +495,9 @@ class DiscordNotes
                                   ?bool            $viewPublic,
                                   ?bool            $readHistory = null): void
     {
+        if ($this->hasCooldown($interaction, $key, $userID)) {
+            return;
+        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -473,8 +508,8 @@ class DiscordNotes
                 $proceed = false;
 
                 foreach ($object->participants as $participant) {
-                    if ($participant->user_id == $interaction->user->id) {
-                        $proceed = $participant->manage !== null;
+                    if ($participant->participant_id == $interaction->user->id) {
+                        $proceed = $participant->manage_permission !== null;
                         break;
                     }
                 }
@@ -486,14 +521,14 @@ class DiscordNotes
                 if (sql_insert(
                     BotDatabaseTable::BOT_NOTE_SETTINGS,
                     array(
-                        "note_id" => $key,
+                        "note_id" => $object->note_id,
                         "user_id" => $interaction->user->id,
                         "view_public" => $viewPublic !== null ? $viewPublic : $object->settings->view_public,
                         "read_history" => $readHistory !== null ? $readHistory : $object->settings->read_history,
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $this->plan->utilities->acknowledgeMessage(
+                    $this->plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "Successfully changed the note's settings."
@@ -505,7 +540,7 @@ class DiscordNotes
                         $this->plan->planID,
                         "An database error occurred while changing the note settings for the note with ID: " . $object->id
                     );
-                    $this->plan->utilities->acknowledgeMessage(
+                    $this->plan->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "An database error occurred while changing the note settings."
@@ -513,7 +548,7 @@ class DiscordNotes
                     );
                 }
             } else {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to change this note's settings."
@@ -521,7 +556,7 @@ class DiscordNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -537,6 +572,9 @@ class DiscordNotes
                                       ?bool            $deletePermission = null,
                                       ?bool            $managePermission = null): void
     {
+        if ($this->hasCooldown($interaction, $key, $userID)) {
+            return;
+        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -547,8 +585,8 @@ class DiscordNotes
                 $proceed = false;
 
                 foreach ($object->participants as $participant) {
-                    if ($participant->user_id == $interaction->user->id) {
-                        $proceed = $participant->manage !== null;
+                    if ($participant->participant_id == $interaction->user->id) {
+                        $proceed = $participant->manage_permission !== null;
                         break;
                     }
                 }
@@ -561,7 +599,7 @@ class DiscordNotes
 
                 if (!empty($object->participants)) {
                     foreach ($object->participants as $participant) {
-                        if ($participant->id == $participantID) {
+                        if ($participant->participant_id == $participantID) {
                             $foundParticipant = $participant;
                             set_sql_query(
                                 BotDatabaseTable::BOT_NOTE_PARTICIPANTS,
@@ -578,88 +616,85 @@ class DiscordNotes
                         }
                     }
                 }
-                if ($foundParticipant !== null) {
-                    if (sql_insert(
+                if ($foundParticipant !== null
+                    ? sql_insert(
                         BotDatabaseTable::BOT_NOTE_PARTICIPANTS,
                         array(
-                            "note_id" => $key,
+                            "note_id" => $object->note_id,
                             "user_id" => $interaction->user->id,
                             "participant_id" => $participantID,
                             "read_history" => $readHistory !== null ? $readHistory : $foundParticipant->read_history,
-                            "write" => $writePermission !== null ? $writePermission : $foundParticipant->write,
-                            "delete" => $deletePermission !== null ? $deletePermission : $foundParticipant->delete,
-                            "manage" => $managePermission !== null ? $managePermission : $foundParticipant->manage,
+                            "write_permission" => $writePermission !== null ? $writePermission : $foundParticipant->write_permission,
+                            "delete_permission" => $deletePermission !== null ? $deletePermission : $foundParticipant->delete_permission,
+                            "manage_permission" => $managePermission !== null ? $managePermission : $foundParticipant->manage_permission,
                             "creation_date" => get_current_date()
                         )
-                    )) {
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent(
-                                "Successfully modified the note's participant."
-                            ), true
-                        );
-                    } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "An database error occurred while modifying a note participant for the note with ID: " . $object->id
-                        );
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent(
-                                "An database error occurred while modifying the note participant."
-                            ), true
-                        );
-                    }
-                } else {
-                    if (sql_insert(
+                    )
+                    : sql_insert(
                         BotDatabaseTable::BOT_NOTE_PARTICIPANTS,
                         array(
-                            "note_id" => $key,
+                            "note_id" => $object->note_id,
                             "user_id" => $interaction->user->id,
                             "participant_id" => $participantID,
-                            "read_history" => $readHistory !== null ? $readHistory : true,
-                            "write" => $writePermission !== null ? $writePermission : false,
-                            "delete" => $deletePermission !== null ? $deletePermission : false,
-                            "manage" => $managePermission !== null ? $managePermission : false,
+                            "read_history" => $readHistory !== null ? $readHistory : false,
+                            "write_permission" => $writePermission !== null ? $writePermission : false,
+                            "delete_permission" => $deletePermission !== null ? $deletePermission : false,
+                            "manage_permission" => $managePermission !== null ? $managePermission : false,
                             "creation_date" => get_current_date()
                         )
                     )) {
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent(
-                                "Successfully modified the note's participant."
-                            ), true
-                        );
-                    } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "An database error occurred while modifying a note participant for the note with ID: " . $object->id
-                        );
-                        $this->plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent(
-                                "An database error occurred while modifying the note participant."
-                            ), true
-                        );
-                    }
+                    $this->plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent(
+                            "Successfully modified the note's participants."
+                        ), true
+                    );
+                } else {
+                    global $logger;
+                    $logger->logError(
+                        $this->plan->planID,
+                        "An database error occurred while modifying a note participant for the note with ID: " . $object->id
+                    );
+                    $this->plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent(
+                            "An database error occurred while modifying the note participant."
+                        ), true
+                    );
                 }
             } else {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->plan->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
-                        "You do not have permission to modify this note's participant."
+                        "You do not have permission to modify this note's participants."
                     ), true
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
                 ), true
             );
+        }
+    }
+
+    private function hasCooldown(Interaction      $interaction,
+                                 int|float|string $key, int|string|null $userID): bool
+    {
+        $cacheKey = array(__METHOD__, $key, $userID);
+
+        if (has_memory_cooldown($cacheKey, "3 seconds")) {
+            $this->plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Please wait before using this command again."
+                ), true
+            );
+            return true;
+        } else {
+            return false;
         }
     }
 }

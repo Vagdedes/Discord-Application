@@ -37,6 +37,7 @@ class DiscordPlan
     public DiscordAI $ai;
     public DiscordStatus $status;
     public DiscordLocations $locations;
+    public DiscordNotes $notes;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,
@@ -91,6 +92,7 @@ class DiscordPlan
         $this->locations = new DiscordLocations($this);
         $this->target = new DiscordTargetedMessage($this);
         $this->messageRefresh = new DiscordMessageRefresh($this);
+        $this->notes = new DiscordNotes($this);
     }
 
 }

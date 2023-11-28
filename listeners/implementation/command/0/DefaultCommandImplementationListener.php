@@ -312,4 +312,85 @@ class DefaultCommandImplementationListener // Name can be changed
             );
         }
     }
+
+    public static function create_note(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->create(
+            $interaction,
+            $arguments["key"]["value"],
+            $arguments["reason"]["value"] ?? null
+        );
+    }
+
+    public static function edit_note(DiscordPlan $plan,
+                                     Interaction $interaction,
+                                     object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->edit(
+            $interaction,
+            $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["reason"]["value"] ?? null
+        );
+    }
+
+    public static function get_note(DiscordPlan $plan,
+                                    Interaction $interaction,
+                                    object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->send(
+            $interaction,
+            $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id
+        );
+    }
+
+    public static function delete_note(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->delete(
+            $interaction,
+            $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["reason"]["value"] ?? null
+        );
+    }
+
+    public static function modify_note_setting(DiscordPlan $plan,
+                                               Interaction $interaction,
+                                               object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->changeSetting(
+            $interaction,
+            $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["view-public"]["value"] ?? false,
+            $arguments["read-history"]["value"] ?? false
+        );
+    }
+
+    public static function modify_note_participant(DiscordPlan $plan,
+                                                   Interaction $interaction,
+                                                   object      $command): void // Name can be changed
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->notes->modifyParticipant(
+            $interaction,
+            $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id,
+            $interaction->data?->resolved?->users?->last()?->id,
+            $arguments["read-history"]["value"] ?? false,
+            $arguments["write-permission"]["value"] ?? false,
+            $arguments["delete-permission"]["value"] ?? false,
+            $arguments["manage-permission"]["value"] ?? false
+        );
+    }
 }
