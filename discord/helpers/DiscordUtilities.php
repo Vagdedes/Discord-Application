@@ -20,7 +20,7 @@ class DiscordUtilities
 
     public function getUsername(int|string $userID): string
     {
-        $users = $this->plan->discord->users->getIterator();
+        $users = $this->plan->discord->users->toArray();
         return $users[$userID]?->username ?? $userID;
     }
 

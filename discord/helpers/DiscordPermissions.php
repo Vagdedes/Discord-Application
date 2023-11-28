@@ -114,7 +114,7 @@ class DiscordPermissions
 
             if ($this->userHasPermission($member->guild_id, $member->id, $permission)) {
                 $result = true;
-            } else if (!empty($member->roles->getIterator())) {
+            } else if (!empty($member->roles->toArray())) {
                 foreach ($member->roles as $role) {
                     if ($this->roleHasPermission($role->guild_id, $role->id, $permission)) {
                         $result = true;

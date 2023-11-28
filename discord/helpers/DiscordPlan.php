@@ -80,7 +80,6 @@ class DiscordPlan
         $this->poll = new DiscordPoll($this);
         $this->level = new DiscordLevel($this);
         $this->cheaperChatAI = new DiscordCheaperChatAI($this);
-        $this->inviteTracker = new DiscordInviteTracker($this);
         $this->reactionRoles = new DiscordReactionRoles($this);
         $this->temporaryChannel = new DiscordTemporaryChannel($this);
         $this->socialAlerts = new DiscordSocialAlerts($this);
@@ -93,6 +92,7 @@ class DiscordPlan
         $this->target = new DiscordTargetedMessage($this);
         $this->messageRefresh = new DiscordMessageRefresh($this);
         $this->notes = new DiscordNotes($this);
+        $this->inviteTracker = new DiscordInviteTracker($this);
     }
 
 }

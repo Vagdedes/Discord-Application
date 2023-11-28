@@ -182,7 +182,7 @@ class DiscordControlledMessages
                 if ($channel !== null
                     && $channel->guild_id == $messageRow->server_id) {
                     if ($messageRow->thread_id !== null) {
-                        foreach ($channel->threads->getIterator() as $thread) {
+                        foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $messageRow->thread_id == $thread->id) {
                                 $finalChannel = $thread;
                                 break;

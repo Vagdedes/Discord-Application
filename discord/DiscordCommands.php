@@ -10,7 +10,7 @@ class DiscordCommands
 {
     private DiscordPlan $plan;
     public array $staticCommands, $dynamicCommands, $nativeCommands;
-    private static $noPlan = false;
+    private static bool $noPlan = false;
 
     public function __construct(DiscordPlan $plan)
     {

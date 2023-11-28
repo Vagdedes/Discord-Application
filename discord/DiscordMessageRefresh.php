@@ -34,7 +34,7 @@ class DiscordMessageRefresh
                     if ($row->thread_id === null) {
                         $this->execute($channel, $row);
                     } else {
-                        foreach ($channel->threads->getIterator() as $thread) {
+                        foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $row->thread_id == $thread->id) {
                                 $this->execute($thread, $row);
                             }

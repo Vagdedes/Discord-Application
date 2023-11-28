@@ -92,7 +92,6 @@ use Discord\WebSockets\Intents;
 
 //todo discord-poll (private via command, public via reactions)
 //todo discord-reaction-roles (make it via list, buttons and reactions)
-//todo discord-invite-tracker
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
