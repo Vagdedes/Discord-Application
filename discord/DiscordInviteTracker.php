@@ -57,7 +57,8 @@ class DiscordInviteTracker
                                 "user_id" => $userID,
                                 "invite_code" => $code,
                                 "uses" => $totalUses,
-                                "creation_date" => get_current_date()
+                                "creation_date" => $invite->created_at,
+                                "expiration_date" => $invite->expires_at
                             )
                         );
                     } else {

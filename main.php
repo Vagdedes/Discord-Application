@@ -419,12 +419,24 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-    $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger) {
+    $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->inviteTracker->track($invite->guild);
+            break;
+        }
         $logger->logInfo($invite->inviter->id, Event::INVITE_CREATE, $invite->getRawAttributes());
     });
 
-    $discord->on(Event::INVITE_DELETE, function (object $invite, Discord $discord) use ($logger) {
-        $logger->logInfo(null, Event::INVITE_DELETE, $invite);
+    $discord->on(Event::INVITE_DELETE, function (object $invite, Discord $discord) use ($logger, $discordBot) {
+        if ($invite instanceof Invite) {
+            foreach ($discordBot->plans as $plan) {
+                $plan->inviteTracker->track($invite->guild);
+                break;
+            }
+            $logger->logInfo($invite->inviter->id, Event::INVITE_DELETE, $invite->getRawAttributes());
+        } else {
+            $logger->logInfo(null, Event::INVITE_DELETE, $invite);
+        }
     });
 
 // Separator
