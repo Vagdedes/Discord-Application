@@ -57,40 +57,42 @@ class DiscordCounting
 
                 if (strlen($message->content) <= 20) {
                     if (is_numeric($message->content)) {
-                        if ($row->allow_decimals !== null || is_int($message->content)) {
+                        if ($row->allow_decimals !== null || !is_float($message->content)) {
                             if ($message->content > $row->current_number) {
                                 if ($message->content <= $row->max_number) {
                                     $pattern = $row->number_pattern !== null ? $row->number_pattern : 1;
+                                    $sent = trim($message->content);
 
-                                    if ($message->content == ($row->current_number + $pattern)) {
-                                        $maxRepetitions = $row->max_repetitions !== null ? $row->max_repetitions : 1;
-                                        $query = get_sql_query(
-                                            BotDatabaseTable::BOT_COUNTING_MESSAGES,
-                                            array("user_id"),
-                                            array(
-                                                array("counting_id", $row->id),
-                                                array("deletion_date", null),
-                                            ),
-                                            array(
-                                                "DESC",
-                                                "id"
-                                            ),
-                                            $maxRepetitions
-                                        );
-                                        $querySize = sizeof($query);
+                                    if ($sent == ($row->current_number + $pattern)) {
+                                        if ($row->max_repetitions !== null) {
+                                            $query = get_sql_query(
+                                                BotDatabaseTable::BOT_COUNTING_MESSAGES,
+                                                array("user_id"),
+                                                array(
+                                                    array("counting_id", $row->id),
+                                                    array("deletion_date", null),
+                                                ),
+                                                array(
+                                                    "DESC",
+                                                    "id"
+                                                ),
+                                                $row->max_repetitions
+                                            );
+                                            $querySize = sizeof($query);
 
-                                        if ($querySize == $maxRepetitions) {
-                                            $count = 0;
+                                            if ($querySize == $row->max_repetitions) {
+                                                $count = 0;
 
-                                            foreach ($query as $row) {
-                                                if ($row->user_id == $message->author->id) {
-                                                    $count++;
+                                                foreach ($query as $single) {
+                                                    if ($single->user_id == $message->author->id) {
+                                                        $count++;
+                                                    }
                                                 }
-                                            }
 
-                                            if ($count >= $maxRepetitions) {
-                                                $this->sendNotification($row, $message, "Too Many Repetitions");
-                                                return true;
+                                                if ($count >= $row->max_repetitions) {
+                                                    $this->sendNotification($row, $message, "Too Many Repetitions");
+                                                    return true;
+                                                }
                                             }
                                         }
                                         if (sql_insert(
@@ -99,14 +101,14 @@ class DiscordCounting
                                                 "counting_id" => $row->id,
                                                 "user_id" => $message->author->id,
                                                 "message_id" => $message->id,
-                                                "sent_number" => $message->content,
+                                                "sent_number" => $sent,
                                                 "creation_date" => get_current_date()
                                             )
                                         )) {
                                             if (set_sql_query(
                                                 BotDatabaseTable::BOT_COUNTING,
                                                 array(
-                                                    "current_number" => $message->content
+                                                    "current_number" => $sent
                                                 ),
                                                 array(
                                                     array("id", $row->id),
@@ -114,7 +116,7 @@ class DiscordCounting
                                                 null,
                                                 1
                                             )) {
-                                                $row->current_number = $message->content;
+                                                $row->current_number = $sent;
                                                 $this->countingPlaces[$rowArray[0]] = $row;
                                                 $this->triggerGoal($message, $row);
                                             } else {
@@ -150,6 +152,17 @@ class DiscordCounting
     public function restore(Message $message): bool
     {
         if ($this->getCountingChannelObject($message) !== null) {
+            $message->channel->sendMessage("<@{$message->author->id}> " . $message->content);
+            return true;
+        }
+        return false;
+    }
+
+    public function moderate(Message $message): bool
+    {
+        if ($this->getCountingChannelObject($message) !== null) {
+            $this->ignoreDeletion++;
+            $message->delete();
             $message->channel->sendMessage("<@{$message->author->id}> " . $message->content);
             return true;
         }
@@ -276,6 +289,7 @@ class DiscordCounting
                 $channel->sendMessage($messageBuilder);
             }
         }
+        $this->ignoreDeletion++;
         $message->delete();
     }
 }

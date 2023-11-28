@@ -200,7 +200,16 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::MESSAGE_DELETE, $message);
     });
 
-    $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger) {
+    $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            if ($plan->counting->ignoreDeletion === 0) {
+                if ($plan->counting->moderate($message)) {
+                    break;
+                }
+            } else {
+                $plan->counting->ignoreDeletion--;
+            }
+        }
         $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
     });
 
