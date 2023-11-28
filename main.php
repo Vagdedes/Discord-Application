@@ -186,13 +186,15 @@ $discord->on('ready', function (Discord $discord) {
     });
 
     $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $discordBot) {
-        foreach ($discordBot->plans as $plan) {
-            if ($plan->counting->ignoreDeletion === 0) {
-                if ($plan->counting->restore($message)) {
-                    break;
+        if ($message instanceof Message) {
+            foreach ($discordBot->plans as $plan) {
+                if ($plan->counting->ignoreDeletion === 0) {
+                    if ($plan->counting->restore($message)) {
+                        break;
+                    }
+                } else {
+                    $plan->counting->ignoreDeletion--;
                 }
-            } else {
-                $plan->counting->ignoreDeletion--;
             }
         }
         $logger->logInfo(null, Event::MESSAGE_DELETE, $message);

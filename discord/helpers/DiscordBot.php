@@ -47,7 +47,7 @@ class DiscordBot
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
-        $this->refreshDate = get_future_date((DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 60_000) . " minutes");
+        $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id", "account_id"),

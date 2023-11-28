@@ -10,7 +10,7 @@ class DiscordCurrency
     public function __construct(string $code)
     {
         $this->code = $code;
-        set_sql_cache(DiscordProperties::SYSTEM_REFRESH_MILLISECONDS);
+        set_sql_cache(null, self::class);
         $query = get_sql_query(
             BotDatabaseTable::CURRENCIES,
             null,

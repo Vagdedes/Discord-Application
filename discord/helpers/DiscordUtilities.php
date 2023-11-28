@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
@@ -141,11 +142,11 @@ class DiscordUtilities
         }
     }
 
-    public function buildMessageFromObject(object $object): MessageBuilder
+    public function buildMessageFromObject(object $object): ?MessageBuilder
     {
+        $hasContent = !empty($object->message_content);
         $messageBuilder = MessageBuilder::new()->setContent(
-            empty($object->message_content) ? ""
-                : $object->message_content
+            $hasContent ? $object->message_content : ""
         );
         $embed = new Embed($this->plan->discord);
         $addEmbed = false;
@@ -188,6 +189,8 @@ class DiscordUtilities
         }
         if ($addEmbed) {
             $messageBuilder->addEmbed($embed);
+        } else if (!$hasContent) {
+            return null;
         }
         return $messageBuilder;
     }

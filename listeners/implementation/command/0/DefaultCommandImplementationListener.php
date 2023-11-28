@@ -73,43 +73,26 @@ class DefaultCommandImplementationListener // Name can be changed
                                        Interaction $interaction,
                                        object      $command): void // Name can be changed
     {
-        $arguments = $interaction->data->options->toArray();
-        $argumentSize = sizeof($arguments);
+        $findUserID = $interaction->data->resolved->users->first()->id;
+        $tickets = $plan->ticket->getMultiple(
+            $findUserID,
+            null,
+            DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
+            false
+        );
 
-        if ($argumentSize === 0) {
+        if (empty($tickets)) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Missing user argument."),
-                true
-            );
-        } else if ($argumentSize > 1) {
-            $plan->utilities->acknowledgeCommandMessage(
-                $interaction,
-                MessageBuilder::new()->setContent("Too many arguments."),
+                MessageBuilder::new()->setContent("No tickets found for user."),
                 true
             );
         } else {
-            $findUserID = $interaction->data->resolved->users->first()->id;
-            $tickets = $plan->ticket->getMultiple(
-                $findUserID,
-                null,
-                DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
-                false
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->ticket->loadTicketsMessage($findUserID, $tickets),
+                true
             );
-
-            if (empty($tickets)) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("No tickets found for user."),
-                    true
-                );
-            } else {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    $plan->ticket->loadTicketsMessage($findUserID, $tickets),
-                    true
-                );
-            }
         }
     }
 
@@ -118,45 +101,29 @@ class DefaultCommandImplementationListener // Name can be changed
                                       object      $command): void // Name can be changed
     {
         $arguments = $interaction->data->options->toArray();
-        $argumentSize = sizeof($arguments);
+        $ticketID = $arguments["ticket-id"]["value"] ?? null;
 
-        if ($argumentSize === 0) {
+        if (!is_numeric($ticketID)) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Missing ticket-id argument."),
+                MessageBuilder::new()->setContent("Invalid ticket-id argument."),
                 true
             );
-        } else if ($argumentSize > 1) {
+        }
+        $ticket = $plan->ticket->getSingle($ticketID);
+
+        if ($ticket === null) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Too many arguments."),
+                MessageBuilder::new()->setContent("Ticket not found."),
                 true
             );
         } else {
-            $ticketID = $arguments["ticket-id"]["value"] ?? null;
-
-            if (!is_numeric($ticketID)) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("Invalid ticket-id argument."),
-                    true
-                );
-            }
-            $ticket = $plan->ticket->getSingle($ticketID);
-
-            if ($ticket === null) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("Ticket not found."),
-                    true
-                );
-            } else {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    $plan->ticket->loadSingleTicketMessage($ticket),
-                    true
-                );
-            }
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->ticket->loadSingleTicketMessage($ticket),
+                true
+            );
         }
     }
 
@@ -268,43 +235,26 @@ class DefaultCommandImplementationListener // Name can be changed
                                        Interaction $interaction,
                                        object      $command): void // Name can be changed
     {
-        $arguments = $interaction->data->options->toArray();
-        $argumentSize = sizeof($arguments);
+        $findUserID = $interaction->data->resolved->users->first()->id;
+        $targets = $plan->target->getMultiple(
+            $findUserID,
+            null,
+            DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
+            false
+        );
 
-        if ($argumentSize === 0) {
+        if (empty($targets)) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Missing user argument."),
-                true
-            );
-        } else if ($argumentSize > 1) {
-            $plan->utilities->acknowledgeCommandMessage(
-                $interaction,
-                MessageBuilder::new()->setContent("Too many arguments."),
+                MessageBuilder::new()->setContent("No targets found for user."),
                 true
             );
         } else {
-            $findUserID = $interaction->data->resolved->users->first()->id;
-            $targets = $plan->target->getMultiple(
-                $findUserID,
-                null,
-                DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
-                false
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->target->loadTargetsMessage($findUserID, $targets),
+                true
             );
-
-            if (empty($targets)) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("No targets found for user."),
-                    true
-                );
-            } else {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    $plan->target->loadTargetsMessage($findUserID, $targets),
-                    true
-                );
-            }
         }
     }
 
@@ -313,46 +263,53 @@ class DefaultCommandImplementationListener // Name can be changed
                                       object      $command): void // Name can be changed
     {
         $arguments = $interaction->data->options->toArray();
-        $argumentSize = sizeof($arguments);
+        $targetID = $arguments["target-id"]["value"] ?? null;
 
-        if ($argumentSize === 0) {
+        if (!is_numeric($targetID)) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Missing target-id argument."),
+                MessageBuilder::new()->setContent("Invalid target-id argument."),
                 true
             );
-        } else if ($argumentSize > 1) {
+        }
+        $target = $plan->target->getSingle($targetID);
+
+        if ($target === null) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Too many arguments."),
+                MessageBuilder::new()->setContent("Target not found."),
                 true
             );
         } else {
-            $targetID = $arguments["target-id"]["value"] ?? null;
-
-            if (!is_numeric($targetID)) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("Invalid target-id argument."),
-                    true
-                );
-            }
-            $target = $plan->target->getSingle($targetID);
-
-            if ($target === null) {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("Target not found."),
-                    true
-                );
-            } else {
-                $plan->utilities->acknowledgeCommandMessage(
-                    $interaction,
-                    $plan->target->loadSingleTargetMessage($target),
-                    true
-                );
-            }
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->target->loadSingleTargetMessage($target),
+                true
+            );
         }
     }
 
+    // Separator
+
+    public static function list_counting_goals(DiscordPlan $plan,
+                                               Interaction $interaction,
+                                               object      $command): void // Name can be changed
+    {
+        $findUserID = $interaction->data->resolved->users->first()->id;
+        $goals = $plan->counting->getStoredGoals($findUserID);
+
+        if (empty($goals)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("No goals found for user."),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->counting->loadStoredGoalMessages($findUserID, $goals),
+                true
+            );
+        }
+    }
 }

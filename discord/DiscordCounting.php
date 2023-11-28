@@ -10,7 +10,7 @@ class DiscordCounting
     private array $countingPlaces;
     public int $ignoreDeletion;
 
-    //todo counting-goal commands to list goals of users
+    private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -147,13 +147,62 @@ class DiscordCounting
         return false;
     }
 
-    public function restore(object $message): bool
+    public function restore(Message $message): bool
     {
-        if ($message instanceof Message && $this->getCountingChannelObject($message) !== null) {
+        if ($this->getCountingChannelObject($message) !== null) {
             $message->channel->sendMessage("<@{$message->author->id}> " . $message->content);
             return true;
         }
         return false;
+    }
+
+    public function getStoredGoals(int|string $userID): array
+    {
+        if (!empty($this->countingPlaces)) {
+            $array = array();
+
+            foreach ($this->countingPlaces as $row) {
+                if (!empty($row->goals)) {
+                    foreach ($row->goals as $goal) {
+                        set_sql_cache(self::REFRESH_TIME);
+                        $storage = get_sql_query(
+                            BotDatabaseTable::BOT_COUNTING_GOAL_STORAGE,
+                            null,
+                            array(
+                                array("goal_id", $goal->id),
+                                array("user_id", $userID),
+                                array("deletion_date", null),
+                            ),
+                            array(
+                                "DESC",
+                                "id"
+                            ),
+                            1
+                        );
+
+                        if (!empty($storage)) {
+                            $array[] = $goal;
+                        }
+                    }
+                }
+            }
+            return $array;
+        }
+        return array();
+    }
+
+    public function loadStoredGoalMessages(int|string $userID, array $goals): MessageBuilder
+    {
+        $messageBuilder = MessageBuilder::new();
+        $messageBuilder->setContent("Showing last **" . sizeof($goals) . " counting goals** of user **" . $this->plan->utilities->getUsername($userID) . "**");
+
+        foreach ($goals as $goal) {
+            $embed = new Embed($this->plan->discord);
+            $embed->setTitle($goal->title);
+            $embed->setDescription($goal->description);
+            $messageBuilder->addEmbed($embed);
+        }
+        return $messageBuilder;
     }
 
     private function triggerGoal(Message $message, object $row): void
@@ -171,8 +220,10 @@ class DiscordCounting
                             "creation_date" => get_current_date()
                         )
                     )) {
-                        if ($goal->user_message !== null) {
-                            $message->reply($this->plan->utilities->buildMessageFromObject($goal));
+                        $messageBuilder = $this->plan->utilities->buildMessageFromObject($goal);
+
+                        if ($messageBuilder !== null) {
+                            $message->reply($messageBuilder);
                         } else {
                             $this->plan->listener->callCountingGoalImplementation(
                                 $goal->listener_class,

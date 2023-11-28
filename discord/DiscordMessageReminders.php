@@ -61,38 +61,66 @@ class DiscordMessageReminders
                 1
             ))) {
             if ($checkPrevious && $row->check_previous !== null) {
-                $channel->getMessageHistory(array("limit" => (int)$row->check_previous))->done(
-                    function (Collection $messages) use ($channel, $row) {
-                        if (!empty($messages)) {
-                            foreach ($messages as $message) {
-                                if ($message->id == $row->message_id) {
-                                    return;
+                $query = get_sql_query(
+                    BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
+                    array("message_id"),
+                    array(
+                        array("deletion_date", null),
+                        array("reminder_id", $row->id),
+                    ),
+                    array(
+                        "DESC",
+                        "id"
+                    ),
+                    1
+                );
+
+                if (!empty($query)) {
+                    $channel->getMessageHistory(array("limit" => (int)$row->check_previous))->done(
+                        function (Collection $messages) use ($channel, $row, $query) {
+                            if (!empty($messages)) {
+                                $query = $query[0];
+
+                                foreach ($messages as $message) {
+                                    if ($message->id == $query->message_id) {
+                                        return;
+                                    }
+                                }
+                            }
+                            $this->execute($channel, $row, false);
+                        }
+                    );
+                }
+            } else {
+                $messageBuilder = $this->plan->utilities->buildMessageFromObject($row);
+
+                if ($messageBuilder !== null) {
+                    $channel->sendMessage($messageBuilder)->done(
+                        function (Message $message) use ($row) {
+                            if (sql_insert(
+                                BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
+                                array(
+                                    "server_id" => $message->guild_id,
+                                    "channel_id" => $message->channel_id,
+                                    "thread_id" => $message->thread?->id,
+                                    "message_id" => $message->id,
+                                    "message_object" => json_encode($message->getRawAttributes()),
+                                    "creation_date" => get_current_date()
+                                ),
+                            )) {
+                                if ($row->milliseconds_retention !== null) {
+                                    $message->delayedDelete($row->milliseconds_retention);
                                 }
                             }
                         }
-                        $this->execute($channel, $row, false);
-                    }
-                );
-            } else {
-                $channel->sendMessage($this->plan->utilities->buildMessageFromObject($row))->done(
-                    function (Message $message) use ($row) {
-                        if (sql_insert(
-                            BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
-                            array(
-                                "server_id" => $message->guild_id,
-                                "channel_id" => $message->channel_id,
-                                "thread_id" => $message->thread?->id,
-                                "message_id" => $message->id,
-                                "message_object" => json_encode($message->getRawAttributes()),
-                                "creation_date" => get_current_date()
-                            ),
-                        )) {
-                            if ($row->milliseconds_retention !== null) {
-                                $message->delayedDelete($row->milliseconds_retention);
-                            }
-                        }
-                    }
-                );
+                    );
+                } else {
+                    global $logger;
+                    $logger->logError(
+                        $this->plan->planID,
+                        "Incorrect reminder message with ID: " . $row->id
+                    );
+                }
             }
         }
     }

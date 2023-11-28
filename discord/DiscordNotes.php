@@ -1,4 +1,5 @@
 <?php
+
 class DiscordNotes
 {
     private DiscordPlan $plan;
@@ -8,5 +9,37 @@ class DiscordNotes
         $this->plan = $plan;
     }
 
-    //todo
+    public function create()
+    {
+
+    }
+
+    public function modify()
+    {
+
+    }
+
+    public function delete()
+    {
+
+    }
+
+    public function get() {
+        
+    }
+
+    public function changeSetting()
+    {
+
+    }
+
+    public function modifyParticipant()
+    {
+
+    }
+
+    public function removeParticipant()
+    {
+
+    }
 }

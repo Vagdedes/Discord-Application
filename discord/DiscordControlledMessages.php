@@ -7,6 +7,7 @@ use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class DiscordControlledMessages
@@ -140,6 +141,16 @@ class DiscordControlledMessages
     private function build(?Interaction $interaction, object $messageRow): MessageBuilder
     {
         $messageBuilder = $this->plan->utilities->buildMessageFromObject($messageRow);
+
+        if ($messageBuilder === null) {
+            global $logger;
+            $logger->logError(
+                $this->plan->planID,
+                "Incorrect controlled-message message with ID: " . $messageRow->id
+            );
+            $messageBuilder = MessageBuilder::new();
+            $messageBuilder->setContent(DiscordProperties::NO_REPLY);
+        }
         $messageBuilder = $this->plan->component->addButtons(
             $interaction,
             $messageBuilder,
