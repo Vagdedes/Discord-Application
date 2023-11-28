@@ -17,7 +17,7 @@ class DiscordNotes
     public function create(Interaction      $interaction,
                            int|float|string $key, ?string $creationReason = null): void
     {
-        if ($this->get($key) !== null) {
+        if ($this->get($interaction->guild_id, $key, $interaction->user->id) !== null) {
             $this->plan->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
@@ -56,22 +56,22 @@ class DiscordNotes
                                 1
                             ))) {
                                 if (sql_insert(
-                                    BotDatabaseTable::BOT_NOTES,
-                                    array(
-                                        "note_id" => $noteID,
-                                        "note_key" => $key,
-                                        "user_id" => $interaction->user->id,
-                                        "creation_date" => get_current_date(),
-                                        "creation_reason" => $creationReason
+                                        BotDatabaseTable::BOT_NOTES,
+                                        array(
+                                            "note_id" => $noteID,
+                                            "note_key" => $key,
+                                            "user_id" => $interaction->user->id,
+                                            "creation_date" => get_current_date(),
+                                            "creation_reason" => $creationReason
+                                        )
                                     )
-                                )
-                                && sql_insert(
+                                    && sql_insert(
                                         BotDatabaseTable::BOT_NOTE_CHANGES,
                                         array(
                                             "note_id" => $noteID,
                                             "user_id" => $interaction->user->id,
-                                            "title" => $noteID,
-                                            "description" => $key,
+                                            "title" => $title,
+                                            "description" => $description,
                                             "creation_date" => get_current_date(),
                                             "creation_reason" => $creationReason
                                         )
@@ -82,15 +82,20 @@ class DiscordNotes
                                             "Successfully created the note."
                                         ), true
                                     );
-                                    break;
                                 } else {
+                                    global $logger;
+                                    $logger->logError(
+                                        $this->plan->planID,
+                                        "An database error occurred while creating a note for the user: " . $interaction->user->id
+                                    );
                                     $this->plan->utilities->acknowledgeMessage(
                                         $interaction,
                                         MessageBuilder::new()->setContent(
-                                            "An error occurred while creating the note."
+                                            "An database error occurred while creating the note."
                                         ), true
                                     );
                                 }
+                                break;
                             }
                         }
                     }
@@ -105,18 +110,86 @@ class DiscordNotes
     }
 
     public function delete(Interaction      $interaction,
-                           int|float|string $key, ?string $deletionReason = null): void
+                           int|float|string $key, int|string|null $userID,
+                           ?string          $deletionReason = null): void
     {
+        $object = $this->get($interaction->guild_id, $key,
+            $userID !== null ? $userID : $interaction->user->id);
+
+        if ($object !== null) {
+
+        } else {
+            $this->plan->utilities->acknowledgeMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "A note with this key does not exist or is not available to you."
+                ), true
+            );
+        }
     }
 
-    public function get(int|float|string $key, int|string|null $userID = null): ?object
+    public function get(int|string $serverID, int|float|string $key, int|string|null $userID,
+                                   $past = 1): ?object
     {
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_NOTES,
+            null,
+            array(
+                array("note_key", $key),
+                array("user_id", $userID),
+                array("server_id", $serverID),
+                array("deletion_date", null)
+            ),
+            null,
+            1
+        );
+
+        if (!empty($query)) {
+            $query = $query[0];
+            $childQuery = get_sql_query(
+                BotDatabaseTable::BOT_NOTE_CHANGES,
+                null,
+                array(
+                    array("note_id", $key),
+                    array("deletion_date", null)
+                ),
+                array(
+                    "DESC",
+                    "id"
+                ),
+                $past
+            );
+            $size = sizeof($childQuery);
+
+            if ($size === $past) {
+                $query->changes = $childQuery[$size - 1];
+                $query->settings = get_sql_query(
+                    BotDatabaseTable::BOT_NOTE_SETTINGS,
+                    null,
+                    array(
+                        array("note_id", $key),
+                    ),
+                    array(
+                        "DESC",
+                        "id"
+                    ),
+                    1
+                )[0];
+                return $query;
+            }
+        }
         return null;
     }
 
     public function send(Interaction      $interaction,
                          int|float|string $key, int|string|null $userID = null): void
     {
+        $object = $this->get($interaction->guild_id, $key,
+            $userID !== null ? $userID : $interaction->user->id);
+
+        if ($object !== null) {
+            //todo
+        }
     }
 
     public function changeSetting(int|float|string $key,
