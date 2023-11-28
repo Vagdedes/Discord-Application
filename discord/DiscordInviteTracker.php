@@ -7,6 +7,9 @@ class DiscordInviteTracker
     private DiscordPlan $plan;
     private static bool $isInitialized = false;
 
+    //todo command to get invite stats about user
+    //todo table to implement listeners for invites
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -27,11 +30,13 @@ class DiscordInviteTracker
                 $totalUses = $invite->uses ?? null;
                 $code = $invite->code ?? null;
                 $serverID = $invite->guild_id ?? null;
+                $userID = $invite->inviter?->id ?? null;
 
-                if ($totalUses !== null && $code !== null && $serverID !== null) {
+                if ($totalUses !== null && $code !== null
+                    && $serverID !== null && $userID !== null) {
                     $query = get_sql_query(
                         BotDatabaseTable::BOT_INVITE_TRACKER,
-                        array("id", "individual_uses", "total_uses"),
+                        array("id", "uses"),
                         array(
                             array("server_id", $serverID),
                             array("invite_code", $code),
@@ -49,27 +54,27 @@ class DiscordInviteTracker
                             BotDatabaseTable::BOT_INVITE_TRACKER,
                             array(
                                 "server_id" => $serverID,
-                                "user_id" => $invite->inviter?->id,
+                                "user_id" => $userID,
                                 "invite_code" => $code,
-                                "individual_uses" => $totalUses,
-                                "total_uses" => $totalUses,
+                                "uses" => $totalUses,
                                 "creation_date" => get_current_date()
                             )
                         );
                     } else {
-                        $difference = $totalUses - $query[0]->total_uses;
+                        $query = $query[0];
+                        $difference = $totalUses - $query->uses;
 
                         if ($difference > 0) {
-                            sql_insert(
+                            set_sql_query(
                                 BotDatabaseTable::BOT_INVITE_TRACKER,
                                 array(
-                                    "server_id" => $serverID,
-                                    "user_id" => $invite->inviter?->id,
-                                    "invite_code" => $code,
-                                    "individual_uses" => $difference,
-                                    "total_uses" => $totalUses,
-                                    "creation_date" => get_current_date()
-                                )
+                                    "uses" => $totalUses,
+                                ),
+                                array(
+                                    array("id", $query->id)
+                                ),
+                                null,
+                                1
                             );
                         }
                     }
