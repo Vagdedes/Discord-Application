@@ -461,7 +461,7 @@ class DiscordNotes
     public function changeSetting(Interaction      $interaction,
                                   int|float|string $key, int|string|null $userID,
                                   ?bool            $viewPublic,
-                                  ?bool            $viewHistory = null): void
+                                  ?bool            $readHistory = null): void
     {
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
@@ -489,7 +489,7 @@ class DiscordNotes
                         "note_id" => $key,
                         "user_id" => $interaction->user->id,
                         "view_public" => $viewPublic !== null ? $viewPublic : $object->settings->view_public,
-                        "view_history" => $viewHistory !== null ? $viewHistory : $object->settings->view_history,
+                        "read_history" => $readHistory !== null ? $readHistory : $object->settings->read_history,
                         "creation_date" => get_current_date()
                     )
                 )) {
