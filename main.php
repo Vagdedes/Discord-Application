@@ -338,7 +338,6 @@ $discord->on('ready', function (Discord $discord) {
     // Separator
 
     // Event::GUILD_MEMBER_UPDATE: Results in error
-    // Event::GUILD_MEMBER_UPDATE: Results in error
 
     $discord->on(Event::GUILD_MEMBER_REMOVE, function (mixed $member, Discord $discord) use ($logger, $discordBot) {
         if ($member instanceof Member) {
