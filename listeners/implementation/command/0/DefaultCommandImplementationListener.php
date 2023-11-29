@@ -15,7 +15,7 @@ class DefaultCommandImplementationListener
         $argumentSize = sizeof($arguments);
 
         if ($argumentSize === 0) {
-            $close = $plan->ticket->closeByChannel($interaction->channel, $interaction->user->id);
+            $close = $plan->userTickets->closeByChannel($interaction->channel, $interaction->user->id);
 
             if ($close !== null) {
                 $plan->utilities->acknowledgeCommandMessage(
@@ -30,13 +30,13 @@ class DefaultCommandImplementationListener
 
             if (is_numeric($ticketID)) {
                 if ($hasReason) {
-                    $close = $plan->ticket->closeByID(
+                    $close = $plan->userTickets->closeByID(
                         $ticketID,
                         $interaction->user->id,
                         $arguments["reason"]["value"] ?? null
                     );
                 } else {
-                    $close = $plan->ticket->closeByID($ticketID, $interaction->user->id);
+                    $close = $plan->userTickets->closeByID($ticketID, $interaction->user->id);
                 }
 
                 if ($close !== null) {
@@ -53,7 +53,7 @@ class DefaultCommandImplementationListener
                     );
                 }
             } else {
-                $close = $plan->ticket->closeByChannel(
+                $close = $plan->userTickets->closeByChannel(
                     $interaction->channel,
                     $interaction->user->id,
                     $arguments["reason"]["value"] ?? null
@@ -75,7 +75,7 @@ class DefaultCommandImplementationListener
                                        object      $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
-        $tickets = $plan->ticket->getMultiple(
+        $tickets = $plan->userTickets->getMultiple(
             $findUserID,
             null,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
@@ -91,7 +91,7 @@ class DefaultCommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                $plan->ticket->loadTicketsMessage($findUserID, $tickets),
+                $plan->userTickets->loadTicketsMessage($findUserID, $tickets),
                 true
             );
         }
@@ -111,7 +111,7 @@ class DefaultCommandImplementationListener
                 true
             );
         }
-        $ticket = $plan->ticket->getSingle($ticketID);
+        $ticket = $plan->userTickets->getSingle($ticketID);
 
         if ($ticket === null) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -122,7 +122,7 @@ class DefaultCommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                $plan->ticket->loadSingleTicketMessage($ticket),
+                $plan->userTickets->loadSingleTicketMessage($ticket),
                 true
             );
         }
@@ -174,7 +174,7 @@ class DefaultCommandImplementationListener
         $argumentSize = sizeof($arguments);
 
         if ($argumentSize === 0) {
-            $close = $plan->target->closeByChannelOrThread(
+            $close = $plan->userTargets->closeByChannelOrThread(
                 $interaction->channel,
                 $interaction->user->id
             );
@@ -192,13 +192,13 @@ class DefaultCommandImplementationListener
 
             if (is_numeric($targetID)) {
                 if ($hasReason) {
-                    $close = $plan->target->closeByID(
+                    $close = $plan->userTargets->closeByID(
                         $targetID,
                         $interaction->user->id,
                         $arguments["reason"]["value"] ?? null
                     );
                 } else {
-                    $close = $plan->target->closeByID($targetID, $interaction->user->id);
+                    $close = $plan->userTargets->closeByID($targetID, $interaction->user->id);
                 }
 
                 if ($close !== null) {
@@ -215,7 +215,7 @@ class DefaultCommandImplementationListener
                     );
                 }
             } else {
-                $close = $plan->target->closeByChannelOrThread(
+                $close = $plan->userTargets->closeByChannelOrThread(
                     $interaction->channel,
                     $interaction->user->id,
                     $arguments["reason"]["value"] ?? null
@@ -237,7 +237,7 @@ class DefaultCommandImplementationListener
                                        object      $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
-        $targets = $plan->target->getMultiple(
+        $targets = $plan->userTargets->getMultiple(
             $findUserID,
             null,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
@@ -253,7 +253,7 @@ class DefaultCommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                $plan->target->loadTargetsMessage($findUserID, $targets),
+                $plan->userTargets->loadTargetsMessage($findUserID, $targets),
                 true
             );
         }
@@ -273,7 +273,7 @@ class DefaultCommandImplementationListener
                 true
             );
         }
-        $target = $plan->target->getSingle($targetID);
+        $target = $plan->userTargets->getSingle($targetID);
 
         if ($target === null) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -284,7 +284,7 @@ class DefaultCommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                $plan->target->loadSingleTargetMessage($target),
+                $plan->userTargets->loadSingleTargetMessage($target),
                 true
             );
         }
@@ -297,7 +297,7 @@ class DefaultCommandImplementationListener
                                                object      $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
-        $goals = $plan->counting->getStoredGoals(
+        $goals = $plan->countingChannels->getStoredGoals(
             $findUserID,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE
         );
@@ -311,7 +311,7 @@ class DefaultCommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                $plan->counting->loadStoredGoalMessages($findUserID, $goals),
+                $plan->countingChannels->loadStoredGoalMessages($findUserID, $goals),
                 true
             );
         }
@@ -322,7 +322,7 @@ class DefaultCommandImplementationListener
                                        object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->create(
+        $plan->userNotes->create(
             $interaction,
             $arguments["key"]["value"],
             $arguments["reason"]["value"] ?? null
@@ -334,7 +334,7 @@ class DefaultCommandImplementationListener
                                      object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->edit(
+        $plan->userNotes->edit(
             $interaction,
             $arguments["key"]["value"],
             $interaction->data?->resolved?->users?->first()?->id,
@@ -347,7 +347,7 @@ class DefaultCommandImplementationListener
                                     object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->send(
+        $plan->userNotes->send(
             $interaction,
             $arguments["key"]["value"],
             $interaction->data?->resolved?->users?->first()?->id
@@ -358,7 +358,7 @@ class DefaultCommandImplementationListener
                                      Interaction $interaction,
                                      object      $command): void
     {
-        $plan->notes->sendAll(
+        $plan->userNotes->sendAll(
             $interaction,
             $interaction->data?->resolved?->users?->first()?->id
         );
@@ -369,7 +369,7 @@ class DefaultCommandImplementationListener
                                        object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->delete(
+        $plan->userNotes->delete(
             $interaction,
             $arguments["key"]["value"],
             $interaction->data?->resolved?->users?->first()?->id,
@@ -382,7 +382,7 @@ class DefaultCommandImplementationListener
                                                object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->changeSetting(
+        $plan->userNotes->changeSetting(
             $interaction,
             $arguments["key"]["value"],
             $interaction->data?->resolved?->users?->first()?->id,
@@ -396,7 +396,7 @@ class DefaultCommandImplementationListener
                                                    object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $plan->notes->modifyParticipant(
+        $plan->userNotes->modifyParticipant(
             $interaction,
             $arguments["key"]["value"],
             $interaction->data?->resolved?->users?->first()?->id,

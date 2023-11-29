@@ -1,5 +1,6 @@
 <?php
-class DiscordReactionRoles
+
+class DiscordSocialAlerts
 {
     private DiscordPlan $plan;
 

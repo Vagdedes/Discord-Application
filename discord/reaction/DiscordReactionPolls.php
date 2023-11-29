@@ -1,5 +1,6 @@
 <?php
-class DiscordLevel
+
+class DiscordReactionPolls
 {
     private DiscordPlan $plan;
 
@@ -7,6 +8,4 @@ class DiscordLevel
     {
         $this->plan = $plan;
     }
-
-    //todo
 }

@@ -7,7 +7,7 @@ use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
-class DiscordTicket
+class DiscordUserTickets
 {
     private DiscordPlan $plan;
     public int $ignoreDeletion;

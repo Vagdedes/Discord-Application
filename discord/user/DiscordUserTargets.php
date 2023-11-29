@@ -7,7 +7,7 @@ use Discord\Parts\Embed\Embed;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 
-class DiscordTargetedMessage
+class DiscordUserTargets
 {
     private DiscordPlan $plan;
     private array $targets;
@@ -365,7 +365,7 @@ class DiscordTargetedMessage
                         $promptMessage
                     ))->done(function (Message $replyMessage) use ($message, $member, $object, $target, $query) {
                         $instructions = $this->plan->instructions->build($object, $target->instructions);
-                        $reply = $this->plan->ai->rawTextAssistance(
+                        $reply = $this->plan->aiMessages->rawTextAssistance(
                             $member,
                             $instructions[0],
                             ($message->content
@@ -385,7 +385,7 @@ class DiscordTargetedMessage
                             $hasNoCost = is_string($modelReply);
                             $assistance = $hasNoCost
                                 ? $modelReply
-                                : $this->plan->ai->chatAI->getText($model, $modelReply);
+                                : $this->plan->aiMessages->chatAI->getText($model, $modelReply);
                             $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
 
                             if ($assistance !== null) {

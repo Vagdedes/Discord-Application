@@ -1,6 +1,6 @@
 <?php
 
-class DiscordStatisticChannels
+class DiscordStatisticsChannels
 {
     private DiscordPlan $plan;
 

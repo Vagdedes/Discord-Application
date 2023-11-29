@@ -1,9 +1,7 @@
 <?php
-
-class DiscordCheaperChatAI
+class DiscordUserLevels
 {
-    private
-    DiscordPlan $plan;
+    private DiscordPlan $plan;
 
     public function __construct(DiscordPlan $plan)
     {

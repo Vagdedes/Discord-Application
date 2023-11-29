@@ -1,29 +1,27 @@
 <?php
 
 /*
- * User Features:
- * Cheaper Chat AI
- *
  * Bot Features:
- * Chat & Image AI
  * Custom Commands
- * Anti-Expiration Threads
- * Admin Targets
  * Moderation Logs
  * Invite Tracker
  * Social Alerts
- * Welcome & Goodbye
  * -
+ * AI Text Messages
+ * AI Image Messages
  * Persistent Messages
  * Reminder Messages
+ * Welcome & Goodbye Messages
  * -
  * Counting Channels
  * Statistics Channels
  * Temporary Channels
+ * Anti-Expiration Threads
  * -
  * Reaction Polls
  * Reaction Roles
  * -
+ * User Targets
  * User Tickets
  * User Levels
  * User Notes

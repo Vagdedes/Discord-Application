@@ -5,7 +5,7 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
 
-class DiscordMessageReminders
+class DiscordReminderMessages
 {
     private DiscordPlan $plan;
 

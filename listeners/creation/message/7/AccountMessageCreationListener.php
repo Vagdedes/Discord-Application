@@ -359,7 +359,7 @@ class AccountMessageCreationListener
                     }
                 }
             } else {
-                $messageBuilder = $plan->controlledMessages->get($interaction, "0-register_or_log_in");
+                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
             }
         }
         return $messageBuilder;
@@ -408,7 +408,7 @@ class AccountMessageCreationListener
                     }
                 }
             } else {
-                $messageBuilder = $plan->controlledMessages->get($interaction, "0-register_or_log_in");
+                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
             }
         }
         return $messageBuilder;

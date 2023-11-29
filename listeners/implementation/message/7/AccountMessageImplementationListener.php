@@ -32,9 +32,9 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
     }
 
@@ -47,7 +47,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-register");
         }
@@ -62,7 +62,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -92,7 +92,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-change_email", true);
+            $plan->persistentMessages->send($interaction, "0-change_email", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -137,7 +137,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-change_password", true);
+            $plan->persistentMessages->send($interaction, "0-change_password", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -160,7 +160,7 @@ class AccountMessageImplementationListener
                 ), true);
             });
         } else {
-            $plan->controlledMessages->send($interaction, "0-log_in", true);
+            $plan->persistentMessages->send($interaction, "0-log_in", true);
         }
     }
 
@@ -175,7 +175,7 @@ class AccountMessageImplementationListener
         if ($account->isPositiveOutcome()) {
             $plan->component->showModal($interaction, "0-complete_password");
         } else {
-            $plan->controlledMessages->send($interaction, "0-log_in", true);
+            $plan->persistentMessages->send($interaction, "0-log_in", true);
         }
     }
 
@@ -188,7 +188,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-forgot_password");
         }
@@ -203,7 +203,7 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-complete_password");
         }

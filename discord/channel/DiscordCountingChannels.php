@@ -4,7 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 
-class DiscordCounting
+class DiscordCountingChannels
 {
     private DiscordPlan $plan;
     private array $countingPlaces;

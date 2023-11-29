@@ -1,5 +1,6 @@
 <?php
-class DiscordPoll
+
+class DiscordReactionRoles
 {
     private DiscordPlan $plan;
 

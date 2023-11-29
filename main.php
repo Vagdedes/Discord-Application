@@ -21,25 +21,29 @@ require '/root/discord_bot/utilities/encrypt.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
-require '/root/discord_bot/discord/DiscordModeration.php';
-require '/root/discord_bot/discord/DiscordCommands.php';
-require '/root/discord_bot/discord/DiscordControlledMessages.php';
-require '/root/discord_bot/discord/DiscordTicket.php';
-require '/root/discord_bot/discord/DiscordMessageRefresh.php';
-require '/root/discord_bot/discord/DiscordTargetedMessage.php';
-require '/root/discord_bot/discord/DiscordLevel.php';
-require '/root/discord_bot/discord/DiscordCounting.php';
-require '/root/discord_bot/discord/DiscordPoll.php';
-require '/root/discord_bot/discord/DiscordTemporaryChannel.php';
-require '/root/discord_bot/discord/DiscordInviteTracker.php';
-require '/root/discord_bot/discord/DiscordReactionRoles.php';
-require '/root/discord_bot/discord/DiscordSocialAlerts.php';
-require '/root/discord_bot/discord/DiscordMessageReminders.php';
-require '/root/discord_bot/discord/DiscordNotes.php';
-require '/root/discord_bot/discord/DiscordQuestionnaire.php';
-require '/root/discord_bot/discord/DiscordControlledChannels.php';
-require '/root/discord_bot/discord/DiscordAI.php';
-require '/root/discord_bot/discord/DiscordStatus.php';
+require '/root/discord_bot/discord/other/DiscordModeration.php';
+require '/root/discord_bot/discord/other/DiscordCommands.php';
+require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
+require '/root/discord_bot/discord/other/DiscordSocialAlerts.php';
+
+require '/root/discord_bot/discord/user/DiscordUserTickets.php';
+require '/root/discord_bot/discord/user/DiscordUserTargets.php';
+require '/root/discord_bot/discord/user/DiscordUserLevels.php';
+require '/root/discord_bot/discord/user/DiscordUserNotes.php';
+require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
+
+require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
+require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
+require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
+require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
+
+require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
+require '/root/discord_bot/discord/message/DiscordAIMessages.php';
+require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
+require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
+
+require '/root/discord_bot/discord/reaction/DiscordReactionRoles.php';
+require '/root/discord_bot/discord/reaction/DiscordReactionPolls.php';
 
 require '/root/discord_bot/discord/helpers/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordConversation.php';
@@ -54,8 +58,6 @@ require '/root/discord_bot/discord/helpers/DiscordLogs.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
 require '/root/discord_bot/discord/helpers/DiscordCurrency.php';
 require '/root/discord_bot/discord/helpers/DiscordLocations.php';
-
-require '/root/discord_bot/discord/user/DiscordCheaperChatAI.php';
 
 require '/root/discord_bot/ai/variables.php';
 require '/root/discord_bot/ai/ChatModel.php';
@@ -95,6 +97,8 @@ use Discord\WebSockets\Intents;
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
+//todo extend moderation to have logs
+//todo discord level
 
 $discord = new Discord([
     'token' => $token[0],
@@ -171,7 +175,7 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($discordBot, $logger) {
         foreach ($discordBot->plans as $plan) {
             if ($message->member !== null
-                && $plan->ai->textAssistance(
+                && $plan->aiMessages->textAssistance(
                     $message,
                     $message->member,
                     $message->content,
@@ -185,12 +189,12 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $discordBot) {
         if ($message instanceof Message) {
             foreach ($discordBot->plans as $plan) {
-                if ($plan->counting->ignoreDeletion === 0) {
-                    if ($plan->counting->restore($message)) {
+                if ($plan->countingChannels->ignoreDeletion === 0) {
+                    if ($plan->countingChannels->restore($message)) {
                         break;
                     }
                 } else {
-                    $plan->counting->ignoreDeletion--;
+                    $plan->countingChannels->ignoreDeletion--;
                 }
             }
         }
@@ -199,12 +203,12 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
-            if ($plan->counting->ignoreDeletion === 0) {
-                if ($plan->counting->moderate($message)) {
+            if ($plan->countingChannels->ignoreDeletion === 0) {
+                if ($plan->countingChannels->moderate($message)) {
                     break;
                 }
             } else {
-                $plan->counting->ignoreDeletion--;
+                $plan->countingChannels->ignoreDeletion--;
             }
         }
         $logger->logInfo($message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
@@ -248,15 +252,15 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
-            if ($plan->ticket->ignoreDeletion === 0) {
-                $plan->ticket->closeByChannel($channel);
+            if ($plan->userTickets->ignoreDeletion === 0) {
+                $plan->userTickets->closeByChannel($channel);
             } else {
-                $plan->ticket->ignoreDeletion--;
+                $plan->userTickets->ignoreDeletion--;
             }
-            if ($plan->target->ignoreChannelDeletion === 0) {
-                $plan->target->closeByChannelOrThread($channel);
+            if ($plan->userTargets->ignoreChannelDeletion === 0) {
+                $plan->userTargets->closeByChannelOrThread($channel);
             } else {
-                $plan->target->ignoreChannelDeletion--;
+                $plan->userTargets->ignoreChannelDeletion--;
             }
         }
         $logger->logInfo(null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
@@ -279,10 +283,10 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::THREAD_DELETE, function (object $thread, Discord $discord) use ($logger, $discordBot) {
         if ($thread instanceof Thread) {
             foreach ($discordBot->plans as $plan) {
-                if ($plan->target->ignoreThreadDeletion === 0) {
-                    $plan->target->closeByChannelOrThread($thread->parent);
+                if ($plan->userTargets->ignoreThreadDeletion === 0) {
+                    $plan->userTargets->closeByChannelOrThread($thread->parent);
                 } else {
-                    $plan->target->ignoreThreadDeletion--;
+                    $plan->userTargets->ignoreThreadDeletion--;
                 }
             }
         }
@@ -348,7 +352,7 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::GUILD_MEMBER_REMOVE, function (mixed $member, Discord $discord) use ($logger, $discordBot) {
         if ($member instanceof Member) {
             foreach ($discordBot->plans as $plan) {
-                $plan->status->goodbye($member->guild_id, $member->id);
+                $plan->statusMessages->goodbye($member->guild_id, $member->id);
             }
             $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
         } else {
@@ -358,7 +362,7 @@ $discord->on('ready', function (Discord $discord) {
 
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
-            $plan->status->welcome($member->guild_id, $member->id);
+            $plan->statusMessages->welcome($member->guild_id, $member->id);
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });

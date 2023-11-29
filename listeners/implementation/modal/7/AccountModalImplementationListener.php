@@ -16,7 +16,7 @@ class AccountModalImplementationListener
         $account = $session->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $account = $account->getObject();
             $objects = $objects->toArray();
@@ -38,7 +38,7 @@ class AccountModalImplementationListener
 
                     if ($accountRegistry->isPositiveOutcome()) {
                         $interaction->sendFollowUpMessage(
-                            $plan->controlledMessages->get($interaction, "0-logged_in"),
+                            $plan->persistentMessages->get($interaction, "0-logged_in"),
                             true
                         );
                     } else {
@@ -60,7 +60,7 @@ class AccountModalImplementationListener
         $account = $session->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $account = $account->getObject();
             $objects = $objects->toArray();
@@ -87,7 +87,7 @@ class AccountModalImplementationListener
 
                 if ($response === null) {
                     $interaction->sendFollowUpMessage(
-                        $plan->controlledMessages->get($interaction, "0-logged_in"),
+                        $plan->persistentMessages->get($interaction, "0-logged_in"),
                         true
                     );
                 } else {
@@ -118,7 +118,7 @@ class AccountModalImplementationListener
                 ), true);
             });
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
     }
 
@@ -139,7 +139,7 @@ class AccountModalImplementationListener
                 ), true);
             });
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
     }
 
@@ -160,7 +160,7 @@ class AccountModalImplementationListener
                 ), true);
             });
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
     }
 
@@ -218,7 +218,7 @@ class AccountModalImplementationListener
                 ), true);
             });
         } else {
-            $plan->controlledMessages->send($interaction, "0-register_or_log_in", true);
+            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
     }
 
@@ -230,7 +230,7 @@ class AccountModalImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->controlledMessages->send($interaction, "0-logged_in", true);
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $account = $account->getObject();
             $objects = $objects->toArray();

@@ -5,7 +5,7 @@ use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 
-class DiscordAI
+class DiscordAIMessages
 {
     private DiscordPlan $plan;
     public ?ChatAI $chatAI;
@@ -85,9 +85,9 @@ class DiscordAI
             }
             $this->plan->bot->processing--;
             return true;
-        } else if ($this->plan->ticket->track($message)
-            || $this->plan->target->track($member, $message, $object)
-            || $this->plan->counting->track($message)) {
+        } else if ($this->plan->userTickets->track($message)
+            || $this->plan->userTargets->track($member, $message, $object)
+            || $this->plan->countingChannels->track($message)) {
             $this->plan->bot->processing--;
             return true;
         } else {

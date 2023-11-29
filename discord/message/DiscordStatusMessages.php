@@ -1,6 +1,6 @@
 <?php
 
-class DiscordStatus
+class DiscordStatusMessages
 {
     private DiscordPlan $plan;
 

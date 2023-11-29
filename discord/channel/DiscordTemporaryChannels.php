@@ -1,5 +1,5 @@
 <?php
-class DiscordSocialAlerts
+class DiscordTemporaryChannels
 {
     private DiscordPlan $plan;
 

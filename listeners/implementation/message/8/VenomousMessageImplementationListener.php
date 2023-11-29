@@ -14,10 +14,10 @@ class VenomousMessageImplementationListener
 
         switch ($objects) {
             case "purchase":
-                $plan->ticket->call($interaction, "8-order");
+                $plan->userTickets->call($interaction, "8-order");
                 break;
             case "support":
-                $plan->ticket->call($interaction, "8-ai");
+                $plan->userTickets->call($interaction, "8-ai");
                 break;
             default:
                 $plan->utilities->acknowledgeMessage(

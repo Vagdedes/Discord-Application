@@ -16,33 +16,34 @@ class DiscordPlan
     public DiscordCommands $commands;
     public DiscordListener $listener;
     public DiscordComponent $component;
-    public DiscordControlledMessages $controlledMessages;
-    public DiscordTicket $ticket;
-    public DiscordMessageRefresh $messageRefresh;
+    public DiscordPersistentMessages $persistentMessages;
+    public DiscordUserTickets $userTickets;
+    public DiscordAntiExpirationThreads $discordAntiExpirationThreads;
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
     public DiscordBot $bot;
-    public DiscordTargetedMessage $target;
-    public DiscordCounting $counting;
-    public DiscordPoll $poll;
-    public DiscordLevel $level;
-    public DiscordCheaperChatAI $cheaperChatAI;
+    public DiscordUserTargets $userTargets;
+    public DiscordCountingChannels $countingChannels;
+    public DiscordReactionPolls $reactionPolls;
+    public DiscordUserLevels $userLevels;
     public DiscordInviteTracker $inviteTracker;
     public DiscordReactionRoles $reactionRoles;
-    public DiscordTemporaryChannel $temporaryChannel;
+    public DiscordTemporaryChannels $temporaryChannels;
     public DiscordSocialAlerts $socialAlerts;
-    public DiscordMessageReminders $messageReminders;
-    public DiscordQuestionnaire $questionnaire;
-    public DiscordStatisticChannels $controlledChannels;
-    public DiscordAI $ai;
-    public DiscordStatus $status;
+    public DiscordReminderMessages $reminderMessages;
+    public DiscordUserQuestionnaire $userQuestionnaire;
+    public DiscordStatisticsChannels $statisticsChannels;
+    public DiscordAIMessages $aiMessages;
+    public DiscordStatusMessages $statusMessages;
     public DiscordLocations $locations;
-    public DiscordNotes $notes;
+    public DiscordUserNotes $userNotes;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,
                                 int|string $botID, int|string $planID)
     {
+        $this->bot = $bot;
+
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             null,
@@ -64,34 +65,33 @@ class DiscordPlan
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
 
-        $this->bot = $bot;
+        $this->locations = new DiscordLocations($this);
         $this->listener = new DiscordListener($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);
-        $this->moderation = new DiscordModeration($this);
         $this->limits = new DiscordLimits($this);
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
-        $this->controlledMessages = new DiscordControlledMessages($this);
-        $this->ticket = new DiscordTicket($this);
         $this->permissions = new DiscordPermissions($this);
         $this->utilities = new DiscordUtilities($this);
-        $this->counting = new DiscordCounting($this);
-        $this->poll = new DiscordPoll($this);
-        $this->level = new DiscordLevel($this);
-        $this->cheaperChatAI = new DiscordCheaperChatAI($this);
+
+        $this->moderation = new DiscordModeration($this);
+        $this->persistentMessages = new DiscordPersistentMessages($this);
+        $this->userTickets = new DiscordUserTickets($this);
+        $this->countingChannels = new DiscordCountingChannels($this);
+        $this->reactionPolls = new DiscordReactionPolls($this);
+        $this->userLevels = new DiscordUserLevels($this);
         $this->reactionRoles = new DiscordReactionRoles($this);
-        $this->temporaryChannel = new DiscordTemporaryChannel($this);
+        $this->temporaryChannels = new DiscordTemporaryChannels($this);
         $this->socialAlerts = new DiscordSocialAlerts($this);
-        $this->messageReminders = new DiscordMessageReminders($this);
-        $this->questionnaire = new DiscordQuestionnaire($this);
-        $this->controlledChannels = new DiscordStatisticChannels($this);
-        $this->ai = new DiscordAI($this);
-        $this->status = new DiscordStatus($this);
-        $this->locations = new DiscordLocations($this);
-        $this->target = new DiscordTargetedMessage($this);
-        $this->messageRefresh = new DiscordMessageRefresh($this);
-        $this->notes = new DiscordNotes($this);
+        $this->reminderMessages = new DiscordReminderMessages($this);
+        $this->userQuestionnaire = new DiscordUserQuestionnaire($this);
+        $this->statisticsChannels = new DiscordStatisticsChannels($this);
+        $this->aiMessages = new DiscordAIMessages($this);
+        $this->statusMessages = new DiscordStatusMessages($this);
+        $this->userTargets = new DiscordUserTargets($this);
+        $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
+        $this->userNotes = new DiscordUserNotes($this);
         $this->inviteTracker = new DiscordInviteTracker($this);
     }
 

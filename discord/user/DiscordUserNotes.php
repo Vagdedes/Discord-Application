@@ -8,7 +8,7 @@ use Discord\Helpers\Collection;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
-class DiscordNotes
+class DiscordUserNotes
 {
     private DiscordPlan $plan;
 

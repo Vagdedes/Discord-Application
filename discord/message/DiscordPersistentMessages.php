@@ -10,7 +10,7 @@ use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 
-class DiscordControlledMessages
+class DiscordPersistentMessages
 {
     private DiscordPlan $plan;
     private array $messages;
@@ -216,8 +216,8 @@ class DiscordControlledMessages
     }
 
     private function newMessage(Thread|Channel $channel,
-                                object  $messageRow, object $oldMessageRow,
-                                array   $array, int $position): void
+                                object         $messageRow, object $oldMessageRow,
+                                array          $array, int $position): void
     {
         $channel->sendMessage($this->build(null, $messageRow))->done(
             function (Message $message) use ($messageRow, $oldMessageRow, $array, $position) {

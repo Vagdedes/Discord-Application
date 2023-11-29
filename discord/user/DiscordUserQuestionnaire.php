@@ -1,7 +1,9 @@
 <?php
-class DiscordTemporaryChannel
+
+class DiscordUserQuestionnaire
 {
-    private DiscordPlan $plan;
+    private
+    DiscordPlan $plan;
 
     public function __construct(DiscordPlan $plan)
     {
