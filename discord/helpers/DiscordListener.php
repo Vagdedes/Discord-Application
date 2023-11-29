@@ -165,15 +165,14 @@ class DiscordListener
     }
 
     public function callInviteTrackerImplementation(?string $class, ?string $method,
-                                                    Invite  $invite,
-                                                    mixed   $object): void
+                                                    Invite  $invite): void
     {
         if ($class !== null && $method !== null) {
             $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_INVITE_TRACKER . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $invite, $object)
+                array($this->plan, $invite)
             );
             $this->plan->bot->processing--;
         }

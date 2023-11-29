@@ -124,7 +124,7 @@ class DiscordInviteTracker
         }
     }
 
-    private function track(Guild $guild): void
+    public function track(Guild $guild): void
     {
         $guild->getInvites()->done(function (mixed $invites) {
             foreach ($invites as $invite) {
@@ -163,6 +163,11 @@ class DiscordInviteTracker
                             )
                         );
 
+                        if (!empty($this->goals)) {
+                            for ($target = 1; $target <= $totalUses; $target++) {
+                                $this->triggerGoal($invite, $serverID, $userID, $query, $target);
+                            }
+                        }
                     } else {
                         $query = $query[0];
                         $difference = $totalUses - $query->uses;
@@ -182,7 +187,7 @@ class DiscordInviteTracker
 
                             if (!empty($this->goals)) {
                                 for ($target = $query->uses + 1; $target <= $totalUses; $target++) {
-                                    $this->triggerGoal($invite, $serverID, $userID, $query, $target);
+                                    $this->triggerGoal($invite, $serverID, $userID, $target);
                                 }
                             }
                         }
@@ -194,7 +199,7 @@ class DiscordInviteTracker
 
     private function triggerGoal(Invite     $invite,
                                  int|string $serverID, int|string $userID,
-                                 object     $row, int $target): void
+                                 int        $target): void
     {
         foreach ($this->goals as $goal) {
             if ($goal->target_invited_users == $target) {
@@ -238,8 +243,7 @@ class DiscordInviteTracker
                         $this->plan->listener->callInviteTrackerImplementation(
                             $goal->listener_class,
                             $goal->listener_method,
-                            $invite,
-                            $row
+                            $invite
                         );
                     }
                 }
