@@ -9,6 +9,8 @@ class DiscordInviteTracker
     private array $goals;
     private static bool $isInitialized = false;
 
+    private const REFRESH_TIME = "15 seconds";
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -40,6 +42,8 @@ class DiscordInviteTracker
         $object->total_invite_links = 0;
         $object->active_invite_links = 0;
         $object->users_invited = 0;
+
+        set_sql_cache(self::REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER,
             null,
@@ -67,6 +71,7 @@ class DiscordInviteTracker
 
     public function getServerStats(int|string $serverID): array
     {
+        set_sql_cache(self::REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER,
             null,
@@ -250,6 +255,43 @@ class DiscordInviteTracker
                 break;
             }
         }
+    }
+
+    public function getStoredGoals(int|string $serverID, int|string $userID, int $limit = 0): array
+    {
+        if (!empty($this->goals)) {
+            $array = array();
+            $hasLimit = $limit > 0;
+
+            foreach ($this->goals as $goal) {
+                set_sql_cache(self::REFRESH_TIME);
+                $storage = get_sql_query(
+                    BotDatabaseTable::BOT_INVITE_TRACKER_GOAL_STORAGE,
+                    null,
+                    array(
+                        array("goal_id", $goal->id),
+                        array("server_id", $serverID),
+                        array("user_id", $userID),
+                        array("deletion_date", null),
+                    ),
+                    array(
+                        "DESC",
+                        "id"
+                    ),
+                    $goal->max_goals ?? 0
+                );
+
+                if (!empty($storage)) {
+                    $array[] = $goal;
+
+                    if ($hasLimit && sizeof($array) == $limit) {
+                        return $array;
+                    }
+                }
+            }
+            return $array;
+        }
+        return array();
     }
 
 }

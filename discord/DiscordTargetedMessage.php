@@ -737,8 +737,13 @@ class DiscordTargetedMessage
         $messageBuilder->setContent("Showing target with ID **" . $target->target_creation_id . "**");
 
         $embed = new Embed($this->plan->discord);
-        $embed->setAuthor($this->plan->utilities->getUsername($target->user_id));
+        $user = $this->plan->utilities->getUser($target->user_id);
 
+        if ($user !== null) {
+            $embed->setAuthor($user->id, $user->avatar);
+        } else {
+            $embed->setAuthor($target->user_id);
+        }
         if (!empty($target->target->title)) {
             $embed->setTitle($target->target->title);
         }
@@ -876,4 +881,5 @@ class DiscordTargetedMessage
             }
         }
     }
+
 }

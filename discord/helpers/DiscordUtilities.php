@@ -18,7 +18,7 @@ class DiscordUtilities
         $this->plan = $plan;
     }
 
-    public function getUser(int|string $userID): mixed
+    public function getUser(int|string $userID): ?object
     {
         $users = $this->plan->discord->users->toArray();
         return $users[$userID] ?? null;

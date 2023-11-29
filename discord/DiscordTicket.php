@@ -582,8 +582,13 @@ class DiscordTicket
         $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
         $embed = new Embed($this->plan->discord);
-        $embed->setAuthor($this->plan->utilities->getUsername($ticket->user_id));
+        $user = $this->plan->utilities->getUser($ticket->user_id);
 
+        if ($user !== null) {
+            $embed->setAuthor($user->id, $user->avatar);
+        } else {
+            $embed->setAuthor($ticket->user_id);
+        }
         if (!empty($ticket->ticket->title)) {
             $embed->setTitle($ticket->ticket->title);
         }

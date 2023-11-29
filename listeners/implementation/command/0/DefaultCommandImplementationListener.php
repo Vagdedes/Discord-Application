@@ -74,7 +74,7 @@ class DefaultCommandImplementationListener
                                        Interaction $interaction,
                                        object      $command): void
     {
-        $findUserID = $interaction->data->resolved->users->first()->id;
+        $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $tickets = $plan->ticket->getMultiple(
             $findUserID,
             null,
@@ -236,7 +236,7 @@ class DefaultCommandImplementationListener
                                        Interaction $interaction,
                                        object      $command): void
     {
-        $findUserID = $interaction->data->resolved->users->first()->id;
+        $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $targets = $plan->target->getMultiple(
             $findUserID,
             null,
@@ -296,8 +296,11 @@ class DefaultCommandImplementationListener
                                                Interaction $interaction,
                                                object      $command): void
     {
-        $findUserID = $interaction->data->resolved->users->first()->id;
-        $goals = $plan->counting->getStoredGoals($findUserID);
+        $findUserID = $interaction->data?->resolved?->users?->first()?->id;
+        $goals = $plan->counting->getStoredGoals(
+            $findUserID,
+            DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE
+        );
 
         if (empty($goals)) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -347,6 +350,16 @@ class DefaultCommandImplementationListener
         $plan->notes->send(
             $interaction,
             $arguments["key"]["value"],
+            $interaction->data?->resolved?->users?->first()?->id
+        );
+    }
+
+    public static function get_notes(DiscordPlan $plan,
+                                     Interaction $interaction,
+                                     object      $command): void
+    {
+        $plan->notes->sendAll(
+            $interaction,
             $interaction->data?->resolved?->users?->first()?->id
         );
     }
@@ -413,6 +426,26 @@ class DefaultCommandImplementationListener
             $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
             $embed->addFieldValues("Users Invited", $object->users_invited);
             $messageBuilder->addEmbed($embed);
+
+            $goals = $plan->inviteTracker->getStoredGoals(
+                $interaction->guild_id,
+                $user->id,
+                DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE - 1
+            );
+
+            if (!empty($goals)) {
+                foreach ($goals as $goal) {
+                    $embed = new Embed($plan->discord);
+                    $embed->setTitle($goal->title);
+
+                    if ($goal->description !== null) {
+                        $embed->setDescription($goal->description);
+                    }
+                    $embed->setTimestamp(strtotime($goal->creation_date));
+                    $messageBuilder->addEmbed($embed);
+                }
+            }
+
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 $messageBuilder,

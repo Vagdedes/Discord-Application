@@ -390,6 +390,62 @@ class DiscordNotes
         return null;
     }
 
+    public function sendAll(Interaction $interaction, int|string $userID): void
+    {
+        if ($this->hasCooldown($interaction, null, $userID)) {
+            return;
+        }
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_NOTES,
+            null,
+            array(
+                array("user_id", $userID),
+                array("server_id", $interaction->guild_id),
+                array("deletion_date", null)
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE
+        );
+
+        if (!empty($query)) {
+            $message = MessageBuilder::new();
+            $user = null;
+
+            foreach ($query as $row) {
+                $embed = new Embed($this->plan->discord);
+
+                if ($user === null) {
+                    $user = $this->plan->utilities->getUser($row->user_id);
+
+                    if ($user === null) {
+                        $user = false;
+                    }
+                }
+                if ($user === false) {
+                    $embed->setAuthor($userID);
+                } else {
+                    $embed->setAuthor($user->id, $user->avatar);
+                }
+                $message->addEmbed($embed);
+            }
+            $this->plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $message,
+                true
+            );
+        } else {
+            $this->plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "This user does not have any notes."
+                ), true
+            );
+        }
+    }
+
     public function send(Interaction      $interaction,
                          int|float|string $key, int|string|null $userID = null): void
     {
@@ -402,7 +458,13 @@ class DiscordNotes
         if ($object !== null) {
             $messageBuilder = MessageBuilder::new();
             $embed = new Embed($this->plan->discord);
-            $embed->setAuthor($this->plan->utilities->getUsername($object->user_id));
+            $user = $this->plan->utilities->getUser($object->user_id);
+
+            if ($user !== null) {
+                $embed->setAuthor($user->id, $user->avatar);
+            } else {
+                $embed->setAuthor($object->user_id);
+            }
             $embed->setTitle($object->changes->title);
             $embed->setDescription($object->changes->description);
             $embed->setTimestamp(strtotime($object->changes->creation_date));
@@ -680,8 +742,8 @@ class DiscordNotes
         }
     }
 
-    private function hasCooldown(Interaction      $interaction,
-                                 int|float|string $key, int|string|null $userID): bool
+    private function hasCooldown(Interaction           $interaction,
+                                 int|float|string|null $key, int|string|null $userID): bool
     {
         $cacheKey = array(__METHOD__, $key, $userID);
 

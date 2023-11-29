@@ -171,10 +171,11 @@ class DiscordCounting
         return false;
     }
 
-    public function getStoredGoals(int|string $userID): array
+    public function getStoredGoals(int|string $userID, int $limit = 0): array
     {
         if (!empty($this->countingPlaces)) {
             $array = array();
+            $hasLimit = $limit > 0;
 
             foreach ($this->countingPlaces as $row) {
                 if (!empty($row->goals)) {
@@ -197,6 +198,10 @@ class DiscordCounting
 
                         if (!empty($storage)) {
                             $array[] = $goal;
+
+                            if ($hasLimit && sizeof($array) == $limit) {
+                                return $array;
+                            }
                         }
                     }
                 }
