@@ -18,10 +18,22 @@ class DiscordUtilities
         $this->plan = $plan;
     }
 
+    public function getUser(int|string $userID): mixed
+    {
+        $users = $this->plan->discord->users->toArray();
+        return $users[$userID] ?? null;
+    }
+
     public function getUsername(int|string $userID): string
     {
         $users = $this->plan->discord->users->toArray();
         return $users[$userID]?->username ?? $userID;
+    }
+
+    public function getAvatar(int|string $userID): ?string
+    {
+        $users = $this->plan->discord->users->toArray();
+        return $users[$userID]?->avatar ?? null;
     }
 
     // Separator

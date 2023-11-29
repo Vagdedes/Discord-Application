@@ -14,6 +14,8 @@ class BotDatabaseTable
         BOT_NOTE_SETTINGS = "discord.botNoteSettings",
         BOT_NOTE_PARTICIPANTS = "discord.botNoteParticipants",
         BOT_INVITE_TRACKER = "discord.botInviteTracker",
+        BOT_INVITE_TRACKER_GOALS = "discord.botInviteTrackerGoals",
+        BOT_INVITE_TRACKER_GOAL_STORAGE = "discord.botInviteTrackerGoalStorage",
         BOT_LEVELS = "discord.botLevels",
         BOT_LEVEL_CHANNELS = "discord.botLevelChannels",
         BOT_LEVEL_TIERS = "discord.botLevelTiers",

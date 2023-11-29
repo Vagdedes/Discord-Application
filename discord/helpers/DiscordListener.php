@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
 
@@ -14,7 +15,8 @@ class DiscordListener
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
         IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
-        IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/";
+        IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/",
+        IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/implementation/invite_tracker/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -157,6 +159,21 @@ class DiscordListener
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $message, $object)
+            );
+            $this->plan->bot->processing--;
+        }
+    }
+
+    public function callInviteTrackerImplementation(?string $class, ?string $method,
+                                                    Invite  $invite,
+                                                    mixed   $object): void
+    {
+        if ($class !== null && $method !== null) {
+            $this->plan->bot->processing++;
+            require_once(self::IMPLEMENTATION_INVITE_TRACKER . $this->plan->planID . "/" . $class . '.php');
+            call_user_func_array(
+                array($class, $method),
+                array($this->plan, $invite, $object)
             );
             $this->plan->bot->processing--;
         }

@@ -232,7 +232,6 @@ class DiscordCounting
                     if (sql_insert(
                         BotDatabaseTable::BOT_COUNTING_GOAL_STORAGE,
                         array(
-                            "counting_id" => $row->id,
                             "goal_id" => $goal->id,
                             "server_id" => $message->guild_id,
                             "user_id" => $message->author->id,

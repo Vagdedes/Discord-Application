@@ -1,14 +1,15 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
-class DefaultCommandImplementationListener // Name can be changed
+class DefaultCommandImplementationListener
 {
 
     public static function close_ticket(DiscordPlan $plan,
                                         Interaction $interaction,
-                                        object      $command): void // Name can be changed
+                                        object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -71,7 +72,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function get_tickets(DiscordPlan $plan,
                                        Interaction $interaction,
-                                       object      $command): void // Name can be changed
+                                       object      $command): void
     {
         $findUserID = $interaction->data->resolved->users->first()->id;
         $tickets = $plan->ticket->getMultiple(
@@ -98,7 +99,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function get_ticket(DiscordPlan $plan,
                                       Interaction $interaction,
-                                      object      $command): void // Name can be changed
+                                      object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $ticketID = $arguments["ticket-id"]["value"] ?? null;
@@ -131,7 +132,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function list_commands(DiscordPlan $plan,
                                          Interaction $interaction,
-                                         object      $command): void // Name can be changed
+                                         object      $command): void
     {
         $content = "";
 
@@ -167,7 +168,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function close_target(DiscordPlan $plan,
                                         Interaction $interaction,
-                                        object      $command): void // Name can be changed
+                                        object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -233,7 +234,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function get_targets(DiscordPlan $plan,
                                        Interaction $interaction,
-                                       object      $command): void // Name can be changed
+                                       object      $command): void
     {
         $findUserID = $interaction->data->resolved->users->first()->id;
         $targets = $plan->target->getMultiple(
@@ -260,7 +261,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function get_target(DiscordPlan $plan,
                                       Interaction $interaction,
-                                      object      $command): void // Name can be changed
+                                      object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $targetID = $arguments["target-id"]["value"] ?? null;
@@ -293,7 +294,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function list_counting_goals(DiscordPlan $plan,
                                                Interaction $interaction,
-                                               object      $command): void // Name can be changed
+                                               object      $command): void
     {
         $findUserID = $interaction->data->resolved->users->first()->id;
         $goals = $plan->counting->getStoredGoals($findUserID);
@@ -315,7 +316,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function create_note(DiscordPlan $plan,
                                        Interaction $interaction,
-                                       object      $command): void // Name can be changed
+                                       object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->create(
@@ -327,7 +328,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function edit_note(DiscordPlan $plan,
                                      Interaction $interaction,
-                                     object      $command): void // Name can be changed
+                                     object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->edit(
@@ -340,7 +341,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function get_note(DiscordPlan $plan,
                                     Interaction $interaction,
-                                    object      $command): void // Name can be changed
+                                    object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->send(
@@ -352,7 +353,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function delete_note(DiscordPlan $plan,
                                        Interaction $interaction,
-                                       object      $command): void // Name can be changed
+                                       object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->delete(
@@ -365,7 +366,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function modify_note_setting(DiscordPlan $plan,
                                                Interaction $interaction,
-                                               object      $command): void // Name can be changed
+                                               object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->changeSetting(
@@ -379,7 +380,7 @@ class DefaultCommandImplementationListener // Name can be changed
 
     public static function modify_note_participant(DiscordPlan $plan,
                                                    Interaction $interaction,
-                                                   object      $command): void // Name can be changed
+                                                   object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->notes->modifyParticipant(
@@ -392,5 +393,79 @@ class DefaultCommandImplementationListener // Name can be changed
             $arguments["delete-permission"]["value"] ?? false,
             $arguments["manage-permission"]["value"] ?? false
         );
+    }
+
+    public static function invite_stats(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void
+    {
+        $user = $interaction->data?->resolved?->users?->first();
+
+        if ($user !== null) {
+            $object = $plan->inviteTracker->getUserStats(
+                $interaction->guild_id,
+                $user->id
+            );
+            $messageBuilder = MessageBuilder::new();
+            $embed = new Embed($plan->discord);
+            $embed->setAuthor($user->username, $user->avatar);
+            $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
+            $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
+            $embed->addFieldValues("Users Invited", $object->users_invited);
+            $messageBuilder->addEmbed($embed);
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $messageBuilder,
+                true
+            );
+        } else {
+            $array = $plan->inviteTracker->getServerStats(
+                $interaction->guild_id,
+            );
+            $size = sizeof($array);
+
+            if ($size > 0) {
+                $messageBuilder = MessageBuilder::new();
+                $counter = 0;
+
+                foreach ($array as $object) {
+                    $user = $plan->utilities->getUser($object->user_id);
+
+                    if ($user !== null) {
+                        $counter++;
+                        $embed = new Embed($plan->discord);
+                        $embed->setAuthor($counter . ". " . $user->username, $user->avatar);
+                        $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
+                        $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
+                        $embed->addFieldValues("Users Invited", $object->users_invited);
+                        $messageBuilder->addEmbed($embed);
+
+                        if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                            break;
+                        }
+                    }
+                }
+
+                if ($counter === 0) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("No relevant invite stats found."),
+                        true
+                    );
+                } else {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        $messageBuilder,
+                        true
+                    );
+                }
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("No relevant invite stats found."),
+                    true
+                );
+            }
+        }
     }
 }
