@@ -18,7 +18,7 @@
  * Reminder Messages
  * -
  * Counting Channels
- * Persistent Channels
+ * Statistics Channels
  * Temporary Channels
  * -
  * Reaction Polls

@@ -33,7 +33,7 @@ class DiscordPlan
     public DiscordSocialAlerts $socialAlerts;
     public DiscordMessageReminders $messageReminders;
     public DiscordQuestionnaire $questionnaire;
-    public DiscordControlledChannels $controlledChannels;
+    public DiscordStatisticChannels $controlledChannels;
     public DiscordAI $ai;
     public DiscordStatus $status;
     public DiscordLocations $locations;
@@ -85,7 +85,7 @@ class DiscordPlan
         $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->messageReminders = new DiscordMessageReminders($this);
         $this->questionnaire = new DiscordQuestionnaire($this);
-        $this->controlledChannels = new DiscordControlledChannels($this);
+        $this->controlledChannels = new DiscordStatisticChannels($this);
         $this->ai = new DiscordAI($this);
         $this->status = new DiscordStatus($this);
         $this->locations = new DiscordLocations($this);

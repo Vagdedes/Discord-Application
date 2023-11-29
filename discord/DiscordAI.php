@@ -54,8 +54,8 @@ class DiscordAI
                                    Member  $member,
                                    string  $messageContent): bool
     {
-        $this->plan->bot->processing++;
         global $logger;
+        $this->plan->bot->processing++;
         $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $member->id);
         $object = $this->plan->instructions->getObject(
             $message->guild,
