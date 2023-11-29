@@ -1,6 +1,6 @@
 <?php
 
-function has_memory_limit($key, $countLimit, $futureTime = null): bool
+function has_memory_limit(mixed $key, string|int $countLimit, string|int|null $futureTime = null): bool
 {
     $key = manipulate_memory_key($key);
 
@@ -26,7 +26,8 @@ function has_memory_limit($key, $countLimit, $futureTime = null): bool
     return false;
 }
 
-function has_memory_cooldown($key, $futureTime = null, $set = true, $force = false): bool
+function has_memory_cooldown(mixed $key, string|int|null $futureTime = null,
+                             bool  $set = true, bool $force = false): bool
 {
     $key = manipulate_memory_key($key);
 
@@ -51,7 +52,7 @@ function has_memory_cooldown($key, $futureTime = null, $set = true, $force = fal
 
 // Separator
 
-function get_key_value_pair($key, $temporaryRedundancyValue = null)
+function get_key_value_pair(mixed $key, mixed $temporaryRedundancyValue = null)
 { // Must call setKeyValuePair() after
     $key = manipulate_memory_key($key);
 
@@ -70,7 +71,7 @@ function get_key_value_pair($key, $temporaryRedundancyValue = null)
     return null;
 }
 
-function set_key_value_pair($key, $value = null, $futureTime = null): bool
+function set_key_value_pair(mixed $key, mixed $value = null, string|int|null $futureTime = null): bool
 { // Must optionally call setKeyValuePair() before
     $key = manipulate_memory_key($key);
 

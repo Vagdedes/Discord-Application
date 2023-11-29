@@ -10,7 +10,14 @@ $sql_cache_tag = null;
 $sql_max_cache_time = "30 minutes";
 
 // Connection
-function sql_sql_credentials($hostname, $username, $password = null, $database = null, $port = null, $socket = null, $exit = false, $duration = null, $showErrors = false): void
+function sql_sql_credentials(string          $hostname,
+                             string          $username,
+                             ?string         $password = null,
+                             ?string         $database = null,
+                             int|string      $port = null, $socket = null,
+                             bool            $exit = false,
+                             string|int|null $duration = null,
+                             bool            $showErrors = false): void
 {
     global $sql_credentials;
     $sql_credentials = array(
@@ -114,7 +121,7 @@ function close_sql_connection(): bool
 
 // Utilities
 
-function sql_build_where($where, $buildKey = false): string|array
+function sql_build_where(array $where, bool $buildKey = false): string|array
 {
     if ($buildKey) {
         $queryKey = array();
@@ -195,7 +202,7 @@ function sql_build_where($where, $buildKey = false): string|array
     return $buildKey ? array($query, $queryKey) : $query;
 }
 
-function sql_build_order($order)
+function sql_build_order(string|array|null $order): ?string
 {
     if (is_array($order)) {
         $orderType = array_shift($order);
@@ -207,7 +214,7 @@ function sql_build_order($order)
 
 // Cache
 
-function get_sql_cache_key($key, $value): string
+function get_sql_cache_key(mixed $key, mixed $value): string
 {
     return substr(
         serialize(array($key => $value)),
@@ -216,7 +223,7 @@ function get_sql_cache_key($key, $value): string
     );
 }
 
-function set_sql_cache($time = null, $tag = null): void
+function set_sql_cache($time = null, mixed $tag = null): void
 {
     global $sql_cache_time, $sql_cache_tag, $sql_max_cache_time;
     $sql_cache_time = $time === null ? $sql_max_cache_time : (is_array($time) ? implode(" ", $time) : $time);
@@ -225,7 +232,7 @@ function set_sql_cache($time = null, $tag = null): void
 
 // Encoding
 
-function properly_sql_encode($string, $partial = false, $extra = false): ?string
+function properly_sql_encode(string $string, bool $partial = false, bool $extra = false): ?string
 {
     if ($string === null) {
         return null;
@@ -244,19 +251,19 @@ function properly_sql_encode($string, $partial = false, $extra = false): ?string
     }
 }
 
-function extra_sql_encode($string): string
+function extra_sql_encode(string $string): string
 {
     return str_replace("_", "\_", str_replace("%", "\%", $string));
 }
 
-function reverse_extra_sql_encode($string): string
+function reverse_extra_sql_encode(string $string): string
 {
     return str_replace("\_", "_", str_replace("\%", "%", $string));
 }
 
 // Get
 
-function get_sql_query($table, $select = null, $where = null, $order = null, $limit = 0): array
+function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
 {
     global $sql_cache_time;
     $hasWhere = $where !== null;
@@ -320,7 +327,7 @@ function get_sql_query($table, $select = null, $where = null, $order = null, $li
     return $array;
 }
 
-function sql_query_row($query): ?object
+function sql_query_row(?object $query): ?object
 {
     return isset($query->num_rows) && $query->num_rows > 0 ? $query->fetch_assoc() : null;
 }
@@ -328,7 +335,7 @@ function sql_query_row($query): ?object
 /**
  * @throws Exception
  */
-function sql_query($command, $debug = false)
+function sql_query(string $command, bool $debug = false)
 {
     $sqlConnection = create_sql_connection();
     global $is_sql_usable;
@@ -379,10 +386,10 @@ function sql_query($command, $debug = false)
 
 class CustomQuery
 {
-    private $fetch, $fetcher, $fetcherLimit;
-    public $num_rows;
+    private array $fetch;
+    public int $num_rows, $fetcher, $fetcherLimit;
 
-    function __construct($fetch, $count)
+    function __construct($fetch, int $count)
     {
         $this->fetch = $fetch;
         $this->num_rows = $count;
@@ -401,7 +408,7 @@ class CustomQuery
     }
 }
 
-function sql_local_query($command)
+function sql_local_query($command): bool|CustomQuery|null
 {
     global $sql_credentials;
 
@@ -439,7 +446,7 @@ function sql_local_query($command)
 
 // Insert
 
-function sql_insert($table, $pairs)
+function sql_insert(string $table, array $pairs)
 {
     $columnsArray = "";
     $valuesArray = "";
@@ -458,7 +465,7 @@ function sql_insert($table, $pairs)
 
 // Set
 
-function set_sql_query($table, $what, $where = null, $order = null, $limit = 0): bool
+function set_sql_query(string $table, array $what, array $where = null, string|array|null $order = null, int $limit = 0): bool
 {
     $query = "UPDATE " . $table . " SET ";
     $counter = 0;
@@ -508,9 +515,9 @@ function set_sql_query($table, $what, $where = null, $order = null, $limit = 0):
 
 // Delete
 
-function delete_sql_query($table, $where, $order = null, $limit = 0): bool
+function delete_sql_query(string $table, array $where, string|array|null $order = null, int $limit = 0): bool
 {
-    $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);;
+    $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);
 
     if ($order !== null) {
         $query .= " ORDER BY " . sql_build_order($order);
@@ -543,7 +550,7 @@ function delete_sql_query($table, $where, $order = null, $limit = 0): bool
 
 // Et ce tera
 
-function get_sql_overhead_rows($table, $minimum = 1, $column = "id"): array
+function get_sql_overhead_rows(string $table, int $minimum = 1, string $column = "id"): array
 {
     $query = sql_query("SELECT " . $column . " FROM " . $table . " ORDER BY " . $column . " ASC;");
     $array = array();
@@ -575,7 +582,7 @@ function get_sql_overhead_rows($table, $minimum = 1, $column = "id"): array
     return $array;
 }
 
-function get_sql_database_tables($database): array
+function get_sql_database_tables(string $database): array
 {
     $array = array();
     $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . $database . "';");

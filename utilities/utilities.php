@@ -15,9 +15,14 @@ $google_recaptcha_secret_key_directory = "/var/www/.structure/private/google_rec
 
 // Constants
 
-function get_server_identifier($long = false): int
+function get_server_identifier(bool $long = false): int
 {
     return string_to_integer(getHostName(), $long);
+}
+
+function get_max_script_time(): bool|string
+{
+    return ini_get('max_execution_time');
 }
 
 // File
@@ -36,7 +41,7 @@ function get_final_directory(): string
 
 // Google Docs
 
-function get_raw_google_doc($url, $returnHTML = false, $timeoutSeconds = 30): ?string
+function get_raw_google_doc(string $url, bool $returnHTML = false, int $timeoutSeconds = 30): ?string
 {
     $html = timed_file_get_contents($url, $timeoutSeconds);
 
@@ -59,7 +64,11 @@ function get_raw_google_doc($url, $returnHTML = false, $timeoutSeconds = 30): ?s
 
 // Connections
 
-function post_file_get_contents($url, $parameters = null, $clearPreviousParameters = null, $user_agent = null, $timeoutSeconds = 0): bool|string
+function post_file_get_contents(string                     $url,
+                                array                      $parameters = null,
+                                bool                       $clearPreviousParameters = false,
+                                int|float|string|bool|null $user_agent = null,
+                                int                        $timeoutSeconds = 0): bool|string
 {
     global $_POST;
 
@@ -86,7 +95,7 @@ function post_file_get_contents($url, $parameters = null, $clearPreviousParamete
     return curl_exec($ch);
 }
 
-function run_script_via_tmux($script, $parameters, $tmux = "async"): void
+function run_script_via_tmux(string $script, array $parameters, string $tmux = "async"): void
 {
     shell_exec("tmux new -s " . $tmux);
     shell_exec('tmux send -t ' . $tmux
@@ -94,7 +103,7 @@ function run_script_via_tmux($script, $parameters, $tmux = "async"): void
         . implode(" ", $parameters) . '" ENTER');
 }
 
-function get_json_object($url, $postParameters = null, $timeoutSeconds = 0)
+function get_json_object(string $url, array $postParameters = null, int $timeoutSeconds = 0)
 {
     if ($postParameters !== null) {
         $opts = array('http' =>
@@ -112,12 +121,12 @@ function get_json_object($url, $postParameters = null, $timeoutSeconds = 0)
     return $contents !== false ? json_decode($contents) : null;
 }
 
-function create_and_close_connection($url): bool|string
+function create_and_close_connection(string $url): bool|string
 {
     return timed_file_get_contents($url, 1);
 }
 
-function timed_file_get_contents($url, $timeoutSeconds = 0): bool|string
+function timed_file_get_contents(string $url, int $timeoutSeconds = 0): bool|string
 {
     if ($timeoutSeconds > 0) {
         return @file_get_contents($url, 0, stream_context_create(["http" => ["timeout" => $timeoutSeconds]]));
@@ -126,7 +135,7 @@ function timed_file_get_contents($url, $timeoutSeconds = 0): bool|string
     }
 }
 
-function create_and_close_curl_connection($url, $properties = null): bool|string|null
+function create_and_close_curl_connection(string $url, array $properties = null): bool|string|null
 {
     return shell_exec(
         "curl"
@@ -135,7 +144,8 @@ function create_and_close_curl_connection($url, $properties = null): bool|string
     );
 }
 
-function get_curl($url, $type, $headers, $arguments, $timeoutSeconds = 25) // 5 because 30 is the max script time usually
+function get_curl(string $url, string $type, array $headers, mixed $arguments,
+                  int    $timeoutSeconds = 25): mixed // 5 because 30 is the max script time usually
 {
     $ch = curl_init();
 
@@ -158,7 +168,7 @@ function get_curl($url, $type, $headers, $arguments, $timeoutSeconds = 25) // 5 
     return $result;
 }
 
-function send_file_download($file, $exit = true): void
+function send_file_download(mixed $file, bool $exit = true): void
 {
     header('Content-Description: File Transfer');
     header('Content-Type: application/octet-stream');
@@ -177,7 +187,7 @@ function send_file_download($file, $exit = true): void
     }
 }
 
-function copy_and_send_file_download($file, $directory, $exit = true)
+function copy_and_send_file_download(mixed $file, string $directory, bool $exit = true)
 {
     if (json_decode($file)) {
         $fileCopy = $directory . "data.json";
@@ -206,7 +216,7 @@ function copy_and_send_file_download($file, $directory, $exit = true)
     }
 }
 
-function can_reach_server($ip): bool
+function can_reach_server(string $ip): bool
 {
     exec("/bin/ping -c2 -w2 $ip", $outcome, $status);
     return $status == 0;
@@ -261,7 +271,7 @@ function get_raw_client_ip_address(): ?string
     return explode(",", $ipAddress, 2)[0];
 }
 
-function redirect_to_url($url, $argumentBlacklist = null)
+function redirect_to_url(string $url, ?iterable $argumentBlacklist = null): void
 {
     if (is_iterable($argumentBlacklist)) {
         global $_GET;
@@ -274,7 +284,7 @@ function redirect_to_url($url, $argumentBlacklist = null)
         }
 
         if (!empty($arguments)) {
-            header("Location: $url" . (strpos($url, "/?") === false ? "?" : "&") . implode("&", $arguments));
+            header("Location: $url" . (!str_contains($url, "/?") ? "?" : "&") . implode("&", $arguments));
             exit();
         } else {
             header("Location: $url");
@@ -286,7 +296,7 @@ function redirect_to_url($url, $argumentBlacklist = null)
     }
 }
 
-function getSSHConnection($ip, $user, $password)
+function getSSHConnection(string $ip, string $user, string $password)
 {
     try {
         set_include_path('/usr/share/php/phpseclib');
@@ -299,7 +309,7 @@ function getSSHConnection($ip, $user, $password)
     }
 }
 
-function getSSHReply($ip, $user, $password, $command)
+function getSSHReply(string $ip, string $user, string $password, string $command)
 {
     try {
         $ssh = getSSHConnection($ip, $user, $password);
@@ -312,7 +322,7 @@ function getSSHReply($ip, $user, $password, $command)
     return null;
 }
 
-function getSSHReplies($ip, $user, $password, $commands): ?array
+function getSSHReplies(string $ip, string $user, string $password, array $commands): ?array
 {
     try {
         $ssh = getSSHConnection($ip, $user, $password);
@@ -345,7 +355,7 @@ function get_user_agent(): string
     return $_SERVER['HTTP_USER_AGENT'] ?? "";
 }
 
-function get_domain($subdomains = true): string
+function get_domain(bool $subdomains = true): string
 {
     if ($subdomains) {
         $domain = $_SERVER['SERVER_NAME'] ?? "";
@@ -373,7 +383,7 @@ function get_domain($subdomains = true): string
 
 // Validators
 
-function is_valid_text_time($string): bool
+function is_valid_text_time(string $string): bool
 {
     $string = explode(" ", $string);
 
@@ -400,7 +410,7 @@ function is_valid_text_time($string): bool
                              "year",
                              "years"
                          ) as $unit) {
-                    if (strtolower($string) === $unit) {
+                    if (strtolower($string[1]) === $unit) {
                         return true;
                     }
                 }
@@ -410,28 +420,28 @@ function is_valid_text_time($string): bool
     return false;
 }
 
-function is_ip_address($address): bool
+function is_ip_address(?string $address): bool
 {
     return filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) != false
         || filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) != false;
 }
 
-function is_port($port): bool
+function is_port(int|string|null $port): bool
 {
     return is_numeric($port) && $port >= 0 && $port <= 65535;
 }
 
-function is_email($email): bool
+function is_email(?string $email): bool
 {
     return filter_var($email, FILTER_VALIDATE_EMAIL) != false;
 }
 
-function is_date($date): bool
+function is_date(?string $date): bool
 {
     return DateTime::createFromFormat('Y-m-d H:i:s', $date) !== false;
 }
 
-function is_phone_number($number): bool
+function is_phone_number(?string $number): bool
 {
     if (isset($number[0])
         && $number[0] !== "-"
@@ -442,12 +452,12 @@ function is_phone_number($number): bool
     return false;
 }
 
-function is_url($url): bool
+function is_url(?string $url): bool
 {
     return filter_var($url, FILTER_VALIDATE_URL) != false;
 }
 
-function prepare_phone_number($number): string
+function prepare_phone_number(string $number): string
 {
     return $number[0] === "+" ? $number : ("+" . $number);
 }
@@ -480,31 +490,31 @@ function is_google_captcha_valid(): bool
     return false;
 }
 
-function is_uuid($string): bool
+function is_uuid(?string $string): bool
 {
     return is_string($string)
         && preg_match('/^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/', $string) === 1;
 }
 
-function is_alpha_numeric($s): bool
+function is_alpha_numeric(?string $s): bool
 {
     return $s != null && strlen($s) > 0 && ctype_alnum($s);
 }
 
-function is_alpha($s): bool
+function is_alpha(?string $s): bool
 {
     return $s != null && strlen($s) > 0 && ctype_alpha($s);
 }
 
-function is_base64_image($string): bool
+function is_base64_image(?string $string): bool
 {
     $pointer = "data:image/";
-    return strlen($string) > strlen($pointer) && strpos($string, $pointer) !== false;
+    return strlen($string) > strlen($pointer) && str_contains($string, $pointer);
 }
 
 // Strings
 
-function unstuck_words_from_capital_letters($word): string
+function unstuck_words_from_capital_letters(string $word): string
 {
     $rebuild = strtoupper($word[0]);
     $word = substr($word, 1);
@@ -522,7 +532,7 @@ function unstuck_words_from_capital_letters($word): string
     return $rebuild;
 }
 
-function get_keys_from_file($file, $amount = 1): ?array
+function get_keys_from_file(string $file, int $amount = 1): ?array
 {
     $contents = @file_get_contents($file);
 
@@ -534,17 +544,8 @@ function get_keys_from_file($file, $amount = 1): ?array
     }
 }
 
-function multi_explode($delimiters, $string): array
+function strpos_array(string $haystack, array $needle): bool|int
 {
-    $ready = str_replace($delimiters, $delimiters[0], $string);
-    return explode($delimiters[0], $ready);
-}
-
-function strpos_array($haystack, $needle): bool|int
-{
-    if (!is_array($needle)) {
-        $needle = array($needle);
-    }
     foreach ($needle as $what) {
         if (($pos = strpos($haystack, $what)) !== false) {
             return $pos;
@@ -553,7 +554,7 @@ function strpos_array($haystack, $needle): bool|int
     return false;
 }
 
-function get_domain_from_url($string, $removeSubdomains = false): array|string
+function get_domain_from_url(string $string, bool $removeSubdomains = false): array|string
 {
     $string = explode("/",
         str_replace("http://", "", str_replace("https://", "", $string)),
@@ -570,24 +571,24 @@ function get_domain_from_url($string, $removeSubdomains = false): array|string
     return $string;
 }
 
-function make_alpha_numeric($string): array|string|null
+function make_alpha_numeric(string $string): array|string|null
 {
     return preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(' ', '', $string));
 }
 
-function starts_with($haystack, $needle): bool
+function starts_with(string $haystack, string $needle): bool
 {
     $length = strlen($needle);
     return $length == 0 || (substr($haystack, 0, $length) === $needle);
 }
 
-function ends_with($haystack, $needle): bool
+function ends_with(string $haystack, string $needle): bool
 {
     $length = strlen($needle);
     return $length == 0 || substr($haystack, -$length) === $needle;
 }
 
-function random_string($length = 10, $lower = true, $capital = true, $numbers = true): ?string
+function random_string(int $length = 10, bool $lower = true, bool $capital = true, bool $numbers = true): ?string
 {
     $characters = "";
 
@@ -612,7 +613,7 @@ function random_string($length = 10, $lower = true, $capital = true, $numbers = 
     return null;
 }
 
-function cut_string_at_first_number($string): string
+function cut_string_at_first_number(string $string): string
 {
     $rebuild = "";
 
@@ -636,7 +637,7 @@ function cut_string_at_first_number($string): string
 
 // Numbers
 
-function overflow_integer($v): int
+function overflow_integer(int $v): int
 {
     global $max_32bit_Integer, $unsigned_32bit_full_Integer;
     $v = $v % $unsigned_32bit_full_Integer;
@@ -654,7 +655,7 @@ function overflow_integer($v): int
     }
 }
 
-function overflow_long($v): int
+function overflow_long(int $v): int
 {
     global $max_59bit_Integer, $unsigned_59bit_full_Integer;
     $v = $v % $unsigned_59bit_full_Integer;
@@ -672,12 +673,12 @@ function overflow_long($v): int
     }
 }
 
-function boolean_to_integer($boolean): int
+function boolean_to_integer(bool $boolean): int
 {
     return $boolean ? 1231 : 1237;
 }
 
-function string_to_integer($string, $long = false): int
+function string_to_integer(?string $string, bool $long = false): int
 {
     if ($string === null) {
         return 0;
@@ -692,7 +693,7 @@ function string_to_integer($string, $long = false): int
     return $result;
 }
 
-function random_number($length = 9): int|string
+function random_number(int $length = 9): int|string
 {
     $characters = '0123456789';
     $charactersLength = strlen($characters);
@@ -703,7 +704,7 @@ function random_number($length = 9): int|string
     return $randomString;
 }
 
-function add_ordinal_number($num): string
+function add_ordinal_number(int $num): string
 {
     if (!in_array(($num % 100), array(11, 12, 13))) {
         switch ($num % 10) {
@@ -720,7 +721,7 @@ function add_ordinal_number($num): string
     return $num . 'th';
 }
 
-function cut_decimal($value, $cut): float
+function cut_decimal(float $value, int $cut): float
 {
     $cut = (int)pow(10, $cut);
     $value *= $cut;
@@ -729,7 +730,7 @@ function cut_decimal($value, $cut): float
 
 // Debug
 
-function manage_errors($display = null, $log = null): void // NULL leaves it unaffected in relation to its current
+function manage_errors(mixed $display = null, mixed $log = null): void // NULL leaves it unaffected in relation to its current
 {
     if ($display !== null) {
         ini_set('display_errors', $display ? 1 : 0);
@@ -747,47 +748,47 @@ function remove_dates($string): array|string|null
     return preg_replace('/(\d{4}[\.\/\-][01]\d[\.\/\-][0-3]\d)/', '', $string);
 }
 
-function manipulate_date($date, $time): string
+function manipulate_date(string $date, int|string $time): string
 {
     return date('Y-m-d H:i:s', strtotime($date . " " . $time));
 }
 
-function get_future_date($time): string
+function get_future_date(int|string $time): string
 {
     return date('Y-m-d H:i:s', strtotime("+" . $time));
 }
 
-function get_past_date($time): string
+function get_past_date(int|string $time): string
 {
     return date('Y-m-d H:i:s', strtotime("-" . $time));
 }
 
-function time_to_date($time): string
+function time_to_date(int $time): string
 {
     return date('Y-m-d H:i:s', $time);
 }
 
-function get_date_days_difference($date): float
+function get_date_days_difference(string $date): float
 {
     return round(get_date_seconds_difference($date) / (60 * 60 * 24));
 }
 
-function get_date_hours_difference($date): float
+function get_date_hours_difference(string $date): float
 {
     return round(get_date_seconds_difference($date) / (60 * 60));
 }
 
-function get_date_minutes_difference($date): float
+function get_date_minutes_difference(string $date): float
 {
     return round(get_date_seconds_difference($date) / 60);
 }
 
-function get_date_seconds_difference($date): float|int
+function get_date_seconds_difference(string $date): float|int
 {
     return abs(time() - strtotime($date));
 }
 
-function get_full_date($date): string
+function get_full_date(string $date): string
 {
     if ($date == null) {
         return "None";
@@ -879,7 +880,7 @@ function get_current_date(): string
 
 // Lists
 
-function find_object_from_key_match($iterable, $key, $match, $associative = false)
+function find_object_from_key_match(iterable $iterable, string $key, mixed $match, bool $associative = false)
 {
     if (is_iterable($iterable)) {
         foreach ($iterable as $object) {
@@ -899,7 +900,7 @@ function find_object_from_key_match($iterable, $key, $match, $associative = fals
 
 // Knowledge
 
-function code_to_country($code): string
+function code_to_country(string $code): string
 {
     $code = strtoupper($code);
     $countryList = array(
@@ -1155,7 +1156,7 @@ function code_to_country($code): string
 
 // Images
 
-function url_to_base64_image($url, $timeoutSeconds = 0): ?string
+function url_to_base64_image(string $url, int $timeoutSeconds = 0): ?string
 {
     $explode = explode(".", $url);
     $size = sizeof($explode);
@@ -1167,7 +1168,7 @@ function url_to_base64_image($url, $timeoutSeconds = 0): ?string
     return $contents === false ? null : "data:image/" . $explode[$size - 1] . ";base64," . base64_encode($contents);
 }
 
-function resize_image_by_percentage($base64Image, $qualityRatio): string
+function resize_image_by_percentage(string $base64Image, int|float $qualityRatio): string
 {
     $base64Image = explode(",", $base64Image, 2);
     $data = base64_decode($base64Image[sizeof($base64Image) - 1]);
@@ -1202,13 +1203,13 @@ function resize_image($image, int $newWidth, int $newHeight)
 
 // HTML
 
-function get_title($url, $timeoutSeconds = 0): ?string
+function get_title(string $url, int $timeoutSeconds = 0): ?string
 {
     $page = timed_file_get_contents($url, $timeoutSeconds);
     return preg_match('/<title[^>]*>(.*?)<\/title>/ims', $page, $match) ? $match[1] : null;
 }
 
-function get_text_list_from_iterable($iterable, $count = 0, $simplify = false): ?string
+function get_text_list_from_iterable(iterable $iterable, int $count = 0, bool $simplify = false): ?string
 {
     if (is_object($iterable)) {
         $iterable = get_object_vars($iterable);
@@ -1305,9 +1306,9 @@ function get_text_list_from_iterable($iterable, $count = 0, $simplify = false): 
 
 // Objects & Arrays
 
-function get_object_depth_key($object, $keys): array
+function get_object_depth_key(object $object, string $keys, string $separator = "."): array
 {
-    $keys = explode(".", $keys);
+    $keys = explode($separator, $keys);
 
     if (sizeof($keys) === 1) {
         $keys = $keys[0];
@@ -1321,7 +1322,7 @@ function get_object_depth_key($object, $keys): array
         $key = array_shift($keys);
 
         if ($key !== null && isset($object->{$key})) {
-            return get_object_depth_key($object->{$key}, implode(".", $keys));
+            return get_object_depth_key($object->{$key}, implode($separator, $keys));
         } else {
             return array(false, null);
         }

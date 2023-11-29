@@ -26,7 +26,7 @@ class DiscordRunnables
         }
     }
 
-    public function addTask($object, string $name, ?array $arguments = null, ?int $milliseconds = null): void
+    public function addTask(mixed $object, string $name, ?array $arguments = null, ?int $milliseconds = null): void
     {
         $task = array(
             $object === null ? $name : array($object, $name),
