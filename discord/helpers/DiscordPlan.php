@@ -86,13 +86,13 @@ class DiscordPlan
         $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->reminderMessages = new DiscordReminderMessages($this);
         $this->userQuestionnaire = new DiscordUserQuestionnaire($this);
-        $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->aiMessages = new DiscordAIMessages($this);
         $this->statusMessages = new DiscordStatusMessages($this);
         $this->userTargets = new DiscordUserTargets($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->userNotes = new DiscordUserNotes($this);
         $this->inviteTracker = new DiscordInviteTracker($this);
+        $this->statisticsChannels = new DiscordStatisticsChannels($this);
     }
 
 }

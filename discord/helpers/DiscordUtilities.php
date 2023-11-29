@@ -38,32 +38,58 @@ class DiscordUtilities
 
     // Separator
 
-    public function createChannel(Guild  $guild,
-                                  int    $type, int|string $parent,
-                                  string $name, string $topic,
-                                  array  $rolePermissions = null, array $memberPermissions = null): \React\Promise\ExtendedPromiseInterface
+    public function getGuild(int|string $serverID): ?Guild
     {
+        return $this->plan->discord->guilds->toArray()[$serverID] ?? null;
+    }
+
+    // Separator
+
+    public function createChannel(Guild|int|string $guild,
+                                  int              $type, int|string|null $parent,
+                                  int|string|float $name, int|string|float|null $topic,
+                                  array            $rolePermissions = null,
+                                  array            $memberPermissions = null): bool|\React\Promise\ExtendedPromiseInterface
+    {
+        if (!($guild instanceof Guild)) {
+            $guild = $this->getGuild($guild);
+
+            if ($guild === null) {
+                return false;
+            }
+        }
         $permissions = array();
 
         if (!empty($rolePermissions)) {
             foreach ($rolePermissions as $permission) {
+                if (!array_key_exists("id", $permission)) {
+                    $permission["id"] = $guild->id;
+                }
+                $permission["type"] = "role";
                 $permissions[] = $permission;
             }
         }
         if (!empty($memberPermissions)) {
             foreach ($memberPermissions as $permission) {
+                $permission["type"] = "member";
                 $permissions[] = $permission;
             }
         }
+        $parameters = array(
+            "name" => $name,
+            "type" => $type,
+            "permission_overwrites" => $permissions
+        );
+
+        if ($parent !== null) {
+            $parameters["parent_id"] = $parent;
+        }
+        if ($topic !== null) {
+            $parameters["topic"] = $topic;
+        }
         return $guild->channels->save(
             $guild->channels->create(
-                array(
-                    "name" => $name,
-                    "type" => $type,
-                    "parent_id" => $parent,
-                    "topic" => $topic,
-                    "permission_overwrites" => $permissions
-                )
+                $parameters
             )
         );
     }

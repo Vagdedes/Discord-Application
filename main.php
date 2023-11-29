@@ -98,7 +98,6 @@ use Discord\WebSockets\Intents;
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
 //todo extend moderation to have logs
-//todo discord level
 
 $discord = new Discord([
     'token' => $token[0],
@@ -242,16 +241,24 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-    $discord->on(Event::CHANNEL_CREATE, function (Channel $channel, Discord $discord) use ($logger) {
+    $discord->on(Event::CHANNEL_CREATE, function (Channel $channel, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+        }
         $logger->logInfo($channel->parent_id, Event::CHANNEL_CREATE, $channel->getRawAttributes());
     });
 
-    $discord->on(Event::CHANNEL_UPDATE, function (Channel $channel, Discord $discord, ?Channel $oldChannel) use ($logger) {
+    $discord->on(Event::CHANNEL_UPDATE, function (Channel $channel, Discord $discord, ?Channel $oldChannel) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+        }
         $logger->logInfo(null, Event::CHANNEL_UPDATE, $channel->getRawAttributes(), $oldChannel?->getRawAttributes());
     });
 
     $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+
             if ($plan->userTickets->ignoreDeletion === 0) {
                 $plan->userTickets->closeByChannel($channel);
             } else {
@@ -272,7 +279,10 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-    $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger) {
+    $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+        }
         $logger->logInfo(null, Event::THREAD_CREATE, $thread);
     });
 
@@ -283,11 +293,17 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::THREAD_DELETE, function (object $thread, Discord $discord) use ($logger, $discordBot) {
         if ($thread instanceof Thread) {
             foreach ($discordBot->plans as $plan) {
+                $plan->statisticsChannels->refresh();
+
                 if ($plan->userTargets->ignoreThreadDeletion === 0) {
                     $plan->userTargets->closeByChannelOrThread($thread->parent);
                 } else {
                     $plan->userTargets->ignoreThreadDeletion--;
                 }
+            }
+        } else {
+            foreach ($discordBot->plans as $plan) {
+                $plan->statisticsChannels->refresh();
             }
         }
         $logger->logInfo(null, Event::THREAD_DELETE, $thread);
@@ -353,6 +369,7 @@ $discord->on('ready', function (Discord $discord) {
         if ($member instanceof Member) {
             foreach ($discordBot->plans as $plan) {
                 $plan->statusMessages->goodbye($member->guild_id, $member->id);
+                $plan->statisticsChannels->refresh();
             }
             $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
         } else {
@@ -363,13 +380,17 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
             $plan->statusMessages->welcome($member->guild_id, $member->id);
+            $plan->statisticsChannels->refresh();
         }
         $logger->logInfo($member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
     });
 
 // Separator
 
-    $discord->on(Event::GUILD_ROLE_CREATE, function (Role $role, Discord $discord) use ($logger) {
+    $discord->on(Event::GUILD_ROLE_CREATE, function (Role $role, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+        }
         $logger->logInfo(null, Event::GUILD_ROLE_CREATE, $role->getRawAttributes());
     });
 
@@ -377,7 +398,10 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
     });
 
-    $discord->on(Event::GUILD_ROLE_DELETE, function (object $role, Discord $discord) use ($logger) {
+    $discord->on(Event::GUILD_ROLE_DELETE, function (object $role, Discord $discord) use ($logger, $discordBot) {
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
+        }
         $logger->logInfo(null, Event::GUILD_ROLE_DELETE, $role);
     });
 
@@ -426,7 +450,10 @@ $discord->on('ready', function (Discord $discord) {
     $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
             $plan->inviteTracker->track($invite->guild);
-            break;
+            break; // Break because the data is global
+        }
+        foreach ($discordBot->plans as $plan) {
+            $plan->statisticsChannels->refresh();
         }
         $logger->logInfo($invite->inviter->id, Event::INVITE_CREATE, $invite->getRawAttributes());
     });
@@ -435,10 +462,16 @@ $discord->on('ready', function (Discord $discord) {
         if ($invite instanceof Invite) {
             foreach ($discordBot->plans as $plan) {
                 $plan->inviteTracker->track($invite->guild);
-                break;
+                break; // Break because the data is global
+            }
+            foreach ($discordBot->plans as $plan) {
+                $plan->statisticsChannels->refresh();
             }
             $logger->logInfo($invite->inviter->id, Event::INVITE_DELETE, $invite->getRawAttributes());
         } else {
+            foreach ($discordBot->plans as $plan) {
+                $plan->statisticsChannels->refresh();
+            }
             $logger->logInfo(null, Event::INVITE_DELETE, $invite);
         }
     });

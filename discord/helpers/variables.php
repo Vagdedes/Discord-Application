@@ -13,6 +13,7 @@ class BotDatabaseTable
         BOT_NOTE_CHANGES = "discord.botNoteChanges",
         BOT_NOTE_SETTINGS = "discord.botNoteSettings",
         BOT_NOTE_PARTICIPANTS = "discord.botNoteParticipants",
+        BOT_STATISTICS_CHANNELS = "discord.botStatisticsChannels",
         BOT_INVITE_TRACKER = "discord.botInviteTracker",
         BOT_INVITE_TRACKER_GOALS = "discord.botInviteTrackerGoals",
         BOT_INVITE_TRACKER_GOAL_STORAGE = "discord.botInviteTrackerGoalStorage",

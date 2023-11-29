@@ -7,6 +7,8 @@ class DiscordInviteTracker
 {
     private DiscordPlan $plan;
     private array $goals;
+    private int $invite_links, $invited_users;
+
     private static bool $isInitialized = false;
 
     private const REFRESH_TIME = "15 seconds";
@@ -14,6 +16,8 @@ class DiscordInviteTracker
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->invite_links = 0;
+        $this->invited_users = 0;
         $this->goals = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER_GOALS,
             null,
@@ -34,6 +38,16 @@ class DiscordInviteTracker
                 $this->track($guild);
             }
         }
+    }
+
+    public function getInviteLinks(): int
+    {
+        return $this->invite_links;
+    }
+
+    public function getInvitedUsers(): int
+    {
+        return $this->invited_users;
     }
 
     public function getUserStats(int|string $serverID, int|string $userID): object
@@ -131,6 +145,7 @@ class DiscordInviteTracker
 
     public function track(Guild $guild): void
     {
+        $this->invite_links = 0;
         $guild->getInvites()->done(function (mixed $invites) {
             foreach ($invites as $invite) {
                 $totalUses = $invite->uses ?? null;
@@ -140,6 +155,8 @@ class DiscordInviteTracker
 
                 if ($totalUses !== null && $code !== null
                     && $serverID !== null && $userID !== null) {
+                    $this->invite_links++;
+                    $this->invited_users += $totalUses;
                     $query = get_sql_query(
                         BotDatabaseTable::BOT_INVITE_TRACKER,
                         array("id", "uses"),
