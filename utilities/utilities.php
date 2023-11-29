@@ -271,7 +271,7 @@ function get_raw_client_ip_address(): ?string
     return explode(",", $ipAddress, 2)[0];
 }
 
-function redirect_to_url(string $url, ?iterable $argumentBlacklist = null): void
+function redirect_to_url(string $url, mixed $argumentBlacklist = null): void
 {
     if (is_iterable($argumentBlacklist)) {
         global $_GET;
@@ -880,7 +880,7 @@ function get_current_date(): string
 
 // Lists
 
-function find_object_from_key_match(iterable $iterable, string $key, mixed $match, bool $associative = false)
+function find_object_from_key_match(mixed $iterable, string $key, mixed $match, bool $associative = false)
 {
     if (is_iterable($iterable)) {
         foreach ($iterable as $object) {
@@ -1209,7 +1209,7 @@ function get_title(string $url, int $timeoutSeconds = 0): ?string
     return preg_match('/<title[^>]*>(.*?)<\/title>/ims', $page, $match) ? $match[1] : null;
 }
 
-function get_text_list_from_iterable(iterable $iterable, int $count = 0, bool $simplify = false): ?string
+function get_text_list_from_iterable(mixed $iterable, int $count = 0, bool $simplify = false): ?string
 {
     if (is_object($iterable)) {
         $iterable = get_object_vars($iterable);

@@ -143,13 +143,7 @@ class DiscordControlledMessages
         $messageBuilder = $this->plan->utilities->buildMessageFromObject($messageRow);
 
         if ($messageBuilder === null) {
-            global $logger;
-            $logger->logError(
-                $this->plan->planID,
-                "Incorrect controlled-message message with ID: " . $messageRow->id
-            );
             $messageBuilder = MessageBuilder::new();
-            $messageBuilder->setContent(DiscordProperties::NO_REPLY);
         }
         $messageBuilder = $this->plan->component->addButtons(
             $interaction,
