@@ -90,14 +90,12 @@ use Discord\WebSockets\Intents;
 
 //todo dalle-3 to discord-ai
 //todo sound to discord-ai
-//todo discord-cheaper-ai
 
 //todo discord-poll (private via command, public via reactions)
 //todo discord-reaction-roles (make it via list, buttons and reactions)
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
-//todo extend moderation to have logs
 
 $discord = new Discord([
     'token' => $token[0],

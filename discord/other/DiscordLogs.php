@@ -36,19 +36,18 @@ class DiscordLogs
                             int|string|null $userID, ?string $action,
                             mixed           $object, mixed $oldObject = null): void
     {
-        if ($this->bot !== null) {
-            if ($this->ignoreAction > 0) {
-                $this->ignoreAction--;
-            } else {
-                check_clear_memory();
-                $date = get_current_date();
-                $hasGuild = $guild !== null;
-                $hasObjectParameter = $object !== null;
-                $hasOldObjectParameter = $oldObject !== null;
-                $encodedObject = $hasObjectParameter ? json_encode($object) : null;
-                $encodedOldObject = $hasOldObjectParameter ? json_encode($oldObject) : null;
+        if ($this->ignoreAction > 0) {
+            $this->ignoreAction--;
+        } else {
+            check_clear_memory();
+            $date = get_current_date();
+            $hasGuild = $guild !== null;
+            $hasObjectParameter = $object !== null;
+            $hasOldObjectParameter = $oldObject !== null;
+            $encodedObject = $hasObjectParameter ? json_encode($object) : null;
+            $encodedOldObject = $hasOldObjectParameter ? json_encode($oldObject) : null;
 
-                if (sql_insert(
+            if (sql_insert(
                     BotDatabaseTable::BOT_LOGS,
                     array(
                         "bot_id" => $this->bot?->botID,
@@ -59,56 +58,57 @@ class DiscordLogs
                         "old_object" => $encodedOldObject,
                         "creation_date" => $date
                     )
-                )) {
-                    if ($hasGuild
-                        && ($hasObjectParameter || $hasOldObjectParameter)
-                        && !empty($this->channels)) {
-                        $hasArray = is_array($object);
-                        $hasOldArray = is_array($oldObject);
-                        $hasObject = is_object($object);
-                        $hasOldObject = is_object($oldObject);
+                )
+                && $hasGuild
+                && $this->bot !== null
+                && ($hasObjectParameter || $hasOldObjectParameter)
+                && !empty($this->channels)) {
+                $hasArray = is_array($object);
+                $hasOldArray = is_array($oldObject);
+                $hasObject = is_object($object);
+                $hasOldObject = is_object($oldObject);
 
-                        if ($hasArray || $hasObject
-                            || $hasOldArray || $hasOldObject) {
-                            $object = $hasArray ? $object : ($hasObject ? json_decode($encodedObject, true) : array());
-                            $oldObject = $hasOldArray ? $oldObject : ($hasOldObject ? json_decode($encodedOldObject, true) : array());
+                if ($hasArray || $hasObject
+                    || $hasOldArray || $hasOldObject) {
+                    $object = $hasArray ? $object
+                        : ($hasObject ? json_decode($encodedObject, true) : array());
+                    $oldObject = $hasOldArray ? $oldObject
+                        : ($hasOldObject ? json_decode($encodedOldObject, true) : array());
 
-                            foreach ($this->channels as $row) {
-                                if ($row->action == $action
-                                    && $row->server_id == $guild->id) {
-                                    $channel = $this->bot->discord->getChannel($row->channel_id);
+                    foreach ($this->channels as $row) {
+                        if (($row->action === null || $row->action == $action)
+                            && $row->server_id == $guild->id) {
+                            $channel = $this->bot->discord->getChannel($row->channel_id);
 
-                                    if ($channel !== null
-                                        && $channel->guild_id == $row->server_id
-                                        && $channel->allowText()) {
-                                        if ($row->thread_id === null) {
-                                            $channel->sendMessage(
-                                                $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
+                            if ($channel !== null
+                                && $channel->guild_id == $row->server_id
+                                && $channel->allowText()) {
+                                if ($row->thread_id === null) {
+                                    $channel->sendMessage(
+                                        $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
+                                    );
+                                } else {
+                                    foreach ($channel->threads as $thread) {
+                                        if ($thread instanceof Thread
+                                            && $row->thread_id == $thread->id) {
+                                            $thread->sendMessage(
+                                                $this->prepareLogMessage(
+                                                    $row, $date,
+                                                    $userID, $action,
+                                                    $object, $oldObject
+                                                )
                                             );
-                                        } else {
-                                            foreach ($channel->threads as $thread) {
-                                                if ($thread instanceof Thread
-                                                    && $row->thread_id == $thread->id) {
-                                                    $thread->sendMessage(
-                                                        $this->prepareLogMessage(
-                                                            $row, $date,
-                                                            $userID, $action,
-                                                            $object, $oldObject
-                                                        )
-                                                    );
-                                                    break;
-                                                }
-                                            }
+                                            break;
                                         }
                                     }
-                                    break;
                                 }
                             }
+                            break;
                         }
                     }
                 }
-                $this->bot?->refresh();
             }
+            $this->bot?->refresh();
         }
     }
 
