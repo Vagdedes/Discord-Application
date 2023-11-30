@@ -65,6 +65,8 @@ class DiscordPlan
         $this->expirationDate = $query->expiration_date;
         $this->expirationReason = $query->expiration_reason;
 
+        $this->utilities = $bot->utilities;
+
         $this->locations = new DiscordLocations($this);
         $this->listener = new DiscordListener($this);
         $this->instructions = new DiscordInstructions($this);
@@ -73,7 +75,6 @@ class DiscordPlan
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
         $this->permissions = new DiscordPermissions($this);
-        $this->utilities = new DiscordUtilities($this);
 
         $this->moderation = new DiscordModeration($this);
         $this->persistentMessages = new DiscordPersistentMessages($this);

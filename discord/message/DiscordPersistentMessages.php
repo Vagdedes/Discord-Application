@@ -174,8 +174,11 @@ class DiscordPersistentMessages
                 $channel = $this->plan->discord->getChannel($messageRow->channel_id);
 
                 if ($channel !== null
+                    && $channel->allowText()
                     && $channel->guild_id == $messageRow->server_id) {
                     if ($messageRow->thread_id !== null) {
+                        $finalChannel = null;
+
                         foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $messageRow->thread_id == $thread->id) {
                                 $finalChannel = $thread;
@@ -185,27 +188,32 @@ class DiscordPersistentMessages
                     } else {
                         $finalChannel = $channel;
                     }
-                    $oldMessageRow = $messageRow;
-                    $custom = $messageRow->copy_of !== null;
 
-                    if ($custom) {
-                        $messageRow = $this->messages[$messageRow->copy_of] ?? null;
+                    if ($finalChannel !== null) {
+                        $oldMessageRow = $messageRow;
+                        $custom = $messageRow->copy_of !== null;
 
-                        if ($messageRow === null) {
-                            $logger->logError(
-                                $this->plan->planID,
-                                "Message {$oldMessageRow->id} is a copy of {$oldMessageRow->copy_of} but it does not exist."
-                            );
-                            $this->process($array, $position + 1);
-                            return;
+                        if ($custom) {
+                            $messageRow = $this->messages[$messageRow->copy_of] ?? null;
+
+                            if ($messageRow === null) {
+                                $logger->logError(
+                                    $this->plan->planID,
+                                    "Message {$oldMessageRow->id} is a copy of {$oldMessageRow->copy_of} but it does not exist."
+                                );
+                                $this->process($array, $position + 1);
+                                return;
+                            }
+                        } else if ($messageRow->name !== null) {
+                            $this->messages[$messageRow->name] = $messageRow;
                         }
-                    } else if ($messageRow->name !== null) {
-                        $this->messages[$messageRow->name] = $messageRow;
-                    }
-                    if ($oldMessageRow->message_id === null) {
-                        $this->newMessage($finalChannel, $messageRow, $oldMessageRow, $array, $position);
+                        if ($oldMessageRow->message_id === null) {
+                            $this->newMessage($finalChannel, $messageRow, $oldMessageRow, $array, $position);
+                        } else {
+                            $this->editMessage($finalChannel, $custom, $messageRow, $oldMessageRow, $array, $position);
+                        }
                     } else {
-                        $this->editMessage($finalChannel, $custom, $messageRow, $oldMessageRow, $array, $position);
+                        $this->process($array, $position + 1);
                     }
                 }
             } else if ($messageRow->name !== null) {

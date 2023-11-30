@@ -285,7 +285,9 @@ class DiscordCountingChannels
         if ($row->notifications_channel_id !== null) {
             $channel = $this->plan->discord->getChannel($row->notifications_channel_id);
 
-            if ($channel !== null && $channel->guild_id == $row->server_id) {
+            if ($channel !== null
+                && $channel->allowText()
+                && $channel->guild_id == $row->server_id) {
                 $messageBuilder = MessageBuilder::new();
                 $embed = new Embed($this->plan->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);

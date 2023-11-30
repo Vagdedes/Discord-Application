@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
@@ -11,28 +12,28 @@ use Discord\Parts\Thread\Thread;
 class DiscordUtilities
 {
 
-    private DiscordPlan $plan;
+    private Discord $discord;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(Discord $discord)
     {
-        $this->plan = $plan;
+        $this->discord = $discord;
     }
 
     public function getUser(int|string $userID): ?object
     {
-        $users = $this->plan->discord->users->toArray();
+        $users = $this->discord->users->toArray();
         return $users[$userID] ?? null;
     }
 
     public function getUsername(int|string $userID): string
     {
-        $users = $this->plan->discord->users->toArray();
+        $users = $this->discord->users->toArray();
         return $users[$userID]?->username ?? $userID;
     }
 
     public function getAvatar(int|string $userID): ?string
     {
-        $users = $this->plan->discord->users->toArray();
+        $users = $this->discord->users->toArray();
         return $users[$userID]?->avatar ?? null;
     }
 
@@ -40,7 +41,7 @@ class DiscordUtilities
 
     public function getGuild(int|string $serverID): ?Guild
     {
-        return $this->plan->discord->guilds->toArray()[$serverID] ?? null;
+        return $this->discord->guilds->toArray()[$serverID] ?? null;
     }
 
     // Separator
@@ -101,7 +102,7 @@ class DiscordUtilities
                                  string|null|float|int $reason = null): bool
     {
         if (!($channel instanceof Channel)) {
-            $channel = $this->plan->discord->getChannel($channel);
+            $channel = $this->discord->getChannel($channel);
 
             if ($channel === null) {
                 return false;
@@ -186,7 +187,7 @@ class DiscordUtilities
         $messageBuilder = MessageBuilder::new()->setContent(
             $hasContent ? $object->message_content : ""
         );
-        $embed = new Embed($this->plan->discord);
+        $embed = new Embed($this->discord);
         $addEmbed = false;
 
         if (!empty($object->embed_title)) {

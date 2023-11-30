@@ -7,6 +7,7 @@ class DiscordStatisticsChannels
 {
     private DiscordPlan $plan;
     private array $channels;
+    private string $futureDate;
 
     private const
         PERMISSIONS = 18003077201,
@@ -31,26 +32,30 @@ class DiscordStatisticsChannels
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->futureDate = get_past_date("1 second");
         $this->refresh();
     }
 
     public function refresh(): void
     {
-        $this->channels = get_sql_query(
-            BotDatabaseTable::BOT_STATISTICS_CHANNELS,
-            null,
-            array(
-                array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
+        if (get_current_date() > $this->futureDate) {
+            $this->futureDate = get_future_date("30 seconds");
+            $this->channels = get_sql_query(
+                BotDatabaseTable::BOT_STATISTICS_CHANNELS,
                 null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
+                array(
+                    array("deletion_date", null),
+                    array("plan_id", $this->plan->planID),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                )
+            );
 
-        if (!empty($this->channels)) {
-            $this->process(0);
+            if (!empty($this->channels)) {
+                $this->process(0);
+            }
         }
     }
 

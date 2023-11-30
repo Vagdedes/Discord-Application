@@ -23,6 +23,7 @@ class BotDatabaseTable
         BOT_LEVEL_TRACKING = "discord.botLevelTracking",
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
+        BOT_CHANNEL_LOGS = "discord.botChannelLogs",
         BOT_LOGS = "discord.botLogs",
         BOT_TARGETED_MESSAGES = "discord.botTargetedMessages",
         BOT_TARGETED_MESSAGE_MESSAGES = "discord.botTargetedMessageMessages",
@@ -168,7 +169,9 @@ class DiscordInheritedLimits
         MAX_FIELDS_PER_EMBED = 25,
         MAX_BUTTONS_PER_ACTION_ROW = 5,
         MESSAGE_MAX_LENGTH = 2000,
-        MESSAGE_NITRO_MAX_LENGTH = 4000;
+        MESSAGE_NITRO_MAX_LENGTH = 4000,
+        MAX_FIELD_KEY_LENGTH = 256,
+        MAX_FIELD_VALUE_LENGTH = 1024;
 }
 
 class DiscordProperties

@@ -3,7 +3,7 @@
 /*
  * Bot Features:
  * Custom Commands
- * Moderation Logs
+ * Channel Logs
  * Invite Tracker
  * Social Alerts
  * -
@@ -35,7 +35,8 @@ class DiscordBot
     public int $botID;
     public array $plans;
     private string $refreshDate;
-    private Discord $discord;
+    public Discord $discord;
+    public DiscordUtilities $utilities;
     public int $processing;
     private mixed $account;
 
@@ -45,6 +46,7 @@ class DiscordBot
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
+        $this->utilities = new DiscordUtilities($this->discord);
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
