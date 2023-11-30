@@ -312,9 +312,8 @@ $discord->on('ready', function (Discord $discord) {
         }
     });
 
-    //todo
     $discord->on(Event::THREAD_LIST_SYNC, function (Collection $threads, Discord $discord) use ($logger) {
-        $logger->logInfo(null, null, Event::THREAD_LIST_SYNC, $threads);
+        $logger->logInfo($threads->first()?->guild, null, Event::THREAD_LIST_SYNC, $threads);
     });
 
     $discord->on(Event::THREAD_MEMBER_UPDATE, function (Member $threadMember, Discord $discord) use ($logger) {
@@ -336,7 +335,7 @@ $discord->on('ready', function (Discord $discord) {
     });
 
     $discord->on(Event::GUILD_UPDATE, function (Guild $guild, Discord $discord, ?Guild $oldGuild) use ($logger) {
-        $logger->logInfo(null, Event::GUILD_UPDATE, $guild->getRawAttributes(), $oldGuild?->getRawAttributes());
+        $logger->logInfo($guild, null, Event::GUILD_UPDATE, $guild->getRawAttributes(), $oldGuild?->getRawAttributes());
     });
 
     $discord->on(Event::GUILD_DELETE, function (object $guild, Discord $discord, bool $unavailable) use ($logger) {
@@ -363,14 +362,12 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-    //todo
     $discord->on(Event::GUILD_EMOJIS_UPDATE, function (Collection $emojis, Discord $discord, Collection $oldEmojis) use ($logger) {
-        $logger->logInfo(null, null, Event::GUILD_EMOJIS_UPDATE, $emojis, $oldEmojis);
+        $logger->logInfo($emojis->first()?->guild, null, Event::GUILD_EMOJIS_UPDATE, $emojis->toArray(), $oldEmojis->toArray());
     });
 
-    //todo
     $discord->on(Event::GUILD_STICKERS_UPDATE, function (Collection $stickers, Discord $discord, Collection $oldStickers) use ($logger) {
-        $logger->logInfo(null, Event::GUILD_STICKERS_UPDATE, $stickers, $oldStickers);
+        $logger->logInfo($stickers->first()?->guild, null, Event::GUILD_STICKERS_UPDATE, $stickers->toArray(), $oldStickers->toArray());
     });
 
     // Separator
@@ -410,12 +407,15 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo(null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
     });
 
-    //todo
     $discord->on(Event::GUILD_ROLE_DELETE, function (object $role, Discord $discord) use ($logger, $discordBot) {
         foreach ($discordBot->plans as $plan) {
             $plan->statisticsChannels->refresh();
         }
-        $logger->logInfo(null, null, Event::GUILD_ROLE_DELETE, $role);
+        if ($role instanceof Role) {
+            $logger->logInfo($role->guild, null, Event::GUILD_ROLE_DELETE, $role);
+        } else {
+            $logger->logInfo(null, null, Event::GUILD_ROLE_DELETE, $role);
+        }
     });
 
 // Separator
@@ -432,21 +432,22 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($scheduledEvent->guild, null, Event::GUILD_SCHEDULED_EVENT_DELETE, $scheduledEvent->getRawAttributes());
     });
 
-    //todo
     $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_ADD, function ($data, Discord $discord) use ($logger) {
-        $logger->logInfo(null, null, Event::GUILD_SCHEDULED_EVENT_USER_ADD, $data);
+        $logger->logInfo($data?->guild, null, Event::GUILD_SCHEDULED_EVENT_USER_ADD, $data);
     });
 
-    //todo
     $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, function ($data, Discord $discord) use ($logger) {
-        $logger->logInfo(null, null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
+        $logger->logInfo($data?->guild, null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
     });
 
 // Separator
 
-    //todo
     $discord->on(Event::GUILD_INTEGRATIONS_UPDATE, function (object $guild, Discord $discord) use ($logger) {
-        $logger->logInfo(null, null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
+        if ($guild instanceof Guild) {
+            $logger->logInfo($guild, null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
+        } else {
+            $logger->logInfo(null, null, Event::GUILD_INTEGRATIONS_UPDATE, $guild);
+        }
     });
 
     $discord->on(Event::INTEGRATION_CREATE, function (Integration $integration, Discord $discord) use ($logger) {
@@ -457,9 +458,12 @@ $discord->on('ready', function (Discord $discord) {
         $logger->logInfo($integration->guild, null, Event::INTEGRATION_UPDATE, $integration->getRawAttributes(), $oldIntegration?->getRawAttributes());
     });
 
-    //todo
     $discord->on(Event::INTEGRATION_DELETE, function (object $integration, Discord $discord) use ($logger) {
-        $logger->logInfo(null, null, Event::INTEGRATION_DELETE, $integration);
+        if ($integration instanceof Integration) {
+            $logger->logInfo($integration->guild, null, Event::INTEGRATION_DELETE, $integration);
+        } else {
+            $logger->logInfo(null, null, Event::INTEGRATION_DELETE, $integration);
+        }
     });
 
 // Separator
@@ -555,9 +559,12 @@ $discord->on('ready', function (Discord $discord) {
 
 // Separator
 
-    //todo
     $discord->on(Event::WEBHOOKS_UPDATE, function (object $guild, Discord $discord, object $channel) use ($logger) {
-        $logger->logInfo(null, null, Event::WEBHOOKS_UPDATE, $channel);
+        if ($guild instanceof Guild) {
+            $logger->logInfo($guild, null, Event::WEBHOOKS_UPDATE, $channel);
+        } else {
+            $logger->logInfo(null, null, Event::WEBHOOKS_UPDATE, $channel);
+        }
     });
 });
 
