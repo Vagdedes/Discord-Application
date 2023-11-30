@@ -195,19 +195,29 @@ class DiscordInviteTracker
                         $difference = $totalUses - $query->uses;
 
                         if ($difference > 0) {
-                            set_sql_query(
-                                BotDatabaseTable::BOT_INVITE_TRACKER,
-                                array(
-                                    "uses" => $totalUses,
-                                ),
-                                array(
-                                    array("id", $query->id)
-                                ),
-                                null,
-                                1
-                            );
+                            $channelID = $invite?->channel_id;
 
-                            if (!empty($this->goals)) {
+                            if ($channelID !== null) {
+                                $this->plan->userLevels->runLevel(
+                                    $serverID,
+                                    $channelID,
+                                    $userID,
+                                    DiscordUserLevels::INVITE_USE_POINTS,
+                                    $difference
+                                );
+                            }
+                            if (set_sql_query(
+                                    BotDatabaseTable::BOT_INVITE_TRACKER,
+                                    array(
+                                        "uses" => $totalUses,
+                                    ),
+                                    array(
+                                        array("id", $query->id)
+                                    ),
+                                    null,
+                                    1
+                                )
+                                && !empty($this->goals)) {
                                 for ($target = $query->uses + 1; $target <= $totalUses; $target++) {
                                     $this->triggerGoal($invite, $serverID, $userID, $target);
                                 }

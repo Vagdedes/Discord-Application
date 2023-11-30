@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Parts\Channel\Message;
+
 class DiscordUserLevels
 {
     private DiscordPlan $plan;
@@ -11,6 +13,10 @@ class DiscordUserLevels
         ATTACHMENT_POINTS = "attachment_points",
         REACTION_POINTS = "reaction_points",
         INVITE_USE_POINTS = "invite_use_points";
+
+    //todo commands
+    //todo apply runLevel
+    //todo implement methods
 
     public function __construct(DiscordPlan $plan)
     {
@@ -89,13 +95,9 @@ class DiscordUserLevels
         $level = $this->getLevel($serverID, $channelID, $userID);
 
         if ($level !== null) {
-            $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
-
-            if ($configuration !== null) {
-                foreach ($configuration->tiers as $tier) {
-                    if ($level >= $tier->tier_points) {
-                        return $tier;
-                    }
+            foreach ($this->configurations[$this->hash($serverID, $channelID)]->tiers as $tier) {
+                if ($level >= $tier->tier_points) {
+                    return $tier;
                 }
             }
         }
@@ -106,22 +108,49 @@ class DiscordUserLevels
                              int|string $userID,
                              string     $type, object $reference): void
     {
-        if (!empty($this->configurations)) {
-            if (!$this->hasCooldown($serverID, $channelID, $userID)) {
-                switch ($type) {
-                    case self::CHAT_CHARACTER_POINTS:
-                        break;
-                    case self::VOICE_SECOND_POINTS:
-                        break;
-                    case self::ATTACHMENT_POINTS:
-                        break;
-                    case self::REACTION_POINTS:
-                        break;
-                    case self::INVITE_USE_POINTS:
-                        break;
-                    default:
-                        break;
-                }
+        if (!$this->hasCooldown($serverID, $channelID, $userID)) {
+            $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+
+            switch ($type) {
+                case self::CHAT_CHARACTER_POINTS:
+                    if ($reference instanceof Message) {
+                        $this->increaseLevel(
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            strlen($reference->content) * $configuration->{$type}
+                        );
+                    }
+                    break;
+                case self::ATTACHMENT_POINTS:
+                    if ($reference instanceof Message) {
+                        $this->increaseLevel(
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            sizeof($reference->attachments->toArray()) * $configuration->{$type}
+                        );
+                    }
+                    break;
+                case self::REACTION_POINTS:
+                    $this->increaseLevel(
+                        $serverID,
+                        $channelID,
+                        $userID,
+                        $configuration->{$type}
+                    );
+                    break;
+                case self::INVITE_USE_POINTS:
+                case self::VOICE_SECOND_POINTS:
+                    $this->increaseLevel(
+                        $serverID,
+                        $channelID,
+                        $userID,
+                        $reference
+                    );
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -150,6 +179,7 @@ class DiscordUserLevels
                              int|string $userID,
                              int|string $amount): ?string
     {
+        //todo
         return null;
     }
 
@@ -169,7 +199,7 @@ class DiscordUserLevels
     private function hasCooldown(int|string $serverID, int|string $channelID,
                                  int|string $userID): bool
     {
-        $configuration = $this->configurations[$serverID] ?? null;
+        $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
 
         if ($configuration === null) {
             return true;
@@ -184,9 +214,18 @@ class DiscordUserLevels
 
     private function hash(int|string|null $serverID, int|string|null $channelID): int
     {
-        return string_to_integer(
-            (empty($serverID) ? "" : $serverID)
-            . (empty($channelID) ? "" : $channelID)
-        );
+        $cacheKey = array(__METHOD__, $serverID, $channelID);
+        $cache = get_key_value_pair($cacheKey);
+
+        if ($cache !== null) {
+            return $cache;
+        } else {
+            $hash = string_to_integer(
+                (empty($serverID) ? "" : $serverID)
+                . (empty($channelID) ? "" : $channelID)
+            );
+            set_key_value_pair($cacheKey, $hash);
+            return $hash;
+        }
     }
 }
