@@ -7,6 +7,10 @@ class DiscordUserLevels
     private DiscordPlan $plan;
     private array $configurations;
 
+    private const
+        REFRESH_TIME = "15 seconds",
+        NOT_FOUND = "Could not find a levelling system related to this server and channel.";
+
     public const
         CHAT_CHARACTER_POINTS = "chat_character_points",
         VOICE_SECOND_POINTS = "voice_second_points",
@@ -16,7 +20,6 @@ class DiscordUserLevels
 
     //todo commands
     //todo apply runLevel
-    //todo implement methods
 
     public function __construct(DiscordPlan $plan)
     {
@@ -90,18 +93,22 @@ class DiscordUserLevels
     }
 
     public function getTier(int|string $serverID, int|string $channelID,
-                            int|string $userID): ?object
+                            int|string $userID): object|string
     {
-        $level = $this->getLevel($serverID, $channelID, $userID);
+        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
 
-        if ($level !== null) {
+        if ($configuration !== null) {
+            $level = $this->getLevel($serverID, $channelID, $userID);
+
             foreach ($this->configurations[$this->hash($serverID, $channelID)]->tiers as $tier) {
-                if ($level >= $tier->tier_points) {
+                if ($level[1] >= $tier->tier_points) {
                     return $tier;
                 }
             }
+            return "Could not find the user's tier.";
+        } else {
+            return self::NOT_FOUND;
         }
-        return null;
     }
 
     public function runLevel(int|string $serverID, int|string $channelID,
@@ -159,28 +166,65 @@ class DiscordUserLevels
                                   int|string $userID,
                                   int|string $amount): ?string
     {
-        $level = $this->getLevel($serverID, $userID);
-        return $level === null
-            ? "Could not retrieve level of user."
-            : $this->setLevel($serverID, $channelID, $userID, $level + $amount);
+        return $this->setLevel($serverID, $channelID, $userID,
+            $this->getLevel($serverID, $channelID, $userID)[1] + $amount);
     }
 
     public function decreaseLevel(int|string $serverID, int|string $channelID,
                                   int|string $userID,
                                   int|string $amount): ?string
     {
-        $level = $this->getLevel($serverID, $userID);
-        return $level === null
-            ? "Could not retrieve level of user."
-            : $this->setLevel($serverID, $channelID, $userID, max($level - $amount, 0));
+        return $this->setLevel($serverID, $channelID, $userID, max(
+            $this->getLevel($serverID, $channelID, $userID)[1] - $amount, 0));
     }
 
     public function setLevel(int|string $serverID, int|string $channelID,
                              int|string $userID,
                              int|string $amount): ?string
     {
-        //todo
-        return null;
+        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+
+        if ($configuration !== null) {
+            $level = $this->getLevel($serverID, $channelID, $userID);
+
+            if ($level[0]) {
+                if (set_sql_query(
+                    BotDatabaseTable::BOT_LEVEL_TRACKING,
+                    array(
+                        "level_points" => $amount,
+                        "expiration_date" => $configuration->points_duration !== null
+                            ? get_future_date($configuration->points_duration) : null
+                    ),
+                    array(
+                        array("level_id", $configuration->id),
+                        array("user_id", $userID),
+                        array("deletion_date", null),
+                    ),
+                    null,
+                    1
+                )) {
+                    return null;
+                } else {
+                    return "Could not update the user's level to the database.";
+                }
+            } else if (sql_insert(
+                BotDatabaseTable::BOT_LEVEL_TRACKING,
+                array(
+                    "level_id" => $configuration->id,
+                    "user_id" => $userID,
+                    "level_points" => $amount,
+                    "creation_date" => get_current_date(),
+                    "expiration_date" => $configuration->points_duration !== null
+                        ? get_future_date($configuration->points_duration) : null
+                )
+            )) {
+                return null;
+            } else {
+                return "Could not the user's insert level to the database.";
+            }
+        } else {
+            return self::NOT_FOUND;
+        }
     }
 
     public function resetLevel(int|string $serverID, int|string $channelID,
@@ -190,10 +234,71 @@ class DiscordUserLevels
     }
 
     private function getLevel(int|string $serverID, int|string $channelID,
-                              int|string $userID): ?int
+                              int|string $userID, bool $cache = false): array
     {
-        //todo
-        return 0;
+        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+
+        if ($configuration !== null) {
+            if ($cache) {
+                set_sql_cache(self::REFRESH_TIME);
+            }
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_LEVEL_TRACKING,
+                array("level_points", "expiration_date"),
+                array(
+                    array("deletion_date", null),
+                    array("user_id", $userID),
+                    array("level_id", $configuration->id)
+                ),
+                null,
+                1
+            );
+
+            if (empty($query)) {
+                return array(false, 0);
+            } else {
+                $query = $query[0];
+                return array(
+                    true,
+                    $query->expiration_date !== null && $query->expiration_date > get_current_date()
+                        ? 0
+                        : $query->level_points
+                );
+            }
+        } else {
+            return array(false, 0);
+        }
+    }
+
+    private function getLevels(int|string $serverID, int|string $channelID): array
+    {
+        $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
+
+        if ($configuration !== null) {
+            $array = array();
+            set_sql_cache(self::REFRESH_TIME);
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_LEVEL_TRACKING,
+                null,
+                array(
+                    array("deletion_date", null),
+                    array("level_id", $configuration->id),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ),
+                null,
+                1
+            );
+
+            if (!empty($query)) {
+                //todo
+            }
+            return $array;
+        } else {
+            return array();
+        }
     }
 
     private function hasCooldown(int|string $serverID, int|string $channelID,
