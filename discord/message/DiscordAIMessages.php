@@ -55,7 +55,6 @@ class DiscordAIMessages
                                    string  $messageContent): bool
     {
         global $logger;
-        $this->plan->bot->processing++;
         $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $member->id);
         $object = $this->plan->instructions->getObject(
             $message->guild,
@@ -83,12 +82,10 @@ class DiscordAIMessages
                     $this->plan->instructions->replace(array($command), $object)[0]
                 ));
             }
-            $this->plan->bot->processing--;
             return true;
         } else if ($this->plan->userTickets->track($message)
             || $this->plan->userTargets->track($member, $message, $object)
             || $this->plan->countingChannels->track($message)) {
-            $this->plan->bot->processing--;
             return true;
         } else {
             $channel = $object->channel;
@@ -182,7 +179,6 @@ class DiscordAIMessages
                                                     $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
                                                 ));
                                             }
-                                            $this->plan->bot->processing--;
                                             return true;
                                         }
                                         if ($channel->prompt_message !== null) {
@@ -199,15 +195,18 @@ class DiscordAIMessages
                                             $threadID, $cacheKey, $logger, $channel
                                         ) {
                                             $instructions = $this->plan->instructions->build($object);
+                                            $reference = $message->message_reference?->content ?? null;
                                             $reply = $this->rawTextAssistance(
                                                 $member,
                                                 $instructions[0],
                                                 $messageContent
-                                                . DiscordProperties::NEW_LINE
-                                                . DiscordProperties::NEW_LINE
-                                                . "Reference Message:"
-                                                . DiscordProperties::NEW_LINE
-                                                . $message->message_reference?->content,
+                                                . ($reference === null
+                                                    ? ""
+                                                    : DiscordProperties::NEW_LINE
+                                                    . DiscordProperties::NEW_LINE
+                                                    . "Reference Message:"
+                                                    . DiscordProperties::NEW_LINE
+                                                    . $reference),
                                             );
                                             $modelReply = $reply[2];
 
@@ -302,11 +301,9 @@ class DiscordAIMessages
                 } else {
                     $logger->logError($this->plan->planID, "Failed to find chat-model for plan: " . $this->plan->planID);
                 }
-                $this->plan->bot->processing--;
                 return true;
             }
         }
-        $this->plan->bot->processing--;
         return false;
     }
 

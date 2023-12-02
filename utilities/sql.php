@@ -1,13 +1,15 @@
 <?php
 // Connection
 
+$sql_max_cache_time = "30 minutes";
+
 $sql_connections = array();
-$is_sql_usable = false;
 $sql_credentials = array();
 
 $sql_cache_time = false;
 $sql_cache_tag = null;
-$sql_max_cache_time = "30 minutes";
+
+$is_sql_usable = false;
 
 // Connection
 function sql_sql_credentials(string          $hostname,
@@ -42,8 +44,20 @@ function has_sql_credentials(): bool
 
 function get_sql_connection(): ?object
 {
-    global $sql_connections, $sql_credentials;
+    global $sql_connections, $sql_credentials, $is_sql_usable;
     return !empty($sql_credentials) ? $sql_connections[$sql_credentials[10]] : null;
+}
+
+function reset_all_sql_connections(): void
+{
+    global $sql_credentials, $sql_connections,
+           $sql_cache_time, $sql_cache_tag,
+           $is_sql_usable;
+    $sql_connections = array();
+    $sql_credentials = array();
+    $sql_cache_time = false;
+    $sql_cache_tag = null;
+    $is_sql_usable = false;
 }
 
 function reset_sql_connection(): void
@@ -51,8 +65,13 @@ function reset_sql_connection(): void
     global $sql_credentials;
 
     if (!empty($sql_credentials)) {
-        global $sql_connections;
+        global $sql_connections,
+               $sql_cache_time, $sql_cache_tag,
+               $is_sql_usable;
         unset($sql_connections[$sql_credentials[10]]);
+        $sql_cache_time = false;
+        $sql_cache_tag = null;
+        $is_sql_usable = false;
     }
 }
 
@@ -100,7 +119,7 @@ function create_sql_connection(): ?object
     return $sql_connections[$hash];
 }
 
-function close_sql_connection(): bool
+function close_sql_connection(bool $clear = false): bool
 {
     global $is_sql_usable;
 
@@ -113,6 +132,10 @@ function close_sql_connection(): bool
             $result = $sql_connections[$hash]->close();
             unset($sql_connections[$hash]);
             $is_sql_usable = false;
+
+            if ($clear) {
+                $sql_credentials = null;
+            }
             return $result;
         }
     }
@@ -234,9 +257,6 @@ function set_sql_cache($time = null, mixed $tag = null): void
 
 function properly_sql_encode(string $string, bool $partial = false, bool $extra = false): ?string
 {
-    if ($string === null) {
-        return null;
-    }
     global $is_sql_usable;
 
     if ($extra) {
@@ -341,7 +361,7 @@ function sql_query(string $command, bool $debug = false)
     global $is_sql_usable;
 
     if ($is_sql_usable) {
-        if ($debug && (!is_string($command) || !isset($command[0]))) {
+        if ($debug && !isset($command[0])) {
             throw new Exception("Empty Query: " . getcwd());
         }
         global $sql_credentials;

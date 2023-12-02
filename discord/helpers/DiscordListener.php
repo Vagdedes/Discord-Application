@@ -29,13 +29,11 @@ class DiscordListener
                                               mixed          $objects = null): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder, $objects)
             );
-            $this->plan->bot->processing--;
         }
     }
 
@@ -44,13 +42,11 @@ class DiscordListener
                                             mixed       $objects = null): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_MODAL . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $objects)
             );
-            $this->plan->bot->processing--;
         }
     }
 
@@ -59,13 +55,11 @@ class DiscordListener
                                                ?string        $class, ?string $method): MessageBuilder
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             $outcome = call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder)
             );
-            $this->plan->bot->processing--;
             return $outcome;
         } else {
             return $messageBuilder;
@@ -77,13 +71,11 @@ class DiscordListener
                                       ?string     $class, ?string $method): array
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
             $outcome = call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $actionRows)
             );
-            $this->plan->bot->processing--;
             return $outcome;
         } else {
             return $actionRows;
@@ -94,7 +86,6 @@ class DiscordListener
                                               ?string $class, ?string $method): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(
                 self::IMPLEMENTATION_COMMAND
                 . (empty($command->plan_id) ? "0" : $command->plan_id)
@@ -130,7 +121,6 @@ class DiscordListener
                 );
             } catch (Throwable $ignored) {
             }
-            $this->plan->bot->processing--;
         }
     }
 
@@ -139,13 +129,11 @@ class DiscordListener
                                              mixed       $objects): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_TICKET . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $objects)
             );
-            $this->plan->bot->processing--;
         }
     }
 
@@ -154,13 +142,11 @@ class DiscordListener
                                                    mixed   $object): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_COUNTING_GOAL . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $message, $object)
             );
-            $this->plan->bot->processing--;
         }
     }
 
@@ -168,13 +154,11 @@ class DiscordListener
                                                     Invite  $invite): void
     {
         if ($class !== null && $method !== null) {
-            $this->plan->bot->processing++;
             require_once(self::IMPLEMENTATION_INVITE_TRACKER . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $invite)
             );
-            $this->plan->bot->processing--;
         }
     }
 }

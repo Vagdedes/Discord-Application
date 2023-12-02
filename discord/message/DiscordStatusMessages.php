@@ -11,8 +11,6 @@ class DiscordStatusMessages
 
     public function welcome(int|string $serverID, int|string $userID): void
     {
-        $this->plan->bot->processing++;
-
         if (!has_memory_limit(
                 array(__METHOD__, $this->plan->planID, $serverID, $userID),
                 1
@@ -48,13 +46,10 @@ class DiscordStatusMessages
                 }
             }
         }
-        $this->plan->bot->processing--;
     }
 
     public function goodbye(int|string $serverID, int|string $userID): void
     {
-        $this->plan->bot->processing++;
-
         if (!has_memory_limit(
                 array(__METHOD__, $this->plan->planID, $serverID, $userID),
                 1
@@ -96,6 +91,5 @@ class DiscordStatusMessages
                 }
             }
         }
-        $this->plan->bot->processing--;
     }
 }

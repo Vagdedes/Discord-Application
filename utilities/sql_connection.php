@@ -1,7 +1,6 @@
 <?php
 $current_sql_database = null;
 $previous_sql_database = null;
-load_sql_database();
 
 class SqlDatabaseCredentials
 {
@@ -25,7 +24,7 @@ function load_previous_sql_database(): void
             null,
             null,
             true,
-            "5 minutes");
+            DiscordProperties::SYSTEM_REFRESH_TIME);
     } else {
         load_sql_database();
     }

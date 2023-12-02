@@ -37,12 +37,10 @@ class DiscordBot
     private string $refreshDate;
     public Discord $discord;
     public DiscordUtilities $utilities;
-    public int $processing;
     private mixed $account;
 
     public function __construct(Discord $discord, int|string $botID)
     {
-        $this->processing = 0;
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
@@ -96,9 +94,12 @@ class DiscordBot
 
     public function refresh(): void
     {
-        if (get_current_date() > $this->refreshDate
-            && $this->processing === 0) {
+        if (get_current_date() > $this->refreshDate) {
+            $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
             $this->discord->close(true);
+            reset_all_sql_connections();
+            clear_memory(null);
+            initiate_discord_bot();
         }
     }
 
