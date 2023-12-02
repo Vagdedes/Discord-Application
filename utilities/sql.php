@@ -44,7 +44,7 @@ function has_sql_credentials(): bool
 
 function get_sql_connection(): ?object
 {
-    global $sql_connections, $sql_credentials, $is_sql_usable;
+    global $sql_connections, $sql_credentials;
     return !empty($sql_credentials) ? $sql_connections[$sql_credentials[10]] : null;
 }
 
@@ -134,7 +134,7 @@ function close_sql_connection(bool $clear = false): bool
             $is_sql_usable = false;
 
             if ($clear) {
-                $sql_credentials = null;
+                $sql_credentials = array();
             }
             return $result;
         }
