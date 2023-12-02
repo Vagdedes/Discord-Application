@@ -38,14 +38,22 @@ class DiscordBot
     public Discord $discord;
     public DiscordUtilities $utilities;
     private mixed $account;
+    private int $counter;
 
     public function __construct(Discord $discord, int|string $botID)
     {
+        $this->counter = 0;
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
         $this->utilities = new DiscordUtilities($this->discord);
+
+        $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
+    }
+
+    private function load(): void
+    {
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id", "account_id"),
@@ -96,10 +104,17 @@ class DiscordBot
     {
         if (get_current_date() > $this->refreshDate) {
             $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
-            $this->discord->close(true);
+            $this->counter++;
             reset_all_sql_connections();
             clear_memory(null);
-            initiate_discord_bot();
+
+            if ($this->counter % 10 === 0) {
+                $this->discord->close(true);
+                initiate_discord_bot();
+            } else {
+                $this->plans = array();
+                $this->load();
+            }
         }
     }
 
