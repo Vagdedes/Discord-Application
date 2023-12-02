@@ -50,25 +50,14 @@ function get_sql_connection(): ?object
 
 function reset_all_sql_connections(): void
 {
-    global $sql_credentials, $sql_connections,
-           $sql_cache_time, $sql_cache_tag,
-           $is_sql_usable;
-    $sql_connections = array();
-    $sql_credentials = array();
-    $sql_cache_time = false;
-    $sql_cache_tag = null;
-    $is_sql_usable = false;
-}
-
-function reset_sql_connection(): void
-{
     global $sql_credentials;
 
     if (!empty($sql_credentials)) {
         global $sql_connections,
                $sql_cache_time, $sql_cache_tag,
                $is_sql_usable;
-        unset($sql_connections[$sql_credentials[10]]);
+        $sql_connections = array();
+        $sql_credentials = array();
         $sql_cache_time = false;
         $sql_cache_tag = null;
         $is_sql_usable = false;
@@ -77,7 +66,7 @@ function reset_sql_connection(): void
 
 function create_sql_connection(): ?object
 {
-    global $sql_connections, $sql_credentials;
+    global $sql_credentials, $sql_connections;
     $hash = $sql_credentials[10];
     $expired = $sql_credentials[8] !== null && $sql_credentials[8] < time();
 
@@ -100,7 +89,7 @@ function create_sql_connection(): ?object
                 error_reporting(0);
                 $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
                     $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
-                error_reporting(E_ALL); // In rare occassions, this would be something, but it's recommended to keep it to E_ALL
+                error_reporting(E_ALL); // In rare occasions, this would be something, but it's recommended to keep it to E_ALL
             }
 
             if ($sql_connections[$hash]->connect_error) {
@@ -121,22 +110,34 @@ function create_sql_connection(): ?object
 
 function close_sql_connection(bool $clear = false): bool
 {
-    global $is_sql_usable;
+    global $sql_credentials;
 
-    if ($is_sql_usable) {
-        global $sql_credentials;
+    if (!empty($sql_credentials)) {
+        global $is_sql_usable;
 
-        if (!empty($sql_credentials)) {
-            global $sql_connections;
+        if ($is_sql_usable) {
+            global $sql_connections, $sql_cache_time, $sql_cache_tag;
             $hash = $sql_credentials[10];
             $result = $sql_connections[$hash]->close();
             unset($sql_connections[$hash]);
+            $sql_cache_time = false;
+            $sql_cache_tag = null;
             $is_sql_usable = false;
 
             if ($clear) {
                 $sql_credentials = array();
             }
             return $result;
+        } else {
+            global $sql_connections, $sql_cache_time, $sql_cache_tag;
+            unset($sql_connections[$sql_credentials[10]]);
+            $sql_cache_time = false;
+            $sql_cache_tag = null;
+            $is_sql_usable = false;
+
+            if ($clear) {
+                $sql_credentials = array();
+            }
         }
     }
     return false;

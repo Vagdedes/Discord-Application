@@ -108,11 +108,13 @@ class DiscordBot
             reset_all_sql_connections();
             clear_memory(null);
 
-            if ($this->counter % 10 === 0) {
+            if ($this->counter === 10) {
+                $this->counter = 0;
                 $this->discord->close(true);
                 initiate_discord_bot();
             } else {
                 $this->plans = array();
+                load_sql_database();
                 $this->load();
             }
         }
