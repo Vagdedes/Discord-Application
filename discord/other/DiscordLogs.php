@@ -34,7 +34,7 @@ class DiscordLogs
 
     public function logInfo(?Guild          $guild,
                             int|string|null $userID, ?string $action,
-                            mixed           $object, mixed $oldObject = null): void
+                            mixed           $object, mixed $oldObject = null): bool
     {
         if ($this->ignoreAction > 0) {
             $this->ignoreAction--;
@@ -109,7 +109,7 @@ class DiscordLogs
                 }
             }
         }
-        $this->bot?->refresh();
+        return $this->bot !== null && $this->bot->refresh();
     }
 
     private function prepareLogMessage(object          $row, string $date,

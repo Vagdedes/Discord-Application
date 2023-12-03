@@ -96,6 +96,8 @@ use Discord\WebSockets\Intents;
 //todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
+//todo user giveaway
+//todo user advertisement
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);
@@ -330,9 +332,11 @@ function initiate_discord_bot(): void
 
         // Separator
 
-        $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($logger) {
+        $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($logger, $createdDiscordBot) {
             if ($guild instanceof Guild) {
-                $logger->logInfo($guild, null, Event::GUILD_CREATE, $guild);
+                if (!$logger->logInfo($guild, null, Event::GUILD_CREATE, $guild)) {
+                    $createdDiscordBot->refresh(true);
+                }
             } else {
                 $logger->logInfo(null, null, Event::GUILD_CREATE, $guild);
             }

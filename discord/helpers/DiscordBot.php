@@ -100,9 +100,9 @@ class DiscordBot
         }
     }
 
-    public function refresh(): void
+    public function refresh($force = false): bool
     {
-        if (get_current_date() > $this->refreshDate) {
+        if ($force || get_current_date() > $this->refreshDate) {
             $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
             $this->counter++;
             reset_all_sql_connections();
@@ -117,6 +117,9 @@ class DiscordBot
                 load_sql_database();
                 $this->load();
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
