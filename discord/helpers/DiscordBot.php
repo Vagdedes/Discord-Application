@@ -39,6 +39,7 @@ class DiscordBot
     public DiscordUtilities $utilities;
     private mixed $account;
     private int $counter;
+    private bool $administrator;
 
     public function __construct(Discord $discord, int|string $botID)
     {
@@ -69,6 +70,7 @@ class DiscordBot
 
         if (empty($query)) {
             global $logger;
+            $this->administrator = false;
             $logger->logError(null, "(1) Found no plans for bot with ID: " . $this->botID);
             // In case connection or database fails, log but do not exit
         } else {
@@ -95,7 +97,10 @@ class DiscordBot
 
             if (empty($query)) {
                 global $logger;
+                $this->administrator = false;
                 $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
+            } else {
+                $this->administrator = $account->getPermissions()->isAdministrator();
             }
         }
     }
@@ -126,5 +131,10 @@ class DiscordBot
     public function getAccount(): mixed
     {
         return $this->account;
+    }
+
+    public function isAdministrator(): bool
+    {
+        return $this->administrator;
     }
 }
