@@ -212,7 +212,7 @@ class DiscordUserLevels
                     $proceed = false;
                 }
 
-                if ($proceed) {
+                if ($proceed) { //todo add replace capability to build message, maybe use instructions
                     $messageBuilder = $this->plan->utilities->buildMessageFromObject($configuration);
 
                     if ($messageBuilder !== null) {
@@ -225,6 +225,16 @@ class DiscordUserLevels
                         );
                     }
                 }
+
+                $newTier = $outcome[1];
+                $this->plan->listener->callUserLevelsImplementation(
+                    $newTier->implement_class,
+                    $newTier->implement_method,
+                    $channel,
+                    $configuration,
+                    $outcome[0],
+                    $newTier
+                );
             }
         }
     }

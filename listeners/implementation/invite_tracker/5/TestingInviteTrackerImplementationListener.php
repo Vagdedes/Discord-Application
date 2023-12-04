@@ -1,6 +1,6 @@
 <?php
 
-class TestingCountingGoalImplementationListener // Name can be changed
+class TestingInviteTrackerImplementationListener // Name can be changed
 {
 
     public static function test_method(DiscordPlan $plan,
