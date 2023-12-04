@@ -66,46 +66,52 @@ function reset_all_sql_connections(): void
 
 function create_sql_connection(): ?object
 {
-    global $sql_credentials, $sql_connections;
-    $hash = $sql_credentials[10];
-    $expired = $sql_credentials[8] !== null && $sql_credentials[8] < time();
+    global $sql_credentials;
+    $hash = $sql_credentials[10] ?? null;
 
-    if ($expired || !array_key_exists($hash, $sql_connections)) {
-        if ($expired) {
-            $sql_credentials[8] = get_future_date($sql_credentials[7]);
-        }
-        global $sql_credentials;
+    if ($hash !== null) {
+        global $sql_connections;
+        $expired = $sql_credentials[8] !== null && $sql_credentials[8] < time();
 
-        if (sizeof($sql_credentials) === 11) {
-            global $is_sql_usable;
-            $is_sql_usable = false;
-            $sql_connections[$hash] = mysqli_init();
-            $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 1);
-
-            if ($sql_credentials[9]) {
-                $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
-                    $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
-            } else {
-                error_reporting(0);
-                $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
-                    $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
-                error_reporting(E_ALL); // In rare occasions, this would be something, but it's recommended to keep it to E_ALL
+        if ($expired || !array_key_exists($hash, $sql_connections)) {
+            if ($expired) {
+                $sql_credentials[8] = get_future_date($sql_credentials[7]);
             }
+            global $sql_credentials;
 
-            if ($sql_connections[$hash]->connect_error) {
+            if (sizeof($sql_credentials) === 11) {
+                global $is_sql_usable;
                 $is_sql_usable = false;
+                $sql_connections[$hash] = mysqli_init();
+                $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 1);
 
-                if ($sql_credentials[6]) {
-                    exit();
+                if ($sql_credentials[9]) {
+                    $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
+                        $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
+                } else {
+                    error_reporting(0);
+                    $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
+                        $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
+                    error_reporting(E_ALL); // In rare occasions, this would be something, but it's recommended to keep it to E_ALL
+                }
+
+                if ($sql_connections[$hash]->connect_error) {
+                    $is_sql_usable = false;
+
+                    if ($sql_credentials[6]) {
+                        exit();
+                    }
+                } else {
+                    $is_sql_usable = true;
                 }
             } else {
-                $is_sql_usable = true;
+                exit();
             }
-        } else {
-            exit();
         }
+        return $sql_connections[$hash];
+    } else {
+        return null;
     }
-    return $sql_connections[$hash];
 }
 
 function close_sql_connection(bool $clear = false): bool

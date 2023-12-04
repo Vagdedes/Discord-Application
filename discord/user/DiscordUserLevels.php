@@ -241,13 +241,17 @@ class DiscordUserLevels
             foreach ($guild->channels as $channel) {
                 if ($channel->allowVoice() && !empty($channel->members->toArray())) {
                     foreach ($channel->members as $member) {
-                        $this->runLevel(
-                            $guild->id,
-                            $channel->id,
-                            $member->id,
-                            self::VOICE_SECOND_POINTS,
-                            $channel
-                        );
+                        if ($guild?->id !== null
+                            && $channel?->id !== null
+                            && $member?->id !== null) {
+                            $this->runLevel(
+                                $guild->id,
+                                $channel->id,
+                                $member->id,
+                                self::VOICE_SECOND_POINTS,
+                                $channel
+                            );
+                        }
                     }
                 }
             }

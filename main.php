@@ -177,29 +177,33 @@ function initiate_discord_bot(): void
         $logger = new DiscordLogs($createdDiscordBot);
 
         $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($createdDiscordBot, $logger) {
-            $ai = false;
+            $ai = $message->member !== null;
+            $userLevel = $message->guild_id !== null
+                && $message->user_id !== null;
 
-            foreach ($createdDiscordBot->plans as $plan) {
-                if ($message->member !== null) {
-                    if (!$ai
+            if ($ai || $userLevel) {
+                foreach ($createdDiscordBot->plans as $plan) {
+                    if ($ai
                         && $plan->aiMessages->textAssistance(
                             $message,
                             $message->member,
                             $message->content,
                         )) {
-                        $ai = true;
+                        $ai = false;
                     }
-                    foreach (array(
-                                 DiscordUserLevels::CHAT_CHARACTER_POINTS,
-                                 DiscordUserLevels::ATTACHMENT_POINTS
-                             ) as $type) {
-                        $plan->userLevels->runLevel(
-                            $message->guild_id,
-                            $message->channel_id,
-                            $message->user_id,
-                            $type,
-                            $message
-                        );
+                    if ($userLevel) {
+                        foreach (array(
+                                     DiscordUserLevels::CHAT_CHARACTER_POINTS,
+                                     DiscordUserLevels::ATTACHMENT_POINTS
+                                 ) as $type) {
+                            $plan->userLevels->runLevel(
+                                $message->guild_id,
+                                $message->channel_id,
+                                $message->user_id,
+                                $type,
+                                $message
+                            );
+                        }
                     }
                 }
             }
@@ -534,6 +538,7 @@ function initiate_discord_bot(): void
                     $reaction->guild_id,
                     $reaction->channel_id,
                     $reaction->user_id,
+                    DiscordUserLevels::REACTION_POINTS,
                     $reaction
                 );
             }
