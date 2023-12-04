@@ -99,8 +99,10 @@ class DiscordBot
                 global $logger;
                 $this->administrator = false;
                 $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
-            } else {
+            } else if ($account->exists()) {
                 $this->administrator = $account->getPermissions()->isAdministrator();
+            } else {
+                $this->administrator = false;
             }
         }
     }

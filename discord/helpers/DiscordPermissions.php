@@ -127,6 +127,35 @@ class DiscordPermissions
         }
     }
 
+    public function addDiscordRole(Member $member, string $roleID): bool
+    {
+        foreach ($member->guild->roles->toArray() as $serverRole) {
+            if ($serverRole->id == $roleID) {
+                if (!empty($member->roles->toArray())) {
+                    foreach ($member->roles as $memberRole) {
+                        if ($memberRole->id == $roleID) {
+                            return false;
+                        }
+                    }
+                }
+                $member->addRole($serverRole);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function removeDiscordRole(Member $member, string $roleID): bool
+    {
+        foreach ($member->guild->roles->toArray() as $serverRole) {
+            if ($serverRole->id == $roleID) {
+                $member->removeRole($serverRole);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private function hash(int|string|null $serverID, int|string|null $specificID): int
     {
         return string_to_integer(

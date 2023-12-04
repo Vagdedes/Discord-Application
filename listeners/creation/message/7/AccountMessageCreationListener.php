@@ -338,7 +338,7 @@ class AccountMessageCreationListener
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
         if ($interaction !== null) {
-            $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+            $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
             $account = $account->getSession();
 
             if ($account->isPositiveOutcome()) {
@@ -370,7 +370,7 @@ class AccountMessageCreationListener
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
         if ($interaction !== null) {
-            $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+            $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
             $account = $account->getSession();
 
             if ($account->isPositiveOutcome()) {
@@ -425,7 +425,7 @@ class AccountMessageCreationListener
                                      ?Interaction   $interaction,
                                      MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {

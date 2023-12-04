@@ -14,12 +14,38 @@ class AccountMessageImplementationListener
     public const
         IDEALISTIC_NAME = "Idealistic AI",
         IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
+    private const
+        VISIONARY_ID = 1174011691764285514,
+        INVESTOR_ID = 1105149269683478661,
+        SPONSOR_ID = 1105149280764821634,
+        MOTIVATOR_ID = 1105149288318779392;
 
-    public static function getAccountSession(DiscordPlan $plan, int|string $userID): object
+    public static function getAccountSession(Interaction $interaction,
+                                             DiscordPlan $plan): object
     {
         $account = new Account($plan->applicationID);
         $session = $account->getSession();
-        $session->setCustomKey("discord", $userID);
+        $session->setCustomKey("discord", $interaction->member->id);
+        $account = $session->getSession();;
+
+        if ($account->isPositiveOutcome()) {
+            $permissions = $account->getObject()->getPermissions();
+
+            if ($permissions->hasPermission("patreon.subscriber.visionary")) {
+                $plan->permissions->addDiscordRole($interaction->member, self::VISIONARY_ID);
+            } else if ($permissions->hasPermission("patreon.subscriber.investor")) {
+                $plan->permissions->addDiscordRole($interaction->member, self::INVESTOR_ID);
+            } else if ($permissions->hasPermission("patreon.subscriber.sponsor")) {
+                $plan->permissions->addDiscordRole($interaction->member, self::SPONSOR_ID);
+            } else if ($permissions->hasPermission("patreon.subscriber.motivator")) {
+                $plan->permissions->addDiscordRole($interaction->member, self::MOTIVATOR_ID);
+            } else {
+                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
+            }
+        }
         return $session;
     }
 
@@ -28,7 +54,7 @@ class AccountMessageImplementationListener
                                       MessageBuilder $messageBuilder,
                                       mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -43,7 +69,7 @@ class AccountMessageImplementationListener
                                     MessageBuilder $messageBuilder,
                                     mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -58,7 +84,7 @@ class AccountMessageImplementationListener
                                   MessageBuilder $messageBuilder,
                                   mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -73,7 +99,7 @@ class AccountMessageImplementationListener
                                    MessageBuilder $messageBuilder,
                                    mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $plan->utilities->acknowledgeMessage(
             $interaction,
             MessageBuilder::new()->setContent(
@@ -88,7 +114,7 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -103,7 +129,7 @@ class AccountMessageImplementationListener
                                      MessageBuilder $messageBuilder,
                                      mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -118,7 +144,7 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -133,7 +159,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -148,7 +174,7 @@ class AccountMessageImplementationListener
                                             MessageBuilder $messageBuilder,
                                             mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -169,7 +195,7 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -184,7 +210,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -195,11 +221,11 @@ class AccountMessageImplementationListener
     }
 
     public static function got_password_code(DiscordPlan    $plan,
-                                           Interaction    $interaction,
-                                           MessageBuilder $messageBuilder,
-                                           mixed          $objects): void
+                                             Interaction    $interaction,
+                                             MessageBuilder $messageBuilder,
+                                             mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -214,7 +240,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -229,14 +255,14 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
             $history = $account->getHistory()->get(
                 array("action_id", "creation_date"),
-                100
+                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
             );
 
             if ($history->isPositiveOutcome()) {
@@ -246,29 +272,51 @@ class AccountMessageImplementationListener
                 if ($size > 0) {
                     $limit = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED;
                     $messageBuilder = MessageBuilder::new();
+                    $select = SelectMenu::new()
+                        ->setMaxValues(1)
+                        ->setMinValues(1);
 
                     for ($i = 0; $i < ceil($size / $limit); $i++) {
                         $counter = $i * $limit;
                         $max = min($counter + $limit, $size);
-                        $divisor = 0;
-                        $embed = new Embed($plan->discord);
-                        $embed->setTitle("Account History #" . ($i + 1));
-                        $embed->setDescription(
-                            "Here is your " . ($i !== 0 ? "next " : "") . ($max - $counter) . " past account actions for your convenience."
-                        );
-
-                        for ($x = $counter; $x < $max; $x++) {
-                            $row = $history[$x];
-                            $time = time() - strtotime($row->creation_date);
-                            $embed->addFieldValues(
-                                "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                "```" . get_full_date(get_past_date($time . " seconds")) . "```",
-                                $divisor % 3 !== 0
-                            );
-                            $divisor++;
-                        }
-                        $messageBuilder->addEmbed($embed);
+                        $select->addOption(Option::new(
+                            get_full_date($history[$counter]->creation_date)
+                            . " - "
+                            . get_full_date($history[$max - 1]->creation_date),
+                            $i
+                        ));
                     }
+                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    use ($size, $plan, $select, $history, $limit) {
+                        if (!$plan->component->hasCooldown($select)) {
+                            $count = $options[0]->getValue();
+                            $messageBuilder = MessageBuilder::new();
+
+                            $counter = $count * $limit;
+                            $max = min($counter + $limit, $size);
+                            $divisor = 0;
+                            $embed = new Embed($plan->discord);
+                            $embed->setTitle("Account History");
+                            $embed->setDescription(
+                                get_full_date($history[$counter]->creation_date)
+                                . " - "
+                                . get_full_date($history[$max - 1]->creation_date)
+                            );
+
+                            for ($x = $counter; $x < $max; $x++) {
+                                $row = $history[$x];
+                                $embed->addFieldValues(
+                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                    "```" . get_full_date($row->creation_date) . "```",
+                                    $divisor % 3 !== 0
+                                );
+                                $divisor++;
+                            }
+                            $messageBuilder->addEmbed($embed);
+                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        }
+                    }, $plan->discord);
+                    $messageBuilder->addComponent($select);
                     $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                 } else {
                     $plan->utilities->acknowledgeMessage(
@@ -298,7 +346,7 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -319,7 +367,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -340,7 +388,7 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -390,7 +438,7 @@ class AccountMessageImplementationListener
                                               MessageBuilder $messageBuilder,
                                               mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -446,7 +494,7 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -465,7 +513,7 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -484,7 +532,7 @@ class AccountMessageImplementationListener
                                                     MessageBuilder $messageBuilder,
                                                     mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -503,7 +551,7 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($plan, $interaction->user->id);
+        $account = self::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {

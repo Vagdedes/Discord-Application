@@ -103,7 +103,7 @@ class AccountModalImplementationListener
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -126,7 +126,7 @@ class AccountModalImplementationListener
                                      Interaction $interaction,
                                      mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -147,7 +147,7 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -168,7 +168,7 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -226,7 +226,7 @@ class AccountModalImplementationListener
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
@@ -256,7 +256,7 @@ class AccountModalImplementationListener
                                              Interaction $interaction,
                                              mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($plan, $interaction->user->id);
+        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
