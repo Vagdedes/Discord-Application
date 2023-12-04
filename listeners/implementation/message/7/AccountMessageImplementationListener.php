@@ -274,7 +274,8 @@ class AccountMessageImplementationListener
                     $messageBuilder = MessageBuilder::new();
                     $select = SelectMenu::new()
                         ->setMaxValues(1)
-                        ->setMinValues(1);
+                        ->setMinValues(1)
+                    ->setPlaceholder("Select a time period.");
 
                     for ($i = 0; $i < ceil($size / $limit); $i++) {
                         $counter = $i * $limit;
@@ -404,7 +405,7 @@ class AccountMessageImplementationListener
                     array(
                         TextInput::new($selectedAccountName, TextInput::STYLE_SHORT)
                             ->setMinLength(1)->setMaxLength(384)
-                            ->setPlaceholder("Please insert the credential here.")
+                            ->setPlaceholder("Insert the credential here.")
                     ),
                     null,
                     function (Interaction $interaction, Collection $components)
