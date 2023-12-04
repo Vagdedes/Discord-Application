@@ -181,48 +181,48 @@ class DiscordUtilities
         }
     }
 
-    public function buildMessageFromObject(object $object): ?MessageBuilder
+    public function buildMessageFromObject(object $row): ?MessageBuilder
     {
-        $hasContent = !empty($object->message_content);
+        $hasContent = !empty($row->message_content);
         $messageBuilder = MessageBuilder::new()->setContent(
-            $hasContent ? $object->message_content : ""
+            $hasContent ? $row->message_content : ""
         );
         $embed = new Embed($this->discord);
         $addEmbed = false;
 
-        if (!empty($object->embed_title)) {
-            $embed->setTitle($object->embed_title);
+        if (!empty($row->embed_title)) {
+            $embed->setTitle($row->embed_title);
             $addEmbed = true;
         }
-        if (!empty($object->embed_description)) {
-            $embed->setDescription($object->embed_description);
+        if (!empty($row->embed_description)) {
+            $embed->setDescription($row->embed_description);
             $addEmbed = true;
         }
-        if (!empty($object->embed_url)) {
-            $embed->setUrl($object->embed_url);
+        if (!empty($row->embed_url)) {
+            $embed->setUrl($row->embed_url);
             $addEmbed = true;
         }
-        if ($object->embed_color !== null) {
-            $embed->setColor($object->embed_color);
+        if (!empty($row->embed_color)) {
+            $embed->setColor($row->embed_color);
             $addEmbed = true;
         }
-        if ($object->embed_image !== null) {
-            $embed->setImage($object->embed_image);
+        if (!empty($row->embed_image)) {
+            $embed->setImage($row->embed_image);
             $addEmbed = true;
         }
-        if ($object->embed_timestamp !== null) {
-            $embed->setTimestamp(strtotime($object->embed_timestamp));
+        if (!empty($row->embed_timestamp)) {
+            $embed->setTimestamp(strtotime($row->embed_timestamp));
             $addEmbed = true;
         }
-        if ($object->embed_footer !== null) {
-            $embed->setFooter($object->embed_footer);
+        if (!empty($row->embed_footer)) {
+            $embed->setFooter($row->embed_footer);
             $addEmbed = true;
         }
-        if (!empty($object->embed_author_name)) {
+        if (!empty($row->embed_author_name)) {
             $embed->setAuthor(
-                $object->embed_author_name,
-                $object->embed_author_icon_url,
-                $object->embed_author_url,
+                $row->embed_author_name,
+                $row->embed_author_icon_url,
+                $row->embed_author_url,
             );
             $addEmbed = true;
         }

@@ -21,6 +21,7 @@
  * Reaction Polls
  * Reaction Roles
  * -
+ * User Giveaways
  * User Targets
  * User Tickets
  * User Levels

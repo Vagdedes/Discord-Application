@@ -196,18 +196,14 @@ class DiscordUserLevels
             }
 
             if (is_array($outcome)) {
-                $channel = $this->plan->discord->getChannel($configuration->notification_channel_id);
+                $databaseChannel = $this->plan->discord->getChannel($configuration->notification_channel_id);
 
-                if ($channel !== null
-                    && $channel->allowText()
-                    && $channel->guild_id == $serverID) {
+                if ($databaseChannel !== null
+                    && $databaseChannel->allowText()) {
+                    $proceed = $databaseChannel->guild_id == $serverID; // Here so there is a way to disable notifications
+                } else if ($channel !== null
+                    && $channel->allowText()) {
                     $proceed = true;
-                } else if ($channel !== null) {
-                    if ($channel->allowText()) {
-                        $proceed = true;
-                    } else {
-                        $proceed = false;
-                    }
                 } else {
                     $proceed = false;
                 }
@@ -384,7 +380,6 @@ class DiscordUserLevels
         $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
 
         if ($configuration !== null) {
-            $array = array();
             set_sql_cache(self::REFRESH_TIME);
             $query = get_sql_query(
                 BotDatabaseTable::BOT_LEVEL_TRACKING,
@@ -392,19 +387,33 @@ class DiscordUserLevels
                 array(
                     array("deletion_date", null),
                     array("level_id", $configuration->id),
-                    null,
-                    array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
-                    null
-                ),
-                null,
-                1
+                )
             );
 
             if (!empty($query)) {
-                //todo
+                $array = array();
+                $date = get_current_date();
+
+                foreach ($query as $row) {
+                    $position = $row->expiration_date === null || $row->expiration_date > $date
+                        ? $row->level_points
+                        : 0;
+                    $row->tier = $this->getTier($serverID, $channelID, $row->user_id, $position);
+
+                    while (true) {
+                        if (!array_key_exists($position, $array)) {
+                            $array[$position] = $row;
+                            break;
+                        } else {
+                            $position--;
+                        }
+                    }
+                }
+                krsort($array);
+                return $array;
+            } else {
+                return array();
             }
-            return $array;
         } else {
             return array();
         }

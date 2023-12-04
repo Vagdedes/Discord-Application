@@ -97,7 +97,6 @@ use Discord\WebSockets\Intents;
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
 //todo user giveaway
-//todo user advertisement
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);

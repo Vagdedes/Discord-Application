@@ -187,7 +187,7 @@ class DiscordInviteTracker
 
                         if (!empty($this->goals)) {
                             for ($target = 1; $target <= $totalUses; $target++) {
-                                $this->triggerGoal($invite, $serverID, $userID, $query, $target);
+                                $this->triggerGoal($invite, $serverID, $userID, $target);
                             }
                         }
                     } else {
