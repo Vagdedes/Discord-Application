@@ -4,6 +4,10 @@ class DiscordStatusMessages
 {
     private DiscordPlan $plan;
 
+    private const
+        WELCOME = 1,
+        GOODBYE = 2;
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -11,10 +15,7 @@ class DiscordStatusMessages
 
     public function welcome(int|string $serverID, int|string $userID): void
     {
-        if (!has_memory_limit(
-                array(__METHOD__, $this->plan->planID, $serverID, $userID),
-                1
-            )
+        if (!$this->hasCooldown($serverID, $userID, self::WELCOME)
             && !empty($this->plan->locations->channels)) {
             foreach ($this->plan->locations->channels as $channel) {
                 if ($channel->server_id == $serverID
@@ -24,6 +25,7 @@ class DiscordStatusMessages
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
+                            $this->addCooldown($serverID, $userID, self::WELCOME);
                             $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                         }
                     } else if (!empty($this->plan->locations->whitelistContents)) {
@@ -37,6 +39,7 @@ class DiscordStatusMessages
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {
+                                    $this->addCooldown($serverID, $userID, self::WELCOME);
                                     $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
                                 }
                                 break;
@@ -50,10 +53,7 @@ class DiscordStatusMessages
 
     public function goodbye(int|string $serverID, int|string $userID): void
     {
-        if (!has_memory_limit(
-                array(__METHOD__, $this->plan->planID, $serverID, $userID),
-                1
-            )
+        if (!$this->hasCooldown($serverID, $userID, self::GOODBYE)
             && !empty($this->plan->locations->channels)) {
             foreach ($this->plan->locations->channels as $channel) {
                 if ($channel->server_id == $serverID
@@ -63,6 +63,7 @@ class DiscordStatusMessages
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
+                            $this->addCooldown($serverID, $userID, self::GOODBYE);
                             $channelFound->sendMessage(
                                 $this->plan->utilities->getUsername($userID)
                                 . " " . $channel->goodbye_message
@@ -79,6 +80,7 @@ class DiscordStatusMessages
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {
+                                    $this->addCooldown($serverID, $userID, self::GOODBYE);
                                     $channelFound->sendMessage(
                                         $this->plan->utilities->getUsername($userID)
                                         . " " . $channel->goodbye_message
@@ -91,5 +93,19 @@ class DiscordStatusMessages
                 }
             }
         }
+    }
+
+    private function hasCooldown(int|string $serverID, int|string $userID, int $case): bool
+    {
+        return !has_memory_cooldown(
+            array(__METHOD__, $serverID, $userID, $case),
+            "5 minutes", false);
+    }
+
+    private function addCooldown(int|string $serverID, int|string $userID, int $case): void
+    {
+        has_memory_cooldown(
+            array(__METHOD__, $serverID, $userID, $case),
+            "5 minutes", true, true);
     }
 }
