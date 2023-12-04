@@ -229,11 +229,7 @@ class DiscordStatisticsChannels
                 if ($placeholder === null) {
                     $placeholder = "Server Members: ";
                 }
-                $statistic = 0;
-
-                foreach ($guild->members as $member) {
-                    $statistic++;
-                }
+                $statistic = sizeof($guild->members->toArray());
                 break;
             case self::TEXT_CHANNELS:
                 if ($placeholder === null) {
@@ -297,6 +293,11 @@ class DiscordStatisticsChannels
                 $statistic = null;
                 break;
         }
-        return $statistic !== null ? $placeholder . $statistic : null;
+        if ($statistic !== null) {
+            $statistic = number_format($statistic, 0, ",", ".");
+            return $placeholder . $statistic;
+        } else {
+            return null;
+        }
     }
 }
