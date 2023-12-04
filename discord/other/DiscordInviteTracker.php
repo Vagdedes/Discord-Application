@@ -203,7 +203,8 @@ class DiscordInviteTracker
                                     $channelID,
                                     $userID,
                                     DiscordUserLevels::INVITE_USE_POINTS,
-                                    $difference
+                                    $difference,
+                                    $invite->channel
                                 );
                             }
                             if (set_sql_query(

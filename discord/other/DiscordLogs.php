@@ -36,12 +36,13 @@ class DiscordLogs
                             int|string|null $userID, ?string $action,
                             mixed           $object, mixed $oldObject = null): bool
     {
+        $hasGuild = $guild !== null;
+
         if ($this->ignoreAction > 0) {
             $this->ignoreAction--;
         } else {
             check_clear_memory();
             $date = get_current_date();
-            $hasGuild = $guild !== null;
             $hasObjectParameter = $object !== null;
             $hasOldObjectParameter = $oldObject !== null;
             $encodedObject = $hasObjectParameter ? json_encode($object) : null;
@@ -107,6 +108,11 @@ class DiscordLogs
                         }
                     }
                 }
+            }
+        }
+        if ($hasGuild) {
+            foreach ($this->bot->plans as $plan) {
+                $plan->userLevels->trackVoiceChannels($guild);
             }
         }
         return $this->bot !== null && $this->bot->refresh();

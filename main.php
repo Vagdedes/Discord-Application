@@ -178,14 +178,30 @@ function initiate_discord_bot(): void
         $logger = new DiscordLogs($createdDiscordBot);
 
         $discord->on(Event::MESSAGE_CREATE, function (Message $message, Discord $discord) use ($createdDiscordBot, $logger) {
+            $ai = false;
+
             foreach ($createdDiscordBot->plans as $plan) {
-                if ($message->member !== null
-                    && $plan->aiMessages->textAssistance(
-                        $message,
-                        $message->member,
-                        $message->content,
-                    )) {
-                    break;
+                if ($message->member !== null) {
+                    if (!$ai
+                        && $plan->aiMessages->textAssistance(
+                            $message,
+                            $message->member,
+                            $message->content,
+                        )) {
+                        $ai = true;
+                    }
+                    foreach (array(
+                                 DiscordUserLevels::CHAT_CHARACTER_POINTS,
+                                 DiscordUserLevels::ATTACHMENT_POINTS
+                             ) as $type) {
+                        $plan->userLevels->runLevel(
+                            $message->guild_id,
+                            $message->channel_id,
+                            $message->user_id,
+                            $type,
+                            $message
+                        );
+                    }
                 }
             }
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_CREATE, $message->getRawAttributes());
@@ -513,7 +529,15 @@ function initiate_discord_bot(): void
 
         // Separator
 
-        $discord->on(Event::MESSAGE_REACTION_ADD, function (MessageReaction $reaction, Discord $discord) use ($logger) {
+        $discord->on(Event::MESSAGE_REACTION_ADD, function (MessageReaction $reaction, Discord $discord) use ($logger, $createdDiscordBot) {
+            foreach ($createdDiscordBot->plans as $plan) {
+                $plan->userLevels->runLevel(
+                    $reaction->guild_id,
+                    $reaction->channel_id,
+                    $reaction->user_id,
+                    $reaction
+                );
+            }
             $logger->logInfo($reaction->guild, $reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction->getRawAttributes());
         });
 

@@ -1,6 +1,9 @@
 <?php
 
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Guild\Guild;
+use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordUserLevels
 {
@@ -19,7 +22,6 @@ class DiscordUserLevels
         INVITE_USE_POINTS = "invite_use_points";
 
     //todo commands
-    //todo apply runLevel
 
     public function __construct(DiscordPlan $plan)
     {
@@ -93,15 +95,16 @@ class DiscordUserLevels
     }
 
     public function getTier(int|string $serverID, int|string $channelID,
-                            int|string $userID): object|string
+                            int|string $userID, int|string|null $level = null): object|string
     {
         $configuration = $this->configurations[$this->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
-            $level = $this->getLevel($serverID, $channelID, $userID);
-
+            if ($level === null) {
+                $level = $this->getLevel($serverID, $channelID, $userID)[1];
+            }
             foreach ($this->configurations[$this->hash($serverID, $channelID)]->tiers as $tier) {
-                if ($level[1] >= $tier->tier_points) {
+                if ($level >= $tier->tier_points) {
                     return $tier;
                 }
             }
@@ -113,7 +116,8 @@ class DiscordUserLevels
 
     public function runLevel(int|string $serverID, int|string $channelID,
                              int|string $userID,
-                             string     $type, object $reference): void
+                             string     $type, mixed $reference,
+                             Channel    $channel = null): void
     {
         if (!$this->hasCooldown($serverID, $channelID, $userID)) {
             $configuration = $this->configurations[$this->hash($serverID, $channelID)];
@@ -121,35 +125,65 @@ class DiscordUserLevels
             switch ($type) {
                 case self::CHAT_CHARACTER_POINTS:
                     if ($reference instanceof Message) {
-                        $this->increaseLevel(
+                        if ($channel === null) {
+                            $channel = $reference->channel;
+                        }
+                        $outcome = $this->increaseLevel(
                             $serverID,
                             $channelID,
                             $userID,
                             strlen($reference->content) * $configuration->{$type}
                         );
+                    } else {
+                        $outcome = false;
                     }
                     break;
                 case self::ATTACHMENT_POINTS:
                     if ($reference instanceof Message) {
-                        $this->increaseLevel(
+                        if ($channel === null) {
+                            $channel = $reference->channel;
+                        }
+                        $outcome = $this->increaseLevel(
                             $serverID,
                             $channelID,
                             $userID,
                             sizeof($reference->attachments->toArray()) * $configuration->{$type}
                         );
+                    } else {
+                        $outcome = false;
                     }
                     break;
                 case self::REACTION_POINTS:
-                    $this->increaseLevel(
+                    if ($reference instanceof MessageReaction) {
+                        if ($channel === null) {
+                            $channel = $reference->channel;
+                        }
+                        $outcome = $this->increaseLevel(
+                            $serverID,
+                            $channelID,
+                            $userID,
+                            $configuration->{$type}
+                        );
+                    } else {
+                        $outcome = false;
+                    }
+                    break;
+                case self::INVITE_USE_POINTS:
+                    if ($channel === null) {
+                        $channel = $reference->channel;
+                    }
+                    $outcome = $this->increaseLevel(
                         $serverID,
                         $channelID,
                         $userID,
-                        $configuration->{$type}
+                        $reference
                     );
                     break;
-                case self::INVITE_USE_POINTS:
                 case self::VOICE_SECOND_POINTS:
-                    $this->increaseLevel(
+                    if ($channel === null) {
+                        $channel = $reference;
+                    }
+                    $outcome = $this->increaseLevel(
                         $serverID,
                         $channelID,
                         $userID,
@@ -157,14 +191,66 @@ class DiscordUserLevels
                     );
                     break;
                 default:
+                    $outcome = false;
                     break;
+            }
+
+            if (is_array($outcome)) {
+                $channel = $this->plan->discord->getChannel($configuration->notification_channel_id);
+
+                if ($channel !== null
+                    && $channel->allowText()
+                    && $channel->guild_id == $serverID) {
+                    $proceed = true;
+                } else if ($channel !== null) {
+                    if ($channel->allowText()) {
+                        $proceed = true;
+                    } else {
+                        $proceed = false;
+                    }
+                } else {
+                    $proceed = false;
+                }
+
+                if ($proceed) {
+                    $messageBuilder = $this->plan->utilities->buildMessageFromObject($configuration);
+
+                    if ($messageBuilder !== null) {
+                        $channel->sendMessage($messageBuilder);
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "Incorrect notification message with configuration ID: " . $configuration->id
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    public function trackVoiceChannels(Guild $guild): void
+    {
+        if (!empty($guild->channels->toArray())) {
+            foreach ($guild->channels as $channel) {
+                if ($channel->allowVoice() && !empty($channel->members->toArray())) {
+                    foreach ($channel->members as $member) {
+                        $this->runLevel(
+                            $guild->id,
+                            $channel->id,
+                            $member->id,
+                            self::VOICE_SECOND_POINTS,
+                            $channel
+                        );
+                    }
+                }
             }
         }
     }
 
     public function increaseLevel(int|string $serverID, int|string $channelID,
                                   int|string $userID,
-                                  int|string $amount): ?string
+                                  int|string $amount): string|array|null
     {
         return $this->setLevel($serverID, $channelID, $userID,
             $this->getLevel($serverID, $channelID, $userID)[1] + $amount);
@@ -172,7 +258,7 @@ class DiscordUserLevels
 
     public function decreaseLevel(int|string $serverID, int|string $channelID,
                                   int|string $userID,
-                                  int|string $amount): ?string
+                                  int|string $amount): string|array|null
     {
         return $this->setLevel($serverID, $channelID, $userID, max(
             $this->getLevel($serverID, $channelID, $userID)[1] - $amount, 0));
@@ -180,7 +266,7 @@ class DiscordUserLevels
 
     public function setLevel(int|string $serverID, int|string $channelID,
                              int|string $userID,
-                             int|string $amount): ?string
+                             int|string $amount): string|array|null
     {
         $configuration = $this->configurations[$this->hash($serverID, $channelID)];
 
@@ -188,7 +274,7 @@ class DiscordUserLevels
             $level = $this->getLevel($serverID, $channelID, $userID);
 
             if ($level[0]) {
-                if (set_sql_query(
+                if (!set_sql_query(
                     BotDatabaseTable::BOT_LEVEL_TRACKING,
                     array(
                         "level_points" => $amount,
@@ -203,11 +289,9 @@ class DiscordUserLevels
                     null,
                     1
                 )) {
-                    return null;
-                } else {
                     return "Could not update the user's level to the database.";
                 }
-            } else if (sql_insert(
+            } else if (!sql_insert(
                 BotDatabaseTable::BOT_LEVEL_TRACKING,
                 array(
                     "level_id" => $configuration->id,
@@ -218,9 +302,24 @@ class DiscordUserLevels
                         ? get_future_date($configuration->points_duration) : null
                 )
             )) {
-                return null;
-            } else {
                 return "Could not the user's insert level to the database.";
+            }
+            $currentTier = $this->getTier($serverID, $channelID, $userID, $level[1]);
+
+            if (is_object($currentTier)) {
+                $newTier = $this->getTier($serverID, $channelID, $userID, $amount);
+
+                if (is_object($newTier)) {
+                    if ($currentTier->id !== $newTier->id) {
+                        return array($currentTier, $newTier);
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return "Could not calculate the user's new tier: " . $newTier;
+                }
+            } else {
+                return "Could not find the user's current tier: " . $currentTier;
             }
         } else {
             return self::NOT_FOUND;
@@ -228,7 +327,7 @@ class DiscordUserLevels
     }
 
     public function resetLevel(int|string $serverID, int|string $channelID,
-                               int|string $userID): ?string
+                               int|string $userID): string|array|null
     {
         return $this->setLevel($serverID, $channelID, $userID, 0);
     }
@@ -317,17 +416,17 @@ class DiscordUserLevels
         }
     }
 
-    private function hash(int|string|null $serverID, int|string|null $channelID): int
+    private function hash(int|string|null $id1, int|string|null $id2): int
     {
-        $cacheKey = array(__METHOD__, $serverID, $channelID);
+        $cacheKey = array(__METHOD__, $id1, $id2);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
             return $cache;
         } else {
             $hash = string_to_integer(
-                (empty($serverID) ? "" : $serverID)
-                . (empty($channelID) ? "" : $channelID)
+                (empty($id1) ? "" : $id1)
+                . (empty($id2) ? "" : $id2)
             );
             set_key_value_pair($cacheKey, $hash);
             return $hash;
