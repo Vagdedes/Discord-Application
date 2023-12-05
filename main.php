@@ -95,7 +95,6 @@ use Discord\WebSockets\Intents;
 //todo discord-poll (private via command, public via reactions)
 //todo discord-reaction-roles (make it via list, buttons and reactions)
 //todo discord-social-alerts
-//todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);
@@ -339,8 +338,8 @@ function initiate_discord_bot(): void
             $logger->logInfo($threads->first()?->guild, null, Event::THREAD_LIST_SYNC, $threads);
         });
 
-        $discord->on(Event::THREAD_MEMBER_UPDATE, function (Member $threadMember, Discord $discord) use ($logger) {
-            $logger->logInfo($threadMember->guild, null, Event::THREAD_MEMBER_UPDATE, $threadMember->getRawAttributes());
+        $discord->on(Event::THREAD_MEMBER_UPDATE, function (object $threadMember, Discord $discord) use ($logger) {
+            $logger->logInfo($threadMember?->guild, null, Event::THREAD_MEMBER_UPDATE, $threadMember->getRawAttributes());
         });
 
         $discord->on(Event::THREAD_MEMBERS_UPDATE, function (Thread $thread, Discord $discord) use ($logger) {
