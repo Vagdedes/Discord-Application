@@ -30,10 +30,11 @@ class DiscordAntiExpirationThreads
                 $channel = $this->plan->discord->getChannel($row->channel_id);
 
                 if ($channel !== null
-                    && $channel->allowText()
                     && $channel->guild_id == $row->server_id) {
                     if ($row->thread_id === null) {
-                        $this->execute($channel, $row);
+                        if ($channel->allowText()) {
+                            $this->execute($channel, $row);
+                        }
                     } else {
                         foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $row->thread_id == $thread->id) {

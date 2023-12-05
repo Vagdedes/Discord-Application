@@ -82,12 +82,13 @@ class DiscordLogs
                             $channel = $this->bot->discord->getChannel($row->channel_id);
 
                             if ($channel !== null
-                                && $channel->guild_id == $row->server_id
-                                && $channel->allowText()) {
+                                && $channel->guild_id == $row->server_id) {
                                 if ($row->thread_id === null) {
-                                    $channel->sendMessage(
-                                        $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
-                                    );
+                                    if ($channel->allowText()) {
+                                        $channel->sendMessage(
+                                            $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
+                                        );
+                                    }
                                 } else {
                                     foreach ($channel->threads as $thread) {
                                         if ($thread instanceof Thread

@@ -31,6 +31,7 @@ require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
 require '/root/discord_bot/discord/user/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
+require '/root/discord_bot/discord/user/DiscordUserGiveaways.php';
 
 require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
@@ -93,10 +94,8 @@ use Discord\WebSockets\Intents;
 
 //todo discord-poll (private via command, public via reactions)
 //todo discord-reaction-roles (make it via list, buttons and reactions)
-//todo discord-temporary-channels
 //todo discord-social-alerts
 //todo discord-questionnaire (make it via threads or temporary channels like tickets/targets)
-//todo user giveaway
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);

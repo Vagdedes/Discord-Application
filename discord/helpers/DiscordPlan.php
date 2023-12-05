@@ -37,6 +37,7 @@ class DiscordPlan
     public DiscordStatusMessages $statusMessages;
     public DiscordLocations $locations;
     public DiscordUserNotes $userNotes;
+    public DiscordUserGiveaways $userGiveaways;
 
     public function __construct(Discord    $discord,
                                 DiscordBot $bot,
@@ -94,6 +95,7 @@ class DiscordPlan
         $this->userNotes = new DiscordUserNotes($this);
         $this->inviteTracker = new DiscordInviteTracker($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
+        $this->userGiveaways = new DiscordUserGiveaways($this);
     }
 
 }

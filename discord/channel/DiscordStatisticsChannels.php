@@ -106,7 +106,8 @@ class DiscordStatisticsChannels
             } else {
                 $channel = $this->plan->discord->getChannel($row->channel_id);
 
-                if ($channel->allowVoice()
+                if ($channel !== null
+                    && $channel->allowVoice()
                     && $channel->guild_id === $row->server_id
                     && $channel->parent_id === $row->category_id) {
                     $channel->name = $this->getName($guild, $row);
