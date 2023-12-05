@@ -200,11 +200,10 @@ class DiscordInviteTracker
                             if ($channelID !== null) {
                                 $this->plan->userLevels->runLevel(
                                     $serverID,
-                                    $channelID,
-                                    $userID,
+                                    $invite->channel,
+                                    $invite->inviter,
                                     DiscordUserLevels::INVITE_USE_POINTS,
-                                    $difference,
-                                    $invite->channel
+                                    $difference
                                 );
                             }
                             if (set_sql_query(
@@ -263,7 +262,15 @@ class DiscordInviteTracker
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $messageBuilder = $this->plan->utilities->buildMessageFromObject($goal);
+                    $messageBuilder = $this->plan->utilities->buildMessageFromObject(
+                        $goal,
+                        $this->plan->instructions->getObject(
+                            $invite->guild,
+                            $invite->channel,
+                            null,
+                            $invite->inviter
+                        ),
+                    );
 
                     if ($messageBuilder !== null) {
                         $channel = $this->plan->discord->getChannel($goal->message_channel_id);

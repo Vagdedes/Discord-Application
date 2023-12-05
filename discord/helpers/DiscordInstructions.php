@@ -76,6 +76,7 @@ class DiscordInstructions
                             bool   $recursive = true): array
     {
         if (!empty($this->placeholders)) {
+            $hasObject = $object !== null;
             $replaceFurther = false;
 
             foreach ($messages as $arrayKey => $message) {
@@ -84,7 +85,7 @@ class DiscordInstructions
                 }
             }
             foreach ($this->placeholders as $placeholder) {
-                if (isset($object->{$placeholder->placeholder})) {
+                if ($hasObject && isset($object->{$placeholder->placeholder})) {
                     $value = $object->{$placeholder->code_field};
                 } else if ($placeholder->dynamic !== null) {
                     $keyWord = explode($placeholderMiddle, $placeholder->placeholder, 3);
@@ -96,13 +97,19 @@ class DiscordInstructions
                             $replaceFurther = $recursive;
                             break;
                         case "botReplies":
-                            $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
+                            $value = $hasObject
+                                ? $this->plan->conversation->getReplies($object->userID, $limit, false)
+                                : "";
                             break;
                         case "botMessages":
-                            $value = $this->plan->conversation->getMessages($object->userID, $limit, false);
+                            $value = $hasObject
+                                ? $this->plan->conversation->getMessages($object->userID, $limit, false)
+                                : "";
                             break;
                         case "allMessages":
-                            $value = $this->plan->conversation->getConversation($object->userID, $limit, false);
+                            $value = $hasObject
+                                ? $this->plan->conversation->getConversation($object->userID, $limit, false)
+                                : "";
                             break;
                         default:
                             $value = "";
@@ -138,8 +145,7 @@ class DiscordInstructions
                 }
                 $object->placeholderArray[] = $value;
 
-                if ($placeholder->include_previous !== null
-                    && $placeholder->include_previous > 0) {
+                if ($placeholder->include_previous !== null) {
                     $size = sizeof($object->placeholderArray);
 
                     for ($position = 1; $position <= min($placeholder->include_previous, $size); $position++) {

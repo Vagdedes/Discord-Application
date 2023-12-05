@@ -58,7 +58,7 @@ class DiscordAIMessages
         $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $member->id);
         $object = $this->plan->instructions->getObject(
             $message->guild,
-            $message->channel,
+            $this->plan->utilities->getChannel($message->channel),
             $message->thread,
             $member,
             $message

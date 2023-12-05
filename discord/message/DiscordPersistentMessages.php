@@ -140,7 +140,17 @@ class DiscordPersistentMessages
 
     private function build(?Interaction $interaction, object $messageRow): MessageBuilder
     {
-        $messageBuilder = $this->plan->utilities->buildMessageFromObject($messageRow);
+        $messageBuilder = $this->plan->utilities->buildMessageFromObject(
+            $messageRow,
+            $interaction === null ? null :
+                $this->plan->instructions->getObject(
+                    $interaction->guild,
+                    $interaction->channel,
+                    $interaction->message->thread,
+                    $interaction->member,
+                    $interaction->message
+                )
+        );
 
         if ($messageBuilder === null) {
             $messageBuilder = MessageBuilder::new();

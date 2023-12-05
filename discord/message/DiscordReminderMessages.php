@@ -92,7 +92,14 @@ class DiscordReminderMessages
                     );
                 }
             } else {
-                $messageBuilder = $this->plan->utilities->buildMessageFromObject($row);
+                $messageBuilder = $this->plan->utilities->buildMessageFromObject(
+                    $row,
+                    $this->plan->instructions->getObject(
+                        $channel->guild,
+                        $channel instanceof Channel ? $channel : $channel->parent_id,
+                        $channel instanceof Thread ? $channel : null
+                    )
+                );
 
                 if ($messageBuilder !== null) {
                     $channel->sendMessage($messageBuilder)->done(

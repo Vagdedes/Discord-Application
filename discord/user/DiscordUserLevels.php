@@ -3,6 +3,7 @@
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Guild;
+use Discord\Parts\User\Member;
 use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordUserLevels
@@ -114,24 +115,20 @@ class DiscordUserLevels
         }
     }
 
-    public function runLevel(int|string $serverID, int|string $channelID,
-                             int|string $userID,
-                             string     $type, mixed $reference,
-                             Channel    $channel = null): void
+    public function runLevel(int|string $serverID, Channel $channel,
+                             Member     $user,
+                             string     $type, mixed $reference): void
     {
-        if (!$this->hasCooldown($serverID, $channelID, $userID)) {
-            $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+        if (!$this->hasCooldown($serverID, $channel->id, $user->id)) {
+            $configuration = $this->configurations[$this->hash($serverID, $channel->id)];
 
             switch ($type) {
                 case self::CHAT_CHARACTER_POINTS:
                     if ($reference instanceof Message) {
-                        if ($channel === null) {
-                            $channel = $reference->channel;
-                        }
                         $outcome = $this->increaseLevel(
                             $serverID,
-                            $channelID,
-                            $userID,
+                            $channel->id,
+                            $user->id,
                             strlen($reference->content) * $configuration->{$type}
                         );
                     } else {
@@ -140,13 +137,10 @@ class DiscordUserLevels
                     break;
                 case self::ATTACHMENT_POINTS:
                     if ($reference instanceof Message) {
-                        if ($channel === null) {
-                            $channel = $reference->channel;
-                        }
                         $outcome = $this->increaseLevel(
                             $serverID,
-                            $channelID,
-                            $userID,
+                            $channel->id,
+                            $user->id,
                             sizeof($reference->attachments->toArray()) * $configuration->{$type}
                         );
                     } else {
@@ -155,39 +149,30 @@ class DiscordUserLevels
                     break;
                 case self::REACTION_POINTS:
                     if ($reference instanceof MessageReaction) {
-                        if ($channel === null) {
-                            $channel = $reference->channel;
-                        }
                         $outcome = $this->increaseLevel(
                             $serverID,
-                            $channelID,
-                            $userID,
+                            $channel->id,
+                            $user->id,
                             $configuration->{$type}
                         );
                     } else {
                         $outcome = false;
                     }
                     break;
-                case self::INVITE_USE_POINTS:
-                    if ($channel === null) {
-                        $channel = $reference->channel;
-                    }
+                case self::VOICE_SECOND_POINTS:
                     $outcome = $this->increaseLevel(
                         $serverID,
-                        $channelID,
-                        $userID,
-                        $reference
+                        $channel->id,
+                        $user->id,
+                        $configuration->{$type}
                     );
                     break;
-                case self::VOICE_SECOND_POINTS:
-                    if ($channel === null) {
-                        $channel = $reference;
-                    }
+                case self::INVITE_USE_POINTS:
                     $outcome = $this->increaseLevel(
                         $serverID,
-                        $channelID,
-                        $userID,
-                        $reference
+                        $channel->id,
+                        $user->id,
+                        $reference * $configuration->{$type}
                     );
                     break;
                 default:
@@ -196,20 +181,30 @@ class DiscordUserLevels
             }
 
             if (is_array($outcome)) {
-                $databaseChannel = $this->plan->discord->getChannel($configuration->notification_channel_id);
-
-                if ($databaseChannel !== null
-                    && $databaseChannel->allowText()) {
-                    $proceed = $databaseChannel->guild_id == $serverID; // Here so there is a way to disable notifications
-                } else if ($channel !== null
-                    && $channel->allowText()) {
-                    $proceed = true;
+                if ($configuration->notification_channel_id !== null) {
+                    $channel = $this->plan->discord->getChannel($configuration->notification_channel_id);
+                    $proceed = $channel !== null
+                        && $channel->allowText()
+                        && $channel->guild_id == $serverID;
                 } else {
-                    $proceed = false;
+                    $proceed = true;
                 }
 
-                if ($proceed) { //todo add replace capability to build message, maybe use instructions
-                    $messageBuilder = $this->plan->utilities->buildMessageFromObject($configuration);
+                if ($proceed) {
+                    $messageBuilder = $this->plan->utilities->buildMessageFromObject(
+                        $configuration,
+                        $this->plan->instructions->getObject(
+                            $channel->guild,
+                            $channel,
+                            $reference instanceof Message
+                                ? $reference->thread
+                                : ($reference instanceof MessageReaction ? $reference->message->thread : null),
+                            $user,
+                            $reference instanceof Message
+                                ? $reference
+                                : ($reference instanceof MessageReaction ? $reference->message : null),
+                        )
+                    );
 
                     if ($messageBuilder !== null) {
                         $channel->sendMessage($messageBuilder);
@@ -246,8 +241,8 @@ class DiscordUserLevels
                             && $member?->id !== null) {
                             $this->runLevel(
                                 $guild->id,
-                                $channel->id,
-                                $member->id,
+                                $channel,
+                                $member,
                                 self::VOICE_SECOND_POINTS,
                                 $channel
                             );
