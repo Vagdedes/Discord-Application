@@ -1,5 +1,9 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\User\Member;
+
 class DiscordStatusMessages
 {
     private DiscordPlan $plan;
@@ -13,8 +17,11 @@ class DiscordStatusMessages
         $this->plan = $plan;
     }
 
-    public function welcome(int|string $serverID, int|string $userID): void
+    public function welcome(Member $member): void
     {
+        $serverID = $member->guild_id;
+        $userID = $member->id;
+
         if (!$this->hasCooldown($serverID, $userID, self::WELCOME)
             && !empty($this->plan->locations->channels)) {
             foreach ($this->plan->locations->channels as $channel) {
@@ -25,8 +32,7 @@ class DiscordStatusMessages
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
-                            $this->addCooldown($serverID, $userID, self::WELCOME);
-                            $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
+                            $this->process($channelFound, $member, $channel, self::WELCOME);
                         }
                     } else if (!empty($this->plan->locations->whitelistContents)) {
                         foreach ($this->plan->locations->whitelistContents as $whitelist) {
@@ -39,8 +45,7 @@ class DiscordStatusMessages
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {
-                                    $this->addCooldown($serverID, $userID, self::WELCOME);
-                                    $channelFound->sendMessage("<@$userID> " . $channel->welcome_message);
+                                    $this->process($channelFound, $member, $channel, self::WELCOME);
                                 }
                                 break;
                             }
@@ -51,8 +56,11 @@ class DiscordStatusMessages
         }
     }
 
-    public function goodbye(int|string $serverID, int|string $userID): void
+    public function goodbye(Member $member): void
     {
+        $serverID = $member->guild_id;
+        $userID = $member->id;
+
         if (!$this->hasCooldown($serverID, $userID, self::GOODBYE)
             && !empty($this->plan->locations->channels)) {
             foreach ($this->plan->locations->channels as $channel) {
@@ -63,11 +71,7 @@ class DiscordStatusMessages
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
-                            $this->addCooldown($serverID, $userID, self::GOODBYE);
-                            $channelFound->sendMessage(
-                                $this->plan->utilities->getUsername($userID)
-                                . " " . $channel->goodbye_message
-                            );
+                            $this->process($channelFound, $member, $channel, self::GOODBYE);
                         }
                     } else if (!empty($this->plan->locations->whitelistContents)) {
                         foreach ($this->plan->locations->whitelistContents as $whitelist) {
@@ -80,11 +84,7 @@ class DiscordStatusMessages
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {
-                                    $this->addCooldown($serverID, $userID, self::GOODBYE);
-                                    $channelFound->sendMessage(
-                                        $this->plan->utilities->getUsername($userID)
-                                        . " " . $channel->goodbye_message
-                                    );
+                                    $this->process($channelFound, $member, $channel, self::GOODBYE);
                                 }
                                 break;
                             }
@@ -92,6 +92,48 @@ class DiscordStatusMessages
                     }
                 }
             }
+        }
+    }
+
+    private function process(Channel $channel, Member $member,
+                             object  $object,
+                             int     $case): void
+    {
+        switch ($case) {
+            case self::WELCOME:
+                $this->addCooldown($member->guild_id, $member->id, $case);
+                $channel->sendMessage(
+                    $this->plan->listener->callStatusMessageImplementation(
+                        $object->listener_class,
+                        $object->listener_method,
+                        $channel,
+                        $member,
+                        MessageBuilder::new()->setContent(
+                            "<@" . $member->id . "> " . $object->welcome_message
+                        ),
+                        $object,
+                        $case
+                    )
+                );
+                break;
+            case self::GOODBYE:
+                $this->addCooldown($member->guild_id, $member->id, $case);
+                $channel->sendMessage(
+                    $this->plan->listener->callStatusMessageImplementation(
+                        $object->listener_class,
+                        $object->listener_method,
+                        $channel,
+                        $member,
+                        MessageBuilder::new()->setContent(
+                            $member->username . " " . $object->goodbye_message
+                        ),
+                        $object,
+                        $case
+                    )
+                );
+                break;
+            default:
+                break;
         }
     }
 

@@ -6,6 +6,8 @@ use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
 
 class DiscordListener
 {
@@ -19,8 +21,10 @@ class DiscordListener
         IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
         IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/",
         IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/implementation/invite_tracker/",
-        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_levels/",
-        IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/implementation/channel_statistics/";
+        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_level/",
+        IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/implementation/channel_statistics/",
+        IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/implementation/reminder_message/",
+        IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/implementation/status_message/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -181,7 +185,7 @@ class DiscordListener
         }
     }
 
-    public function callChannelStatisticsImplementation(?string $class, ?string $method,
+    public function callChannelStatisticsImplementation(?string  $class, ?string $method,
                                                         Guild    $guild,
                                                         ?Channel $channel,
                                                         string   $name,
@@ -195,5 +199,37 @@ class DiscordListener
             );
         }
         return $name;
+    }
+
+    public function callReminderMessageImplementation(?string        $class, ?string $method,
+                                                      Channel|Thread $channel,
+                                                      MessageBuilder $messageBuilder,
+                                                      object         $object): MessageBuilder
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::IMPLEMENTATION_REMINDER_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            return call_user_func_array(
+                array($class, $method),
+                array($this->plan, $channel, $messageBuilder, $object)
+            );
+        }
+        return $messageBuilder;
+    }
+
+    public function callStatusMessageImplementation(?string        $class, ?string $method,
+                                                    Channel        $channel,
+                                                    Member         $member,
+                                                    MessageBuilder $messageBuilder,
+                                                    object         $object,
+                                                    int            $case): MessageBuilder
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::IMPLEMENTATION_STATUS_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            return call_user_func_array(
+                array($class, $method),
+                array($this->plan, $channel, $member, $messageBuilder, $object, $case)
+            );
+        }
+        return $messageBuilder;
     }
 }

@@ -100,8 +100,15 @@ class DiscordReminderMessages
                         $channel instanceof Thread ? $channel : null
                     )
                 );
-
                 if ($messageBuilder !== null) {
+                    $messageBuilder = $this->plan->listener->callReminderMessageImplementation(
+                        $row->listener_class,
+                        $row->listener_method,
+                        $channel,
+                        $messageBuilder,
+                        $row
+                    );
+
                     $channel->sendMessage($messageBuilder)->done(
                         function (Message $message) use ($row) {
                             if (sql_insert(
