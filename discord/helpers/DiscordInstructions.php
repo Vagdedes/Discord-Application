@@ -75,8 +75,7 @@ class DiscordInstructions
                             string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END,
                             bool   $recursive = true): array
     {
-        if (!empty($this->placeholders)) {
-            $hasObject = $object !== null;
+        if ($object !== null && !empty($this->placeholders)) {
             $replaceFurther = false;
 
             foreach ($messages as $arrayKey => $message) {
@@ -85,7 +84,7 @@ class DiscordInstructions
                 }
             }
             foreach ($this->placeholders as $placeholder) {
-                if ($hasObject && isset($object->{$placeholder->placeholder})) {
+                if (isset($object->{$placeholder->placeholder})) {
                     $value = $object->{$placeholder->code_field};
                 } else if ($placeholder->dynamic !== null) {
                     $keyWord = explode($placeholderMiddle, $placeholder->placeholder, 3);
@@ -97,19 +96,13 @@ class DiscordInstructions
                             $replaceFurther = $recursive;
                             break;
                         case "botReplies":
-                            $value = $hasObject
-                                ? $this->plan->conversation->getReplies($object->userID, $limit, false)
-                                : "";
+                            $value = $this->plan->conversation->getReplies($object->userID, $limit, false);
                             break;
                         case "botMessages":
-                            $value = $hasObject
-                                ? $this->plan->conversation->getMessages($object->userID, $limit, false)
-                                : "";
+                            $value = $this->plan->conversation->getMessages($object->userID, $limit, false);
                             break;
                         case "allMessages":
-                            $value = $hasObject
-                                ? $this->plan->conversation->getConversation($object->userID, $limit, false)
-                                : "";
+                            $value = $this->plan->conversation->getConversation($object->userID, $limit, false);
                             break;
                         default:
                             $value = "";

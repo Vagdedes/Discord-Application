@@ -146,7 +146,7 @@ class DiscordPersistentMessages
                 $this->plan->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
-                    $interaction->message->thread,
+                    $interaction->message?->thread,
                     $interaction->member,
                     $interaction->message
                 )
@@ -184,7 +184,6 @@ class DiscordPersistentMessages
                 $channel = $this->plan->discord->getChannel($messageRow->channel_id);
 
                 if ($channel !== null
-                    && $channel->allowText()
                     && $channel->guild_id == $messageRow->server_id) {
                     if ($messageRow->thread_id !== null) {
                         $finalChannel = null;
@@ -195,8 +194,10 @@ class DiscordPersistentMessages
                                 break;
                             }
                         }
-                    } else {
+                    } else if ($channel->allowText()) {
                         $finalChannel = $channel;
+                    } else {
+                        $finalChannel = null;
                     }
 
                     if ($finalChannel !== null) {
