@@ -4,6 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 
 class DiscordListener
@@ -18,7 +19,8 @@ class DiscordListener
         IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
         IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/",
         IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/implementation/invite_tracker/",
-        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_levels/";
+        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_levels/",
+        IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/implementation/channel_statistics/";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -177,5 +179,21 @@ class DiscordListener
                 array($this->plan, $channel, $configuration, $oldTier, $newTier)
             );
         }
+    }
+
+    public function callChannelStatisticsImplementation(?string $class, ?string $method,
+                                                        Guild    $guild,
+                                                        ?Channel $channel,
+                                                        string   $name,
+                                                        object   $object): string
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $this->plan->planID . "/" . $class . '.php');
+            return call_user_func_array(
+                array($class, $method),
+                array($this->plan, $guild, $channel, $name, $object)
+            );
+        }
+        return $name;
     }
 }

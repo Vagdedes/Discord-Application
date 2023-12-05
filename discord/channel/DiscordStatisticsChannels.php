@@ -75,7 +75,14 @@ class DiscordStatisticsChannels
                 return;
             }
             if ($row->channel_id === null) {
-                $name = $this->getName($guild, $row);
+                $name = $this->plan->listener->callChannelStatisticsImplementation(
+                    $row->listener_class,
+                    $row->listener_method,
+                    $guild,
+                    null,
+                    $this->getName($guild, $row),
+                    $row
+                );
                 $this->plan->utilities->createChannel(
                     $guild,
                     Channel::TYPE_VOICE,
@@ -110,7 +117,14 @@ class DiscordStatisticsChannels
                     && $channel->allowVoice()
                     && $channel->guild_id === $row->server_id
                     && $channel->parent_id === $row->category_id) {
-                    $channel->name = $this->getName($guild, $row);
+                    $channel->name = $this->plan->listener->callChannelStatisticsImplementation(
+                        $row->listener_class,
+                        $row->listener_method,
+                        $guild,
+                        $channel,
+                        $this->getName($guild, $row),
+                        $row
+                    );
                     $guild->channels->save($channel)->done(function () use ($position) {
                         $this->process($position + 1);
                     });
