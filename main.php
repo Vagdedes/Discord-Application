@@ -43,8 +43,8 @@ require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 
-require '/root/discord_bot/discord/reaction/DiscordReactionRoles.php';
-require '/root/discord_bot/discord/reaction/DiscordReactionPolls.php';
+require '/root/discord_bot/discord/interaction/DiscordReactionRoles.php';
+require '/root/discord_bot/discord/interaction/DiscordReactionPolls.php';
 
 require '/root/discord_bot/discord/helpers/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordConversation.php';
@@ -88,13 +88,6 @@ use Discord\Parts\WebSockets\VoiceServerUpdate;
 use Discord\Parts\WebSockets\VoiceStateUpdate;
 use Discord\WebSockets\Event;
 use Discord\WebSockets\Intents;
-
-//todo dalle-3 to discord-ai
-//todo sound to discord-ai
-
-//todo discord-poll (private via command, public via reactions)
-//todo discord-reaction-roles (make it via list, buttons and reactions)
-//todo discord-social-alerts
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);
@@ -449,7 +442,7 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::GUILD_SCHEDULED_EVENT_UPDATE, function (ScheduledEvent $scheduledEvent, Discord $discord, ?ScheduledEvent $oldScheduledEvent) use ($logger) {
-            $logger->logInfo(null, Event::GUILD_SCHEDULED_EVENT_UPDATE, $scheduledEvent->getRawAttributes(), $oldScheduledEvent?->getRawAttributes());
+            $logger->logInfo($scheduledEvent->guild, null, Event::GUILD_SCHEDULED_EVENT_UPDATE, $scheduledEvent->getRawAttributes(), $oldScheduledEvent?->getRawAttributes());
         });
 
         $discord->on(Event::GUILD_SCHEDULED_EVENT_DELETE, function (ScheduledEvent $scheduledEvent, Discord $discord) use ($logger) {

@@ -24,10 +24,10 @@ class DiscordPlan
     public DiscordBot $bot;
     public DiscordUserTargets $userTargets;
     public DiscordCountingChannels $countingChannels;
-    public DiscordReactionPolls $reactionPolls;
+    public DiscordPolls $polls;
     public DiscordUserLevels $userLevels;
     public DiscordInviteTracker $inviteTracker;
-    public DiscordReactionRoles $reactionRoles;
+    public DiscordInteractionRoles $interactionRoles;
     public DiscordTemporaryChannels $temporaryChannels;
     public DiscordSocialAlerts $socialAlerts;
     public DiscordReminderMessages $reminderMessages;
@@ -81,9 +81,9 @@ class DiscordPlan
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);
-        $this->reactionPolls = new DiscordReactionPolls($this);
+        $this->polls = new DiscordPolls($this);
         $this->userLevels = new DiscordUserLevels($this);
-        $this->reactionRoles = new DiscordReactionRoles($this);
+        $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->temporaryChannels = new DiscordTemporaryChannels($this);
         $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->reminderMessages = new DiscordReminderMessages($this);

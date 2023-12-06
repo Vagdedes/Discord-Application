@@ -10,6 +10,9 @@ class DiscordAIMessages
     private DiscordPlan $plan;
     public ?ChatAI $chatAI;
 
+    //todo dalle-3 to discord-ai
+    //todo sound to discord-ai
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;

@@ -22,7 +22,7 @@ class DiscordUserLevels
         REACTION_POINTS = "reaction_points",
         INVITE_USE_POINTS = "invite_use_points";
 
-    //todo commands
+    //todo get-user-level, set-user-level, reset-user-level, get-level-leaderboard commands
 
     public function __construct(DiscordPlan $plan)
     {

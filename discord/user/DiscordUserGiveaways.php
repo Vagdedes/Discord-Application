@@ -8,4 +8,9 @@ class DiscordUserGiveaways
     {
         $this->plan = $plan;
     }
+
+    //todo join-giveaway, leave-giveaway, initiate-giveaway, stop-giveaway command
+    //todo manual/scheduled (manual/automatic join) giveaways
+    //todo giveaway role requirements
+    //todo poll role, permission or both requirements
 }

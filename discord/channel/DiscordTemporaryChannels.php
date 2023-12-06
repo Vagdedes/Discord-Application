@@ -7,4 +7,6 @@ class DiscordTemporaryChannels
     {
         $this->plan = $plan;
     }
+
+    //todo add-channel-owner, remove-channel-owner, ban-channel-user, unban-channel-user command
 }
