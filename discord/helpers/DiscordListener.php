@@ -108,13 +108,13 @@ class DiscordListener
                                 $interaction->member,
                                 $command->required_permission
                             )) {
-                            $this->plan->utilities->acknowledgeMessage(
+                            $this->plan->utilities->acknowledgeCommandMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent($command->no_permission_message),
                                 $command->ephemeral !== null
                             );
                         } else if ($command->command_reply !== null) {
-                            $this->plan->utilities->acknowledgeMessage(
+                            $this->plan->utilities->acknowledgeCommandMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent($command->command_reply),
                                 $command->ephemeral !== null

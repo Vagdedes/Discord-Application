@@ -43,8 +43,8 @@ require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 
-require '/root/discord_bot/discord/interaction/DiscordReactionRoles.php';
-require '/root/discord_bot/discord/interaction/DiscordReactionPolls.php';
+require '/root/discord_bot/discord/interaction/DiscordInteractionRoles.php';
+require '/root/discord_bot/discord/interaction/DiscordPolls.php';
 
 require '/root/discord_bot/discord/helpers/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordConversation.php';

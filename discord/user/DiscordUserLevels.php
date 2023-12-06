@@ -22,8 +22,6 @@ class DiscordUserLevels
         REACTION_POINTS = "reaction_points",
         INVITE_USE_POINTS = "invite_use_points";
 
-    //todo get-user-level, set-user-level, reset-user-level, get-level-leaderboard commands
-
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -96,17 +94,18 @@ class DiscordUserLevels
     }
 
     public function getTier(int|string $serverID, int|string $channelID,
-                            int|string $userID, int|string|null $level = null): object|string
+                            int|string $userID, int|string|null $level = null,
+                            bool       $cache = false): array|string
     {
         $configuration = $this->configurations[$this->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             if ($level === null) {
-                $level = $this->getLevel($serverID, $channelID, $userID)[1];
+                $level = $this->getLevel($serverID, $channelID, $userID, $cache)[1];
             }
             foreach ($this->configurations[$this->hash($serverID, $channelID)]->tiers as $tier) {
                 if ($level >= $tier->tier_points) {
-                    return $tier;
+                    return array($tier, $level);
                 }
             }
             return "Could not find the user's tier.";
@@ -219,8 +218,8 @@ class DiscordUserLevels
 
                 $newTier = $outcome[1];
                 $this->plan->listener->callUserLevelsImplementation(
-                    $newTier->implement_class,
-                    $newTier->implement_method,
+                    $newTier->listener_class,
+                    $newTier->listener_method,
                     $channel,
                     $configuration,
                     $outcome[0],
@@ -309,14 +308,14 @@ class DiscordUserLevels
             )) {
                 return "Could not the user's insert level to the database.";
             }
-            $currentTier = $this->getTier($serverID, $channelID, $userID, $level[1]);
+            $currentTier = $this->getTier($serverID, $channelID, $userID, $level[0]);
 
-            if (is_object($currentTier)) {
+            if (is_array($currentTier)) {
                 $newTier = $this->getTier($serverID, $channelID, $userID, $amount);
 
-                if (is_object($newTier)) {
-                    if ($currentTier->id !== $newTier->id) {
-                        return array($currentTier, $newTier);
+                if (is_array($newTier)) {
+                    if ($currentTier[0]->id !== $newTier[0]->id) {
+                        return array($currentTier[0], $newTier[0]);
                     } else {
                         return null;
                     }
@@ -374,7 +373,7 @@ class DiscordUserLevels
         }
     }
 
-    private function getLevels(int|string $serverID, int|string $channelID): array
+    public function getLevels(int|string $serverID, int|string $channelID): array|string
     {
         $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
 
@@ -397,7 +396,8 @@ class DiscordUserLevels
                     $position = $row->expiration_date === null || $row->expiration_date > $date
                         ? $row->level_points
                         : 0;
-                    $row->tier = $this->getTier($serverID, $channelID, $row->user_id, $position);
+                    $row->level_points = $position;
+                    $row->tier = $this->getTier($serverID, $channelID, $row->user_id, $position, true)[0];
 
                     while (true) {
                         if (!array_key_exists($position, $array)) {
@@ -411,10 +411,10 @@ class DiscordUserLevels
                 krsort($array);
                 return $array;
             } else {
-                return array();
+                return "Could not find any levels for this server and channel.";
             }
         } else {
-            return array();
+            return self::NOT_FOUND;
         }
     }
 

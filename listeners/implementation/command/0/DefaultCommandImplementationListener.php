@@ -501,4 +501,192 @@ class DefaultCommandImplementationListener
             }
         }
     }
+
+    public static function get_user_level(DiscordPlan $plan,
+                                          Interaction $interaction,
+                                          object      $command): void
+    {
+        $user = $interaction->data?->resolved?->users?->first();
+        $object = $plan->userLevels->getTier(
+            $interaction->guild_id,
+            $interaction->channel_id,
+            $user?->id,
+            null,
+            true
+        );
+
+        if (is_string($object)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($object),
+                true
+            );
+        } else {
+            $messageBuilder = MessageBuilder::new();
+            $embed = new Embed($plan->discord);
+            $embed->setAuthor($user->username, $user->avatar);
+            $embed->setTitle($object[0]->tier_name);
+            $embed->setDescription($object[0]->tier_description);
+            $embed->setFooter($object[1] . " Points");
+            $messageBuilder->addEmbed($embed);
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $messageBuilder,
+                true
+            );
+        }
+    }
+
+    public static function set_user_level(DiscordPlan $plan,
+                                          Interaction $interaction,
+                                          object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $process = $plan->userLevels->setLevel(
+            $interaction->guild_id,
+            $interaction->channel_id,
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["amount"]["value"]
+        );
+
+        if (is_string($process)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($process),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("User level successfully increased."),
+                true
+            );
+        }
+    }
+
+    public static function increase_user_level(DiscordPlan $plan,
+                                               Interaction $interaction,
+                                               object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $process = $plan->userLevels->increaseLevel(
+            $interaction->guild_id,
+            $interaction->channel_id,
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["amount"]["value"]
+        );
+
+        if (is_string($process)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($process),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("User level successfully increased."),
+                true
+            );
+        }
+    }
+
+    public static function decrease_user_level(DiscordPlan $plan,
+                                               Interaction $interaction,
+                                               object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $process = $plan->userLevels->decreaseLevel(
+            $interaction->guild_id,
+            $interaction->channel_id,
+            $interaction->data?->resolved?->users?->first()?->id,
+            $arguments["amount"]["value"]
+        );
+
+        if (is_string($process)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($process),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("User level successfully decreased."),
+                true
+            );
+        }
+    }
+
+    public static function reset_user_level(DiscordPlan $plan,
+                                            Interaction $interaction,
+                                            object      $command): void
+    {
+        $process = $plan->userLevels->resetLevel(
+            $interaction->guild_id,
+            $interaction->channel_id,
+            $interaction->data?->resolved?->users?->first()?->id
+        );
+
+        if (is_string($process)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($process),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("User level successfully reset."),
+                true
+            );
+        }
+    }
+
+    public static function get_level_leaderboard(DiscordPlan $plan,
+                                                 Interaction $interaction,
+                                                 object      $command): void
+    {
+        $object = $plan->userLevels->getLevels(
+            $interaction->guild_id,
+            $interaction->channel_id,
+        );
+
+        if (is_string($object)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($object),
+                true
+            );
+        } else {
+            $messageBuilder = MessageBuilder::new();
+            $counter = 0;
+
+            foreach ($object as $user) {
+                $counter++;
+                $embed = new Embed($plan->discord);
+                $userObject = $plan->utilities->getUser($user->user_id);
+
+                if ($userObject !== null) {
+                    $embed->setAuthor($userObject->username, $userObject->avatar);
+                } else {
+                    $embed->setAuthor($user->user_id);
+                }
+                $embed->setTitle($user->tier->tier_name);
+                $embed->setDescription($user->tier->tier_description);
+                $embed->setFooter($user->level_points . " Points");
+                $messageBuilder->addEmbed($embed);
+
+                if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                    break;
+                }
+            }
+
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $messageBuilder,
+                true
+            );
+        }
+    }
 }
