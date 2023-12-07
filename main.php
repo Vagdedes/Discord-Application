@@ -421,7 +421,7 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::GUILD_ROLE_UPDATE, function (Role $role, Discord $discord, ?Role $oldRole) use ($logger) {
-            $logger->logInfo(null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
+            $logger->logInfo($role->guild, null, Event::GUILD_ROLE_UPDATE, $role->getRawAttributes(), $oldRole?->getRawAttributes());
         });
 
         $discord->on(Event::GUILD_ROLE_DELETE, function (object $role, Discord $discord) use ($logger, $createdDiscordBot) {
@@ -449,11 +449,11 @@ function initiate_discord_bot(): void
             $logger->logInfo($scheduledEvent->guild, null, Event::GUILD_SCHEDULED_EVENT_DELETE, $scheduledEvent->getRawAttributes());
         });
 
-        $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_ADD, function ($data, Discord $discord) use ($logger) {
+        $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_ADD, function (mixed $data, Discord $discord) use ($logger) {
             $logger->logInfo($data?->guild, null, Event::GUILD_SCHEDULED_EVENT_USER_ADD, $data);
         });
 
-        $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, function ($data, Discord $discord) use ($logger) {
+        $discord->on(Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, function (mixed $data, Discord $discord) use ($logger) {
             $logger->logInfo($data?->guild, null, Event::GUILD_SCHEDULED_EVENT_USER_REMOVE, $data);
         });
 
@@ -505,7 +505,7 @@ function initiate_discord_bot(): void
                 foreach ($createdDiscordBot->plans as $plan) {
                     $plan->statisticsChannels->refresh();
                 }
-                $logger->logInfo($invite->inviter->id, Event::INVITE_DELETE, $invite->getRawAttributes());
+                $logger->logInfo($invite->guild, $invite->inviter->id, Event::INVITE_DELETE, $invite->getRawAttributes());
             } else {
                 foreach ($createdDiscordBot->plans as $plan) {
                     $plan->statisticsChannels->refresh();
