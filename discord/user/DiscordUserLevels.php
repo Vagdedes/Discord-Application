@@ -231,9 +231,9 @@ class DiscordUserLevels
 
     public function trackVoiceChannels(Guild $guild): void
     {
-        if (!empty($guild->channels->toArray())) {
+        if (!empty($guild->channels->first())) {
             foreach ($guild->channels as $channel) {
-                if ($channel->allowVoice() && !empty($channel->members->toArray())) {
+                if ($channel->allowVoice() && !empty($channel->members->first())) {
                     foreach ($channel->members as $member) {
                         if ($guild?->id !== null
                             && $channel?->id !== null

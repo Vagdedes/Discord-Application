@@ -114,7 +114,7 @@ class DiscordPermissions
 
             if ($this->userHasPermission($member->guild_id, $member->id, $permission)) {
                 $result = true;
-            } else if (!empty($member->roles->toArray())) {
+            } else if (!empty($member->roles->first())) {
                 foreach ($member->roles as $role) {
                     if ($this->roleHasPermission($role->guild_id, $role->id, $permission)) {
                         $result = true;
@@ -127,11 +127,11 @@ class DiscordPermissions
         }
     }
 
-    public function addDiscordRole(Member $member, string $roleID): bool
+    public function addDiscordRole(Member $member, int|string $roleID): bool
     {
-        foreach ($member->guild->roles->toArray() as $serverRole) {
+        foreach ($member->guild->roles as $serverRole) {
             if ($serverRole->id == $roleID) {
-                if (!empty($member->roles->toArray())) {
+                if (!empty($member->roles->first())) {
                     foreach ($member->roles as $memberRole) {
                         if ($memberRole->id == $roleID) {
                             return false;
@@ -145,12 +145,14 @@ class DiscordPermissions
         return false;
     }
 
-    public function removeDiscordRole(Member $member, string $roleID): bool
+    public function removeDiscordRole(Member $member, int|string $roleID): bool
     {
-        foreach ($member->guild->roles->toArray() as $serverRole) {
-            if ($serverRole->id == $roleID) {
-                $member->removeRole($serverRole);
-                return true;
+        if (!empty($member->guild->roles->first())) {
+            foreach ($member->guild->roles as $serverRole) {
+                if ($serverRole->id == $roleID) {
+                    $member->removeRole($serverRole);
+                    return true;
+                }
             }
         }
         return false;

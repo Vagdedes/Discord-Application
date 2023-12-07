@@ -63,51 +63,46 @@ class AccountMessageCreationListener
 
             // Separator
 
-            try {
-                $productGiveaway = $account->getProductGiveaway();
-                $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days", true);
+            $productGiveaway = $account->getProductGiveaway();
+            $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days", true);
 
-                if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
-                    $embed = new Embed($plan->discord);
-                    $currentGiveaway = $currentGiveaway->getObject();
-                    $lastGiveawayInformation = $productGiveaway->getLast();
+            if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
+                $embed = new Embed($plan->discord);
+                $currentGiveaway = $currentGiveaway->getObject();
+                $lastGiveawayInformation = $productGiveaway->getLast();
 
-                    if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
-                        $lastGiveawayInformation = $lastGiveawayInformation->getObject();
-                        $lastGiveawayWinners = $lastGiveawayInformation[0];
-                        $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
-                        $productToWinName = strip_tags($currentGiveaway->product->name);
-                        $nextWinnersText = $currentGiveaway->amount > 1
-                            ? $currentGiveaway->amount . " winners"
-                            : "the winner";
+                if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
+                    $lastGiveawayInformation = $lastGiveawayInformation->getObject();
+                    $lastGiveawayWinners = $lastGiveawayInformation[0];
+                    $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
+                    $productToWinName = strip_tags($currentGiveaway->product->name);
+                    $nextWinnersText = $currentGiveaway->amount > 1
+                        ? $currentGiveaway->amount . " winners"
+                        : "the winner";
 
-                        if (!empty($lastGiveawayWinners)) { // Check if winners exist
-                            $description = "**" . implode(", ", $lastGiveawayWinners)
-                                . "** recently won the product **" .strip_tags( $lastGiveawayInformation[1]->name) . "**. ";
-                        } else {
-                            $description = "";
-                        }
-                        $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
-                            . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
-                        $embed->setAuthor(
-                            "GIVEAWAY",
-                            $currentGiveaway->product->image,
-                        );
-                        $embed->setTitle($productToWinName);
-                        $embed->setDescription($description);
-                        $embed->addFieldValues(
-                            DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
-                            DiscordSyntax::HEAVY_CODE_BLOCK
-                            . "Create an account and verify your email so we know you are a genuine user."
-                            . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
-                            . DiscordSyntax::HEAVY_CODE_BLOCK
-                        );
+                    if (!empty($lastGiveawayWinners)) { // Check if winners exist
+                        $description = "**" . implode(", ", $lastGiveawayWinners)
+                            . "** recently won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "**. ";
+                    } else {
+                        $description = "";
                     }
-                    $messageBuilder->addEmbed($embed);
+                    $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
+                        . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
+                    $embed->setAuthor(
+                        "GIVEAWAY",
+                        $currentGiveaway->product->image,
+                    );
+                    $embed->setTitle($productToWinName);
+                    $embed->setDescription($description);
+                    $embed->addFieldValues(
+                        DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
+                        DiscordSyntax::HEAVY_CODE_BLOCK
+                        . "Create an account and verify your email so we know you are a genuine user. "
+                        . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
+                        . DiscordSyntax::HEAVY_CODE_BLOCK
+                    );
                 }
-            } catch (Throwable $e) {
-                var_dump($e->getMessage());
-                var_dump($e->getLine());
+                $messageBuilder->addEmbed($embed);
             }
         }
         return $messageBuilder;
@@ -497,6 +492,7 @@ class AccountMessageCreationListener
                 $embed->addFieldValues(
                     "__**Objectives**__",
                     "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete."
+                    . " If you do not have any of the accounts, you can skip adding them without problem."
                 );
                 foreach ($objectives as $count => $objective) {
                     $hasURL = !$objective->optional_url && $objective->url !== null;

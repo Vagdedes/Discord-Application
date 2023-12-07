@@ -26,19 +26,31 @@ class AccountMessageImplementationListener
         $account = new Account($plan->applicationID);
         $session = $account->getSession();
         $session->setCustomKey("discord", $interaction->member->id);
-        $account = $session->getSession();;
+        $account = $session->getSession();
 
         if ($account->isPositiveOutcome()) {
             $permissions = $account->getObject()->getPermissions();
 
             if ($permissions->hasPermission("patreon.subscriber.visionary")) {
                 $plan->permissions->addDiscordRole($interaction->member, self::VISIONARY_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
             } else if ($permissions->hasPermission("patreon.subscriber.investor")) {
                 $plan->permissions->addDiscordRole($interaction->member, self::INVESTOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
             } else if ($permissions->hasPermission("patreon.subscriber.sponsor")) {
                 $plan->permissions->addDiscordRole($interaction->member, self::SPONSOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
             } else if ($permissions->hasPermission("patreon.subscriber.motivator")) {
                 $plan->permissions->addDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
             } else {
                 $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
                 $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
@@ -275,7 +287,7 @@ class AccountMessageImplementationListener
                     $select = SelectMenu::new()
                         ->setMaxValues(1)
                         ->setMinValues(1)
-                    ->setPlaceholder("Select a time period.");
+                        ->setPlaceholder("Select a time period.");
 
                     for ($i = 0; $i < ceil($size / $limit); $i++) {
                         $counter = $i * $limit;

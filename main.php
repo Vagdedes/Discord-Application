@@ -517,7 +517,7 @@ function initiate_discord_bot(): void
         // Separator
 
         $discord->on(Event::INTERACTION_CREATE, function (Interaction $interaction, Discord $discord) use ($logger) {
-            $logger->logInfo($interaction->guild, $interaction->user->id, Event::INTERACTION_CREATE, $interaction->getRawAttributes());
+            $logger->logInfo($interaction->guild, $interaction->user->id, Event::INTERACTION_CREATE, $interaction->getRawAttributes(), null, false);
         });
 
         // Separator

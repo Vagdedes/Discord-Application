@@ -34,7 +34,8 @@ class DiscordLogs
 
     public function logInfo(?Guild          $guild,
                             int|string|null $userID, ?string $action,
-                            mixed           $object, mixed $oldObject = null): bool
+                            mixed           $object, mixed $oldObject = null,
+                            bool            $refresh = true): bool
     {
         $hasGuild = $guild !== null;
 
@@ -116,7 +117,7 @@ class DiscordLogs
                 $plan->userLevels->trackVoiceChannels($guild);
             }
         }
-        return $this->bot !== null && $this->bot->refresh();
+        return $refresh && $this->bot !== null && $this->bot->refresh();
     }
 
     private function prepareLogMessage(object          $row, string $date,

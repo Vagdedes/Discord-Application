@@ -111,7 +111,7 @@ class DiscordAIMessages
                                 if ($channel->require_mention) {
                                     $mention = false;
 
-                                    if (!empty($message->mentions->toArray())) {
+                                    if (!empty($message->mentions->first())) {
                                         foreach ($message->mentions as $userObj) {
                                             if ($userObj->id == $this->plan->botID) {
                                                 $mention = true;
