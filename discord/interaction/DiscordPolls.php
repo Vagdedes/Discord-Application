@@ -10,7 +10,5 @@ class DiscordPolls
     }
 
     //todo max 20 choices (4x5 buttons, 20 select options, 20 reactions)
-    //todo pick-poll-choice, unpick-poll-choice commands
-    //todo public & private or both choice polls (public = interactions, private = commands)
-    //todo poll role, permission or both requirements
+    //todo create-poll, delete-poll, pick-poll-choice, unpick-poll-choice commands
 }
