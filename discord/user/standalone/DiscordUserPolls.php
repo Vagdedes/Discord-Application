@@ -1,6 +1,6 @@
 <?php
 
-class DiscordPolls
+class DiscordUserPolls
 {
     private DiscordPlan $plan;
 

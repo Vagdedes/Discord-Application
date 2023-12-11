@@ -183,7 +183,7 @@ class DiscordCommands
 
     public function process(Message $message, Member $user): string|null|MessageBuilder
     {
-        if ($user->id !== $this->plan->botID) {
+        if ($user->id !== $this->plan->bot->botID) {
             if (!empty($this->staticCommands)) {
                 $cacheKey = array(
                     __METHOD__,

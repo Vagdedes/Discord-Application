@@ -21,17 +21,20 @@ require '/root/discord_bot/utilities/encrypt.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
-require '/root/discord_bot/discord/other/DiscordCommands.php';
+require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
+require '/root/discord_bot/discord/custom/DiscordCommands.php';
+
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/other/DiscordSocialAlerts.php';
-require '/root/discord_bot/discord/other/DiscordLogs.php';
+require '/root/discord_bot/discord/other/DiscordInteractionRoles.php';
 
+require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
+require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
+require '/root/discord_bot/discord/user/standalone/DiscordUserPolls.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
-require '/root/discord_bot/discord/user/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
-require '/root/discord_bot/discord/user/DiscordUserGiveaways.php';
 
 require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
@@ -43,21 +46,18 @@ require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 
-require '/root/discord_bot/discord/interaction/DiscordInteractionRoles.php';
-require '/root/discord_bot/discord/interaction/DiscordPolls.php';
-
-require '/root/discord_bot/discord/helpers/variables.php';
+require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
+require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
+require '/root/discord_bot/discord/helpers/standalone/DiscordCurrency.php';
+require '/root/discord_bot/discord/helpers/standalone/variables.php';
+require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordConversation.php';
 require '/root/discord_bot/discord/helpers/DiscordLimits.php';
-require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
-require '/root/discord_bot/discord/helpers/DiscordBot.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
-require '/root/discord_bot/discord/helpers/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
 require '/root/discord_bot/discord/helpers/DiscordModeration.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
-require '/root/discord_bot/discord/helpers/DiscordCurrency.php';
 require '/root/discord_bot/discord/helpers/DiscordLocations.php';
 
 require '/root/discord_bot/ai/variables.php';

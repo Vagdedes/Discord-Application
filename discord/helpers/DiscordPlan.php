@@ -2,7 +2,7 @@
 
 class DiscordPlan
 {
-    public int $planID, $botID;
+    public int $planID;
     public ?int $applicationID, $family;
     public string $name, $creationDate;
     public ?string $description, $expirationDate, $creationReason, $expirationReason;
@@ -21,7 +21,7 @@ class DiscordPlan
     public DiscordBot $bot;
     public DiscordUserTargets $userTargets;
     public DiscordCountingChannels $countingChannels;
-    public DiscordPolls $polls;
+    public DiscordUserPolls $userPolls;
     public DiscordUserLevels $userLevels;
     public DiscordInviteTracker $inviteTracker;
     public DiscordInteractionRoles $interactionRoles;
@@ -36,8 +36,7 @@ class DiscordPlan
     public DiscordUserNotes $userNotes;
     public DiscordUserGiveaways $userGiveaways;
 
-    public function __construct(DiscordBot $bot,
-                                int|string $botID, int|string $planID)
+    public function __construct(DiscordBot $bot, int|string $planID)
     {
         $this->bot = $bot;
 
@@ -50,7 +49,6 @@ class DiscordPlan
             null,
             1
         )[0];
-        $this->botID = $botID;
         $this->planID = (int)$query->id;
         $this->family = $query->family === null ? null : (int)$query->family;
         $this->applicationID = $query->application_id === null ? null : (int)$query->application_id;
@@ -76,7 +74,7 @@ class DiscordPlan
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);
-        $this->polls = new DiscordPolls($this);
+        $this->userPolls = new DiscordUserPolls($this);
         $this->userLevels = new DiscordUserLevels($this);
         $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->temporaryChannels = new DiscordTemporaryChannels($this);

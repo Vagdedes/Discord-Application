@@ -265,7 +265,7 @@ class DiscordPersistentMessages
         try {
             $channel->messages->fetch($oldMessageRow->message_id)->done(
                 function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
-                    if ($message->user_id == $this->plan->botID) {
+                    if ($message->user_id == $this->plan->bot->botID) {
                         if ($custom) {
                             $messageRow->message_id = $message->id;
                         }

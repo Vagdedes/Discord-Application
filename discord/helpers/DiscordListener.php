@@ -13,13 +13,15 @@ class DiscordListener
 {
     private DiscordPlan $plan;
     private const
-        IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
-        IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
+
+        IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
+        IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
-        IMPLEMENTATION_TICKET = "/root/discord_bot/listeners/implementation/ticket/",
-        IMPLEMENTATION_COUNTING_GOAL = "/root/discord_bot/listeners/implementation/counting_goal/",
+
+        IMPLEMENTATION_USER_TICKETS = "/root/discord_bot/listeners/implementation/user_tickets/",
+        IMPLEMENTATION_CHANNEL_COUNTING = "/root/discord_bot/listeners/implementation/channel_counting/",
         IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/implementation/invite_tracker/",
         IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_level/",
         IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/implementation/channel_statistics/",
@@ -137,7 +139,7 @@ class DiscordListener
                                              mixed       $objects): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_TICKET . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_USER_TICKETS . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $objects)
@@ -150,7 +152,7 @@ class DiscordListener
                                                    mixed   $object): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_COUNTING_GOAL . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_CHANNEL_COUNTING . $this->plan->planID . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $message, $object)

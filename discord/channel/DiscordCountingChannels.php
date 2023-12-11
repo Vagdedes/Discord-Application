@@ -49,7 +49,7 @@ class DiscordCountingChannels
 
     public function track(Message $message): bool
     {
-        if ($message->author->id != $this->plan->botID) {
+        if ($message->author->id != $this->plan->bot->botID) {
             $rowArray = $this->getCountingChannelObject($message);
 
             if ($rowArray !== null) {

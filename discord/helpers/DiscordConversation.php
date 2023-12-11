@@ -180,7 +180,7 @@ class DiscordConversation
             BotDatabaseTable::BOT_REPLIES,
             array(
                 "plan_id" => $this->plan->planID,
-                "bot_id" => $this->plan->botID,
+                "bot_id" => $this->plan->bot->botID,
                 "server_id" => $serverID,
                 "channel_id" => $channelID,
                 "thread_id" => $threadID,
@@ -203,7 +203,7 @@ class DiscordConversation
             BotDatabaseTable::BOT_MESSAGES,
             array(
                 "plan_id" => $this->plan->planID,
-                "bot_id" => $this->plan->botID,
+                "bot_id" => $this->plan->bot->botID,
                 "server_id" => $serverID,
                 "channel_id" => $channelID,
                 "thread_id" => $threadID,

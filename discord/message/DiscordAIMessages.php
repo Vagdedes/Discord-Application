@@ -107,13 +107,13 @@ class DiscordAIMessages
 
                         if (get_key_value_pair($cooldownKey) === null) {
                             set_key_value_pair($cooldownKey, true);
-                            if ($member->id != $this->plan->botID) {
+                            if ($member->id != $this->plan->bot->botID) {
                                 if ($channel->require_mention) {
                                     $mention = false;
 
                                     if (!empty($message->mentions->first())) {
                                         foreach ($message->mentions as $userObj) {
-                                            if ($userObj->id == $this->plan->botID) {
+                                            if ($userObj->id == $this->plan->bot->botID) {
                                                 $mention = true;
                                                 break;
                                             }

@@ -93,7 +93,7 @@ class DiscordUserTargets
             return;
         } else {
             $members = $members->toArray();
-            unset($members[$this->plan->botID]);
+            unset($members[$this->plan->bot->botID]);
             $removalList = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 array("user_id"),
@@ -344,7 +344,7 @@ class DiscordUserTargets
                             "(1) Failed to close expired target with ID: " . $query->id
                         );
                     }
-                } else if ($member->id != $this->plan->botID) {
+                } else if ($member->id != $this->plan->bot->botID) {
                     sql_insert(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
                         array(

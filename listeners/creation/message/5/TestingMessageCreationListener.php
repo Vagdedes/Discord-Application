@@ -7,7 +7,7 @@ class TestingMessageCreationListener // Name can be changed
 {
 
     public static function test_method(DiscordPlan    $plan,
-                                       ?Interaction    $interaction,
+                                       ?Interaction   $interaction,
                                        MessageBuilder $messageBuilder): MessageBuilder // Name can be changed
     {
         $messageBuilder->setContent("Hello World!");

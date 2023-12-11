@@ -2,31 +2,31 @@
 
 /*
  * Bot Features:
- * Custom Commands
- * Channel Logs
- * Invite Tracker
+ * Custom Logs
+ * Custom Commands (Listener)
+ * -
  * Social Alerts
+ * Reaction Roles
+ * Invite Tracker (Listener)
  * -
  * AI Text Messages
  * AI Image Messages
- * Persistent Messages
- * Reminder Messages
- * Welcome & Goodbye Messages
+ * Persistent Messages (Listener)
+ * Reminder Messages (Listener)
+ * Welcome & Goodbye Messages (Listener)
  * -
- * Counting Channels
- * Statistics Channels
- * Temporary Channels
  * Anti-Expiration Threads
+ * Counting Channels (Listener)
+ * Statistics Channels (Listener)
+ * Temporary Channels (Listener)
  * -
- * Reaction Polls
- * Reaction Roles
- * -
- * User Giveaways
- * User Targets
- * User Tickets
- * User Levels
  * User Notes
- * User Questionnaire
+ * User Targets
+ * User Giveaways (Listener)
+ * User Polls (Listener)
+ * User Tickets (Listener)
+ * User Levels (Listener)
+ * User Questionnaire (Listener)
  */
 
 use Discord\Discord;
@@ -90,7 +90,6 @@ class DiscordBot
                 }
                 $this->plans[] = new DiscordPlan(
                     $this,
-                    $this->botID,
                     $plan->id
                 );
             }
