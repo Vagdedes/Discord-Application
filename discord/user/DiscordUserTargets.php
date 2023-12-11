@@ -48,13 +48,12 @@ class DiscordUserTargets
                     null
                 )
             );
+            $target->instructions = array();
 
             if (!empty($query)) {
                 foreach ($query as $arrayChildKey => $row) {
                     $target->instructions[$arrayChildKey] = $row->instruction_id;
                 }
-            } else {
-                $target->instructions = array();
             }
             $this->targets[$target->id] = $target;
             $this->initiate($target);
@@ -245,7 +244,7 @@ class DiscordUserTargets
                                     global $logger;
                                     $logger->logError(
                                         $this->plan->planID,
-                                        "Failed to insert target creation with ID: " . $query->id
+                                        "(2) Failed to insert target creation with ID: " . $query->id
                                     );
                                 }
                             });

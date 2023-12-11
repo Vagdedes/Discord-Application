@@ -13,11 +13,13 @@ class DiscordUserQuestionnaire
     public int $ignoreChannelDeletion, $ignoreThreadDeletion;
 
     private const
+        FAILED_QUESTION = "Failed to find question, please contact an administrator or try again later.",
         REFRESH_TIME = "15 seconds",
         AI_HASH = 689043243;
 
     public function __construct(DiscordPlan $plan)
     {
+        global $logger;
         $this->plan = $plan;
         $this->ignoreChannelDeletion = 0;
         $this->ignoreThreadDeletion = 0;
@@ -37,8 +39,8 @@ class DiscordUserQuestionnaire
         foreach ($this->questionnaires as $arrayKey => $questionnaire) {
             unset($this->questionnaires[$arrayKey]);
             $query = get_sql_query(
-                BotDatabaseTable::BOT_QUESTIONNAIRE_INSTRUCTIONS,
-                array("instruction_id"),
+                BotDatabaseTable::BOT_QUESTIONNAIRE_QUESTIONS,
+                null,
                 array(
                     array("questionnaire_id", $questionnaire->id),
                     array("deletion_date", null),
@@ -50,18 +52,39 @@ class DiscordUserQuestionnaire
             );
 
             if (!empty($query)) {
-                foreach ($query as $arrayChildKey => $row) {
-                    $questionnaire->instructions[$arrayChildKey] = $row->instruction_id;
+                $questionnaire->questions = array();
+
+                foreach ($query as $row) {
+                    $questionnaire->questions[$row->id] = $row;
                 }
-            } else {
+                $query = get_sql_query(
+                    BotDatabaseTable::BOT_QUESTIONNAIRE_INSTRUCTIONS,
+                    array("instruction_id"),
+                    array(
+                        array("questionnaire_id", $questionnaire->id),
+                        array("deletion_date", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
                 $questionnaire->instructions = array();
+
+                if (!empty($query)) {
+                    foreach ($query as $arrayChildKey => $row) {
+                        $questionnaire->instructions[$arrayChildKey] = $row->instruction_id;
+                    }
+                }
+                $this->questionnaires[$questionnaire->id] = $questionnaire;
+                $this->initiate($questionnaire);
+            } else {
+                $logger->logError($plan->planID, "Questionnaire without questions with ID: " . $questionnaire->id);
             }
-            $this->questionnaires[$questionnaire->id] = $questionnaire;
-            $this->initiate($questionnaire);
         }
     }
 
-    private function initiate(object|string|int $query): void
+    private function initiate(object|string|int $query, bool $force = false): void
     {
         if (!is_object($query)) {
             if (!empty($this->questionnaires)) {
@@ -76,7 +99,8 @@ class DiscordUserQuestionnaire
         } else {
             $this->checkExpired();
 
-            if ($query->max_open_general !== null
+            if (!$force && $query->automatic !== null
+                || $query->max_open_general !== null
                 && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
                 return;
             }
@@ -245,7 +269,7 @@ class DiscordUserQuestionnaire
                                     global $logger;
                                     $logger->logError(
                                         $this->plan->planID,
-                                        "Failed to insert questionnaire creation with ID: " . $query->id
+                                        "(2) Failed to insert questionnaire creation with ID: " . $query->id
                                     );
                                 }
                             });
@@ -336,6 +360,8 @@ class DiscordUserQuestionnaire
                     }
                 } else if ($message->member->id != $this->plan->bot->botID) {
                     //todo
+
+
                     return true;
                 }
             }
@@ -572,7 +598,13 @@ class DiscordUserQuestionnaire
                         "id"
                     )
                 );
-                rsort($query->answers);
+
+                if (!empty($query->answers)) {
+                    foreach ($query->answers as $answer) {
+                        $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
+                    }
+                    rsort($query->answers);
+                }
                 set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
                 return $query;
             } else {
@@ -622,7 +654,13 @@ class DiscordUserQuestionnaire
                                 "id"
                             )
                         );
-                        rsort($row->answers);
+
+                        if (!empty($row->answers)) {
+                            foreach ($row->answers as $answer) {
+                                $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
+                            }
+                            rsort($row->answers);
+                        }
                     }
                 }
             }
@@ -706,6 +744,85 @@ class DiscordUserQuestionnaire
     }
 
     // Separator
+
+    private function getQuestion(object $questionnaire): object|bool|string
+    {
+        $questionnaire = $this->questionnaires[$questionnaire->questionnaire_id] ?? null;
+
+        if ($questionnaire !== null) {
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_QUESTIONNAIRE_ANSWERS,
+                null,
+                array(
+                    array("questionnaire_creation_id", $questionnaire->questionnaire_creation_id),
+                    array("deletion_date", null),
+                    array("answer", null)
+                ),
+                null,
+                1
+            );
+
+            if (empty($query)) {
+                $query = get_sql_query(
+                    BotDatabaseTable::BOT_QUESTIONNAIRE_ANSWERS,
+                    null,
+                    array(
+                        array("questionnaire_creation_id", $questionnaire->questionnaire_creation_id),
+                        array("deletion_date", null),
+                        array("answer", "IS NOT", null)
+                    )
+                );
+
+                if (empty($query)) {
+                    $question = $questionnaire->questions[0] ?? null;
+
+                    if ($question === null) {
+                        return self::FAILED_QUESTION;
+                    } else {
+                        if (sql_insert(
+                            BotDatabaseTable::BOT_QUESTIONNAIRE_ANSWERS,
+                            array(
+                                "questionnaire_creation_id" => $questionnaire->questionnaire_creation_id,
+                                "question_id" => $question->id,
+                                "creation_date" => get_current_date()
+                            )
+                        )) {
+                            return $question;
+                        } else {
+                            return self::FAILED_QUESTION;
+                        }
+                    }
+                } else {
+                    $questions = $questionnaire->questions;
+
+                    foreach ($query as $row) {
+                        unset($questions[$row->question_id]);
+                    }
+                    if (empty($questions)) {
+                        return true;
+                    }
+                    $question = array_shift($questions);
+
+                    if (sql_insert(
+                        BotDatabaseTable::BOT_QUESTIONNAIRE_ANSWERS,
+                        array(
+                            "questionnaire_creation_id" => $questionnaire->questionnaire_creation_id,
+                            "question_id" => $question->id,
+                            "creation_date" => get_current_date()
+                        )
+                    )) {
+                        return $question;
+                    } else {
+                        return self::FAILED_QUESTION;
+                    }
+                }
+            } else {
+                return $questionnaire->questions[$query[0]->question_id] ?? self::FAILED_QUESTION;
+            }
+        } else {
+            return self::FAILED_QUESTION;
+        }
+    }
 
     private function hasMaxOpen(int|string $questionnaireID, int|string|null $userID, int|string $limit): bool
     {
