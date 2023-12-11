@@ -420,7 +420,7 @@ class DefaultCommandImplementationListener
                 $user->id
             );
             $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($plan->discord);
+            $embed = new Embed($plan->bot->discord);
             $embed->setAuthor($user->username, $user->avatar);
             $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
             $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
@@ -435,7 +435,7 @@ class DefaultCommandImplementationListener
 
             if (!empty($goals)) {
                 foreach ($goals as $goal) {
-                    $embed = new Embed($plan->discord);
+                    $embed = new Embed($plan->bot->discord);
                     $embed->setTitle($goal->title);
 
                     if ($goal->description !== null) {
@@ -466,7 +466,7 @@ class DefaultCommandImplementationListener
 
                     if ($user !== null) {
                         $counter++;
-                        $embed = new Embed($plan->discord);
+                        $embed = new Embed($plan->bot->discord);
                         $embed->setAuthor($counter . ". " . $user->username, $user->avatar);
                         $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
                         $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
@@ -523,7 +523,7 @@ class DefaultCommandImplementationListener
             );
         } else {
             $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($plan->discord);
+            $embed = new Embed($plan->bot->discord);
             $embed->setAuthor($user->username, $user->avatar);
             $embed->setTitle($object[0]->tier_name);
             $embed->setDescription($object[0]->tier_description);
@@ -664,7 +664,7 @@ class DefaultCommandImplementationListener
 
             foreach ($object as $user) {
                 $counter++;
-                $embed = new Embed($plan->discord);
+                $embed = new Embed($plan->bot->discord);
                 $userObject = $plan->utilities->getUser($user->user_id);
 
                 if ($userObject !== null) {

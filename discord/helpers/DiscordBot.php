@@ -89,7 +89,6 @@ class DiscordBot
                     $this->account = $account;
                 }
                 $this->plans[] = new DiscordPlan(
-                    $this->discord,
                     $this,
                     $this->botID,
                     $plan->id

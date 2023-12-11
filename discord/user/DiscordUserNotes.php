@@ -418,7 +418,7 @@ class DiscordUserNotes
             $user = null;
 
             foreach ($query as $row) {
-                $embed = new Embed($this->plan->discord);
+                $embed = new Embed($this->plan->bot->discord);
 
                 if ($user === null) {
                     $user = $this->plan->utilities->getUser($row->user_id);
@@ -460,7 +460,7 @@ class DiscordUserNotes
 
         if ($object !== null) {
             $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
             $user = $this->plan->utilities->getUser($object->user_id);
 
             if ($user !== null) {
@@ -537,7 +537,7 @@ class DiscordUserNotes
                             ), true
                         );
                     }
-                }, $this->plan->discord, true);
+                }, $this->plan->bot->discord, true);
                 $messageBuilder->addComponent($select);
             }
             $this->plan->utilities->acknowledgeCommandMessage(

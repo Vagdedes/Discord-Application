@@ -217,7 +217,7 @@ class DiscordCountingChannels
         $messageBuilder->setContent("Showing last **" . sizeof($goals) . " counting goals** of user **" . $this->plan->utilities->getUsername($userID) . "**");
 
         foreach ($goals as $goal) {
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
             $embed->setTitle($goal->title);
 
             if ($goal->description !== null) {
@@ -292,13 +292,13 @@ class DiscordCountingChannels
                                       string  $title): void
     {
         if ($row->notifications_channel_id !== null) {
-            $channel = $this->plan->discord->getChannel($row->notifications_channel_id);
+            $channel = $this->plan->bot->discord->getChannel($row->notifications_channel_id);
 
             if ($channel !== null
                 && $channel->allowText()
                 && $channel->guild_id == $row->server_id) {
                 $messageBuilder = MessageBuilder::new();
-                $embed = new Embed($this->plan->discord);
+                $embed = new Embed($this->plan->bot->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);
                 $embed->setTitle($title);
                 $embed->setDescription($message->content);

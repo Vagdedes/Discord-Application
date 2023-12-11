@@ -82,7 +82,7 @@ class DiscordUserTargets
         }
         $members = null;
 
-        foreach ($this->plan->discord->guilds as $guild) {
+        foreach ($this->plan->bot->discord->guilds as $guild) {
             if ($guild->id == $query->server_id) {
                 $members = $guild->members;
                 break;
@@ -216,7 +216,7 @@ class DiscordUserTargets
                             }
                         });
                     } else if ($query->create_channel_id !== null) {
-                        $channel = $this->plan->discord->getChannel($query->create_channel_id);
+                        $channel = $this->plan->bot->discord->getChannel($query->create_channel_id);
 
                         if ($channel !== null
                             && $channel->allowText()
@@ -481,7 +481,7 @@ class DiscordUserTargets
                         null,
                         1
                     )) {
-                        $channel = $this->plan->discord->getChannel($query->channel_id);
+                        $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                         if ($channel !== null
                             && $channel->allowText()
@@ -612,7 +612,7 @@ class DiscordUserTargets
                 null,
                 1
             )) {
-                $channel = $this->plan->discord->getChannel($query->channel_id);
+                $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
                     && $channel->allowText()
@@ -739,7 +739,7 @@ class DiscordUserTargets
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing target with ID **" . $target->target_creation_id . "**");
 
-        $embed = new Embed($this->plan->discord);
+        $embed = new Embed($this->plan->bot->discord);
         $user = $this->plan->utilities->getUser($target->user_id);
 
         if ($user !== null) {
@@ -761,7 +761,7 @@ class DiscordUserTargets
             $max = DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE;
 
             foreach (array_chunk($target->messages, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                $embed = new Embed($this->plan->discord);
+                $embed = new Embed($this->plan->bot->discord);
 
                 foreach ($chunk as $message) {
                     $embed->addFieldValues(
@@ -789,7 +789,7 @@ class DiscordUserTargets
         $messageBuilder->setContent("Showing last **" . sizeof($targets) . " targets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
 
         foreach ($targets as $target) {
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
 
             if (!empty($target->target->title)) {
                 $embed->setTitle($target->target->title);
@@ -859,7 +859,7 @@ class DiscordUserTargets
                     null,
                     1
                 )) {
-                    $channel = $this->plan->discord->getChannel($row->channel_id);
+                    $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
                         && $channel->allowText()

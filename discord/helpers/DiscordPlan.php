@@ -1,14 +1,11 @@
 <?php
 
-use Discord\Discord;
-
 class DiscordPlan
 {
     public int $planID, $botID;
     public ?int $applicationID, $family;
     public string $name, $creationDate;
     public ?string $description, $expirationDate, $creationReason, $expirationReason;
-    public Discord $discord;
     public DiscordInstructions $instructions;
     public DiscordConversation $conversation;
     public DiscordModeration $moderation;
@@ -39,8 +36,7 @@ class DiscordPlan
     public DiscordUserNotes $userNotes;
     public DiscordUserGiveaways $userGiveaways;
 
-    public function __construct(Discord    $discord,
-                                DiscordBot $bot,
+    public function __construct(DiscordBot $bot,
                                 int|string $botID, int|string $planID)
     {
         $this->bot = $bot;
@@ -54,7 +50,6 @@ class DiscordPlan
             null,
             1
         )[0];
-        $this->discord = $discord;
         $this->botID = $botID;
         $this->planID = (int)$query->id;
         $this->family = $query->family === null ? null : (int)$query->family;

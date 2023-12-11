@@ -181,7 +181,7 @@ class DiscordPersistentMessages
             if ($messageRow->server_id !== null
                 && $messageRow->channel_id !== null) {
                 global $logger;
-                $channel = $this->plan->discord->getChannel($messageRow->channel_id);
+                $channel = $this->plan->bot->discord->getChannel($messageRow->channel_id);
 
                 if ($channel !== null
                     && $channel->guild_id == $messageRow->server_id) {

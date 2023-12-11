@@ -111,7 +111,7 @@ class DiscordStatisticsChannels
                     }
                 });
             } else {
-                $channel = $this->plan->discord->getChannel($row->channel_id);
+                $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                 if ($channel !== null
                     && $channel->allowVoice()

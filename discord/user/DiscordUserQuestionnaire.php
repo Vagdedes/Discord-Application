@@ -9,5 +9,5 @@ class DiscordUserQuestionnaire
         $this->plan = $plan;
     }
 
-    //todo repeat-question, take-questionnaire, quit-questionnaire command
+    //todo repeat-question, take-questionnaire, quit-questionnaire commands
 }

@@ -236,7 +236,7 @@ class DiscordInstructions
         $object->messageContent = $message?->content;
         $object->messageID = $message?->id;
         $object->botID = $this->plan->botID;
-        $object->botName = $this->plan->discord->user->id;
+        $object->botName = $this->plan->bot->discord->user->id;
         $object->domain = get_domain();
         $object->date = get_current_date();
         $object->year = date("Y");

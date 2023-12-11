@@ -18,7 +18,7 @@ class DiscordUtilities
     public function __construct(Discord|DiscordPlan $object)
     {
         if ($object instanceof DiscordPlan) {
-            $this->discord = $object->discord;
+            $this->discord = $object->bot->discord;
             $this->plan = $object;
         } else {
             $this->discord = $object;

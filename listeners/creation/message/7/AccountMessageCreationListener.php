@@ -58,7 +58,7 @@ class AccountMessageCreationListener
                         }
                     });
                 }
-            }, $plan->discord);
+            }, $plan->bot->discord);
             $messageBuilder->addComponent($select);
 
             // Separator
@@ -67,7 +67,7 @@ class AccountMessageCreationListener
             $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days", true);
 
             if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
-                $embed = new Embed($plan->discord);
+                $embed = new Embed($plan->bot->discord);
                 $currentGiveaway = $currentGiveaway->getObject();
                 $lastGiveawayInformation = $productGiveaway->getLast();
 
@@ -134,7 +134,7 @@ class AccountMessageCreationListener
 
         // Separator
 
-        $embed = new Embed($plan->discord);
+        $embed = new Embed($plan->bot->discord);
 
         if ($product->color !== null) {
             $embed->setColor($product->color);
@@ -199,7 +199,7 @@ class AccountMessageCreationListener
                             $compatibleProductImage = $compatibleProduct->image;
 
                             if ($compatibleProductImage != null) {
-                                $embed = new Embed($plan->discord);
+                                $embed = new Embed($plan->bot->discord);
                                 $embed->setTitle(strip_tags($compatibleProduct->name));
 
                                 if ($compatibleProduct->color !== null) {
@@ -221,7 +221,7 @@ class AccountMessageCreationListener
 
             if ($offer->isPositiveOutcome()) {
                 $offer = $offer->getObject();
-                $embed = new Embed($plan->discord);
+                $embed = new Embed($plan->bot->discord);
                 $embed->setAuthor(
                     strip_tags($offer->name),
                     $offer->image
@@ -246,7 +246,7 @@ class AccountMessageCreationListener
         if (!empty($productDivisions)) {
             if (sizeof($productDivisions) === 1) {
                 foreach ($productDivisions as $family => $divisions) {
-                    $embed = new Embed($plan->discord);
+                    $embed = new Embed($plan->bot->discord);
 
                     if ($family !== null) {
                         $embed->setTitle($family);
@@ -283,7 +283,7 @@ class AccountMessageCreationListener
                 $select->setListener(function (Interaction $interaction, Collection $options)
                 use ($plan, $productDivisions) {
                     $reply = MessageBuilder::new();
-                    $embed = new Embed($plan->discord);
+                    $embed = new Embed($plan->bot->discord);
                     $division = $productDivisions[$options[0]->getValue()];
 
                     if ($division->has_title) {
@@ -298,7 +298,7 @@ class AccountMessageCreationListener
                     }
                     $reply->addEmbed($embed);
                     $plan->utilities->acknowledgeMessage($interaction, $reply, true);
-                }, $plan->discord);
+                }, $plan->bot->discord);
             }
         }
 
@@ -351,7 +351,7 @@ class AccountMessageCreationListener
                                     true
                                 );
                             }
-                        }, $plan->discord);
+                        }, $plan->bot->discord);
                         $actionRow->addComponent($button);
                     }
                 }
@@ -365,7 +365,7 @@ class AccountMessageCreationListener
 
         if (!empty($productCards)) {
             foreach ($productCards as $card) {
-                $embed = new Embed($plan->discord);
+                $embed = new Embed($plan->bot->discord);
                 $embed->setAuthor(
                     strip_tags($card->name),
                     $card->image,
@@ -475,7 +475,7 @@ class AccountMessageCreationListener
         if ($account->isPositiveOutcome()) {
             global $website_domain;
             $account = $account->getObject();
-            $embed = new Embed($plan->discord);
+            $embed = new Embed($plan->bot->discord);
             $embed->setAuthor(
                 AccountMessageImplementationListener::IDEALISTIC_NAME,
                 AccountMessageImplementationListener::IDEALISTIC_LOGO,
@@ -516,7 +516,7 @@ class AccountMessageCreationListener
         global $website_domain;
         $account = new Account($plan->applicationID);
         $accounts = $account->getRegistry()->getAccountAmount();
-        $embed = new Embed($plan->discord);
+        $embed = new Embed($plan->bot->discord);
         $embed->setAuthor(
             AccountMessageImplementationListener::IDEALISTIC_NAME,
             AccountMessageImplementationListener::IDEALISTIC_LOGO,

@@ -101,7 +101,7 @@ class DiscordCommands
                     global $logger;
 
                     foreach ($command->arguments as $argument) {
-                        $option = new Option($this->plan->discord);
+                        $option = new Option($this->plan->bot->discord);
                         $option->setName(
                             $argument->name
                         )->setRequired(
@@ -167,8 +167,8 @@ class DiscordCommands
                         $commandBuilder->addOption($option);
                     }
                 }
-                $this->plan->discord->application->commands->save(
-                    $this->plan->discord->application->commands->create(
+                $this->plan->bot->discord->application->commands->save(
+                    $this->plan->bot->discord->application->commands->create(
                         $commandBuilder->toArray()
                     )
                 );

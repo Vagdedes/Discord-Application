@@ -28,7 +28,7 @@ class DiscordReminderMessages
         if (!empty($query)) {
             foreach ($query as $row) {
                 if ($row->thread_id === null) {
-                    $channel = $this->plan->discord->getChannel($row->channel_id);
+                    $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
                         && $channel->allowText()

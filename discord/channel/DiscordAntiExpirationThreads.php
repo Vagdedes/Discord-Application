@@ -27,7 +27,7 @@ class DiscordAntiExpirationThreads
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $channel = $this->plan->discord->getChannel($row->channel_id);
+                $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                 if ($channel !== null
                     && $channel->guild_id == $row->server_id) {

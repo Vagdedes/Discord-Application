@@ -125,7 +125,7 @@ class DiscordUserTickets
 
         if ($post || $create) {
             $message = MessageBuilder::new();
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
             $embed->setAuthor($interaction->user->username, $interaction->user->getAvatarAttribute());
             $embed->setTimestamp(time());
 
@@ -151,7 +151,7 @@ class DiscordUserTickets
         }
 
         if ($post) {
-            $channel = $this->plan->discord->getChannel($query->post_channel_id);
+            $channel = $this->plan->bot->discord->getChannel($query->post_channel_id);
 
             if ($channel !== null
                 && $channel->allowText()
@@ -372,7 +372,7 @@ class DiscordUserTickets
                         null,
                         1
                     )) {
-                        $channel = $this->plan->discord->getChannel($query->created_channel_id);
+                        $channel = $this->plan->bot->discord->getChannel($query->created_channel_id);
 
                         if ($channel !== null
                             && $channel->allowText()
@@ -583,7 +583,7 @@ class DiscordUserTickets
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
-        $embed = new Embed($this->plan->discord);
+        $embed = new Embed($this->plan->bot->discord);
         $user = $this->plan->utilities->getUser($ticket->user_id);
 
         if ($user !== null) {
@@ -613,7 +613,7 @@ class DiscordUserTickets
             $max = DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE - 1; // Minus one due to previous embed
 
             foreach (array_chunk($ticket->messages, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                $embed = new Embed($this->plan->discord);
+                $embed = new Embed($this->plan->bot->discord);
 
                 foreach ($chunk as $message) {
                     $embed->addFieldValues(
@@ -641,7 +641,7 @@ class DiscordUserTickets
         $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
 
         foreach ($tickets as $ticket) {
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
 
             if (!empty($ticket->ticket->title)) {
                 $embed->setTitle($ticket->ticket->title);
@@ -740,7 +740,7 @@ class DiscordUserTickets
                     null,
                     1
                 )) {
-                    $channel = $this->plan->discord->getChannel($row->created_channel_id);
+                    $channel = $this->plan->bot->discord->getChannel($row->created_channel_id);
 
                     if ($channel !== null
                         && $channel->allowText()

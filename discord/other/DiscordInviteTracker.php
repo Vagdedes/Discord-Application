@@ -34,7 +34,7 @@ class DiscordInviteTracker
         if (!self::$isInitialized) {
             self::$isInitialized = true;
 
-            foreach ($this->plan->discord->guilds as $guild) {
+            foreach ($this->plan->bot->discord->guilds as $guild) {
                 $this->track($guild);
             }
         }
@@ -273,7 +273,7 @@ class DiscordInviteTracker
                     );
 
                     if ($messageBuilder !== null) {
-                        $channel = $this->plan->discord->getChannel($goal->message_channel_id);
+                        $channel = $this->plan->bot->discord->getChannel($goal->message_channel_id);
 
                         if ($channel !== null
                             && $channel->guild_id === $goal->message_server_id) {

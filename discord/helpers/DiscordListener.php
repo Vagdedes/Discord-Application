@@ -100,7 +100,7 @@ class DiscordListener
                 . "/" . $class . '.php'
             );
             try {
-                $this->plan->discord->listenCommand(
+                $this->plan->bot->discord->listenCommand(
                     $command->command_identification,
                     function (Interaction $interaction) use ($class, $method, $command) {
                         if ($command->required_permission !== null

@@ -308,7 +308,7 @@ class AccountMessageImplementationListener
                             $counter = $count * $limit;
                             $max = min($counter + $limit, $size);
                             $divisor = 0;
-                            $embed = new Embed($plan->discord);
+                            $embed = new Embed($plan->bot->discord);
                             $embed->setTitle("Account History");
                             $embed->setDescription(
                                 get_full_date($history[$counter]->creation_date)
@@ -328,7 +328,7 @@ class AccountMessageImplementationListener
                             $messageBuilder->addEmbed($embed);
                             $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                         }
-                    }, $plan->discord);
+                    }, $plan->bot->discord);
                     $messageBuilder->addComponent($select);
                     $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                 } else {
@@ -365,7 +365,7 @@ class AccountMessageImplementationListener
         if ($account->isPositiveOutcome()) {
             $account = $account->getObject();
             $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($plan->discord);
+            $embed = new Embed($plan->bot->discord);
             $embed->setTitle($account->getIdentification()->get());
             $embed->setDescription("Send this code when asked by our team to help us identify you.");
             $messageBuilder->addEmbed($embed);
@@ -480,7 +480,7 @@ class AccountMessageImplementationListener
                                 $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
                             ), true
                         );
-                    }, $plan->discord);
+                    }, $plan->bot->discord);
                     $messageBuilder->addComponent($select);
                     $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                 } else {

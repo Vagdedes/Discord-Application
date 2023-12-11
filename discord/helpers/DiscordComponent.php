@@ -109,7 +109,7 @@ class DiscordComponent
                 if ($customListener === null) {
                     $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
-                            $embed = new Embed($this->plan->discord);
+                            $embed = new Embed($this->plan->bot->discord);
                             $embed->setDescription($this->plan->instructions->replace(array($query->response), $object)[0]);
                             $this->plan->utilities->acknowledgeMessage(
                                 $interaction,
@@ -284,7 +284,7 @@ class DiscordComponent
                                 if (!$this->hasCooldown($actionRow)) {
                                     $this->extract($interaction, $messageBuilder, $buttonObject, $button);
                                 }
-                            }, $this->plan->discord);
+                            }, $this->plan->bot->discord);
                         }
                     }
                     $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
@@ -312,7 +312,7 @@ class DiscordComponent
                     if (!$this->hasCooldown($actionRow)) {
                         $listener($interaction, $button);
                     }
-                }, $this->plan->discord);
+                }, $this->plan->bot->discord);
             }
         }
         return $actionRow;
@@ -399,7 +399,7 @@ class DiscordComponent
                         if (!$this->hasCooldown($select)) {
                             $this->extract($interaction, $messageBuilder, $query, $options);
                         }
-                    }, $this->plan->discord);
+                    }, $this->plan->bot->discord);
                 }
             } else {
                 global $logger;
@@ -438,7 +438,7 @@ class DiscordComponent
                 if (!$this->hasCooldown($select)) {
                     $listener($interaction, $options);
                 }
-            }, $this->plan->discord);
+            }, $this->plan->bot->discord);
         }
         return $select;
     }
@@ -450,7 +450,7 @@ class DiscordComponent
                              object         $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
-            $embed = new Embed($this->plan->discord);
+            $embed = new Embed($this->plan->bot->discord);
             $embed->setDescription(
                 $this->plan->instructions->replace(array($databaseObject->response),
                     $this->plan->instructions->getObject(

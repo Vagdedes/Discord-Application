@@ -28,7 +28,7 @@ class DiscordStatusMessages
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
                     if ($channel->whitelist === null) {
-                        $channelFound = $this->plan->discord->getChannel($channel->channel_id);
+                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
@@ -41,7 +41,7 @@ class DiscordStatusMessages
                                     || $whitelist->server_id === $serverID
                                     && ($whitelist->channel_id === null
                                         || $whitelist->channel_id === $channel->channel_id))) {
-                                $channelFound = $this->plan->discord->getChannel($channel->channel_id);
+                                $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {
@@ -67,7 +67,7 @@ class DiscordStatusMessages
                 if ($channel->server_id == $serverID
                     && $channel->goodbye_message !== null) {
                     if ($channel->whitelist === null) {
-                        $channelFound = $this->plan->discord->getChannel($channel->channel_id);
+                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                         if ($channelFound !== null
                             && $channelFound->allowText()) {
@@ -80,7 +80,7 @@ class DiscordStatusMessages
                                     || $whitelist->server_id === $serverID
                                     && ($whitelist->channel_id === null
                                         || $whitelist->channel_id === $channel->channel_id))) {
-                                $channelFound = $this->plan->discord->getChannel($channel->channel_id);
+                                $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                                 if ($channelFound !== null
                                     && $channelFound->allowText()) {

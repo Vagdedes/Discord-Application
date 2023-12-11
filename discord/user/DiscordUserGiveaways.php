@@ -9,5 +9,5 @@ class DiscordUserGiveaways
         $this->plan = $plan;
     }
 
-    //todo join-giveaway, leave-giveaway, start-giveaway, stop-giveaway command
+    //todo join-giveaway, leave-giveaway, start-giveaway, stop-giveaway commands
 }
