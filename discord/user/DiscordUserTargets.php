@@ -368,6 +368,7 @@ class DiscordUserTargets
                         $instructions = $this->plan->instructions->build($object, $target->instructions);
                         $reply = $this->plan->aiMessages->rawTextAssistance(
                             $member,
+                            $message->channel,
                             $instructions[0],
                             ($message->content
                                 . DiscordProperties::NEW_LINE

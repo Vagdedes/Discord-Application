@@ -1,14 +1,16 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
+use Discord\Parts\Thread\Thread;
 
 class DiscordAIMessages
 {
     private DiscordPlan $plan;
-    public ?ChatAI $chatAI;
+    public ?array $chatAI;
 
     //todo dalle-3 to discord-ai
     //todo sound to discord-ai
@@ -22,35 +24,40 @@ class DiscordAIMessages
             array(
                 array("plan_id", $this->plan->planID),
                 array("deletion_date", null)
-            ),
-            null,
-            1
+            )
         );
 
         if (!empty($query)) {
-            $query = $query[0];
-            $apiKey = $query->api_key !== null ? array($query->api_key) :
-                get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
+            foreach ($query as $row) {
+                $apiKey = $row->api_key !== null ? array($row->api_key) :
+                    get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
 
-            if ($apiKey === null) {
-                global $logger;
-                $this->chatAI = null;
-                $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
-            } else {
-                $this->chatAI = new ChatAI(
-                    $query->model_family,
-                    $apiKey[0],
-                    DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
-                    $query->temperature,
-                    $query->frequency_penalty,
-                    $query->presence_penalty,
-                    $query->completions,
-                    $query->top_p,
-                );
+                if ($apiKey === null) {
+                    global $logger;
+                    $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
+                } else {
+                    $this->chatAI[$row->channel_id ?? 0] = new ChatAI(
+                        $row->model_family,
+                        $apiKey[0],
+                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
+                        $row->temperature,
+                        $row->frequency_penalty,
+                        $row->presence_penalty,
+                        $row->completions,
+                        $row->top_p,
+                    );
+                }
             }
         } else {
-            $this->chatAI = null;
+            $this->chatAI = array();
         }
+    }
+
+    public function getChatAI(?int $channelID): ?ChatAI
+    {
+        return $channelID !== null
+            ? ($this->chatAI[$channelID] ?? $this->chatAI[0])
+            : $this->chatAI[0];
     }
 
     public function textAssistance(Message $message,
@@ -59,9 +66,10 @@ class DiscordAIMessages
     {
         global $logger;
         $punishment = $this->plan->moderation->hasPunishment(DiscordPunishment::AI_BLACKLIST, $member->id);
+        $channelObj = $this->plan->utilities->getChannel($message->channel);
         $object = $this->plan->instructions->getObject(
             $message->guild,
-            $this->plan->utilities->getChannel($message->channel),
+            $channelObj,
             $message->thread,
             $member,
             $message
@@ -94,8 +102,9 @@ class DiscordAIMessages
             $channel = $object->channel;
 
             if ($channel !== null) {
-                if ($this->chatAI !== null
-                    && $this->chatAI->exists) {
+                $chatAI = $this->getChatAI($channel->channel_id);
+
+                if ($chatAI !== null && $chatAI->exists) {
                     if ($punishment !== null) {
                         if ($punishment->notify !== null) {
                             $message->reply(MessageBuilder::new()->setContent(
@@ -194,13 +203,14 @@ class DiscordAIMessages
                                             $promptMessage
                                         ))->done(function (Message $message)
                                         use (
-                                            $object, $messageContent, $member,
-                                            $threadID, $cacheKey, $logger, $channel
+                                            $object, $messageContent, $member, $chatAI,
+                                            $threadID, $cacheKey, $logger, $channel, $channelObj
                                         ) {
                                             $instructions = $this->plan->instructions->build($object);
                                             $reference = $message->message_reference?->content ?? null;
                                             $reply = $this->rawTextAssistance(
                                                 $member,
+                                                $channelObj,
                                                 $instructions[0],
                                                 $messageContent
                                                 . ($reference === null
@@ -229,7 +239,7 @@ class DiscordAIMessages
                                             }
                                             if ($reply[0]) {
                                                 $model = $reply[1];
-                                                $assistance = $this->chatAI->getText($model, $modelReply);
+                                                $assistance = $chatAI->getText($model, $modelReply);
 
                                                 if ($assistance !== null) {
                                                     $assistance .= $instructions[1];
@@ -311,11 +321,12 @@ class DiscordAIMessages
     }
 
     // 1: Success, 2: Model, 3: Reply, 4: Cache
-    public function rawTextAssistance(User|Member $userObject,
-                                      string      $instructions, string $user,
-                                      ?int        $extraHash = null,
-                                      bool        $cacheTime = false,
-                                      string      $cooldownMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE): array
+    public function rawTextAssistance(User|Member    $userObject,
+                                      Channel|Thread $channel,
+                                      string         $instructions, string $user,
+                                      ?int           $extraHash = null,
+                                      bool           $cacheTime = false,
+                                      string         $cooldownMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE): array
     {
         $useCache = $cacheTime !== false;
 
@@ -348,26 +359,34 @@ class DiscordAIMessages
         if ($extraHash !== null) {
             $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
         }
-        $outcome = $this->chatAI->getResult(
-            $hash,
-            array(
-                "messages" => array(
-                    array(
-                        "role" => "system",
-                        "content" => $instructions
-                    ),
-                    array(
-                        "role" => "user",
-                        "content" => $user
-                    )
-                )
-            )
-        );
-        if ($useCache) {
-            $outcome[3] = true;
+        $chatAI = $this->getChatAI($this->plan->utilities->getChannel($channel)->id);
+
+        if ($chatAI === null) {
+            $outcome = array(false, null, null, false);
             set_key_value_pair($cacheKey, $outcome, $cacheTime);
             clear_memory(array(manipulate_memory_key($simpleCacheKey)));
-            $outcome[3] = false;
+        } else {
+            $outcome = $chatAI->getResult(
+                $hash,
+                array(
+                    "messages" => array(
+                        array(
+                            "role" => "system",
+                            "content" => $instructions
+                        ),
+                        array(
+                            "role" => "user",
+                            "content" => $user
+                        )
+                    )
+                )
+            );
+            if ($useCache) {
+                $outcome[3] = true;
+                set_key_value_pair($cacheKey, $outcome, $cacheTime);
+                clear_memory(array(manipulate_memory_key($simpleCacheKey)));
+                $outcome[3] = false;
+            }
         }
         return $outcome;
     }
