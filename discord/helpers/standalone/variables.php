@@ -35,6 +35,7 @@ class BotDatabaseTable
         BOT_TEMPORARY_CHANNEL_OWNERS = "discord.botTemporaryChannelOwners",
         BOT_TEMPORARY_CHANNEL_ROLES = "discord.botTemporaryChannelRoles",
         BOT_QUESTIONNAIRES = "discord.botQuestionnaires",
+        BOT_QUESTIONNAIRE_TRACKING = "discord.botQuestionnaireTracking",
         BOT_QUESTIONNAIRE_QUESTIONS = "discord.botQuestionnaireQuestions",
         BOT_QUESTIONNAIRE_ANSWERS = "discord.botQuestionnaireAnswers",
         BOT_QUESTIONNAIRE_ROLES = "discord.botQuestionnaireRoles",

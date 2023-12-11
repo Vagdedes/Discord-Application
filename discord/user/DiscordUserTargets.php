@@ -5,7 +5,6 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Thread\Thread;
-use Discord\Parts\User\Member;
 
 class DiscordUserTargets
 {
@@ -37,7 +36,6 @@ class DiscordUserTargets
 
         foreach ($this->targets as $arrayKey => $target) {
             unset($this->targets[$arrayKey]);
-            $this->targets[$target->id] = $target;
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_INSTRUCTIONS,
                 array("instruction_id"),
@@ -55,7 +53,10 @@ class DiscordUserTargets
                 foreach ($query as $arrayChildKey => $row) {
                     $target->instructions[$arrayChildKey] = $row->instruction_id;
                 }
+            } else {
+                $target->instructions = array();
             }
+            $this->targets[$target->id] = $target;
             $this->initiate($target);
         }
     }
@@ -244,18 +245,7 @@ class DiscordUserTargets
                                     global $logger;
                                     $logger->logError(
                                         $this->plan->planID,
-                                        "(2) Failed to insert target creation with ID: " . $query->id
-                                    );
-                                }
-                                $insert["created_thread_id"] = $channel->guild_id;
-
-                                if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                                    $channel->sendMessage($message);
-                                } else {
-                                    global $logger;
-                                    $logger->logError(
-                                        $this->plan->planID,
-                                        "Failed to insert target creation of user: " . $member->user->id
+                                        "Failed to insert target creation with ID: " . $query->id
                                     );
                                 }
                             });
@@ -279,7 +269,7 @@ class DiscordUserTargets
         }
     }
 
-    public function track(Member $member, Message $message, object $object): bool
+    public function track(Message $message, object $object): bool
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
@@ -344,7 +334,7 @@ class DiscordUserTargets
                             "(1) Failed to close expired target with ID: " . $query->id
                         );
                     }
-                } else if ($member->id != $this->plan->bot->botID) {
+                } else if ($message->member->id != $this->plan->bot->botID) {
                     sql_insert(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
                         array(
@@ -364,10 +354,10 @@ class DiscordUserTargets
                     }
                     $message->reply(MessageBuilder::new()->setContent(
                         $promptMessage
-                    ))->done(function (Message $replyMessage) use ($message, $member, $object, $target, $query) {
+                    ))->done(function (Message $replyMessage) use ($message, $object, $target, $query) {
                         $instructions = $this->plan->instructions->build($object, $target->instructions);
                         $reply = $this->plan->aiMessages->rawTextAssistance(
-                            $member,
+                            $message->member,
                             $message->channel,
                             $instructions[0],
                             ($message->content

@@ -286,6 +286,11 @@ function initiate_discord_bot(): void
                 } else {
                     $plan->userTargets->ignoreChannelDeletion--;
                 }
+                if ($plan->userQuestionnaire->ignoreChannelDeletion === 0) {
+                    $plan->userQuestionnaire->closeByChannelOrThread($channel);
+                } else {
+                    $plan->userQuestionnaire->ignoreChannelDeletion--;
+                }
             }
             $logger->logInfo($channel->guild, null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
         });
@@ -316,6 +321,11 @@ function initiate_discord_bot(): void
                         $plan->userTargets->closeByChannelOrThread($thread->parent);
                     } else {
                         $plan->userTargets->ignoreThreadDeletion--;
+                    }
+                    if ($plan->userQuestionnaire->ignoreThreadDeletion === 0) {
+                        $plan->userQuestionnaire->closeByChannelOrThread($thread->parent);
+                    } else {
+                        $plan->userQuestionnaire->ignoreThreadDeletion--;
                     }
                 }
                 $logger->logInfo($thread->guild, null, Event::THREAD_DELETE, $thread);

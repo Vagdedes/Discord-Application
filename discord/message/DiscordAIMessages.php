@@ -3,9 +3,9 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
-use Discord\Parts\Thread\Thread;
 
 class DiscordAIMessages
 {
@@ -95,7 +95,8 @@ class DiscordAIMessages
             }
             return true;
         } else if ($this->plan->userTickets->track($message)
-            || $this->plan->userTargets->track($member, $message, $object)
+            || $this->plan->userTargets->track($message, $object)
+            || $this->plan->userQuestionnaire->track($message, $object)
             || $this->plan->countingChannels->track($message)) {
             return true;
         } else {
