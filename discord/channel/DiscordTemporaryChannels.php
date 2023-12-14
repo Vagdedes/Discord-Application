@@ -9,4 +9,18 @@ class DiscordTemporaryChannels
     }
 
     //todo add-channel-owner, remove-channel-owner, ban-channel-user, unban-channel-user commands
+
+    public function trackJoin() {
+
+    }
+
+    public function trackLeave() {
+
+    }
+
+    public function trackMove() {
+
+    }
+
+
 }

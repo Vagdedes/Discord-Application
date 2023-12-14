@@ -17,8 +17,6 @@ class DiscordUserQuestionnaire
         REFRESH_TIME = "15 seconds",
         AI_HASH = 689043243;
 
-    //todo close questionnaire command, start questionnaire command
-
     public function __construct(DiscordPlan $plan)
     {
         global $logger;
@@ -133,7 +131,7 @@ class DiscordUserQuestionnaire
                 array(
                     array("questionnaire_id", $query->id),
                     array("creation_date", ">", get_past_date(
-                        $query->questionnaire_duration !== null ? $query->questionnaire_duration : "1 minute"
+                        $query->cooldown_duration !== null ? $query->cooldown_duration : "1 minute"
                     ), 0),
                     array("deletion_date", null),
                     array("completion_date", null),
