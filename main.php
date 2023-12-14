@@ -585,7 +585,28 @@ function initiate_discord_bot(): void
 
         // Separator
 
-        $discord->on(Event::VOICE_STATE_UPDATE, function (VoiceStateUpdate $state, Discord $discord, $oldstate) use ($logger) {
+        $discord->on(Event::VOICE_STATE_UPDATE, function (VoiceStateUpdate $state, Discord $discord, $oldstate)
+        use ($logger, $createdDiscordBot) {
+            if ($state->channel_id === null) {
+                foreach ($createdDiscordBot->plans as $plan) {
+                    if ($plan->temporaryChannels->trackLeave($oldstate)) {
+                        break;
+                    }
+                }
+            } else if ($oldstate === null) {
+                foreach ($createdDiscordBot->plans as $plan) {
+                    if ($plan->temporaryChannels->trackJoin($state)) {
+                        break;
+                    }
+                }
+            } else if ($state->channel_id != $oldstate->channel_id) {
+                foreach ($createdDiscordBot->plans as $plan) {
+                    if ($plan->temporaryChannels->trackLeave($oldstate)
+                        | $plan->temporaryChannels->trackJoin($state)) { // Keep one OR so it runs either way
+                        break;
+                    }
+                }
+            }
             $logger->logInfo($state->guild, $state->user_id, Event::VOICE_STATE_UPDATE, $state->getRawAttributes(), $oldstate);
         });
 

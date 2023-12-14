@@ -501,7 +501,7 @@ class DiscordUserQuestionnaire
                             }
                             $embed->setAuthor($message->author->username, $message->author->avatar);
                             $embed->addFieldValues(
-                                "__" . $count . "__ Question",
+                                "__" . $count . "__",
                                 "Question:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $question . DiscordSyntax::HEAVY_CODE_BLOCK
                                 . DiscordProperties::NEW_LINE
                                 . "Answer:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $answer->answer . DiscordSyntax::HEAVY_CODE_BLOCK
