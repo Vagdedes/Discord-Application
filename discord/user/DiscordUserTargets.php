@@ -75,8 +75,9 @@ class DiscordUserTargets
         } else {
             $this->checkExpired();
 
-            if ($query->max_open_general !== null
-                && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
+            if ($query->max_open !== null
+                && $this->hasMaxOpen($query->id, $query->max_open)
+                && ($query->close_oldest_if_max_open === null || !$this->closeOldest($query))) {
                 return;
             }
         }
@@ -123,12 +124,6 @@ class DiscordUserTargets
             $key = array_rand($members);
             $member = $members[$key];
             unset($members[$key]);
-
-            if ($query->max_open_per_user !== null
-                && $this->hasMaxOpen($query->id, $member->user->id, $query->max_open_per_user)
-                && ($query->close_oldest_if_max_open === null || !$this->closeOldest($query))) {
-                return;
-            }
 
             while (true) {
                 $targetID = random_number(19);
@@ -797,15 +792,15 @@ class DiscordUserTargets
 
     // Separator
 
-    private function hasMaxOpen(int|string $targetID, int|string|null $userID, int|string $limit): bool
+    private function hasMaxOpen(int|string $targetID, int|string $limit): bool
     {
         return sizeof(get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 array("id"),
                 array(
                     array("target_id", $targetID),
-                    $userID === null ? "" : array("user_id", $userID),
                     array("deletion_date", null),
+                    array("expired", null),
                     null,
                     array("expiration_date", "IS", null, 0),
                     array("expiration_date", ">", get_current_date()),

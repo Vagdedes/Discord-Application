@@ -91,11 +91,11 @@ function set_key_value_pair(mixed $key, mixed $value = null, string|int|null $fu
 // Separator
 
 function clear_memory(array|null $keys, bool $abstractSearch = false,
-                      int   $stopAfterSuccessfulIterations = 0): void
+                      int|string   $stopAfterSuccessfulIterations = 0): void
 {
     if (!empty($keys)) {
         share_clear_memory($keys, $abstractSearch);
-        $hasLimit = $stopAfterSuccessfulIterations > 0;
+        $hasLimit = is_numeric($stopAfterSuccessfulIterations) && $stopAfterSuccessfulIterations > 0;
 
         if ($hasLimit) {
             $iterations = array();
