@@ -53,7 +53,7 @@ class DiscordAIMessages
         }
     }
 
-    public function getChatAI(?int $channelID): ?ChatAI
+    public function getChatAI(?int $channelID = null): ?ChatAI
     {
         return $channelID !== null
             ? ($this->chatAI[$channelID] ?? $this->chatAI[0])
@@ -281,20 +281,7 @@ class DiscordAIMessages
                                                     $this->plan->utilities->deleteMessage($message);
                                                 }
                                             } else {
-                                                $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
-                                                $this->plan->utilities->editMessage(
-                                                    $message,
-                                                    array_shift($pieces)
-                                                );
-
-                                                if (!empty($pieces)) {
-                                                    foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                                        $this->plan->utilities->replyMessage(
-                                                            $message,
-                                                            MessageBuilder::new()->setContent($split)
-                                                        );
-                                                    }
-                                                }
+                                                $this->plan->utilities->replyMessageInPieces($message, $assistance);
                                             }
                                         });
                                     }

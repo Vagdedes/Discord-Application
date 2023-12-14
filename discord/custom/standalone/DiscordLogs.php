@@ -165,8 +165,8 @@ class DiscordLogs
                         $arrayValue = implode("\n", array_map(
                             function ($key, $value) {
                                 if (is_array($value) || is_object($value)) {
-                                    return $this->beautifulText($key) . ": " .
-                                        json_encode($value);
+                                    $show = json_encode($value);
+                                    return $this->beautifulText($key) . ": " . (strlen($show) > 100 ? "(REDACTED)" : $show);
                                 } else {
                                     return $this->beautifulText($key) . ": "
                                         . (is_bool($value)

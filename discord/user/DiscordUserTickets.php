@@ -580,6 +580,7 @@ class DiscordUserTickets
     public function loadSingleTicketMessage(object $ticket): MessageBuilder
     {
         $this->checkExpired();
+        $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
@@ -595,7 +596,7 @@ class DiscordUserTickets
             $embed->setTitle($ticket->ticket->title);
         }
         $embed->setDescription($ticket->deletion_date === null
-            ? ($ticket->expiration_date !== null && get_current_date() > $ticket->expiration_date
+            ? ($ticket->expiration_date !== null && $date > $ticket->expiration_date
                 ? "Expired on " . get_full_date($ticket->expiration_date)
                 : "Open")
             : "Closed on " . get_full_date($ticket->deletion_date));

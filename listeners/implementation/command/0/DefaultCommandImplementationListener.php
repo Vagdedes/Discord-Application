@@ -166,6 +166,133 @@ class DefaultCommandImplementationListener
 
     // Separator
 
+    public static function close_questionnaire(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $argumentSize = sizeof($arguments);
+
+        if ($argumentSize === 0) {
+            $close = $plan->userQuestionnaire->closeByChannelOrThread(
+                $interaction->channel,
+                $interaction->user->id
+            );
+
+            if ($close !== null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Questionnaire could not be closed: " . $close),
+                    true
+                );
+            }
+        } else {
+            $hasReason = $argumentSize > 1;
+            $targetID = $arguments["target-id"]["value"] ?? null;
+
+            if (is_numeric($targetID)) {
+                if ($hasReason) {
+                    $close = $plan->userQuestionnaire->closeByID(
+                        $targetID,
+                        $interaction->user->id,
+                        $arguments["reason"]["value"] ?? null
+                    );
+                } else {
+                    $close = $plan->userQuestionnaire->closeByID($targetID, $interaction->user->id);
+                }
+
+                if ($close !== null) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Questionnaire could not be closed: " . $close),
+                        true
+                    );
+                } else {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Questionnaire successfully closed"),
+                        true
+                    );
+                }
+            } else {
+                $close = $plan->userQuestionnaire->closeByChannelOrThread(
+                    $interaction->channel,
+                    $interaction->user->id,
+                    $arguments["reason"]["value"] ?? null
+                );
+
+                if ($close !== null) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("Questionnaire could not be closed: " . $close),
+                        true
+                    );
+                }
+            }
+        }
+    }
+
+    public static function get_questionnaires(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void
+    {
+        $findUserID = $interaction->data?->resolved?->users?->first()?->id;
+        $questionnaires = $plan->userQuestionnaire->getMultiple(
+            $findUserID,
+            null,
+            DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
+            false,
+            -1
+        );
+
+        if (empty($questionnaires)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("No questionnaires found for user."),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->userQuestionnaire->loadQuestionnaireMessage($findUserID, $questionnaires),
+                true
+            );
+        }
+    }
+
+    public static function get_questionnaire(DiscordPlan $plan,
+                                      Interaction $interaction,
+                                      object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $questionnaireID = $arguments["target-id"]["value"] ?? null;
+
+        if (!is_numeric($questionnaireID)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid questionnaire-id argument."),
+                true
+            );
+        }
+        $target = $plan->userQuestionnaire->getSingle($questionnaireID, -1);
+
+        if ($target === null) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Questionnaire not found."),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $plan->userQuestionnaire->loadSingleQuestionnaireMessage($target),
+                true
+            );
+        }
+    }
+
+    // Separator
+
     public static function close_target(DiscordPlan $plan,
                                         Interaction $interaction,
                                         object      $command): void

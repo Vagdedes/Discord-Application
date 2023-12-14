@@ -371,26 +371,13 @@ class DiscordUserTargets
                             $hasNoCost = is_string($modelReply);
                             $assistance = $hasNoCost
                                 ? $modelReply
-                                : $this->plan->aiMessages->chatAI->getText($model, $modelReply);
+                                : $this->plan->aiMessages->getChatAI()->getText($model, $modelReply);
                             $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
 
                             if ($assistance !== null) {
                                 $assistance .= $instructions[1];
                                 $messageContent = $assistance;
-                                $pieces = str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
-                                $this->plan->utilities->editMessage(
-                                    $replyMessage,
-                                    array_shift($pieces)
-                                );
-
-                                if (!empty($pieces)) {
-                                    foreach (str_split($assistance, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                        $this->plan->utilities->replyMessage(
-                                            $replyMessage,
-                                            MessageBuilder::new()->setContent($split)
-                                        );
-                                    }
-                                }
+                                $this->plan->utilities->replyMessageInPieces($replyMessage, $assistance);
                             } else {
                                 $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
                                 $this->plan->utilities->editMessage(

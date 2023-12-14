@@ -8,6 +8,8 @@ use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
+use Discord\Parts\User\User;
 
 class DiscordUtilities
 {
@@ -163,6 +165,36 @@ class DiscordUtilities
                 $message->reply($messageBuilder);
             });
         } catch (Throwable $ignored) {
+        }
+    }
+
+    public function replyMessageInPieces(Message $message, string $reply): void
+    {
+        $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
+        $this->editMessage(
+            $message,
+            array_shift($pieces)
+        );
+
+        if (!empty($pieces)) {
+            foreach (str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                $this->replyMessage(
+                    $message,
+                    MessageBuilder::new()->setContent($split)
+                );
+            }
+        }
+    }
+
+    public function sendMessageInPieces(Member|User $member, string $reply): void
+    {
+        $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
+        $member->sendMessage(MessageBuilder::new()->setContent(array_shift($pieces)));
+
+        if (!empty($pieces)) {
+            foreach (str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                $member->sendMessage(MessageBuilder::new()->setContent($split));
+            }
         }
     }
 
