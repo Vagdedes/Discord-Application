@@ -166,7 +166,7 @@ class DiscordUserTickets
 
             if (empty(get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
-                array("ticket_id"),
+                array("ticket_creation_id"),
                 array(
                     array("ticket_creation_id", $ticketID)
                 ),

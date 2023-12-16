@@ -291,6 +291,11 @@ function initiate_discord_bot(): void
                 } else {
                     $plan->userQuestionnaire->ignoreChannelDeletion--;
                 }
+                if ($plan->temporaryChannels->ignoreDeletion === 0) {
+                    $plan->temporaryChannels->closeByChannel($channel);
+                } else {
+                    $plan->temporaryChannels->ignoreDeletion--;
+                }
             }
             $logger->logInfo($channel->guild, null, Event::CHANNEL_DELETE, $channel->getRawAttributes());
         });

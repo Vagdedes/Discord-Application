@@ -130,7 +130,7 @@ class DiscordUserTargets
 
                 if (empty(get_sql_query(
                     BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                    array("target_id"),
+                    array("target_creation_id"),
                     array(
                         array("target_creation_id", $targetID)
                     ),

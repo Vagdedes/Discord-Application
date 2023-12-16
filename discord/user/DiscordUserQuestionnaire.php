@@ -161,7 +161,7 @@ class DiscordUserQuestionnaire
 
                 if (empty(get_sql_query(
                     BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
-                    array("questionnaire_id"),
+                    array("questionnaire_creation_id"),
                     array(
                         array("questionnaire_creation_id", $questionnaireID)
                     ),
