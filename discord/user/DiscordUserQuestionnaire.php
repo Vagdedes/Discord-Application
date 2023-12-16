@@ -772,7 +772,7 @@ class DiscordUserQuestionnaire
                 array("deletion_date", null),
                 array("completion_date", null),
                 array("expired", null),
-                array("questionnaire_id", $questionnaire->questionnaire_id),
+                array("questionnaire_id", $questionnaire->id),
             ),
             array(
                 "ASC",

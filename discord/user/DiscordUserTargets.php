@@ -561,7 +561,7 @@ class DiscordUserTargets
             array(
                 array("deletion_date", null),
                 array("expired", null),
-                array("target_id", $target->target_id),
+                array("target_id", $target->id),
             ),
             array(
                 "ASC",

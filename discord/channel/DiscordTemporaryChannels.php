@@ -57,78 +57,83 @@ class DiscordTemporaryChannels
 
         if (!empty($state)) {
             if ($state[0]) {
-                $date = get_current_date();
+                $query = $state[1]->inception_channel;
 
-                while (true) {
-                    $temporaryID = random_number(19);
+                if ($query->max_open === null
+                    || !$this->hasMaxOpen($query->id, $query->max_open)
+                    || $query->close_oldest_if_max_open !== null && $this->closeOldest($query)) {
+                    $date = get_current_date();
 
-                    if (empty(get_sql_query(
-                        BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
-                        array("temporary_channel_creation_id"),
-                        array(
-                            array("temporary_channel_creation_id", $temporaryID)
-                        ),
-                        null,
-                        1
-                    ))) {
-                        $query = $state[1]->inception_channel;
-                        $rolePermissions = get_sql_query(
-                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_ROLES,
-                            array("allow", "deny", "role_id"),
+                    while (true) {
+                        $temporaryID = random_number(19);
+
+                        if (empty(get_sql_query(
+                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                            array("temporary_channel_creation_id"),
                             array(
-                                array("deletion_date", null),
-                                array("temporary_channel_id", $state[1]->id),
-                            )
-                        );
-
-                        if (!empty($rolePermissions)) {
-                            foreach ($rolePermissions as $arrayKey => $role) {
-                                $rolePermissions[$arrayKey] = array(
-                                    "id" => $role->role_id,
-                                    "type" => "role",
-                                    "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                    "deny" => empty($role->deny) ? $query->deny_permission : $role->deny
-                                );
-                            }
-                        }
-                        $this->plan->utilities->createChannel(
-                            $update->guild,
-                            Channel::TYPE_TEXT,
-                            $query->inception_channel_category_id,
-                            $update->member->username . "'s Channel",
-                            $query->inception_channel_topic,
-                            $rolePermissions,
-                        )->done(function (Channel $channel) use ($update, $query, $temporaryID, $date) {
-                            if (sql_insert(
-                                BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                                array("temporary_channel_creation_id", $temporaryID)
+                            ),
+                            null,
+                            1
+                        ))) {
+                            $rolePermissions = get_sql_query(
+                                BotDatabaseTable::BOT_TEMPORARY_CHANNEL_ROLES,
+                                array("allow", "deny", "role_id"),
                                 array(
-                                    "temporary_channel_id" => $query->id,
-                                    "temporary_channel_creation_id" => $temporaryID,
-                                    "server_id" => $channel->guild,
-                                    "channel_id" => $channel->id,
-                                    "creation_date" => $date,
-                                    "expiration_date" => $query->duration !== null ? get_future_date($query->duration) : null,
+                                    array("deletion_date", null),
+                                    array("temporary_channel_id", $state[1]->id),
                                 )
-                            )) {
-                                $outcome = $this->setOwner($update->member, $update->user);
+                            );
 
-                                if ($outcome !== null) {
+                            if (!empty($rolePermissions)) {
+                                foreach ($rolePermissions as $arrayKey => $role) {
+                                    $rolePermissions[$arrayKey] = array(
+                                        "id" => $role->role_id,
+                                        "type" => "role",
+                                        "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
+                                        "deny" => empty($role->deny) ? $query->deny_permission : $role->deny
+                                    );
+                                }
+                            }
+                            $this->plan->utilities->createChannel(
+                                $update->guild,
+                                Channel::TYPE_TEXT,
+                                $query->inception_channel_category_id,
+                                $update->member->username . "'s Channel",
+                                $query->inception_channel_topic,
+                                $rolePermissions,
+                            )->done(function (Channel $channel) use ($update, $query, $temporaryID, $date) {
+                                if (sql_insert(
+                                    BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                                    array(
+                                        "temporary_channel_id" => $query->id,
+                                        "temporary_channel_creation_id" => $temporaryID,
+                                        "server_id" => $channel->guild,
+                                        "channel_id" => $channel->id,
+                                        "creation_date" => $date,
+                                        "expiration_date" => $query->duration !== null ? get_future_date($query->duration) : null,
+                                    )
+                                )) {
+                                    $outcome = $this->setOwner($update->member, $update->user, true, null, $channel, true);
+
+                                    if ($outcome !== null) {
+                                        global $logger;
+                                        $logger->logError($this->plan->planID, $outcome);
+                                        $this->closeByChannel($channel);
+                                    }
+                                } else {
                                     global $logger;
-                                    $logger->logError($this->plan->planID, $outcome);
+                                    $logger->logError(
+                                        $this->plan->planID,
+                                        "Failed to insert temporary channel into the database with ID: " . $query->id
+                                    );
                                     $this->closeByChannel($channel);
                                 }
-                            } else {
-                                global $logger;
-                                $logger->logError(
-                                    $this->plan->planID,
-                                    "Failed to insert temporary channel into the database with ID: " . $query->id
-                                );
-                                $this->closeByChannel($channel);
-                            }
-                        });
+                            });
+                        }
                     }
                 }
-            } else if ($this->isBanned($update->channel, $update->user)) {
+            } else if ($this->isBanned($update->user, $state[1]->temporary_channel_creation_id)) {
                 $this->kick($update->user, $update->channel, $state);
             }
             $this->checkExpired();
@@ -164,18 +169,23 @@ class DiscordTemporaryChannels
                         null,
                         1
                     );
+                    $this->ignoreDeletion++;
                     $channel->guild->channels->delete($channel);
-                } else if (!empty($this->getOwner($channel, $update->user))) {
-                    foreach ($members as $member) {
-                        if ($member->id != $update->user->id) {
-                            $outcome = $this->setOwner($member, $member->user);
+                } else {
+                    $owner = $this->getOwner($update->user, $state[1]->temporary_channel_creation_id);
+
+                    if (!empty($owner) && $owner[0]->created_by === null) {
+                        $this->setOwner($update->member, $update->user, false, null, $channel, true);
+
+                        if ($this->getOwners($state[1]->temporary_channel_creation_id) === 0) {
+                            $member = array_shift($members);
+                            $outcome = $this->setOwner($member, $member->user, true, null, $channel, true);
 
                             if ($outcome !== null) {
                                 global $logger;
                                 $logger->logError($this->plan->planID, $outcome);
                                 $this->closeByChannel($channel);
                             }
-                            break;
                         }
                     }
                 }
@@ -188,19 +198,22 @@ class DiscordTemporaryChannels
 
     // Separator
 
-    public function setOwner(Member $member, User $user,
-                             bool   $set = true, ?string $reason = null): ?string
+    public function setOwner(Member  $member, User $user,
+                             bool    $set = true, ?string $reason = null,
+                             Channel $channel = null, bool $force = false): ?string
     {
-        $channel = $member->getVoiceChannel();
+        if ($channel === null) {
+            $channel = $member->getVoiceChannel();
+        }
 
         if ($channel !== null) {
             $state = $this->getChannelState($channel);
 
-            if (!empty($state)) {
+            if (!empty($state) && !$state[0]) {
                 if ($set) {
-                    if ($this->isBanned($channel, $user)) {
+                    if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is banned from this temporary voice channel.";
-                    } else if (!empty($this->getOwner($channel, $user))) {
+                    } else if (!$force && !empty($this->getOwner($user, $state[1]->temporary_channel_creation_id))) {
                         return "User is already an owner of this temporary voice channel.";
                     } else {
                         foreach ($channel->members as $member) {
@@ -234,10 +247,10 @@ class DiscordTemporaryChannels
                 } else if ($member->id == $user->id) {
                     return "You cannot remove yourself from an owner of this temporary voice channel.";
                 } else {
-                    $owner = $this->getOwner($channel, $user);
+                    $owner = $force ? true : $this->getOwner($user, $state[1]->temporary_channel_creation_id);
 
                     if (!empty($owner)) {
-                        if ($owner[0]->created_by === null) {
+                        if (!$force && $owner[0]->created_by === null) {
                             return "You cannot remove the original owner of this temporary voice channel.";
                         } else if (set_sql_query(
                             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_OWNERS,
@@ -260,7 +273,9 @@ class DiscordTemporaryChannels
                             $channel->setPermissions(
                                 $member,
                                 array(),
-                                $this->isBanned($channel, $user) ? self::BANNED_MEMBER_PERMISSIONS : array()
+                                $this->isBanned($user, $state[1]->temporary_channel_creation_id)
+                                    ? self::BANNED_MEMBER_PERMISSIONS
+                                    : array()
                             );
                             return null;
                         } else {
@@ -287,12 +302,12 @@ class DiscordTemporaryChannels
         if ($channel !== null) {
             $state = $this->getChannelState($channel);
 
-            if (!empty($state)) {
+            if (!empty($state) && !$state[0]) {
                 if ($set) {
-                    if ($this->isBanned($channel, $user)) {
+                    if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is already banned from this temporary voice channel.";
                     } else {
-                        $owner = $this->getOwner($channel, $user);
+                        $owner = $this->getOwner($user, $state[1]->temporary_channel_creation_id);
 
                         if (!empty($owner) && $owner[0]->created_by === null) {
                             return "You cannot ban the original owner of this temporary voice channel.";
@@ -310,7 +325,7 @@ class DiscordTemporaryChannels
                                 "deletion_date" => get_current_date(),
                             )
                         )) {
-                            $string = $this->setOwner($member, $user, false, null);
+                            $string = $this->setOwner($member, $user, false);
 
                             if ($string === null) {
                                 $this->kick($user, $channel, $state);
@@ -321,7 +336,7 @@ class DiscordTemporaryChannels
                         }
                     }
                 } else {
-                    if (!$this->isBanned($channel, $user)) {
+                    if (!$this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is not banned from this temporary voice channel.";
                     } else if (set_sql_query(
                         BotDatabaseTable::BOT_TEMPORARY_CHANNEL_BANS,
@@ -354,7 +369,7 @@ class DiscordTemporaryChannels
         }
     }
 
-    private function isBanned(Channel $channel, User $user): bool
+    private function isBanned(User $user, int|string $temporaryID): bool
     {
         set_sql_cache("1 second");
         return !empty(get_sql_query(
@@ -363,8 +378,7 @@ class DiscordTemporaryChannels
             array(
                 array("deletion_date", null),
                 array("user_id", $user->id),
-                array("server_id", $channel->guild_id),
-                array("channel_id", $channel->id),
+                array("temporary_channel_creation_id", $temporaryID)
             ),
             array(
                 "DESC",
@@ -376,57 +390,36 @@ class DiscordTemporaryChannels
 
     // Separator
 
-    public function closeByChannel(Channel         $channel,
-                                   int|string|null $userID = null,
-                                   ?string         $reason = null): void
+    public function closeByChannel(Channel $channel): void
     {
-        set_sql_cache("1 second");
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
-            array("id", "deletion_date"),
-            array(
-                array("created_channel_server_id", $channel->guild_id), //todo fix
-                array("created_channel_id", $channel->id),
-            ),
-            null,
-            1
-        );
+        $state = $this->getChannelState($channel);
 
-        if (!empty($query)) {
-            $query = $query[0];
-
-            if ($query->deletion_date === null) {
-                try {
-                    if (set_sql_query(
-                        BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
-                        array(
-                            "deletion_date" => get_current_date(),
-                            "deletion_reason" => empty($reason) ? null : $reason,
-                            "deleted_by" => $userID
-                        ),
-                        array(
-                            array("id", $query->id)
-                        ),
-                        null,
-                        1
-                    )) {
-                        $this->ignoreDeletion++;
-                        $channel->guild->channels->delete(
-                            $channel,
-                            empty($reason) ? null : $userID . ": " . $reason
-                        );
-                    }
-                } catch (Throwable $exception) {
-                    global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+        if (!empty($state) && !$state[0]) {
+            try {
+                if (set_sql_query(
+                    BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                    array(
+                        "deletion_date" => get_current_date()
+                    ),
+                    array(
+                        array("id", $state[1]->id)
+                    ),
+                    null,
+                    1
+                )) {
+                    $this->ignoreDeletion++;
+                    $channel->guild->channels->delete($channel);
                 }
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($this->plan->planID, $exception->getMessage());
             }
         }
     }
 
     // Separator
 
-    private function getOwner(Channel $channel, User $user): array
+    private function getOwner(User $user, int|string $temporaryID): array
     {
         set_sql_cache("1 second");
         return get_sql_query(
@@ -435,15 +428,28 @@ class DiscordTemporaryChannels
             array(
                 array("deletion_date", null),
                 array("user_id", $user->id),
-                array("server_id", $channel->guild_id),
-                array("channel_id", $channel->id),
+                array("temporary_channel_creation_id", $temporaryID)
+            ),
+            null,
+            1
+        );
+    }
+
+    private function getOwners(int|string $temporaryID): int
+    {
+        set_sql_cache("1 second");
+        return sizeof(get_sql_query(
+            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_OWNERS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("temporary_channel_id", $temporaryID)
             ),
             array(
                 "DESC",
                 "id"
-            ),
-            1
-        );
+            )
+        ));
     }
 
     private function getChannelState(Channel $channel): ?array
@@ -558,5 +564,76 @@ class DiscordTemporaryChannels
                 }
             }
         }
+    }
+
+    private function hasMaxOpen(int|string $temporaryID, int|string $limit): bool
+    {
+        set_sql_cache("1 second");
+        return sizeof(get_sql_query(
+                BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                array("id"),
+                array(
+                    array("temporary_channel_id", $temporaryID),
+                    array("deletion_date", null),
+                    array("expired", null),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ),
+                array(
+                    "DESC",
+                    "id"
+                ),
+                $limit
+            )) == $limit;
+    }
+
+    private function closeOldest(object $temporary): bool
+    {
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+            array("id", "server_id", "channel_id", "created_thread_id"),
+            array(
+                array("deletion_date", null),
+                array("expired", null),
+                array("temporary_channel_id", $temporary->id),
+            ),
+            array(
+                "ASC",
+                "creation_date"
+            ),
+            1
+        );
+
+        if (!empty($query)) {
+            $query = $query[0];
+
+            if (set_sql_query(
+                BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+                array(
+                    "deletion_date" => get_current_date(),
+                ),
+                array(
+                    array("id", $query->id)
+                ),
+                null,
+                1
+            )) {
+                $channel = $this->plan->bot->discord->getChannel($query->channel_id);
+
+                if ($channel !== null
+                    && $channel->allowText()
+                    && $channel->guild_id == $query->server_id) {
+                    $this->ignoreDeletion++;
+                    $channel->guild->channels->delete($channel);
+                }
+                return true;
+            } else {
+                global $logger;
+                $logger->logError($this->plan->planID, "Failed to close oldest target with ID: " . $query->id);
+            }
+        }
+        return false;
     }
 }

@@ -697,6 +697,7 @@ class DiscordUserTickets
                     array("ticket_id", $ticketID),
                     $userID === null ? "" : array("user_id", $userID),
                     array("deletion_date", null),
+                    array("expired", null),
                     null,
                     array("expiration_date", "IS", null, 0),
                     array("expiration_date", ">", get_current_date()),

@@ -167,8 +167,8 @@ class DefaultCommandImplementationListener
     // Separator
 
     public static function close_questionnaire(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+                                               Interaction $interaction,
+                                               object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -233,8 +233,8 @@ class DefaultCommandImplementationListener
     }
 
     public static function get_questionnaires(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+                                              Interaction $interaction,
+                                              object      $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $questionnaires = $plan->userQuestionnaire->getMultiple(
@@ -261,8 +261,8 @@ class DefaultCommandImplementationListener
     }
 
     public static function get_questionnaire(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+                                             Interaction $interaction,
+                                             object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $questionnaireID = $arguments["target-id"]["value"] ?? null;
