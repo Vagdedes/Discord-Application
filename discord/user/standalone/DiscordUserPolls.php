@@ -15,7 +15,7 @@ class DiscordUserPolls
         $this->checkExpired();
     }
 
-    //todo max 20 choices, commands
+    //todo max 25 choices, commands
 
     public function create(): ?string
     {

@@ -171,7 +171,7 @@ class DiscordPersistentMessages
             $messageRow->listener_class,
             $messageRow->listener_method
         );
-        return $this->plan->interactionRoles->process($messageBuilder);
+        return $this->plan->interactionRoles->process($messageBuilder, $messageRow->id);
     }
 
     private function process(array $array, int $position): void
