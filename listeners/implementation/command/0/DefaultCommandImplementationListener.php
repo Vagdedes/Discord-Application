@@ -7,6 +7,41 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function temporary_channel_lock(DiscordPlan $plan,
+                                                  Interaction $interaction,
+                                                  object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setLock($interaction->member);
+
+        if ($outcome === null) {
+            $outcome = "Temporary channel successfully locked.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
+    public static function temporary_channel_unlock(DiscordPlan $plan,
+                                                    Interaction $interaction,
+                                                    object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setLock(
+            $interaction->member,
+            false
+        );
+
+        if ($outcome === null) {
+            $outcome = "Temporary channel successfully unlocked.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
     public static function temporary_channel_ban(DiscordPlan $plan,
                                                  Interaction $interaction,
                                                  object      $command): void

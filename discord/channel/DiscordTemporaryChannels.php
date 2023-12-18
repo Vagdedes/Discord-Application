@@ -20,6 +20,9 @@ class DiscordTemporaryChannels
         BANNED_MEMBER_PERMISSIONS = array(
         "connect",
         "speak"
+    ),
+        LOCKED_MEMBER_PERMISSIONS = array(
+        "connect"
     );
 
     public function __construct(DiscordPlan $plan)
@@ -224,7 +227,11 @@ class DiscordTemporaryChannels
 
             if ($state !== null && !$state[0]) {
                 if ($set) {
-                    if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
+                    $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
+
+                    if (empty($owner)) {
+                        return "You cannot add owners this temporary channel.";
+                    } else if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is banned from this temporary voice channel.";
                     } else if (!$force && !empty($this->getOwner($user, $state[1]->temporary_channel_creation_id))) {
                         return "User is already an owner of this temporary voice channel.";
@@ -265,38 +272,130 @@ class DiscordTemporaryChannels
                 } else if ($member->id == $user->id) {
                     return "You cannot remove yourself from an owner of this temporary voice channel.";
                 } else {
-                    $owner = $force ? true : $this->getOwner($user, $state[1]->temporary_channel_creation_id);
+                    $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
 
-                    if (!empty($owner)) {
-                        if (!$force && $owner[0]->created_by === null) {
-                            return "You cannot remove the original owner of this temporary voice channel.";
+                    if (empty($owner)) {
+                        return "You cannot remove owners this temporary channel.";
+                    } else {
+                        $owner = $force ? true : $this->getOwner($user, $state[1]->temporary_channel_creation_id);
+
+                        if (!empty($owner)) {
+                            if (!$force && $owner[0]->created_by === null) {
+                                return "You cannot remove the original owner of this temporary voice channel.";
+                            } else if (set_sql_query(
+                                BotDatabaseTable::BOT_TEMPORARY_CHANNEL_OWNERS,
+                                array(
+                                    "deletion_date" => get_current_date(),
+                                    "deleted_by" => $member->id,
+                                ),
+                                array(
+                                    array("deletion_date", null),
+                                    array("user_id", $user->id),
+                                    array("temporary_channel_creation_id", $state[1]->temporary_channel_creation_id)
+                                ),
+                                null,
+                                1
+                            )) {
+                                $channel->setPermissions(
+                                    $member,
+                                    array(),
+                                    $this->isBanned($user, $state[1]->temporary_channel_creation_id)
+                                        ? self::BANNED_MEMBER_PERMISSIONS
+                                        : array()
+                                );
+                                return null;
+                            } else {
+                                return "Failed to modify owner into the database.";
+                            }
+                        } else {
+                            return "User is not an owner of this temporary voice channel.";
+                        }
+                    }
+                }
+            } else {
+                return self::NOT_IN_TEMPORARY_CHANNEL;
+            }
+        } else {
+            return self::NOT_IN_CHANNEL;
+        }
+    }
+
+    // Separator
+
+    private function isLocked(int|string $temporaryID): bool
+    {
+        set_sql_cache("1 second");
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+            array("lock_date"),
+            array(
+                array("temporary_channel_creation_id", $temporaryID)
+            ),
+            null,
+            1
+        );
+        return !empty($query) && $query[0]->lock_date !== null;
+    }
+
+    public function setLock(Member $member, bool $set = true): ?string
+    {
+        $channel = $member->getVoiceChannel();
+
+        if ($channel instanceof Channel) {
+            $state = $this->getChannelState($channel, false);
+
+            if ($state !== null && !$state[0]) {
+                if ($set) {
+                    if ($this->isLocked($state[1]->temporary_channel_creation_id)) {
+                        return "This temporary channel is already locked.";
+                    } else {
+                        $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
+
+                        if (empty($owner)) {
+                            return "You cannot lock this temporary channel.";
                         } else if (set_sql_query(
-                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_OWNERS,
+                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
                             array(
-                                "deletion_date" => get_current_date(),
-                                "deleted_by" => $member->id,
+                                "lock_date" => get_current_date(),
                             ),
                             array(
-                                array("deletion_date", null),
-                                array("user_id", $user->id),
                                 array("temporary_channel_creation_id", $state[1]->temporary_channel_creation_id)
                             ),
                             null,
                             1
                         )) {
                             $channel->setPermissions(
-                                $member,
+                                $channel->guild->roles->toArray()[$channel->guild_id],
                                 array(),
-                                $this->isBanned($user, $state[1]->temporary_channel_creation_id)
-                                    ? self::BANNED_MEMBER_PERMISSIONS
-                                    : array()
+                                self::LOCKED_MEMBER_PERMISSIONS
                             );
                             return null;
                         } else {
-                            return "Failed to modify owner into the database.";
+                            return "Failed to set lock in the database.";
                         }
+                    }
+                } else {
+                    $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
+
+                    if (empty($owner)) {
+                        return "You cannot unlock this temporary channel.";
+                    } else if (!$this->isLocked($state[1]->temporary_channel_creation_id)) {
+                        return "This temporary channel is not locked.";
+                    } else if (set_sql_query(
+                        BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                        array(
+                            "lock_date" => null,
+                        ),
+                        array(
+                            array("temporary_channel_creation_id", $state[1]->temporary_channel_creation_id)
+                        ),
+                        null,
+                        1
+                    )) {
+                        $channel->setPermissions($channel->guild->roles->toArray()[$channel->guild_id]);
+                        return null;
                     } else {
-                        return "User is not an owner of this temporary voice channel.";
+                        return "Failed to set unlock in the database.";
                     }
                 }
             } else {
@@ -322,30 +421,40 @@ class DiscordTemporaryChannels
                         $this->kick($this->plan->utilities->getMember($channel->guild, $user), $channel);
                         return "User is already banned from this temporary voice channel.";
                     } else {
-                        $owner = $this->getOwner($user, $state[1]->temporary_channel_creation_id);
+                        $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
 
-                        if (!empty($owner) && $owner[0]->created_by === null) {
-                            return "You cannot ban the original owner of this temporary voice channel.";
-                        } else if (sql_insert(
-                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_BANS,
-                            array(
-                                "user_id" => $user->id,
-                                "temporary_channel_id" => $state[1]->temporary_channel_id,
-                                "temporary_channel_creation_id" => $state[1]->temporary_channel_creation_id,
-                                "creation_date" => get_current_date(),
-                                "creation_reason" => $reason,
-                                "created_by" => $member->id,
-                            )
-                        )) {
-                            $this->setOwner($member, $user, false);
-                            $this->kick($this->plan->utilities->getMember($channel->guild, $user), $channel);
-                            return null;
+                        if (empty($owner)) {
+                            return "You cannot ban in this temporary channel.";
                         } else {
-                            return "Failed to insert ban into the database.";
+                            $owner = $this->getOwner($user, $state[1]->temporary_channel_creation_id);
+
+                            if (!empty($owner) && $owner[0]->created_by === null) {
+                                return "You cannot ban the original owner of this temporary voice channel.";
+                            } else if (sql_insert(
+                                BotDatabaseTable::BOT_TEMPORARY_CHANNEL_BANS,
+                                array(
+                                    "user_id" => $user->id,
+                                    "temporary_channel_id" => $state[1]->temporary_channel_id,
+                                    "temporary_channel_creation_id" => $state[1]->temporary_channel_creation_id,
+                                    "creation_date" => get_current_date(),
+                                    "creation_reason" => $reason,
+                                    "created_by" => $member->id,
+                                )
+                            )) {
+                                $this->setOwner($member, $user, false);
+                                $this->kick($this->plan->utilities->getMember($channel->guild, $user), $channel);
+                                return null;
+                            } else {
+                                return "Failed to insert ban into the database.";
+                            }
                         }
                     }
                 } else {
-                    if (!$this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
+                    $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
+
+                    if (empty($owner)) {
+                        return "You cannot unban in this temporary channel.";
+                    } else if (!$this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is not banned from this temporary voice channel.";
                     } else if (set_sql_query(
                         BotDatabaseTable::BOT_TEMPORARY_CHANNEL_BANS,
@@ -365,8 +474,10 @@ class DiscordTemporaryChannels
 
                         if ($member !== null) {
                             $channel->setPermissions($member);
+                            return null;
+                        } else {
+                            return "Failed to find member in this Discord server.";
                         }
-                        return null;
                     } else {
                         return "Failed to insert unban into the database.";
                     }
@@ -430,7 +541,7 @@ class DiscordTemporaryChannels
 
     // Separator
 
-    private function getOwner(User $user, int|string $temporaryID): array
+    private function getOwner(Member|User $user, int|string $temporaryID): array
     {
         set_sql_cache("1 second");
         return get_sql_query(
