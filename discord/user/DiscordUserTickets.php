@@ -398,7 +398,8 @@ class DiscordUserTickets
 
     public function closeByChannel(Channel         $channel,
                                    int|string|null $userID = null,
-                                   ?string         $reason = null): ?string
+                                   ?string         $reason = null,
+                                   bool            $delete = true): ?string
     {
         set_sql_cache("1 second");
         $query = get_sql_query(
@@ -434,11 +435,13 @@ class DiscordUserTickets
                         null,
                         1
                     )) {
-                        $this->ignoreDeletion++;
-                        $channel->guild->channels->delete(
-                            $channel,
-                            empty($reason) ? null : $userID . ": " . $reason
-                        );
+                        if ($delete) {
+                            $this->ignoreDeletion++;
+                            $channel->guild->channels->delete(
+                                $channel,
+                                empty($reason) ? null : $userID . ": " . $reason
+                            );
+                        }
                         return null;
                     } else {
                         return "Database query failed";

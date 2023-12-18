@@ -693,7 +693,8 @@ class DiscordUserQuestionnaire
     public function closeByChannelOrThread(Channel         $channel,
                                            int|string|null $userID = null,
                                            ?string         $reason = null,
-                                                           $query = null): ?string
+                                           ?object         $query = null,
+                                           bool            $delete = true): ?string
     {
         $hasQuery = $query !== null;
 
@@ -735,19 +736,21 @@ class DiscordUserQuestionnaire
                             null,
                             1
                         )) {
-                        if ($query->created_thread_id !== null) {
-                            $this->ignoreThreadDeletion++;
-                            $this->plan->utilities->deleteThread(
-                                $channel,
-                                $query->created_thread_id,
-                                empty($reason) ? null : $userID . ": " . $reason
-                            );
-                        } else {
-                            $this->ignoreChannelDeletion++;
-                            $channel->guild->channels->delete(
-                                $channel,
-                                empty($reason) ? null : $userID . ": " . $reason
-                            );
+                        if ($delete) {
+                            if ($query->created_thread_id !== null) {
+                                $this->ignoreThreadDeletion++;
+                                $this->plan->utilities->deleteThread(
+                                    $channel,
+                                    $query->created_thread_id,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            } else {
+                                $this->ignoreChannelDeletion++;
+                                $channel->guild->channels->delete(
+                                    $channel,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            }
                         }
                         $this->initiate($query->questionnaire_id);
                         return null;

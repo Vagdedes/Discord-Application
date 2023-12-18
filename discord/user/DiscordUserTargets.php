@@ -489,7 +489,8 @@ class DiscordUserTargets
 
     public function closeByChannelOrThread(Channel         $channel,
                                            int|string|null $userID = null,
-                                           ?string         $reason = null): ?string
+                                           ?string         $reason = null,
+                                           bool            $delete = true): ?string
     {
         set_sql_cache("1 second");
         $query = get_sql_query(
@@ -525,19 +526,21 @@ class DiscordUserTargets
                         null,
                         1
                     )) {
-                        if ($query->created_thread_id !== null) {
-                            $this->ignoreThreadDeletion++;
-                            $this->plan->utilities->deleteThread(
-                                $channel,
-                                $query->created_thread_id,
-                                empty($reason) ? null : $userID . ": " . $reason
-                            );
-                        } else {
-                            $this->ignoreChannelDeletion++;
-                            $channel->guild->channels->delete(
-                                $channel,
-                                empty($reason) ? null : $userID . ": " . $reason
-                            );
+                        if ($delete) {
+                            if ($query->created_thread_id !== null) {
+                                $this->ignoreThreadDeletion++;
+                                $this->plan->utilities->deleteThread(
+                                    $channel,
+                                    $query->created_thread_id,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            } else {
+                                $this->ignoreChannelDeletion++;
+                                $channel->guild->channels->delete(
+                                    $channel,
+                                    empty($reason) ? null : $userID . ": " . $reason
+                                );
+                            }
                         }
                         $this->initiate($query->target_id);
                         return null;

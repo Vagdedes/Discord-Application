@@ -34,6 +34,12 @@ class DiscordUtilities
         return $users[$userID] ?? null;
     }
 
+    public function getMember(Guild $guild, int|string|User $userID): ?object
+    {
+        $members = $guild->members->toArray();
+        return $members[$userID instanceof User ? $userID->id : $userID] ?? null;
+    }
+
     public function getUsername(int|string $userID): string
     {
         $users = $this->discord->users->toArray();

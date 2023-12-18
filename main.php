@@ -277,22 +277,22 @@ function initiate_discord_bot(): void
                 $plan->statisticsChannels->refresh();
 
                 if ($plan->userTickets->ignoreDeletion === 0) {
-                    $plan->userTickets->closeByChannel($channel);
+                    $plan->userTickets->closeByChannel($channel, null, null, false);
                 } else {
                     $plan->userTickets->ignoreDeletion--;
                 }
                 if ($plan->userTargets->ignoreChannelDeletion === 0) {
-                    $plan->userTargets->closeByChannelOrThread($channel);
+                    $plan->userTargets->closeByChannelOrThread($channel, null, null, false);
                 } else {
                     $plan->userTargets->ignoreChannelDeletion--;
                 }
                 if ($plan->userQuestionnaire->ignoreChannelDeletion === 0) {
-                    $plan->userQuestionnaire->closeByChannelOrThread($channel);
+                    $plan->userQuestionnaire->closeByChannelOrThread($channel, null, null, null, false);
                 } else {
                     $plan->userQuestionnaire->ignoreChannelDeletion--;
                 }
                 if ($plan->temporaryChannels->ignoreDeletion === 0) {
-                    $plan->temporaryChannels->closeByChannel($channel);
+                    $plan->temporaryChannels->closeByChannel($channel, false);
                 } else {
                     $plan->temporaryChannels->ignoreDeletion--;
                 }
@@ -606,8 +606,12 @@ function initiate_discord_bot(): void
                 }
             } else if ($state->channel_id != $oldstate->channel_id) {
                 foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->temporaryChannels->trackLeave($oldstate)
-                        | $plan->temporaryChannels->trackJoin($state)) { // Keep one OR so it runs either way
+                    if ($plan->temporaryChannels->trackLeave($oldstate)) {
+                        break;
+                    }
+                }
+                foreach ($createdDiscordBot->plans as $plan) {
+                    if ($plan->temporaryChannels->trackJoin($state)) {
                         break;
                     }
                 }

@@ -7,6 +7,92 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function temporary_channel_ban(DiscordPlan $plan,
+                                                 Interaction $interaction,
+                                                 object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setBan(
+            $interaction->member,
+            $interaction->data?->resolved?->users?->first(),
+            true,
+            $arguments["reason"]["value"] ?? null
+        );
+
+        if ($outcome === null) {
+            $outcome = "User successfully banned from this temporary channel.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
+    public static function temporary_channel_unban(DiscordPlan $plan,
+                                                   Interaction $interaction,
+                                                   object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setBan(
+            $interaction->member,
+            $interaction->data?->resolved?->users?->first(),
+            false,
+            $arguments["reason"]["value"] ?? null
+        );
+
+        if ($outcome === null) {
+            $outcome = "User successfully unbanned in this temporary channel.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
+    public static function temporary_channel_add_owner(DiscordPlan $plan,
+                                                       Interaction $interaction,
+                                                       object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setOwner(
+            $interaction->member,
+            $interaction->data?->resolved?->users?->first(),
+            true,
+            $arguments["reason"]["value"] ?? null
+        );
+
+        if ($outcome === null) {
+            $outcome = "User successfully made an owner in this temporary channel.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
+    public static function temporary_channel_remove_owner(DiscordPlan $plan,
+                                                          Interaction $interaction,
+                                                          object      $command): void
+    {
+        $outcome = $plan->temporaryChannels->setOwner(
+            $interaction->member,
+            $interaction->data?->resolved?->users?->first(),
+            false,
+            $arguments["reason"]["value"] ?? null
+        );
+
+        if ($outcome === null) {
+            $outcome = "User successfully removed from owner in this temporary channel.";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($outcome),
+            true
+        );
+    }
+
+    // Separator
+
     public static function close_ticket(DiscordPlan $plan,
                                         Interaction $interaction,
                                         object      $command): void
