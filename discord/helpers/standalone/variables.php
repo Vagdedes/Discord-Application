@@ -45,6 +45,7 @@ class BotDatabaseTable
         BOT_INTERACTION_ROLE_TRACKING = "discord.botInteractionRoleTracking",
         BOT_INTERACTION_ROLE_CHOICES = "discord.botInteractionRoleChoices",
         BOT_POLLS = "discord.botPolls",
+        BOT_POLL_TRACKING = "discord.botPollTracking",
         BOT_POLL_CHOICES = "discord.botPollChoices",
         BOT_POLL_CHOICE_TRACKING = "discord.botPollChoiceTracking",
         BOT_POLL_PERMISSIONS = "discord.botPollPermissions",
