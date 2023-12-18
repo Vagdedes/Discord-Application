@@ -109,9 +109,9 @@ class DiscordTemporaryChannels
                                     if (sql_insert(
                                         BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
                                         array(
+                                            "plan_id" => $this->plan->planID,
                                             "temporary_channel_id" => $query->id,
                                             "temporary_channel_creation_id" => $temporaryID,
-                                            "plan_id" => $this->plan->planID,
                                             "server_id" => $channel->guild_id,
                                             "channel_id" => $channel->id,
                                             "creation_date" => $date,
@@ -632,6 +632,7 @@ class DiscordTemporaryChannels
             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
             null,
             array(
+                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "<", get_current_date())

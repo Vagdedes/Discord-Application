@@ -174,6 +174,7 @@ class DiscordUserTickets
                 1
             ))) {
                 $insert = array(
+                    "plan_id" => $this->plan->planID,
                     "ticket_id" => $query->id,
                     "ticket_creation_id" => $ticketID,
                     "server_id" => $interaction->guild_id,
@@ -515,8 +516,9 @@ class DiscordUserTickets
         }
     }
 
-    public function getMultiple(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null,
-                                bool       $messages = true): array
+    public function getMultiple(int|string      $serverID, int|string $userID,
+                                int|string|null $pastLookup = null, ?int $limit = null,
+                                bool            $messages = true): array
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
         $cache = get_key_value_pair($cacheKey);
@@ -528,6 +530,7 @@ class DiscordUserTickets
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
                 null,
                 array(
+                    array("server_id", $serverID),
                     array("user_id", $userID),
                     $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
                 ),
@@ -720,6 +723,7 @@ class DiscordUserTickets
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             null,
             array(
+                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "IS NOT", null),

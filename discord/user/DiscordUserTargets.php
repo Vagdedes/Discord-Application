@@ -138,6 +138,7 @@ class DiscordUserTargets
                     1
                 ))) {
                     $insert = array(
+                        "plan_id" => $this->plan->planID,
                         "target_id" => $query->id,
                         "target_creation_id" => $targetID,
                         "user_id" => $member->user->id,
@@ -657,8 +658,9 @@ class DiscordUserTargets
         }
     }
 
-    public function getMultiple(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null,
-                                bool       $messages = true): array
+    public function getMultiple(int|string      $serverID, int|string $userID,
+                                int|string|null $pastLookup = null, ?int $limit = null,
+                                bool            $messages = true): array
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
         $cache = get_key_value_pair($cacheKey);
@@ -670,6 +672,7 @@ class DiscordUserTargets
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 null,
                 array(
+                    array("server_id", $serverID),
                     array("user_id", $userID),
                     $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
                 ),
@@ -810,6 +813,7 @@ class DiscordUserTargets
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
             null,
             array(
+                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "<", get_current_date())

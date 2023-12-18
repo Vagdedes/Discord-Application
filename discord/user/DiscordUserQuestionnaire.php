@@ -169,6 +169,7 @@ class DiscordUserQuestionnaire
                     1
                 ))) {
                     $insert = array(
+                        "plan_id" => $this->plan->planID,
                         "questionnaire_id" => $query->id,
                         "questionnaire_creation_id" => $questionnaireID,
                         "user_id" => $member->user->id,
@@ -863,8 +864,9 @@ class DiscordUserQuestionnaire
         }
     }
 
-    public function getMultiple(int|string $userID, int|string|null $pastLookup = null, ?int $limit = null,
-                                bool       $messages = true, int $limitModification = 0): array
+    public function getMultiple(int|string      $serverID, int|string $userID,
+                                int|string|null $pastLookup = null, ?int $limit = null,
+                                bool            $messages = true, int $limitModification = 0): array
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
         $cache = get_key_value_pair($cacheKey);
@@ -876,6 +878,7 @@ class DiscordUserQuestionnaire
                 BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
                 null,
                 array(
+                    array("server_id", $serverID),
                     array("user_id", $userID),
                     $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
                 ),
@@ -1111,6 +1114,7 @@ class DiscordUserQuestionnaire
             BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
             null,
             array(
+                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("completion_date", null),
                 array("expired", null),

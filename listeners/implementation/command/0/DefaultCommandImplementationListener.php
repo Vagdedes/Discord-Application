@@ -197,6 +197,7 @@ class DefaultCommandImplementationListener
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $tickets = $plan->userTickets->getMultiple(
+            $interaction->guild_id,
             $findUserID,
             null,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
@@ -359,6 +360,7 @@ class DefaultCommandImplementationListener
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $questionnaires = $plan->userQuestionnaire->getMultiple(
+            $interaction->guild_id,
             $findUserID,
             null,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
@@ -486,6 +488,7 @@ class DefaultCommandImplementationListener
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $targets = $plan->userTargets->getMultiple(
+            $interaction->guild_id,
             $findUserID,
             null,
             DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE,
