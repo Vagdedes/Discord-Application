@@ -51,6 +51,7 @@ class BotDatabaseTable
         BOT_POLL_PERMISSIONS = "discord.botPollPermissions",
         BOT_POLL_ROLES = "discord.botPollRoles",
         BOT_GIVEAWAYS = "discord.botGiveaways",
+        BOT_GIVEAWAY_TRACKING = "discord.botGiveawayTracking",
         BOT_GIVEAWAY_PARTICIPANTS = "discord.botGiveawayParticipants",
         BOT_GIVEAWAYS_WINNERS = "discord.botGiveawayWinners",
         BOT_GIVEAWAYS_PERMISSIONS = "discord.botGiveawayPermissions",

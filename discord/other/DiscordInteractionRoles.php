@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
+
 class DiscordInteractionRoles
 {
     private DiscordPlan $plan;
@@ -9,5 +11,9 @@ class DiscordInteractionRoles
         $this->plan = $plan;
     }
 
-    //todo max 20 choices (4x5 buttons, 20 select options, 20 reactions)
+    //todo max 20 choices (5x5 buttons, 20 select options)
+
+    public function process(MessageBuilder $messageBuilder): MessageBuilder {
+        return $messageBuilder;
+    }
 }
