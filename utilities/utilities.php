@@ -15,6 +15,12 @@ $google_recaptcha_secret_key_directory = "/var/www/.structure/private/google_rec
 
 // Constants
 
+function get_time_limit(): bool|int|float
+{
+    $limit = ini_get("max_execution_time");
+    return is_numeric($limit) ? $limit : false;
+}
+
 function get_server_identifier(bool $long = false): int
 {
     return string_to_integer(getHostName(), $long);
