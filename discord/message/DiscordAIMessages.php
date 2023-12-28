@@ -75,11 +75,11 @@ class DiscordAIMessages
         }
     }
 
-    public function getModel(?int $channelID = null): ?ChatAI
+    public function getModel(?int $channelID = null): ?object
     {
         return $channelID !== null
-            ? (array_key_exists($channelID, $this->model) ? $this->model[$channelID] : $this->model[0])
-            : $this->model[0];
+            ? (array_key_exists($channelID, $this->model) ? $this->model[$channelID] : $this?->model[0])
+            : $this?->model[0];
     }
 
     public function getChatAI(?int $channelID = null): ?ChatAI
