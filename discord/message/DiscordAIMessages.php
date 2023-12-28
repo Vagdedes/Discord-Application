@@ -327,7 +327,7 @@ class DiscordAIMessages
                                                             $message,
                                                             $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
                                                         );
-                                                    } else {
+                                                    } else if ($channel->debug === null) {
                                                         $this->plan->utilities->deleteMessage($message);
                                                     }
                                                 } else {
