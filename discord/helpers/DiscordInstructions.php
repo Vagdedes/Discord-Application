@@ -13,6 +13,11 @@ class DiscordInstructions
     private DiscordPlan $plan;
     private array $localInstructions, $publicInstructions, $placeholders;
 
+    public const
+        DEFAULT_PLACEHOLDER_START = "%%__",
+        DEFAULT_PLACEHOLDER_MIDDLE = "__",
+        DEFAULT_PLACEHOLDER_END = "__%%";
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -70,9 +75,9 @@ class DiscordInstructions
     }
 
     public function replace(array  $messages, ?object $object,
-                            string $placeholderStart = DiscordProperties::DEFAULT_PLACEHOLDER_START,
-                            string $placeholderMiddle = DiscordProperties::DEFAULT_PLACEHOLDER_MIDDLE,
-                            string $placeholderEnd = DiscordProperties::DEFAULT_PLACEHOLDER_END,
+                            string $placeholderStart = self::DEFAULT_PLACEHOLDER_START,
+                            string $placeholderMiddle = self::DEFAULT_PLACEHOLDER_MIDDLE,
+                            string $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
                             bool   $recursive = true): array
     {
         if ($object !== null && !empty($this->placeholders)) {
@@ -132,7 +137,7 @@ class DiscordInstructions
                         }
 
                         if ($arrayKey !== ($size - 1)) {
-                            $value .= DiscordProperties::NEW_LINE;
+                            $value .= "\n";
                         }
                     }
                 }
@@ -177,9 +182,7 @@ class DiscordInstructions
             $hasSpecific = $specific !== null;
 
             foreach ($this->localInstructions as $instruction) {
-                if ($hasSpecific
-                    ? in_array($instruction->id, $specific)
-                    : $instruction->use !== null) {
+                if (!$hasSpecific || in_array($instruction->id, $specific)) {
                     $replacements = $this->replace(
                         array(
                             $instruction->information,

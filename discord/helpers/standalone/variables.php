@@ -81,7 +81,8 @@ class BotDatabaseTable
         BOT_COST_LIMITS = "discord.botMessageLimits",
         BOT_MESSAGE_LIMITS = "discord.botMessageLimits",
         BOT_KEYWORDS = "discord.botKeywords",
-        BOT_CHAT_MODEL = "discord.botChatModel",
+        BOT_AI_CHAT_MODEL = "discord.botAIChatModel",
+        BOT_AI_INSTRUCTIONS = "discord.botAIInstructions",
         CURRENCIES = "discord.currencies",
         BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
         BOT_USER_PERMISSIONS = "discord.botUserPermissions",
@@ -213,10 +214,7 @@ class DiscordProperties
         SYSTEM_REFRESH_SECONDS = self::SYSTEM_REFRESH_MILLISECONDS / 1_000,
         SYSTEM_REFRESH_TIME = (DiscordProperties::SYSTEM_REFRESH_SECONDS / 60) . " minutes",
         NEW_LINE = "\n",
-        DEFAULT_PLACEHOLDER_START = "%%__",
-        DEFAULT_PLACEHOLDER_MIDDLE = "__",
-        DEFAULT_PLACEHOLDER_END = "__%%",
-        NO_REPLY = self::DEFAULT_PLACEHOLDER_START . "empty" . self::DEFAULT_PLACEHOLDER_END,
+        NO_REPLY = DiscordInstructions::DEFAULT_PLACEHOLDER_START . "empty" . DiscordInstructions::DEFAULT_PLACEHOLDER_END,
         STRICT_REPLY_INSTRUCTIONS = self::STRICT_REPLY_INSTRUCTIONS_DEFAULT . ", JUST REPLY WITH: " . self::NO_REPLY,
         STRICT_REPLY_INSTRUCTIONS_WITH_MENTION = self::STRICT_REPLY_INSTRUCTIONS_DEFAULT . ", KINDLY NOTIFY THE USER.";
 }
