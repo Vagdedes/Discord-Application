@@ -1,6 +1,6 @@
 <?php
 
-class DiscordTranferredMessages
+class DiscordTransferredMessages
 {
     private DiscordPlan $plan;
     private array $channels;
