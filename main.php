@@ -99,7 +99,8 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/phone",
         "/var/www/.structure/library/email",
         "/var/www/.structure/library/gameCloud",
-        "/var/www/.structure/library/ai"
+        "/var/www/.structure/library/ai",
+        "/var/www/.structure/library/base/placeholder.php",
     )
 );
 

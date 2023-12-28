@@ -255,10 +255,30 @@ class DiscordAIMessages
                                                 $modelReply = $reply[2];
 
                                                 if ($channel->debug !== null) {
-                                                    foreach (str_split($instructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                    if (!empty($instructions[0])) {
+                                                        foreach (str_split($instructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                            $this->plan->utilities->replyMessage(
+                                                                $message,
+                                                                MessageBuilder::new()->setContent($split)
+                                                            );
+                                                        }
+                                                    } else {
                                                         $this->plan->utilities->replyMessage(
                                                             $message,
-                                                            MessageBuilder::new()->setContent($split)
+                                                            MessageBuilder::new()->setContent("NO MESSAGE")
+                                                        );
+                                                    }
+                                                    if (!empty($instructions[1])) {
+                                                        foreach (str_split($instructions[1], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                                                            $this->plan->utilities->replyMessage(
+                                                                $message,
+                                                                MessageBuilder::new()->setContent($split)
+                                                            );
+                                                        }
+                                                    } else {
+                                                        $this->plan->utilities->replyMessage(
+                                                            $message,
+                                                            MessageBuilder::new()->setContent("NO DISCLAIMER")
                                                         );
                                                     }
                                                     foreach (str_split(json_encode($modelReply), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {

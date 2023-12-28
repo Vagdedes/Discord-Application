@@ -56,6 +56,7 @@ class DiscordBot
 
     private function load(): void
     {
+        $this->account = new Account();
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id", "account_id"),
@@ -76,11 +77,10 @@ class DiscordBot
             // In case connection or database fails, log but do not exit
         } else {
             $permission = "patreon.subscriber.discord.bot";
-            $account = new Account();
 
             foreach ($query as $arrayKey => $plan) {
                 if ($plan->account_id !== null) {
-                    $account = $account->getNew($plan->account_id);
+                    $account = $this->account->getNew($plan->account_id);
 
                     if (!$account->exists() || !$account->getPermissions()->hasPermission($permission)) {
                         unset($query[$arrayKey]);
@@ -98,8 +98,8 @@ class DiscordBot
                 global $logger;
                 $this->administrator = false;
                 $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
-            } else if ($account->exists()) {
-                $this->administrator = $account->getPermissions()->isAdministrator();
+            } else if ($this->account->exists()) {
+                $this->administrator = $this->account->getPermissions()->isAdministrator();
             } else {
                 $this->administrator = false;
             }

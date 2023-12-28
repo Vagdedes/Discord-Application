@@ -30,20 +30,24 @@ class DiscordInstructions
                             string $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
                             bool   $recursive = true): array
     {
-        $this->instructions->setPlaceholderStart($placeholderStart);
-        $this->instructions->setPlaceholderMiddle($placeholderMiddle);
-        $this->instructions->setPlaceholderEnd($placeholderEnd);
-        return $this->instructions->replace(
-            $messages,
-            $object,
-            array(
-                "publicInstructions" => array($this->instructions, "getPublic"),
-                "botReplies" => array($this->plan->conversation, "getReplies", array($object->userID, new stdClass(), false)),
-                "botMessages" => array($this->plan->conversation, "getMessages", array($object->userID, new stdClass(), false)),
-                "allMessages" => array($this->plan->conversation, "getConversation", array($object->userID, new stdClass(), false))
-            ),
-            $recursive
-        );
+        if ($object !== null) {
+            $this->instructions->setPlaceholderStart($placeholderStart);
+            $this->instructions->setPlaceholderMiddle($placeholderMiddle);
+            $this->instructions->setPlaceholderEnd($placeholderEnd);
+            return $this->instructions->replace(
+                $messages,
+                $object,
+                array(
+                    "publicInstructions" => array($this->instructions, "getPublic", array()),
+                    "botReplies" => array($this->plan->conversation, "getReplies", array($object->userID, new stdClass(), false)),
+                    "botMessages" => array($this->plan->conversation, "getMessages", array($object->userID, new stdClass(), false)),
+                    "allMessages" => array($this->plan->conversation, "getConversation", array($object->userID, new stdClass(), false))
+                ),
+                $recursive
+            );
+        } else {
+            return $messages;
+        }
     }
 
     public function build(object $object, ?array $specific = null): array

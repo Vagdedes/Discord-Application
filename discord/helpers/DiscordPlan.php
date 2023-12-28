@@ -3,7 +3,7 @@
 class DiscordPlan
 {
     public int $planID;
-    public ?int $applicationID, $family;
+    public ?int $applicationID;
     public string $name, $creationDate;
     public ?string $description, $expirationDate, $creationReason, $expirationReason;
     public DiscordInstructions $instructions;
@@ -50,7 +50,6 @@ class DiscordPlan
             1
         )[0];
         $this->planID = (int)$query->id;
-        $this->family = $query->family === null ? null : (int)$query->family;
         $this->applicationID = $query->application_id === null ? null : (int)$query->application_id;
         $this->name = $query->name;
         $this->description = $query->description;
