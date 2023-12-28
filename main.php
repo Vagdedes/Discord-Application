@@ -60,10 +60,6 @@ require '/root/discord_bot/discord/helpers/DiscordModeration.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
 require '/root/discord_bot/discord/helpers/DiscordLocations.php';
 
-require '/root/discord_bot/ai/variables.php';
-require '/root/discord_bot/ai/ChatModel.php';
-require '/root/discord_bot/ai/ChatAI.php';
-
 use Discord\Discord;
 use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
@@ -102,7 +98,8 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/builtbybit",
         "/var/www/.structure/library/phone",
         "/var/www/.structure/library/email",
-        "/var/www/.structure/library/gameCloud"
+        "/var/www/.structure/library/gameCloud",
+        "/var/www/.structure/library/ai"
     )
 );
 
