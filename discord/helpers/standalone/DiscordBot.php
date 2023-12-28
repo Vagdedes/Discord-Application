@@ -2,6 +2,7 @@
 
 /*
  * Bot Features:
+ * Custom Mute
  * Custom Logs
  * Custom Commands (Listener)
  * -
@@ -14,11 +15,14 @@
  * Persistent Messages (Listener)
  * Reminder Messages (Listener)
  * Welcome & Goodbye Messages (Listener)
+ * Filtered Messages (Listener)
+ * Transferred Messages (Listener)
  * -
  * Anti-Expiration Threads
  * Counting Channels (Listener)
  * Statistics Channels (Listener)
  * Temporary Channels (Listener)
+ * Objectives Channels (Listener)
  * -
  * User Notes
  * User Targets

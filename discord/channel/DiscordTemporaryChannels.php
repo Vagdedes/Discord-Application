@@ -229,8 +229,8 @@ class DiscordTemporaryChannels
                 if ($set) {
                     $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
 
-                    if (empty($owner)) {
-                        return "You cannot add owners this temporary channel.";
+                    if (!$force && empty($owner)) {
+                        return "You cannot add owners to this temporary channel.";
                     } else if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
                         return "User is banned from this temporary voice channel.";
                     } else if (!$force && !empty($this->getOwner($user, $state[1]->temporary_channel_creation_id))) {

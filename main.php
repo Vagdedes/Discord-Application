@@ -23,6 +23,7 @@ require '/root/discord_bot/web/LoadBalancer.php';
 
 require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
 require '/root/discord_bot/discord/custom/DiscordCommands.php';
+require '/root/discord_bot/discord/custom/DiscordMute.php';
 
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/other/DiscordSocialAlerts.php';
@@ -40,11 +41,14 @@ require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
 require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
+require '/root/discord_bot/discord/channel/DiscordObjectivesChannels.php';
 
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
 require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
+require '/root/discord_bot/discord/message/DiscordChatFilteredMessages.php';
+require '/root/discord_bot/discord/message/DiscordTransferredMessages.php';
 
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';

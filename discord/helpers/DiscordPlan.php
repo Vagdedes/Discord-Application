@@ -35,6 +35,10 @@ class DiscordPlan
     public DiscordLocations $locations;
     public DiscordUserNotes $userNotes;
     public DiscordUserGiveaways $userGiveaways;
+    public DiscordChatFilteredMessages $chatFilteredMessages;
+    public DiscordObjectivesChannels $objectivesChannels;
+    public DiscordMute $mute;
+    public DiscordTranferredMessages $tranferredMessages;
 
     public function __construct(DiscordBot $bot, int|string $planID)
     {
@@ -88,6 +92,10 @@ class DiscordPlan
         $this->inviteTracker = new DiscordInviteTracker($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->userGiveaways = new DiscordUserGiveaways($this);
+        $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
+        $this->objectivesChannels = new DiscordObjectivesChannels($this);
+        $this->mute = new DiscordMute($this);
+        $this->tranferredMessages = new DiscordTranferredMessages($this);
     }
 
 }
