@@ -70,30 +70,19 @@ class BotDatabaseTable
         BOT_SELECTION_SUB_COMPONENTS = "discord.botSelectionSubComponents",
         BOT_CONTROLLED_MESSAGES = "discord.botControlledMessages",
         BOT_ERRORS = "discord.botErrors",
-        BOT_MESSAGES = "discord.botMessages",
-        BOT_REPLIES = "discord.botReplies",
-        BOT_PUNISHMENTS = "discord.botPunishments",
-        BOT_PUNISHMENT_TYPES = "discord.botPunishmentTypes",
-        BOT_COST_LIMITS = "discord.botMessageLimits",
-        BOT_MESSAGE_LIMITS = "discord.botMessageLimits",
+        BOT_AI_COST_LIMITS = "discord.botAICostLimits",
+        BOT_AI_MESSAGE_LIMITS = "discord.botAIMessageLimits",
         BOT_AI_KEYWORDS = "discord.botAIKeywords",
         BOT_AI_CHAT_MODEL = "discord.botAIChatModel",
         BOT_AI_INSTRUCTIONS = "discord.botAIInstructions",
         BOT_AI_MENTIONS = "discord.botAIMentions",
+        BOT_AI_MESSAGES = "discord.botAIMessages",
+        BOT_AI_REPLIES = "discord.botAIReplies",
         CURRENCIES = "discord.currencies",
         BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
         BOT_USER_PERMISSIONS = "discord.botUserPermissions",
         BOT_COMMANDS = "discord.botCommands",
         BOT_COMMAND_ARGUMENTS = "discord.botCommandArguments";
-}
-
-class DiscordPunishment
-{
-    public const
-        DISCORD_BAN = 1,
-        DISCORD_KICK = 2,
-        DISCORD_TIMEOUT = 3,
-        AI_BLACKLIST = 4;
 }
 
 class DiscordSyntax

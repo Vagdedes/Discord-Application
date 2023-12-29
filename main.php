@@ -55,12 +55,9 @@ require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordCurrency.php';
 require '/root/discord_bot/discord/helpers/standalone/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
-require '/root/discord_bot/discord/helpers/DiscordConversation.php';
-require '/root/discord_bot/discord/helpers/DiscordLimits.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
 require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
-require '/root/discord_bot/discord/helpers/DiscordModeration.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
 require '/root/discord_bot/discord/helpers/DiscordChannels.php';
 

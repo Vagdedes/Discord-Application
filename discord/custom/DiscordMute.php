@@ -11,4 +11,5 @@ class DiscordMute
     }
 
     //todo voice & chat mute but separate
+    //todo make it channel specific
 }

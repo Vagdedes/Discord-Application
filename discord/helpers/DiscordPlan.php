@@ -7,9 +7,6 @@ class DiscordPlan
     public string $name, $creationDate;
     public ?string $description, $expirationDate, $creationReason, $expirationReason;
     public DiscordInstructions $instructions;
-    public DiscordConversation $conversation;
-    public DiscordModeration $moderation;
-    public DiscordLimits $limits;
     public DiscordCommands $commands;
     public DiscordListener $listener;
     public DiscordComponent $component;
@@ -67,13 +64,10 @@ class DiscordPlan
         $this->channels = new DiscordChannels($this);
         $this->listener = new DiscordListener($this);
         $this->instructions = new DiscordInstructions($this);
-        $this->conversation = new DiscordConversation($this);
-        $this->limits = new DiscordLimits($this);
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
         $this->permissions = new DiscordPermissions($this);
 
-        $this->moderation = new DiscordModeration($this);
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);

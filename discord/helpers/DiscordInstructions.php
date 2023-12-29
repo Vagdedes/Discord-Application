@@ -39,9 +39,9 @@ class DiscordInstructions
                 $object,
                 array(
                     "publicInstructions" => array($this->instructions, "getPublic", array()),
-                    "botReplies" => array($this->plan->conversation, "getReplies", array($object->userID, new stdClass(), false)),
-                    "botMessages" => array($this->plan->conversation, "getMessages", array($object->userID, new stdClass(), false)),
-                    "allMessages" => array($this->plan->conversation, "getConversation", array($object->userID, new stdClass(), false))
+                    "botReplies" => array($this->plan->aiMessages, "getReplies", array($object->userID, new stdClass(), false)),
+                    "botMessages" => array($this->plan->aiMessages, "getMessages", array($object->userID, new stdClass(), false)),
+                    "allMessages" => array($this->plan->aiMessages, "getConversation", array($object->userID, new stdClass(), false))
                 ),
                 $recursive
             );
