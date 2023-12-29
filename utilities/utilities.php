@@ -368,7 +368,13 @@ function get_domain(bool $subdomains = true): string
     } else if (isset($_SERVER['SERVER_NAME'])) {
         $domain = explode(".", $_SERVER['SERVER_NAME']);
         $size = sizeof($domain);
-        $domain = $domain[$size - 2] . "." . $domain[$size - 1];
+        $domainEnd = $domain[$size - 1];
+
+        if (is_alpha($domainEnd)) {
+            $domain = $domain[$size - 2] . "." . $domainEnd;
+        } else {
+            $domain = null;
+        }
     } else {
         $domain = null;
     }
