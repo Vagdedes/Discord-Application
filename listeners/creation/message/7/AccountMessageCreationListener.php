@@ -131,7 +131,9 @@ class AccountMessageCreationListener
             $productID,
             1,
             true,
-            false, DiscordProperties::SYSTEM_REFRESH_TIME
+            false,
+            DiscordProperties::SYSTEM_REFRESH_TIME,
+            null
         );
         $downloadURL = $hasPurchased && $downloadToken->isPositiveOutcome()
             ? $product->download_placeholder . "?token=" . $downloadToken->getObject()
