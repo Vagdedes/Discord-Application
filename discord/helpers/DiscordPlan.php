@@ -32,7 +32,7 @@ class DiscordPlan
     public DiscordStatisticsChannels $statisticsChannels;
     public DiscordAIMessages $aiMessages;
     public DiscordStatusMessages $statusMessages;
-    public DiscordLocations $locations;
+    public DiscordChannels $channels;
     public DiscordUserNotes $userNotes;
     public DiscordUserGiveaways $userGiveaways;
     public DiscordChatFilteredMessages $chatFilteredMessages;
@@ -64,7 +64,7 @@ class DiscordPlan
 
         $this->utilities = new DiscordUtilities($this);
 
-        $this->locations = new DiscordLocations($this);
+        $this->channels = new DiscordChannels($this);
         $this->listener = new DiscordListener($this);
         $this->instructions = new DiscordInstructions($this);
         $this->conversation = new DiscordConversation($this);

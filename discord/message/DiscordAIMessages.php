@@ -11,6 +11,7 @@ class DiscordAIMessages
 {
     private DiscordPlan $plan;
     public ?array $model;
+    private array $mentions, $keywords;
 
     //todo dalle-3 to discord-ai
     //todo sound to discord-ai
@@ -18,7 +19,39 @@ class DiscordAIMessages
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->instructions = array();
+        $this->mentions = array();
+
+        if (!empty($this->plan->channels->getList())) {
+            foreach ($this->plan->channels->getList() as $channel) {
+                if ($channel->require_mention !== null) {
+                    $this->mentions = get_sql_query(
+                        BotDatabaseTable::BOT_AI_MENTIONS,
+                        null,
+                        array(
+                            array("deletion_date", null),
+                            array("plan_id", $this->plan->planID),
+                            null,
+                            array("expiration_date", "IS", null, 0),
+                            array("expiration_date", ">", get_current_date()),
+                            null
+                        )
+                    );
+                    break;
+                }
+            }
+        }
+        $this->keywords = get_sql_query(
+            BotDatabaseTable::BOT_AI_KEYWORDS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("plan_id", $this->plan->planID),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
         $query = get_sql_query(
             BotDatabaseTable::BOT_AI_CHAT_MODEL,
             null,
@@ -159,8 +192,8 @@ class DiscordAIMessages
                                                 }
                                             }
 
-                                            if (!$mention && !empty($this->plan->locations->mentions)) {
-                                                foreach ($this->plan->locations->mentions as $alternativeMention) {
+                                            if (!$mention && !empty($this->mentions)) {
+                                                foreach ($this->mentions as $alternativeMention) {
                                                     foreach ($message->mentions as $userObj) {
                                                         if ($userObj->id == $alternativeMention->user_id) {
                                                             $mention = true;
@@ -174,8 +207,8 @@ class DiscordAIMessages
                                         $mention = true;
                                     }
 
-                                    if (!$mention && !empty($this->plan->locations->keywords)) {
-                                        foreach ($this->plan->locations->keywords as $keyword) {
+                                    if (!$mention && !empty($this->keywords)) {
+                                        foreach ($this->keywords as $keyword) {
                                             if ($keyword->keyword !== null) {
                                                 if (str_contains($messageContent, $keyword->keyword)) {
                                                     $mention = true;

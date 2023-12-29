@@ -124,7 +124,7 @@ class DiscordInstructions
         $object->minute = date("i");
         $object->second = date("s");
         $object->channel = $object->serverID === null || $object->channelID === null || $object->userID === null ? null
-            : $this->plan->locations->getChannel($object->serverID, $object->channelID, $object->userID);
+            : $this->plan->channels->getIfHasAccess($object->serverID, $object->channelID, $object->userID);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

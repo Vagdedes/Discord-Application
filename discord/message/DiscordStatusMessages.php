@@ -23,8 +23,8 @@ class DiscordStatusMessages
         $userID = $member->id;
 
         if (!$this->hasCooldown($serverID, $userID, self::WELCOME)
-            && !empty($this->plan->locations->channels)) {
-            foreach ($this->plan->locations->channels as $channel) {
+            && !empty($this->plan->channels->getList())) {
+            foreach ($this->plan->channels->getList() as $channel) {
                 if ($channel->server_id == $serverID
                     && $channel->welcome_message !== null) {
                     if ($channel->whitelist === null) {
@@ -34,8 +34,8 @@ class DiscordStatusMessages
                             && $channelFound->allowText()) {
                             $this->process($channelFound, $member, $channel, self::WELCOME);
                         }
-                    } else if (!empty($this->plan->locations->whitelistContents)) {
-                        foreach ($this->plan->locations->whitelistContents as $whitelist) {
+                    } else if (!empty($this->plan->channels->getWhitelist())) {
+                        foreach ($this->plan->channels->getWhitelist() as $whitelist) {
                             if ($whitelist->user_id == $userID
                                 && ($whitelist->server_id === null
                                     || $whitelist->server_id === $serverID
@@ -62,8 +62,8 @@ class DiscordStatusMessages
         $userID = $member->id;
 
         if (!$this->hasCooldown($serverID, $userID, self::GOODBYE)
-            && !empty($this->plan->locations->channels)) {
-            foreach ($this->plan->locations->channels as $channel) {
+            && !empty($this->plan->channels->getList())) {
+            foreach ($this->plan->channels->getList() as $channel) {
                 if ($channel->server_id == $serverID
                     && $channel->goodbye_message !== null) {
                     if ($channel->whitelist === null) {
@@ -73,8 +73,8 @@ class DiscordStatusMessages
                             && $channelFound->allowText()) {
                             $this->process($channelFound, $member, $channel, self::GOODBYE);
                         }
-                    } else if (!empty($this->plan->locations->whitelistContents)) {
-                        foreach ($this->plan->locations->whitelistContents as $whitelist) {
+                    } else if (!empty($this->plan->channels->getWhitelist())) {
+                        foreach ($this->plan->channels->getWhitelist() as $whitelist) {
                             if ($whitelist->user_id == $userID
                                 && ($whitelist->server_id === null
                                     || $whitelist->server_id === $serverID

@@ -1,26 +1,14 @@
 <?php
 
-class DiscordLocations
+class DiscordChannels
 {
     private DiscordPlan $plan;
-    public array $channels, $whitelistContents, $keywords, $mentions;
+    private array $list, $whitelist;
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->keywords = get_sql_query(
-            BotDatabaseTable::BOT_KEYWORDS,
-            null,
-            array(
-                array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
-        $this->channels = get_sql_query(
+        $this->list = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
             array(
@@ -32,31 +20,8 @@ class DiscordLocations
                 null
             )
         );
-        if (!empty($this->channels)) {
-            $this->mentions = array();
-
-            foreach ($this->channels as $channel) {
-                if ($channel->require_mention !== null) {
-                    $this->mentions = get_sql_query(
-                        BotDatabaseTable::BOT_MENTIONS,
-                        null,
-                        array(
-                            array("deletion_date", null),
-                            array("plan_id", $this->plan->planID),
-                            null,
-                            array("expiration_date", "IS", null, 0),
-                            array("expiration_date", ">", get_current_date()),
-                            null
-                        )
-                    );
-                    break;
-                }
-            }
-        } else {
-            $this->mentions = array();
-        }
-        $this->whitelistContents = get_sql_query(
-            BotDatabaseTable::BOT_WHITELIST,
+        $this->whitelist = get_sql_query(
+            BotDatabaseTable::BOT_CHANNEL_WHITELIST,
             null,
             array(
                 array("deletion_date", null),
@@ -74,7 +39,17 @@ class DiscordLocations
 
     // Separator
 
-    public function getChannel(int|string $serverID, int|string $channelID, int|string $userID): ?object
+    public function getList(): array
+    {
+        return $this->list;
+    }
+
+    public function getWhitelist(): array
+    {
+        return $this->whitelist;
+    }
+
+    public function getIfHasAccess(int|string $serverID, int|string $channelID, int|string $userID): ?object
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID);
         $cache = get_key_value_pair($cacheKey);
@@ -84,16 +59,16 @@ class DiscordLocations
         } else {
             $result = false;
 
-            if (!empty($this->channels)) {
-                foreach ($this->channels as $channel) {
+            if (!empty($this->list)) {
+                foreach ($this->list as $channel) {
                     if ($channel->server_id == $serverID
                         && ($channel->channel_id == $channelID
                             || $channel->channel_id === null)) {
                         if ($channel->whitelist === null) {
                             $result = $channel;
                             break;
-                        } else if (!empty($this->whitelistContents)) {
-                            foreach ($this->whitelistContents as $whitelist) {
+                        } else if (!empty($this->whitelist)) {
+                            foreach ($this->whitelist as $whitelist) {
                                 if ($whitelist->user_id == $userID
                                     && ($whitelist->server_id === null
                                         || $whitelist->server_id === $serverID

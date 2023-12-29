@@ -62,7 +62,7 @@ require '/root/discord_bot/discord/helpers/DiscordListener.php';
 require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
 require '/root/discord_bot/discord/helpers/DiscordModeration.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
-require '/root/discord_bot/discord/helpers/DiscordLocations.php';
+require '/root/discord_bot/discord/helpers/DiscordChannels.php';
 
 use Discord\Discord;
 use Discord\Helpers\Collection;
