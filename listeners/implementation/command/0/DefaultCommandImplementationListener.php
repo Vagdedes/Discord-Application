@@ -7,6 +7,146 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function mute_user(DiscordPlan $plan,
+                                     Interaction $interaction,
+                                     object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $type = $arguments["type"]["value"];
+
+        switch ($type) {
+            case DiscordMute::VOICE:
+            case DiscordMute::TEXT:
+            case DiscordMute::COMMAND:
+                break;
+            case "all":
+                $type = DiscordMute::ALL;
+                break;
+            default:
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Invalid mute type."),
+                    true
+                );
+                return;
+        }
+        $duration = $arguments["duration"]["value"];
+
+        if (!is_valid_text_time($duration)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid mute duration."),
+                true
+            );
+        } else {
+            $mute = $plan->bot->mute->mute(
+                $interaction->member,
+                $interaction->data?->resolved?->users?->first(),
+                $interaction->data?->resolved?->channels?->first(),
+                $arguments["reason"]["value"],
+                strtolower($type),
+                strtolower($duration)
+            );
+
+            if ($mute[0]) {
+                $important = $mute[1];
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("User is already by '"
+                        . $plan->utilities->getUsername($important->created_by)
+                        . "' muted for: " . $important->creation_reason),
+                    true
+                );
+            } else {
+                $important = $mute[1];
+
+                if (is_string($important)) {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent($important),
+                        true
+                    );
+                } else {
+                    $plan->utilities->acknowledgeCommandMessage(
+                        $interaction,
+                        MessageBuilder::new()->setContent("User successfully muted."),
+                        true
+                    );
+                }
+            }
+        }
+    }
+
+    public static function unmute_user(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $type = $arguments["type"]["value"];
+
+        switch ($type) {
+            case DiscordMute::VOICE:
+            case DiscordMute::TEXT:
+            case DiscordMute::COMMAND:
+                break;
+            case "all":
+                $type = DiscordMute::ALL;
+                break;
+            default:
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Invalid mute type."),
+                    true
+                );
+                return;
+        }
+        $unmute = $plan->bot->mute->unmute(
+            $interaction->member,
+            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->channels?->first(),
+            $arguments["reason"]["value"],
+            strtolower($type)
+        );
+
+        if (empty($unmute)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("User is not muted."),
+                true
+            );
+        } else {
+            $positive = 0;
+            $negative = 0;
+
+            foreach ($unmute as $important) {
+                if ($important[0]) {
+                    $positive++;
+                } else {
+                    $negative++;
+                }
+            }
+
+            if ($positive > 0) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent(
+                        "User " . ($negative > 0 ? "partly" : "successfully") . " unmuted."
+                    ),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("User failed to be unmuted."),
+                    true
+                );
+
+            }
+        }
+    }
+
+    // Separator
+
     public static function temporary_channel_lock(DiscordPlan $plan,
                                                   Interaction $interaction,
                                                   object      $command): void
@@ -109,6 +249,7 @@ class DefaultCommandImplementationListener
                                                           Interaction $interaction,
                                                           object      $command): void
     {
+        $arguments = $interaction->data->options->toArray();
         $outcome = $plan->temporaryChannels->setOwner(
             $interaction->member,
             $interaction->data?->resolved?->users?->first(),
