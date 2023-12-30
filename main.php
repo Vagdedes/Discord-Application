@@ -597,21 +597,31 @@ function initiate_discord_bot(): void
                         break;
                     }
                 }
-            } else if ($oldstate === null) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->temporaryChannels->trackJoin($state)) {
-                        break;
-                    }
+            } else {
+                $mute = $createdDiscordBot->mute->isMuted($state->member, $state->channel, DiscordMute::VOICE);
+
+                if ($mute !== null) {
+                    $state->channel->muteMember($state->member, $mute->creation_reason);
+                    $createdDiscordBot->utilities->sendMessageInPieces($state->member, $mute->creation_reason);
+                } else if ($createdDiscordBot->mute->wasMuted($state->member, $state->channel, DiscordMute::VOICE)) {
+                    $state->channel->unmuteMember($state->member);
                 }
-            } else if ($state->channel_id != $oldstate->channel_id) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->temporaryChannels->trackLeave($oldstate)) {
-                        break;
+                if ($oldstate === null) {
+                    foreach ($createdDiscordBot->plans as $plan) {
+                        if ($plan->temporaryChannels->trackJoin($state)) {
+                            break;
+                        }
                     }
-                }
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->temporaryChannels->trackJoin($state)) {
-                        break;
+                } else if ($state->channel_id != $oldstate->channel_id) {
+                    foreach ($createdDiscordBot->plans as $plan) {
+                        if ($plan->temporaryChannels->trackLeave($oldstate)) {
+                            break;
+                        }
+                    }
+                    foreach ($createdDiscordBot->plans as $plan) {
+                        if ($plan->temporaryChannels->trackJoin($state)) {
+                            break;
+                        }
                     }
                 }
             }

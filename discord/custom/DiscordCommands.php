@@ -195,19 +195,29 @@ class DiscordCommands
                 $cache = get_key_value_pair($cacheKey);
 
                 if ($cache !== null) {
-                    $cooldown = $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $cache[0]);
+                    $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
-                    if ($cooldown[0]) {
-                        return $cooldown[1];
+                    if ($mute !== null) {
+                        return $mute->creation_reason;
                     } else {
-                        return $cache[1];
+                        $cooldown = $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $cache[0]);
+
+                        if ($cooldown[0]) {
+                            return $cooldown[1];
+                        } else {
+                            return $cache[1];
+                        }
                     }
                 } else {
                     foreach ($this->staticCommands as $command) {
                         if (($command->server_id === null || $command->server_id == $message->guild_id)
                             && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
-                            if ($command->required_permission !== null
+                            $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+
+                            if ($mute !== null) {
+                                return $mute->creation_reason;
+                            } else if ($command->required_permission !== null
                                 && !$this->plan->permissions->hasPermission(
                                     $user,
                                     $command->required_permission
@@ -228,7 +238,11 @@ class DiscordCommands
                     if (($command->server_id === null || $command->server_id == $message->guild_id)
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
-                        if ($command->required_permission !== null
+                        $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+
+                        if ($mute !== null) {
+                            return $mute->creation_reason;
+                        } else if ($command->required_permission !== null
                             && !$this->plan->permissions->hasPermission(
                                 $user,
                                 $command->required_permission
