@@ -30,9 +30,9 @@ class DefaultCommandImplementationListener
                 );
                 return;
         }
-        $duration = $arguments["duration"]["value"];
+        $duration = $arguments["duration"]["value"] ?? null;
 
-        if (!is_valid_text_time($duration)) {
+        if ($duration !== null && !is_valid_text_time($duration)) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Invalid mute duration."),
@@ -41,11 +41,11 @@ class DefaultCommandImplementationListener
         } else {
             $mute = $plan->bot->mute->mute(
                 $interaction->member,
-                $interaction->data?->resolved?->users?->first(),
+                $interaction->data?->resolved?->members?->first(),
                 $interaction->data?->resolved?->channels?->first(),
                 $arguments["reason"]["value"],
                 strtolower($type),
-                strtolower($duration)
+                $duration !== null ? strtolower($duration) : null
             );
 
             if ($mute[0]) {
@@ -102,7 +102,7 @@ class DefaultCommandImplementationListener
         }
         $unmute = $plan->bot->mute->unmute(
             $interaction->member,
-            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->members?->first(),
             $interaction->data?->resolved?->channels?->first(),
             $arguments["reason"]["value"],
             strtolower($type)
@@ -188,7 +188,7 @@ class DefaultCommandImplementationListener
     {
         $outcome = $plan->temporaryChannels->setBan(
             $interaction->member,
-            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->members?->first(),
             true,
             $arguments["reason"]["value"] ?? null
         );
@@ -209,7 +209,7 @@ class DefaultCommandImplementationListener
     {
         $outcome = $plan->temporaryChannels->setBan(
             $interaction->member,
-            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->members?->first(),
             false,
             $arguments["reason"]["value"] ?? null
         );
@@ -230,7 +230,7 @@ class DefaultCommandImplementationListener
     {
         $outcome = $plan->temporaryChannels->setOwner(
             $interaction->member,
-            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->members?->first(),
             true,
             $arguments["reason"]["value"] ?? null
         );
@@ -252,7 +252,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $outcome = $plan->temporaryChannels->setOwner(
             $interaction->member,
-            $interaction->data?->resolved?->users?->first(),
+            $interaction->data?->resolved?->members?->first(),
             false,
             $arguments["reason"]["value"] ?? null
         );

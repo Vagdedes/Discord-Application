@@ -24,8 +24,8 @@ class DiscordMute
             BotDatabaseTable::BOT_MUTE,
             null,
             array(
-                array("type", null),
-                array("deletion_date"),
+                array("type", self::ALL),
+                array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", $date),
@@ -37,7 +37,7 @@ class DiscordMute
             null,
             array(
                 array("type", self::VOICE),
-                array("deletion_date"),
+                array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", $date),
@@ -49,7 +49,7 @@ class DiscordMute
             null,
             array(
                 array("type", self::TEXT),
-                array("deletion_date"),
+                array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", $date),
@@ -61,7 +61,7 @@ class DiscordMute
             null,
             array(
                 array("type", self::COMMAND),
-                array("deletion_date"),
+                array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", $date),
@@ -71,17 +71,19 @@ class DiscordMute
         $this->refresh();
     }
 
-    public function isMuted(User|Member $member, Channel|Thread $thread,
+    public function isMuted(User|Member $member, Channel|Thread|null $channelOrThread,
                             ?string     $type = self::ALL): ?object
     {
         if (!empty($this->merged)) {
             $date = get_current_date();
-            $all = $type == self::ALL;
+            $all = $type === self::ALL;
+            $specific = $channelOrThread !== null;
 
             foreach ($this->merged as $mute) {
                 if ($mute->user_id == $member->id
+                    && $mute->server_id == $member->guild_id
                     && ($all || $mute->type == $type)
-                    && ($mute->channel_id == $thread->id || $mute->channel_id === null)
+                    && ($specific && $mute->channel_id == $channelOrThread->id || $mute->channel_id === null)
                     && ($mute->expiration_date === null || $mute->expiration_date > $date)) {
                     return $mute;
                 }
@@ -90,10 +92,10 @@ class DiscordMute
         return null;
     }
 
-    public function wasMuted(User|Member $member, Channel|Thread $channel,
+    public function wasMuted(User|Member $member, Channel|Thread $channelOrThread,
                              ?string     $type = self::ALL): bool
     {
-        $isThread = $channel instanceof Thread;
+        $isThread = $channelOrThread instanceof Thread;
         set_sql_cache("1 second");
         return !empty(get_sql_query(
             BotDatabaseTable::BOT_MUTE,
@@ -103,11 +105,11 @@ class DiscordMute
                 array("user_id", $member->id),
                 $isThread ? null : "",
                 $isThread ? array("thread_id", "IS", null, 0) : "",
-                $isThread ? array("thread_id", $channel->id) : "",
+                $isThread ? array("thread_id", $channelOrThread->id) : "",
                 $isThread ? null : array("thread_id", null), // Attention
                 null,
                 array("channel_id", "IS", null, 0),
-                array("channel_id", $isThread ? $channel->parent_id : $channel->id),
+                array("channel_id", $isThread ? $channelOrThread->parent_id : $channelOrThread->id),
                 null,
                 null,
                 array("type", "IS", null, 0),
@@ -121,7 +123,7 @@ class DiscordMute
         ));
     }
 
-    public function mute(User|Member         $self, User|Member $member,
+    public function mute(Member         $self, Member $member,
                          Channel|Thread|null $channelOrThread, string $reason,
                          ?string             $type = self::ALL,
                          ?string             $expiration = null): array
@@ -135,9 +137,9 @@ class DiscordMute
         $insert = array(
             "type" => $type,
             "user_id" => $member->id,
-            "server_id" => $channelOrThread->guild_id,
-            "channel_id" => $specific ? null : ($channelOrThread instanceof Thread ? $channelOrThread->parent_id : $channelOrThread->id),
-            "thread_id" => !$specific && $channelOrThread instanceof Thread ? $channelOrThread->id : null,
+            "server_id" => $member->guild_id,
+            "channel_id" => $specific ? ($channelOrThread instanceof Thread ? $channelOrThread->parent_id : $channelOrThread->id) : null,
+            "thread_id" => $specific && $channelOrThread instanceof Thread ? $channelOrThread->id : null,
             "creation_date" => get_current_date(),
             "creation_reason" => $reason,
             "created_by" => $self->id,
@@ -172,21 +174,32 @@ class DiscordMute
         }
     }
 
-    public function unmute(User|Member         $self, User|Member $member,
+    public function unmute(Member         $self, Member $member,
                            Channel|Thread|null $channelOrThread, string $reason,
                            ?string             $type = self::ALL): array
     {
         if (!empty($this->merged)) {
             $array = array();
             $date = get_current_date();
-            $all = $type == self::ALL;
+            $all = $type === self::ALL;
             $specific = $channelOrThread !== null;
 
             foreach ($this->merged as $mute) {
                 if ($mute->user_id == $member->id
+                    && $mute->server_id == $member->guild_id
                     && ($all || $mute->type == $type)
-                    && ($mute->channel_id == $channelOrThread->id || !$specific && $mute->channel_id === null)
+                    && ($specific && $mute->channel_id == $channelOrThread->id || $mute->channel_id === null)
                     && ($mute->expiration_date === null || $mute->expiration_date > $date)) {
+                    $where = isset($mute->id)
+                        ? array("id", $mute->id)
+                        : array(
+                            array("user_id", $mute->user_id),
+                            array("type", $mute->type),
+                            array("creation_date", $mute->creation_date),
+                            array("created_by", $mute->created_by),
+                            array("expiration_date", $mute->expiration_date)
+                        );
+
                     if (set_sql_query(
                         BotDatabaseTable::BOT_MUTE,
                         array(
@@ -194,10 +207,11 @@ class DiscordMute
                             "deletion_reason" => $reason,
                             "deleted_by" => $self->id
                         ),
+                        $where,
                         array(
-                            array("id", $mute->id)
+                            "DESC",
+                            "id"
                         ),
-                        null,
                         1
                     )) {
                         $array[] = array(true, $mute);

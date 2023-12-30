@@ -190,9 +190,7 @@ class DiscordAIMessages
                 $message->delete();
                 $this->plan->utilities->sendMessageInPieces(
                     $member,
-                    MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
-                    )
+                    $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
             } else {
                 $channel = $object->channel;
