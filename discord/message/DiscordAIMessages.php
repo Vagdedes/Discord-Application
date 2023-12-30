@@ -19,6 +19,7 @@ class DiscordAIMessages
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->messageCounter = array();
         $query = get_sql_query(
             BotDatabaseTable::BOT_AI_CHAT_MODEL,
             null,
@@ -410,7 +411,7 @@ class DiscordAIMessages
     }
 
     // 1: Success, 2: Model, 3: Reply, 4: Cache
-    public function rawTextAssistance(User|Member    $userObject, //todo find a way to measure
+    public function rawTextAssistance(User|Member    $userObject, //todo remove this method & use the channels object to list the channels the AI will work with extra details of how to store
                                       Channel|Thread $channel,
                                       string         $instructions, string $user,
                                       ?int           $extraHash = null,
@@ -422,7 +423,6 @@ class DiscordAIMessages
         if ($useCache) {
             $simpleCacheKey = array(
                 __METHOD__,
-                $this->plan->planID,
                 $userObject->id,
                 $extraHash
             );
@@ -574,7 +574,7 @@ class DiscordAIMessages
 
     // Separator
 
-    public function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+    private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
                             int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
@@ -609,7 +609,7 @@ class DiscordAIMessages
         }
     }
 
-    public function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+    private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
                                     int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
@@ -658,7 +658,10 @@ class DiscordAIMessages
                         $loopUserID,
                         $limit->past_lookup,
                     );
-                    $hash = $this->hash($limit->server_id, $limit->channel_id, $loopUserID);
+                    $hash = string_to_integer(
+                        serialize(get_object_vars($model)) . $serverID . $channelID . $userID,
+                        true
+                    );
 
                     if (array_key_exists($hash, $this->messageCounter)) {
                         $this->messageCounter[$hash]++;
@@ -688,24 +691,6 @@ class DiscordAIMessages
             }
         }
         return $array;
-    }
-
-    private function hash(int|string|null $serverID,
-                          int|string|null $channelID,
-                          int|string|null $userID): int
-    {
-        $string = $this->plan->planID;
-
-        if ($serverID !== null) {
-            $string .= $serverID;
-        }
-        if ($channelID !== null) {
-            $string .= $channelID;
-        }
-        if ($userID !== null) {
-            $string .= $userID;
-        }
-        return string_to_integer($string, true);
     }
 
     // Separator

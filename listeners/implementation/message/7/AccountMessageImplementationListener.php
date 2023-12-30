@@ -28,7 +28,15 @@ class AccountMessageImplementationListener
         $session->setCustomKey("discord", $interaction->member->id);
         $account = $session->getSession();
 
-        if ($account->isPositiveOutcome()) {
+        if ($account->isPositiveOutcome()
+            && !$plan->permissions->hasRole(
+                $interaction->member, array(
+                    self::VISIONARY_ID,
+                    self::INVESTOR_ID,
+                    self::SPONSOR_ID,
+                    self::MOTIVATOR_ID
+                )
+            )) {
             $permissions = $account->getObject()->getPermissions();
 
             if ($permissions->hasPermission("patreon.subscriber.visionary")) {

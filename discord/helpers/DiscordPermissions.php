@@ -158,6 +158,25 @@ class DiscordPermissions
         return false;
     }
 
+    public function hasRole(Member $member, int|string|array $roleID): bool
+    {
+        if (is_array($roleID)) {
+            foreach ($roleID as $id) {
+                if ($this->hasRole($member, $id)) {
+                    return true;
+                }
+            }
+            return false;
+        } else if (!empty($member->guild->roles->first())) {
+            foreach ($member->guild->roles as $serverRole) {
+                if ($serverRole->id == $roleID) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private function hash(int|string|null $serverID, int|string|null $specificID): int
     {
         return string_to_integer(
