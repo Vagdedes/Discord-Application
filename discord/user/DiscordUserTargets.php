@@ -12,9 +12,7 @@ class DiscordUserTargets
     private array $targets;
     public int $ignoreChannelDeletion, $ignoreThreadDeletion;
 
-    private const
-        REFRESH_TIME = "15 seconds",
-        AI_HASH = 528937509;
+    private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -191,6 +189,14 @@ class DiscordUserTargets
                             $insert["channel_id"] = $channel->id;
 
                             if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                $this->plan->channels->addTemporary($channel, array(
+                                    "message_retention" => "1 minute",
+                                    "message_cooldown" => 1,
+                                    "failure_message" => $query->failure_message,
+                                    "cooldown_message" => $query->cooldown_message,
+                                    "prompt_message" => $query->prompt_message,
+                                    "instructions" => $query->instructions
+                                ));
                                 $message = MessageBuilder::new()->setContent(
                                     $this->plan->instructions->replace(
                                         array($query->create_message),
@@ -264,7 +270,7 @@ class DiscordUserTargets
         }
     }
 
-    public function track(Message $message, object $object): bool
+    public function track(Message $message): bool
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
@@ -299,6 +305,7 @@ class DiscordUserTargets
                         $channel->guild->channels->delete($channel);
                     }
                     $this->initiate($query->target_id);
+                    return true;
                 } else if (get_current_date() > $query->expiration_date) {
                     if (set_sql_query(
                         BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
@@ -329,86 +336,6 @@ class DiscordUserTargets
                             "(1) Failed to close expired target with ID: " . $query->id
                         );
                     }
-                } else if ($message->member->id != $this->plan->bot->botID) {
-                    sql_insert(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
-                        array(
-                            "target_creation_id" => $query->target_creation_id,
-                            "user_id" => $message->author->id,
-                            "message_id" => $message->id,
-                            "message_content" => $message->content,
-                            "creation_date" => get_current_date()
-                        )
-                    );
-                    $target = $this->targets[$query->target_id];
-
-                    if ($target->prompt_message !== null) {
-                        $promptMessage = $this->plan->instructions->replace(array($target->prompt_message), $object)[0];
-                    } else {
-                        $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
-                    }
-                    $message->reply(MessageBuilder::new()->setContent(
-                        $promptMessage
-                    ))->done(function (Message $replyMessage) use ($message, $object, $target, $query) {
-                        $instructions = $this->plan->instructions->build($object, $target->instructions);
-                        $reply = $this->plan->aiMessages->rawTextAssistance(
-                            $message->member,
-                            $message->channel,
-                            $instructions[0],
-                            ($message->content
-                                . DiscordProperties::NEW_LINE
-                                . DiscordProperties::NEW_LINE
-                                . "Reference Message:"
-                                . DiscordProperties::NEW_LINE
-                                . $message->message_reference?->content),
-                            self::AI_HASH,
-                            "1 minute",
-                            $target->cooldown_message
-                        );
-
-                        if ($reply[0]) {
-                            $model = $reply[1];
-                            $modelReply = $reply[2];
-                            $hasNoCost = is_string($modelReply);
-                            $assistance = $hasNoCost
-                                ? $modelReply
-                                : $this->plan->aiMessages->getChatAI()->getText($model, $modelReply);
-                            $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
-
-                            if ($assistance !== null) {
-                                $assistance .= $instructions[1];
-                                $messageContent = $assistance;
-                                $this->plan->utilities->replyMessageInPieces($replyMessage, $assistance);
-                            } else {
-                                $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
-                                $this->plan->utilities->editMessage(
-                                    $replyMessage,
-                                    $messageContent
-                                );
-                            }
-                        } else {
-                            $hasNoCost = true;
-                            $messageContent = $this->plan->instructions->replace(array($target->failure_message), $object)[0];
-                            $this->plan->utilities->editMessage(
-                                $replyMessage,
-                                $messageContent
-                            );
-                        }
-                        if (!$reply[3]) { // Not cached
-                            sql_insert(
-                                BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
-                                array(
-                                    "target_creation_id" => $query->target_creation_id,
-                                    "user_id" => $replyMessage->author->id,
-                                    "message_id" => $replyMessage->id,
-                                    "message_content" => $messageContent,
-                                    "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
-                                    "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null),
-                                    "creation_date" => get_current_date()
-                                )
-                            );
-                        }
-                    });
                     return true;
                 }
             }
@@ -636,17 +563,13 @@ class DiscordUserTargets
             if (!empty($query)) {
                 $query = $query[0];
                 $query->target = $this->targets[$query->target_id];
-                $query->messages = get_sql_query(
-                    BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                $query->messages = $this->plan->aiMessages->getConversation(
+                    $query->server_id,
+                    $query->created_thread_id === null ? $query->channel_id : null,
+                    $query->created_thread_id === null ? null : $query->created_thread_id,
+                    $query->user_id,
                     null,
-                    array(
-                        array("target_creation_id", $targetID),
-                        array("deletion_date", null)
-                    ),
-                    array(
-                        "DESC",
-                        "id"
-                    )
+                    false
                 );
                 rsort($query->messages);
                 set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
@@ -688,17 +611,13 @@ class DiscordUserTargets
                     $row->target = $this->targets[$row->target_id];
 
                     if ($messages) {
-                        $row->messages = get_sql_query(
-                            BotDatabaseTable::BOT_TARGETED_MESSAGE_MESSAGES,
+                        $row->messages = $this->plan->aiMessages->getConversation(
+                            $row->server_id,
+                            $row->created_thread_id === null ? $row->channel_id : null,
+                            $row->created_thread_id === null ? null : $row->created_thread_id,
+                            $row->user_id,
                             null,
-                            array(
-                                array("target_creation_id", $row->target_creation_id),
-                                array("deletion_date", null)
-                            ),
-                            array(
-                                "DESC",
-                                "id"
-                            )
+                            false
                         );
                         rsort($row->messages);
                     }

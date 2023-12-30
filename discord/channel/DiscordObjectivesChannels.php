@@ -1,10 +1,5 @@
 <?php
 
-use Discord\Parts\Channel\Channel;
-use Discord\Parts\User\Member;
-use Discord\Parts\User\User;
-use Discord\Parts\WebSockets\VoiceStateUpdate;
-
 class DiscordObjectivesChannels
 {
     private DiscordPlan $plan;

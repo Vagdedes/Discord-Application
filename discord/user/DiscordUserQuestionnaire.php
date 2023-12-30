@@ -485,41 +485,102 @@ class DiscordUserQuestionnaire
                 $promptMessage
             ))->done(function (Message $replyMessage)
             use ($message, $object, $query, $questionnaire, $answerCount, $answers) {
-                try {
-                    $answersString = "";
-                    $count = 0;
-                    $messageBuilder = MessageBuilder::new();
+                $answersString = "";
+                $count = 0;
+                $messageBuilder = MessageBuilder::new();
 
-                    foreach (array_chunk($answers, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                        $embed = new Embed($this->plan->bot->discord);
+                foreach (array_chunk($answers, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
+                    $embed = new Embed($this->plan->bot->discord);
 
-                        foreach ($chunk as $answer) {
-                            $count++;
-                            $question = $questionnaire->questions[$answer->question_id]?->message_content ?? "Unknown";
-                            $answersString .= "Question: " . $question . DiscordProperties::NEW_LINE;
-                            $answersString .= "Answer: " . $answer->answer;
+                    foreach ($chunk as $answer) {
+                        $count++;
+                        $question = $questionnaire->questions[$answer->question_id]?->message_content ?? "Unknown";
+                        $answersString .= "Question: " . $question . DiscordProperties::NEW_LINE;
+                        $answersString .= "Answer: " . $answer->answer;
 
-                            if ($count !== $answerCount) {
-                                $answersString .= DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE;
-                            }
-                            $embed->setAuthor($message->author->username, $message->author->avatar);
-                            $embed->addFieldValues(
-                                "__" . $count . "__",
-                                "Question:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $question . DiscordSyntax::HEAVY_CODE_BLOCK
-                                . DiscordProperties::NEW_LINE
-                                . "Answer:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $answer->answer . DiscordSyntax::HEAVY_CODE_BLOCK
-                            );
+                        if ($count !== $answerCount) {
+                            $answersString .= DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE;
                         }
-                        $messageBuilder->addEmbed($embed);
+                        $embed->setAuthor($message->author->username, $message->author->avatar);
+                        $embed->addFieldValues(
+                            "__" . $count . "__",
+                            "Question:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $question . DiscordSyntax::HEAVY_CODE_BLOCK
+                            . DiscordProperties::NEW_LINE
+                            . "Answer:" . DiscordProperties::NEW_LINE . DiscordSyntax::HEAVY_CODE_BLOCK . $answer->answer . DiscordSyntax::HEAVY_CODE_BLOCK
+                        );
                     }
-                    if ($questionnaire->finish_message !== null) {
-                        $message->author->sendMessage(MessageBuilder::new()->setContent(
-                            $this->plan->instructions->replace(
-                                array($questionnaire->finish_message),
-                                $object
-                            )[0]
-                        ));
+                    $messageBuilder->addEmbed($embed);
+                }
+                if ($questionnaire->finish_message !== null) {
+                    $message->author->sendMessage(MessageBuilder::new()->setContent(
+                        $this->plan->instructions->replace(
+                            array($questionnaire->finish_message),
+                            $object
+                        )[0]
+                    ));
 
+                    if ($questionnaire->outcome_channel_id !== null) {
+                        $channel = $this->plan->bot->discord->getChannel($questionnaire->outcome_channel_id);
+
+                        if ($channel !== null
+                            && $channel->guild_id == $questionnaire->outcome_server_id
+                            && $channel->allowText()) {
+                            $channel->sendMessage($messageBuilder);
+                        }
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "Failed to find questionnaire outcome channel with ID: " . $query->id
+                        );
+                    }
+                } else {
+                    $instructions = $this->plan->instructions->build($object, $questionnaire->instructions);
+                    $reply = $this->plan->aiMessages->rawTextAssistance(
+                        $message->member,
+                        $message->channel,
+                        $instructions[0],
+                        $answersString,
+                        self::AI_HASH
+                    );
+
+                    if ($reply[0]) {
+                        $model = $reply[1];
+                        $modelReply = $reply[2];
+                        $hasNoCost = is_string($modelReply);
+                        $assistance = $hasNoCost
+                            ? $modelReply
+                            : $this->plan->aiMessages->getChatAI()->getText($model, $modelReply);
+                        $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
+
+                        if ($assistance !== null) {
+                            $assistance .= $instructions[1];
+                            $messageContent = $assistance;
+                            $this->plan->utilities->sendMessageInPieces($message->member, $messageContent);
+                        } else {
+                            $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
+                            $message->author->sendMessage($messageContent);
+                        }
+                    } else {
+                        $hasNoCost = true;
+                        $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
+                        $message->author->sendMessage($messageContent);
+                    }
+
+                    if (set_sql_query(
+                        BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
+                        array(
+                            "completion_date" => get_current_date(),
+                            "outcome_message" => $messageContent,
+                            "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
+                            "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null)
+                        ),
+                        array(
+                            array("id", $query->id)
+                        ),
+                        null,
+                        1
+                    )) {
                         if ($questionnaire->outcome_channel_id !== null) {
                             $channel = $this->plan->bot->discord->getChannel($questionnaire->outcome_channel_id);
 
@@ -536,86 +597,20 @@ class DiscordUserQuestionnaire
                             );
                         }
                     } else {
-                        $instructions = $this->plan->instructions->build($object, $questionnaire->instructions);
-                        $reply = $this->plan->aiMessages->rawTextAssistance(
-                            $message->member,
-                            $message->channel,
-                            $instructions[0],
-                            $answersString,
-                            self::AI_HASH
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "Failed to insert questionnaire completion with ID: " . $query->id
                         );
-
-                        if ($reply[0]) {
-                            $model = $reply[1];
-                            $modelReply = $reply[2];
-                            $hasNoCost = is_string($modelReply);
-                            $assistance = $hasNoCost
-                                ? $modelReply
-                                : $this->plan->aiMessages->getChatAI()->getText($model, $modelReply);
-                            $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
-
-                            if ($assistance !== null) {
-                                $assistance .= $instructions[1];
-                                $messageContent = $assistance;
-                                $this->plan->utilities->sendMessageInPieces($message->member, $messageContent);
-                            } else {
-                                $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
-                                $message->author->sendMessage($messageContent);
-                            }
-                        } else {
-                            $hasNoCost = true;
-                            $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
-                            $message->author->sendMessage($messageContent);
-                        }
-
-                        if (set_sql_query(
-                            BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
-                            array(
-                                "completion_date" => get_current_date(),
-                                "outcome_message" => $messageContent,
-                                "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
-                                "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null)
-                            ),
-                            array(
-                                array("id", $query->id)
-                            ),
-                            null,
-                            1
-                        )) {
-                            if ($questionnaire->outcome_channel_id !== null) {
-                                $channel = $this->plan->bot->discord->getChannel($questionnaire->outcome_channel_id);
-
-                                if ($channel !== null
-                                    && $channel->guild_id == $questionnaire->outcome_server_id
-                                    && $channel->allowText()) {
-                                    $channel->sendMessage($messageBuilder);
-                                }
-                            } else {
-                                global $logger;
-                                $logger->logError(
-                                    $this->plan->planID,
-                                    "Failed to find questionnaire outcome channel with ID: " . $query->id
-                                );
-                            }
-                        } else {
-                            global $logger;
-                            $logger->logError(
-                                $this->plan->planID,
-                                "Failed to insert questionnaire completion with ID: " . $query->id
-                            );
-                            $message->author->sendMessage(MessageBuilder::new()->setContent(
-                                $this->plan->instructions->replace(
-                                    array($query->failure_message),
-                                    $object
-                                )[0]
-                            ));
-                        }
+                        $message->author->sendMessage(MessageBuilder::new()->setContent(
+                            $this->plan->instructions->replace(
+                                array($query->failure_message),
+                                $object
+                            )[0]
+                        ));
                     }
-                    $this->closeByChannelOrThread($message->channel, null, null, $query);
-                } catch (Throwable $e) {
-                    var_dump($e->getLine());
-                    var_dump($e->getMessage());
                 }
+                $this->closeByChannelOrThread($message->channel, null, null, $query);
             });
         }
     }

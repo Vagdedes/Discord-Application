@@ -179,7 +179,7 @@ class DiscordAIMessages
             }
             return true;
         } else if ($this->plan->userTickets->track($message)
-            || $this->plan->userTargets->track($message, $object)
+            || $this->plan->userTargets->track($message)
             || $this->plan->userQuestionnaire->track($message, $object)
             || $this->plan->countingChannels->track($message)) {
             return true;
@@ -287,7 +287,7 @@ class DiscordAIMessages
                                             $object, $messageContent, $member, $chatAI, $model,
                                             $threadID, $cacheKey, $logger, $channel, $channelObj
                                         ) {
-                                            $instructions = $this->plan->instructions->build($object, $model->instructions);
+                                            $instructions = $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions);
                                             $reference = $message->message_reference?->content ?? null;
                                             $reply = $this->rawTextAssistance(
                                                 $member,
@@ -410,39 +410,12 @@ class DiscordAIMessages
         return false;
     }
 
-    // 1: Success, 2: Model, 3: Reply, 4: Cache
-    public function rawTextAssistance(User|Member    $userObject, //todo remove this method & use the channels object to list the channels the AI will work with extra details of how to store
+    // 1: Success, 2: Model, 3: Reply
+    public function rawTextAssistance(User|Member    $userObject,
                                       Channel|Thread $channel,
                                       string         $instructions, string $user,
-                                      ?int           $extraHash = null,
-                                      bool           $cacheTime = false,
-                                      string         $cooldownMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE): array
+                                      ?int           $extraHash = null): array
     {
-        $useCache = $cacheTime !== false;
-
-        if ($useCache) {
-            $simpleCacheKey = array(
-                __METHOD__,
-                $userObject->id,
-                $extraHash
-            );
-            $cache = get_key_value_pair($simpleCacheKey);
-
-            if ($cache !== null) {
-                return $cache;
-            } else {
-                $cacheKey = $simpleCacheKey;
-                $cacheKey[] = string_to_integer($instructions);
-                $cacheKey[] = string_to_integer($user);
-                $cache = get_key_value_pair($cacheKey);
-
-                if ($cache !== null) {
-                    return $cache;
-                } else {
-                    set_key_value_pair($simpleCacheKey, array(true, null, $cooldownMessage, true));
-                }
-            }
-        }
         $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)($userObject->id));
 
         if ($extraHash !== null) {
@@ -451,9 +424,7 @@ class DiscordAIMessages
         $chatAI = $this->getChatAI($this->plan->utilities->getChannel($channel)->id);
 
         if ($chatAI === null) {
-            $outcome = array(false, null, null, false);
-            set_key_value_pair($cacheKey, $outcome, $cacheTime);
-            clear_memory(array(manipulate_memory_key($simpleCacheKey)));
+            $outcome = array(false, null, null);
         } else {
             $outcome = $chatAI->getResult(
                 $hash,
@@ -470,19 +441,15 @@ class DiscordAIMessages
                     )
                 )
             );
-            if ($useCache) {
-                $outcome[3] = true;
-                set_key_value_pair($cacheKey, $outcome, $cacheTime);
-                clear_memory(array(manipulate_memory_key($simpleCacheKey)));
-                $outcome[3] = false;
-            }
         }
         return $outcome;
     }
 
     // Separator
 
-    public function getMessages(int|string $userID, ?int $limit = 0, bool $object = true): array
+    public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                                int|string      $userID,
+                                ?int            $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -490,6 +457,9 @@ class DiscordAIMessages
             array("creation_date", "message_content"),
             array(
                 array("user_id", $userID),
+                $serverID !== null ? array("server_id", $serverID) : "",
+                $channelID !== null ? array("channel_id", $channelID) : "",
+                $threadID !== null ? array("thread_id", $threadID) : "",
                 array("deletion_date", null),
                 array("plan_id", $this->plan->planID),
             ),
@@ -510,7 +480,9 @@ class DiscordAIMessages
         return $array;
     }
 
-    public function getReplies(int|string $userID, ?int $limit = 0, bool $object = true): array
+    public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                               int|string      $userID,
+                               ?int            $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -518,6 +490,9 @@ class DiscordAIMessages
             array("creation_date", "message_content"),
             array(
                 array("user_id", $userID),
+                $serverID !== null ? array("server_id", $serverID) : "",
+                $channelID !== null ? array("channel_id", $channelID) : "",
+                $threadID !== null ? array("thread_id", $threadID) : "",
                 array("deletion_date", null),
                 array("plan_id", $this->plan->planID),
             ),
@@ -538,11 +513,13 @@ class DiscordAIMessages
         return $array;
     }
 
-    public function getConversation(int|string $userID, ?int $limit = 0, bool $object = true): array
+    public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                                    int|string      $userID,
+                                    ?int            $limit = 0, bool $object = true): array
     {
         $final = array();
-        $messages = $this->getMessages($userID, $limit, $object);
-        $replies = $this->getReplies($userID, $limit, $object);
+        $messages = $this->getMessages($serverID, $channelID, $threadID, $userID, $limit, $object);
+        $replies = $this->getReplies($serverID, $channelID, $threadID, $userID, $limit, $object);
 
         if (!empty($messages)) {
             if ($object) {
@@ -575,7 +552,7 @@ class DiscordAIMessages
     // Separator
 
     private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
-                            int|string      $pastLookup): float
+                             int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -610,7 +587,7 @@ class DiscordAIMessages
     }
 
     private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
-                                    int|string|null $userID, int|string $pastLookup): float
+                                     int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
