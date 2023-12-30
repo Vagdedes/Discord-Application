@@ -34,7 +34,6 @@ class DiscordPlan
     public DiscordUserGiveaways $userGiveaways;
     public DiscordChatFilteredMessages $chatFilteredMessages;
     public DiscordObjectiveChannels $objectiveChannels;
-    public DiscordMute $mute;
     public DiscordTransferredMessages $tranferredMessages;
 
     public function __construct(DiscordBot $bot, int|string $planID)
@@ -88,7 +87,6 @@ class DiscordPlan
         $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
-        $this->mute = new DiscordMute($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
     }
 

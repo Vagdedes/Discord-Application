@@ -42,6 +42,7 @@ class DiscordBot
     private string $refreshDate;
     public Discord $discord;
     public DiscordUtilities $utilities;
+    public DiscordMute $mute;
     private mixed $account;
     private int $counter;
     private bool $administrator;
@@ -53,6 +54,7 @@ class DiscordBot
         $this->botID = $botID;
         $this->plans = array();
         $this->utilities = new DiscordUtilities($this->discord);
+        $this->mute = new DiscordMute($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

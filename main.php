@@ -22,8 +22,8 @@ require '/root/discord_bot/utilities/encrypt.php';
 require '/root/discord_bot/web/LoadBalancer.php';
 
 require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
+require '/root/discord_bot/discord/custom/standalone/DiscordMute.php';
 require '/root/discord_bot/discord/custom/DiscordCommands.php';
-require '/root/discord_bot/discord/custom/DiscordMute.php';
 
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/other/DiscordSocialAlerts.php';
