@@ -1,6 +1,6 @@
 <?php
 
-class DiscordObjectivesChannels
+class DiscordObjectiveChannels
 {
     private DiscordPlan $plan;
     private array $channels;

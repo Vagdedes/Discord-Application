@@ -33,7 +33,7 @@ class DiscordPlan
     public DiscordUserNotes $userNotes;
     public DiscordUserGiveaways $userGiveaways;
     public DiscordChatFilteredMessages $chatFilteredMessages;
-    public DiscordObjectivesChannels $objectivesChannels;
+    public DiscordObjectiveChannels $objectiveChannels;
     public DiscordMute $mute;
     public DiscordTransferredMessages $tranferredMessages;
 
@@ -87,7 +87,7 @@ class DiscordPlan
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
-        $this->objectivesChannels = new DiscordObjectivesChannels($this);
+        $this->objectiveChannels = new DiscordObjectiveChannels($this);
         $this->mute = new DiscordMute($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
     }
