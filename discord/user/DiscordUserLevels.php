@@ -81,7 +81,7 @@ class DiscordUserLevels
                     $row->channels = $channelsQuery;
 
                     foreach ($channelsQuery as $channel) {
-                        $this->configurations[$this->hash($channel->server_id, $channel->channel_id)] = $row;
+                        $this->configurations[$this->plan->utilities->hash($channel->server_id, $channel->channel_id)] = $row;
                     }
                 } else {
                     $logger->logError(
@@ -97,13 +97,13 @@ class DiscordUserLevels
                             int|string $userID, int|string|null $level = null,
                             bool       $cache = false): array|string
     {
-        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             if ($level === null) {
                 $level = $this->getLevel($serverID, $channelID, $userID, $cache)[1];
             }
-            foreach ($this->configurations[$this->hash($serverID, $channelID)]->tiers as $tier) {
+            foreach ($this->configurations[$this->plan->utilities->hash($serverID, $channelID)]->tiers as $tier) {
                 if ($level >= $tier->tier_points) {
                     return array($tier, $level);
                 }
@@ -119,7 +119,7 @@ class DiscordUserLevels
                              string     $type, mixed $reference): void
     {
         if (!$this->hasCooldown($serverID, $channel->id, $user->id)) {
-            $configuration = $this->configurations[$this->hash($serverID, $channel->id)];
+            $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channel->id)];
 
             switch ($type) {
                 case self::CHAT_CHARACTER_POINTS:
@@ -272,7 +272,7 @@ class DiscordUserLevels
                              int|string $userID,
                              int|string $amount): string|array|null
     {
-        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             $level = $this->getLevel($serverID, $channelID, $userID);
@@ -339,7 +339,7 @@ class DiscordUserLevels
     private function getLevel(int|string $serverID, int|string $channelID,
                               int|string $userID, bool $cache = false): array
     {
-        $configuration = $this->configurations[$this->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             if ($cache) {
@@ -375,7 +375,7 @@ class DiscordUserLevels
 
     public function getLevels(int|string $serverID, int|string $channelID): array|string
     {
-        $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
+        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)] ?? null;
 
         if ($configuration !== null) {
             set_sql_cache(self::REFRESH_TIME);
@@ -421,7 +421,7 @@ class DiscordUserLevels
     private function hasCooldown(int|string $serverID, int|string $channelID,
                                  int|string $userID): bool
     {
-        $configuration = $this->configurations[$this->hash($serverID, $channelID)] ?? null;
+        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)] ?? null;
 
         if ($configuration === null) {
             return true;
@@ -431,23 +431,6 @@ class DiscordUserLevels
                 return !has_memory_cooldown($cacheKey, $configuration->point_cooldown);
             }
             return false;
-        }
-    }
-
-    private function hash(int|string|null $id1, int|string|null $id2): int
-    {
-        $cacheKey = array(__METHOD__, $id1, $id2);
-        $cache = get_key_value_pair($cacheKey);
-
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $hash = string_to_integer(
-                (empty($id1) ? "" : $id1)
-                . (empty($id2) ? "" : $id2)
-            );
-            set_key_value_pair($cacheKey, $hash);
-            return $hash;
         }
     }
 }

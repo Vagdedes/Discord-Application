@@ -22,7 +22,7 @@
  * Counting Channels (Listener)
  * Statistics Channels (Listener)
  * Temporary Channels (Listener)
- * Objective Channels (Listener)
+ * Objective Channels
  * -
  * User Notes
  * User Targets

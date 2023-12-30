@@ -149,10 +149,13 @@ class DiscordCountingChannels
         return false;
     }
 
-    public function restore(Message $message): bool
+    public function restore(object $message): bool
     {
         if ($this->getCountingChannelObject($message) !== null) {
-            $message->channel->sendMessage("<@{$message->author->id}> " . strip_tags($message->content));
+            $message->channel->sendMessage(
+                (isset($message->author) ? "<@{$message->author->id}> " : "<" . $message->id . "> ")
+                . strip_tags($message->content)
+            );
             return true;
         }
         return false;
@@ -271,14 +274,16 @@ class DiscordCountingChannels
         }
     }
 
-    private function getCountingChannelObject(Message $message): ?array
+    private function getCountingChannelObject(object $message): ?array
     {
         if (!empty($this->countingPlaces)) {
+            $hasThread = isset($message->thread);
+
             foreach ($this->countingPlaces as $key => $row) {
                 if ($row->server_id == $message->guild_id
                     && ($row->channel_id == $message->channel_id
                         || $row->channel_id === null)
-                    && ($row->thread_id == $message->thread?->id
+                    && (!$hasThread || $row->thread_id == $message->thread?->id
                         || $row->thread_id === null)) {
                     return array($key, $row);
                 }

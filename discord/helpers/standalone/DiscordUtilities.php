@@ -14,6 +14,8 @@ use Discord\Parts\User\User;
 class DiscordUtilities
 {
 
+    // todo create matches family with null allowance for objects and database rows
+
     private Discord $discord;
     private ?DiscordPlan $plan;
 
@@ -282,5 +284,10 @@ class DiscordUtilities
             return null;
         }
         return $messageBuilder;
+    }
+
+    public function hash(mixed ...$strings): int|float
+    {
+        return string_to_integer(implode("", $strings), true);
     }
 }

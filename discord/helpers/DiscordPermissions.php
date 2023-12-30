@@ -31,7 +31,7 @@ class DiscordPermissions
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $hash = $this->hash($row->server_id, $row->role_id);
+                $hash = $this->plan->utilities->hash($row->server_id, $row->role_id);
 
                 if (array_key_exists($hash, $this->rolePermissions)) {
                     $this->rolePermissions[$hash][] = $row->permission;
@@ -58,7 +58,7 @@ class DiscordPermissions
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $hash = $this->hash($row->server_id, $row->user_id);
+                $hash = $this->plan->utilities->hash($row->server_id, $row->user_id);
 
                 if (array_key_exists($hash, $this->userPermissions)) {
                     $this->userPermissions[$hash][] = $row->permission;
@@ -71,18 +71,18 @@ class DiscordPermissions
 
     public function getRolePermissions(int|string|null $serverID, int|string $roleID): array
     {
-        return $this->rolePermissions[$this->hash($serverID, $roleID)] ?? array();
+        return $this->rolePermissions[$this->plan->utilities->hash($serverID, $roleID)] ?? array();
     }
 
     public function getUserPermissions(int|string|null $serverID, int|string|null $userID): array
     {
-        return $this->userPermissions[$this->hash($serverID, $userID)] ?? array();
+        return $this->userPermissions[$this->plan->utilities->hash($serverID, $userID)] ?? array();
     }
 
     public function roleHasPermission(int|string $serverID, int|string $roleID,
                                       string     $permission): bool
     {
-        $hash = $this->hash($serverID, $roleID);
+        $hash = $this->plan->utilities->hash($serverID, $roleID);
         return array_key_exists($hash, $this->rolePermissions)
             && in_array($permission, $this->rolePermissions[$hash]);
     }
@@ -90,7 +90,7 @@ class DiscordPermissions
     public function userHasPermission(int|string|null $serverID, int|string|null $userID,
                                       string          $permission, bool $recursive = true): bool
     {
-        $hash = $this->hash($serverID, $userID);
+        $hash = $this->plan->utilities->hash($serverID, $userID);
         return array_key_exists($hash, $this->userPermissions)
             && in_array($permission, $this->userPermissions[$hash])
             || $recursive && ($this->userHasPermission($serverID, null, $permission, false)
@@ -177,11 +177,4 @@ class DiscordPermissions
         return false;
     }
 
-    private function hash(int|string|null $serverID, int|string|null $specificID): int
-    {
-        return string_to_integer(
-            (empty($serverID) ? "" : $serverID)
-            . (empty($specificID) ? "" : $specificID)
-        );
-    }
 }
