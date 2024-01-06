@@ -206,13 +206,13 @@ class DiscordLogs
         return str_replace("_", "-", strtolower($string));
     }
 
-    public function logError(int|string|null $planID, mixed $object, bool $exit = false): void
+    public function logError(int|string|object|null $plan, mixed $object, bool $exit = false): void
     {
         sql_insert(
             BotDatabaseTable::BOT_ERRORS,
             array(
                 "bot_id" => $this->bot?->botID,
-                "plan_id" => $planID,
+                "plan_id" => $plan instanceof DiscordPlan ? $plan->planID : $plan,
                 "object" => $object !== null ? json_encode($object) : null,
                 "creation_date" => get_current_date()
             )
