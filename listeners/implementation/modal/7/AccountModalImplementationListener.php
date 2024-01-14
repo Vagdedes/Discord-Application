@@ -182,29 +182,13 @@ class AccountModalImplementationListener
                 $response = "Please wait a few minutes before contacting us again.";
             } else {
                 $objects = $objects->toArray();
-                $platformsString = null;
-                $accounts = $account->getAccounts()->getAdded();
+                $content = $account->getEmail()->getSupportEmailDetails(
+                    true,
+                    strip_tags(array_shift($objects)["value"]), // Subject
+                    strip_tags(array_shift($objects)["value"]) // Info
+                );
 
-                if (!empty($accounts)) {
-                    $platformsString = "Accounts:\r\n";
-
-                    foreach ($accounts as $row) {
-                        $platformsString .= $row->accepted_account->name . ": " . $row->credential . "\r\n";
-                    }
-                    $platformsString .= "\r\n";
-                }
-                $id = rand(0, 2147483647);
-                $email = $account->getDetail("email_address");
-                $subject = strip_tags(array_shift($objects)["value"]);
-                $title = get_domain() . " - $subject [ID: $id]";
-                $content = "ID: $id" . "\r\n"
-                    . "Subject: $subject" . "\r\n"
-                    . "Email: $email" . "\r\n"
-                    . "\r\n"
-                    . ($platformsString !== null ? $platformsString : "")
-                    . strip_tags(array_shift($objects)["value"]);
-
-                if (services_self_email($email, $title, $content) === true) {
+                if (services_self_email($content[0], $content[1], $content[2]) === true) {
                     has_memory_cooldown($cacheKey, "5 minutes");
                     $response = "Thanks for taking the time to contact us.";
                 } else {
@@ -220,6 +204,43 @@ class AccountModalImplementationListener
         } else {
             $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
         }
+    }
+
+    public static function contact_form_offline(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                mixed       $objects): void
+    {
+        $cacheKey = array(
+            $interaction->user->id,
+            "contact-form"
+        );
+
+        if (has_memory_cooldown($cacheKey, null, false)) {
+            $response = "Please wait a few minutes before contacting us again.";
+        } else {
+            $account = new Account($plan->applicationID);
+            $objects = $objects->toArray();
+            $email = strip_tags(array_shift($objects)["value"]);
+            $content = $account->getEmail()->getSupportEmailDetails(
+                false,
+                strip_tags(array_shift($objects)["value"]), // Subject
+                strip_tags(array_shift($objects)["value"]), // Info
+                $email
+            );
+
+            if (services_self_email($content[0], $content[1], $content[2]) === true) {
+                has_memory_cooldown($cacheKey, "5 minutes");
+                $response = "Thanks for taking the time to contact us.";
+            } else {
+                global $email_default_email_name;
+                $response = "An error occurred, please contact us at: " . $email_default_email_name;
+            }
+        }
+        $interaction->acknowledge()->done(function () use ($interaction, $response) {
+            $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                $response
+            ), true);
+        });
     }
 
     public static function forgot_password(DiscordPlan $plan,

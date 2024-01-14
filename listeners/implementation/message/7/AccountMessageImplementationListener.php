@@ -129,6 +129,13 @@ class AccountMessageImplementationListener
         );
     }
 
+    public static function contact_form_offline(DiscordPlan $plan,
+                                                       Interaction $interaction,
+                                                       mixed       $objects): void
+    {
+        $plan->component->showModal($interaction, "0-contact_form_offline");
+    }
+
     public static function change_email(DiscordPlan    $plan,
                                         Interaction    $interaction,
                                         MessageBuilder $messageBuilder,
