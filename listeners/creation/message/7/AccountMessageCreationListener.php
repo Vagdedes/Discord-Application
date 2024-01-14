@@ -127,15 +127,15 @@ class AccountMessageCreationListener
             : ($hasPurchased
                 ? $product->divisions->post_purchase
                 : $product->divisions->pre_purchase);
-        $downloadToken = $account->getDownloads()->getOrCreateValidToken(
+        $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->getOrCreateValidToken(
             $productID,
             1,
             true,
             false,
             DiscordProperties::SYSTEM_REFRESH_TIME,
             null
-        );
-        $downloadURL = $hasPurchased && $downloadToken->isPositiveOutcome()
+        ) : null;
+        $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
             ? $product->download_placeholder . "?token=" . $downloadToken->getObject()
             : null;
 
