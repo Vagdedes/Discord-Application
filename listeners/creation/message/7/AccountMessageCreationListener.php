@@ -64,7 +64,7 @@ class AccountMessageCreationListener
             // Separator
 
             $productGiveaway = $account->getProductGiveaway();
-            $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days", true);
+            $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
 
             if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
                 $embed = new Embed($plan->bot->discord);
