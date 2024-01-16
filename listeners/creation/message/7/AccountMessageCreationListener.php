@@ -197,13 +197,13 @@ class AccountMessageCreationListener
 
                 if (sizeof($validProducts) > 1) { // One because we already are quering one
                     foreach ($productCompatibilities as $compatibility) {
-                        //$product->compatibility_description
                         $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
 
                         if (is_object($compatibleProduct)) {
                             $compatibleProductImage = $compatibleProduct->image;
 
-                            if ($compatibleProductImage != null) {
+                            if ($compatibleProductImage != null
+                                && (!$isLoggedIn || !$account->getPurchases()->owns($compatibleProduct->id)->isPositiveOutcome())) {
                                 $embed = new Embed($plan->bot->discord);
                                 $embed->setTitle(strip_tags($compatibleProduct->name));
 
