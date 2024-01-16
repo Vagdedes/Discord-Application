@@ -25,7 +25,7 @@ class AccountMessageCreationListener
             $select = SelectMenu::new();
             $select->setMinValues(1);
             $select->setMaxValues(1);
-            $select->setPlaceholder("Select a Product");
+            $select->setPlaceholder("Select a product to view/download.");
 
             foreach ($products->getObject() as $product) {
                 if ($product->independent !== null) {
@@ -39,25 +39,23 @@ class AccountMessageCreationListener
 
             $select->setListener(function (Interaction $interaction, Collection $options)
             use ($productObject, $plan, $select, $session) {
-                if (!$plan->component->hasCooldown($select)) {
-                    $interaction->acknowledge()->done(function ()
-                    use ($plan, $interaction, $session, $productObject, $options) {
-                        $product = $productObject->find($options[0]->getValue(), true);
+                $interaction->acknowledge()->done(function ()
+                use ($plan, $interaction, $session, $productObject, $options) {
+                    $product = $productObject->find($options[0]->getValue(), true);
 
-                        if ($product->isPositiveOutcome()) {
-                            $interaction->sendFollowUpMessage(
-                                self::loadProduct(
-                                    $interaction,
-                                    MessageBuilder::new(),
-                                    $plan,
-                                    $session,
-                                    $product->getObject()[0]
-                                ),
-                                true
-                            );
-                        }
-                    });
-                }
+                    if ($product->isPositiveOutcome()) {
+                        $interaction->sendFollowUpMessage(
+                            self::loadProduct(
+                                $interaction,
+                                MessageBuilder::new(),
+                                $plan,
+                                $session,
+                                $product->getObject()[0]
+                            ),
+                            true
+                        );
+                    }
+                });
             }, $plan->bot->discord);
             $messageBuilder->addComponent($select);
 
@@ -97,7 +95,7 @@ class AccountMessageCreationListener
                     $embed->addFieldValues(
                         DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
                         DiscordSyntax::HEAVY_CODE_BLOCK
-                        . "Create an account and verify your email so we know you are a genuine user. "
+                        . "Create an account and verify your email. "
                         . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
                         . DiscordSyntax::HEAVY_CODE_BLOCK
                     );
@@ -351,13 +349,11 @@ class AccountMessageCreationListener
                     if ($button !== null) {
                         $button->setListener(function (Interaction $interaction)
                         use ($plan, $actionRow, $buttonObj) {
-                            if (!$plan->component->hasCooldown($actionRow)) {
-                                $plan->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent($buttonObj->url),
-                                    true
-                                );
-                            }
+                            $plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($buttonObj->url),
+                                true
+                            );
                         }, $plan->bot->discord);
                         $actionRow->addComponent($button);
                     }
@@ -488,6 +484,7 @@ class AccountMessageCreationListener
                 AccountMessageImplementationListener::IDEALISTIC_LOGO,
                 $website_domain
             );
+            $embed->setFooter("Support Code: " . $account->getIdentification()->get());
             $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
 
             // Separator
@@ -512,6 +509,71 @@ class AccountMessageCreationListener
                 }
             }
             $messageBuilder->addEmbed($embed);
+
+            // Separator
+
+            try {
+                $history = $account->getHistory()->get(
+                    array("action_id", "creation_date"),
+                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
+                );
+
+                if ($history->isPositiveOutcome()) {
+                    $history = $history->getObject();
+                    $size = sizeof($history);
+
+                    if ($size > 0) {
+                        $limit = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED;
+                        $select = SelectMenu::new()
+                            ->setMaxValues(1)
+                            ->setMinValues(1)
+                            ->setPlaceholder("Select a time period to view history.");
+
+                        for ($i = 0; $i < ceil($size / $limit); $i++) {
+                            $counter = $i * $limit;
+                            $max = min($counter + $limit, $size);
+                            $select->addOption(Option::new(
+                                get_full_date($history[$counter]->creation_date)
+                                . " - "
+                                . get_full_date($history[$max - 1]->creation_date),
+                                $i
+                            ));
+                        }
+                        $select->setListener(function (Interaction $interaction, Collection $options)
+                        use ($size, $plan, $select, $history, $limit) {
+                            $count = $options[0]->getValue();
+                            $messageBuilder = MessageBuilder::new();
+
+                            $counter = $count * $limit;
+                            $max = min($counter + $limit, $size);
+                            $divisor = 0;
+                            $embed = new Embed($plan->bot->discord);
+                            $embed->setTitle("Account History");
+                            $embed->setDescription(
+                                get_full_date($history[$counter]->creation_date)
+                                . " - "
+                                . get_full_date($history[$max - 1]->creation_date)
+                            );
+
+                            for ($x = $counter; $x < $max; $x++) {
+                                $row = $history[$x];
+                                $embed->addFieldValues(
+                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                    "```" . get_full_date($row->creation_date) . "```",
+                                    $divisor % 3 !== 0
+                                );
+                                $divisor++;
+                            }
+                            $messageBuilder->addEmbed($embed);
+                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        }, $plan->bot->discord);
+                        $messageBuilder->addComponent($select);
+                    }
+                }
+            } catch (Throwable $e) {
+                var_dump($e->getMessage());
+                var_dump($e->getLine());
+            }
         }
         return $messageBuilder;
     }

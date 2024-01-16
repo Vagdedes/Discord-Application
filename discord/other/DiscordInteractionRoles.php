@@ -113,14 +113,12 @@ class DiscordInteractionRoles
                                     return $originalMessageBuilder;
                             }
                             $button->setListener(function (Interaction $interaction) use ($choice, $button) {
-                                if (!$this->plan->component->hasCooldown($button)) {
-                                    $this->giveRole(
-                                        $interaction,
-                                        $choice->role_id,
-                                        $choice->reply_success,
-                                        $choice->reply_failure
-                                    );
-                                }
+                                $this->giveRole(
+                                    $interaction,
+                                    $choice->role_id,
+                                    $choice->reply_success,
+                                    $choice->reply_failure
+                                );
                             }, $this->plan->bot->discord);
                             $actionRow->addComponent($button);
                         }
@@ -142,15 +140,13 @@ class DiscordInteractionRoles
                     }
                     $select->setListener(function (Interaction $interaction, Collection $options)
                     use ($select, $object) {
-                        if (!$this->plan->component->hasCooldown($select)) {
-                            $choice = $object->choices[$options[0]->getValue()];
-                            $this->giveRole(
-                                $interaction,
-                                $choice->role_id,
-                                $choice->reply_success,
-                                $choice->reply_failure
-                            );
-                        }
+                        $choice = $object->choices[$options[0]->getValue()];
+                        $this->giveRole(
+                            $interaction,
+                            $choice->role_id,
+                            $choice->reply_success,
+                            $choice->reply_failure
+                        );
                     }, $this->plan->bot->discord);
                     $messageBuilder->addComponent($select);
                     break;

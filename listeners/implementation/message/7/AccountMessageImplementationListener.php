@@ -12,13 +12,13 @@ class AccountMessageImplementationListener
 {
 
     public const
-        IDEALISTIC_NAME = "Idealistic AI",
+        IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
         IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
     private const
-        VISIONARY_ID = 1174011691764285514,
-        INVESTOR_ID = 1105149269683478661,
-        SPONSOR_ID = 1105149280764821634,
-        MOTIVATOR_ID = 1105149288318779392;
+        VISIONARY_ID = 1195532368551878696,
+        INVESTOR_ID = 1195532375677997166,
+        SPONSOR_ID = 1195532379532558476,
+        MOTIVATOR_ID = 1195532382363725945;
 
     public static function getAccountSession(Interaction $interaction,
                                              DiscordPlan $plan): object
@@ -127,13 +127,6 @@ class AccountMessageImplementationListener
             ),
             true
         );
-    }
-
-    public static function contact_form_offline(DiscordPlan $plan,
-                                                       Interaction $interaction,
-                                                       mixed       $objects): void
-    {
-        $plan->component->showModal($interaction, "0-contact_form_offline");
     }
 
     public static function change_email(DiscordPlan    $plan,
@@ -277,98 +270,6 @@ class AccountMessageImplementationListener
         }
     }
 
-    public static function view_history(DiscordPlan    $plan,
-                                        Interaction    $interaction,
-                                        MessageBuilder $messageBuilder,
-                                        mixed          $objects): void
-    {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
-
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
-            $history = $account->getHistory()->get(
-                array("action_id", "creation_date"),
-                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
-            );
-
-            if ($history->isPositiveOutcome()) {
-                $history = $history->getObject();
-                $size = sizeof($history);
-
-                if ($size > 0) {
-                    $limit = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED;
-                    $messageBuilder = MessageBuilder::new();
-                    $select = SelectMenu::new()
-                        ->setMaxValues(1)
-                        ->setMinValues(1)
-                        ->setPlaceholder("Select a time period.");
-
-                    for ($i = 0; $i < ceil($size / $limit); $i++) {
-                        $counter = $i * $limit;
-                        $max = min($counter + $limit, $size);
-                        $select->addOption(Option::new(
-                            get_full_date($history[$counter]->creation_date)
-                            . " - "
-                            . get_full_date($history[$max - 1]->creation_date),
-                            $i
-                        ));
-                    }
-                    $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($size, $plan, $select, $history, $limit) {
-                        if (!$plan->component->hasCooldown($select)) {
-                            $count = $options[0]->getValue();
-                            $messageBuilder = MessageBuilder::new();
-
-                            $counter = $count * $limit;
-                            $max = min($counter + $limit, $size);
-                            $divisor = 0;
-                            $embed = new Embed($plan->bot->discord);
-                            $embed->setTitle("Account History");
-                            $embed->setDescription(
-                                get_full_date($history[$counter]->creation_date)
-                                . " - "
-                                . get_full_date($history[$max - 1]->creation_date)
-                            );
-
-                            for ($x = $counter; $x < $max; $x++) {
-                                $row = $history[$x];
-                                $embed->addFieldValues(
-                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                    "```" . get_full_date($row->creation_date) . "```",
-                                    $divisor % 3 !== 0
-                                );
-                                $divisor++;
-                            }
-                            $messageBuilder->addEmbed($embed);
-                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                        }
-                    }, $plan->bot->discord);
-                    $messageBuilder->addComponent($select);
-                    $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                } else {
-                    $plan->utilities->acknowledgeMessage(
-                        $interaction,
-                        MessageBuilder::new()->setContent(
-                            "No account history found."
-                        ),
-                        true
-                    );
-                }
-            } else {
-                $plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent(
-                        $history->getMessage()
-                    ),
-                    true
-                );
-            }
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
-    }
-
     public static function view_support_code(DiscordPlan    $plan,
                                              Interaction    $interaction,
                                              MessageBuilder $messageBuilder,
@@ -437,16 +338,14 @@ class AccountMessageImplementationListener
                     null,
                     function (Interaction $interaction, Collection $components)
                     use ($plan, $account, $selectedAccountID) {
-                        if (!$plan->component->hasCooldown($interaction)) {
-                            $components = $components->toArray();
-                            $credential = array_shift($components)["value"];
-                            $plan->utilities->acknowledgeMessage(
-                                $interaction,
-                                MessageBuilder::new()->setContent(
-                                    $account->getAccounts()->add($selectedAccountID, $credential)->getMessage()
-                                ), true
-                            );
-                        }
+                        $components = $components->toArray();
+                        $credential = array_shift($components)["value"];
+                        $plan->utilities->acknowledgeMessage(
+                            $interaction,
+                            MessageBuilder::new()->setContent(
+                                $account->getAccounts()->add($selectedAccountID, $credential)->getMessage()
+                            ), true
+                        );
                     },
                 );
             } else {
@@ -584,6 +483,21 @@ class AccountMessageImplementationListener
 
         if ($account->isPositiveOutcome()) {
             $plan->component->showModal($interaction, "0-contact_form");
+        } else {
+            $plan->component->showModal($interaction, "0-log_in");
+        }
+    }
+
+    public static function contact_form_offline(DiscordPlan    $plan,
+                                        Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        mixed          $objects): void
+    {
+        $account = self::getAccountSession($interaction, $plan);
+        $account = $account->getSession();
+
+        if ($account->isPositiveOutcome()) {
+            $plan->component->showModal($interaction, "0-contact_form_offline");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
