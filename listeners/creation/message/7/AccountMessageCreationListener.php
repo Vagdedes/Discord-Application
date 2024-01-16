@@ -433,7 +433,11 @@ class AccountMessageCreationListener
                         if (!empty($accounts)) {
                             foreach ($accounts as $accountObject) {
                                 $option = Option::new($accountObject->name, $accountObject->id);
-                                $description = $account->getAccounts()->getAdded($accountObject->id, 5);
+                                $description = $account->getAccounts()->getAdded(
+                                    $accountObject->id,
+                                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+                                    true
+                                );
 
                                 if (!empty($description)) {
                                     $rows = array();

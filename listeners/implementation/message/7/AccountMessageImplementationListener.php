@@ -374,7 +374,11 @@ class AccountMessageImplementationListener
             $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
 
             if (!empty($selectedAccountName)) {
-                $accounts = $account->getAccounts()->getAdded($selectedAccountID, 25);
+                $accounts = $account->getAccounts()->getAdded(
+                    $selectedAccountID,
+                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+                    true
+                );
 
                 if (!empty($accounts)) {
                     $selectedAccountName = $selectedAccountName[0]->name;
