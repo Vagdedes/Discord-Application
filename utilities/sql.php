@@ -11,6 +11,8 @@ $sql_cache_tag = null;
 
 $is_sql_usable = false;
 
+$debug = false;
+
 // Connection
 function sql_sql_credentials(string          $hostname,
                              string          $username,
@@ -290,9 +292,15 @@ function reverse_extra_sql_encode(string $string): string
 
 // Get
 
+function sql_debug()
+{
+    global $debug;
+    $debug = true;
+}
+
 function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
 {
-    global $sql_cache_time;
+    global $sql_cache_time, $debug;
     $hasWhere = $where !== null;
 
     if ($hasWhere) {
@@ -334,6 +342,11 @@ function get_sql_query(string $table, array $select = null, array $where = null,
     }
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
+    }
+
+    if ($debug) {
+        $debug = false;
+        var_dump($query);
     }
     $query = sql_query($query . ";");
     $array = array();
