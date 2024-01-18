@@ -67,12 +67,12 @@ class DiscordPlan
         $this->component = new DiscordComponent($this);
         $this->permissions = new DiscordPermissions($this);
 
+        $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);
         $this->userPolls = new DiscordUserPolls($this);
         $this->userLevels = new DiscordUserLevels($this);
-        $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->temporaryChannels = new DiscordTemporaryChannels($this);
         $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->reminderMessages = new DiscordReminderMessages($this);
