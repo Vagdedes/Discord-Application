@@ -24,7 +24,7 @@ class BotDatabaseTable
         BOT_PLANS = "discord.botPlans",
         BOT_CHANNELS = "discord.botChannels",
         BOT_CHANNEL_LOGS = "discord.botChannelLogs",
-        BOT_CHANNEL_WHITELIST = "discord.botChannel Whitelist",
+        BOT_CHANNEL_WHITELIST = "discord.botChannelWhitelist",
         BOT_LOGS = "discord.botLogs",
         BOT_TARGETED_MESSAGES = "discord.botTargetedMessages",
         BOT_TARGETED_MESSAGE_INSTRUCTIONS = "discord.botTargetedMessageInstructions",

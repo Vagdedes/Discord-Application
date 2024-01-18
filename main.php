@@ -200,7 +200,6 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $createdDiscordBot) {
-
             foreach ($createdDiscordBot->plans as $plan) {
                 if ($plan->countingChannels->ignoreDeletion === 0) {
                     if ($plan->countingChannels->restore($message)) {
@@ -211,7 +210,7 @@ function initiate_discord_bot(): void
                 }
                 $plan->objectiveChannels->trackDeletion($message);
             }
-            $logger->logInfo($message->guild, null, Event::MESSAGE_DELETE, $message);
+            $logger->logInfo($message?->guild, null, Event::MESSAGE_DELETE, $message);
         });
 
         $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $createdDiscordBot) {
