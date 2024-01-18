@@ -501,9 +501,9 @@ class AccountMessageImplementationListener
         $account = $account->getSession();
 
         if ($account->isPositiveOutcome()) {
-            $plan->component->showModal($interaction, "0-contact_form_offline");
+            $plan->component->showModal($interaction, "0-contact_form");
         } else {
-            $plan->component->showModal($interaction, "0-log_in");
+            $plan->component->showModal($interaction, "0-contact_form_offline");
         }
     }
 }
