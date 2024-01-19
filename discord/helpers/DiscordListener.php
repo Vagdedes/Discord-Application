@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Invite;
@@ -77,18 +78,18 @@ class DiscordListener
     }
 
     public function callModalCreation(Interaction $interaction,
-                                      array       $actionRows,
-                                      ?string     $class, ?string $method): array
+                                      TextInput   $input,
+                                      int         $position,
+                                      ?string     $class, ?string $method): TextInput
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
-            $outcome = call_user_func_array(
+            return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $actionRows)
+                array($this->plan, $interaction, $input, $position)
             );
-            return $outcome;
         } else {
-            return $actionRows;
+            return $input;
         }
     }
 

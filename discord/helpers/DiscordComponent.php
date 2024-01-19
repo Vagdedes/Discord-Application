@@ -92,16 +92,17 @@ class DiscordComponent
                     if ($textInput->max_length !== null) {
                         $input->setMaxLength($textInput->max_length);
                     }
+                    $input = $this->plan->listener->callModalCreation(
+                        $interaction,
+                        $input,
+                        $arrayKey,
+                        $query->creation_listener_class,
+                        $query->creation_listener_method
+                    );
                     $actionRow = ActionRow::new();
                     $actionRow->addComponent($input);
                     $subQuery[$arrayKey] = $actionRow;
                 }
-                $subQuery = $this->plan->listener->callModalCreation(
-                    $interaction,
-                    $subQuery,
-                    $query->creation_listener_class,
-                    $query->creation_listener_method
-                );
                 if ($query->custom_id === null) {
                     global $min_59bit_Integer, $max_59bit_Integer;
                     $query->custom_id = rand($min_59bit_Integer, $max_59bit_Integer);
