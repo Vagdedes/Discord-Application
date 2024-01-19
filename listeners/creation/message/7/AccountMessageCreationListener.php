@@ -516,7 +516,6 @@ class AccountMessageCreationListener
 
             // Separator
 
-            try {
                 $history = $account->getHistory()->get(
                     array("action_id", "creation_date"),
                     DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
@@ -544,40 +543,41 @@ class AccountMessageCreationListener
                             ));
                         }
                         $select->setListener(function (Interaction $interaction, Collection $options)
-                        use ($size, $plan, $select, $history, $limit) {
-                            $count = $options[0]->getValue();
-                            $messageBuilder = MessageBuilder::new();
+                        use ($size, $plan, $select, $history, $limit, $account) {
+                            if ($account->isPositiveOutcome()) {
+                                $count = $options[0]->getValue();
+                                $messageBuilder = MessageBuilder::new();
 
-                            $counter = $count * $limit;
-                            $max = min($counter + $limit, $size);
-                            $divisor = 0;
-                            $embed = new Embed($plan->bot->discord);
-                            $embed->setTitle("Account History");
-                            $embed->setDescription(
-                                get_full_date($history[$counter]->creation_date)
-                                . " - "
-                                . get_full_date($history[$max - 1]->creation_date)
-                            );
-
-                            for ($x = $counter; $x < $max; $x++) {
-                                $row = $history[$x];
-                                $embed->addFieldValues(
-                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                    "```" . get_full_date($row->creation_date) . "```",
-                                    $divisor % 3 !== 0
+                                $counter = $count * $limit;
+                                $max = min($counter + $limit, $size);
+                                $divisor = 0;
+                                $embed = new Embed($plan->bot->discord);
+                                $embed->setTitle("Account History");
+                                $embed->setDescription(
+                                    get_full_date($history[$counter]->creation_date)
+                                    . " - "
+                                    . get_full_date($history[$max - 1]->creation_date)
                                 );
-                                $divisor++;
+
+                                for ($x = $counter; $x < $max; $x++) {
+                                    $row = $history[$x];
+                                    $embed->addFieldValues(
+                                        "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                        "```" . get_full_date($row->creation_date) . "```",
+                                        $divisor % 3 !== 0
+                                    );
+                                    $divisor++;
+                                }
+                                $messageBuilder->addEmbed($embed);
+                                $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                            } else {
+                                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                                $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                             }
-                            $messageBuilder->addEmbed($embed);
-                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
                         }, $plan->bot->discord);
                         $messageBuilder->addComponent($select);
                     }
                 }
-            } catch (Throwable $e) {
-                var_dump($e->getMessage());
-                var_dump($e->getLine());
-            }
         }
         return $messageBuilder;
     }
