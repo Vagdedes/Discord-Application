@@ -508,7 +508,7 @@ class AccountMessageCreationListener
                         if (!empty($accounts)) {
                             $added = false;
 
-                            foreach ($accounts as $accountObject) {
+                            foreach ($accounts as $arrayKey => $accountObject) {
                                 $description = $account->getAccounts()->getAdded(
                                     $accountObject->id,
                                     DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
@@ -526,7 +526,8 @@ class AccountMessageCreationListener
                                     $option->setDescription(substr(implode(", ", $rows), 0, 100));
                                     $component->addOption($option);
                                 } else if ($addIfEmpty) {
-                                    $option = Option::new($accountObject->name, "empty");
+                                    $added = true;
+                                    $option = Option::new($accountObject->name, "empty" . $arrayKey);
                                     $option->setDescription("No accounts added.");
                                     $component->addOption($option);
                                 }
