@@ -10,30 +10,26 @@ class AccountModalImplementationListener
                                     Interaction $interaction,
                                     mixed       $objects): void
     {
-        $account = new Account($plan->applicationID);
-        $session = $account->getSession();
-        $session->setCustomKey("discord", $interaction->user->id);
-        $account = $session->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
-            $account = $account->getObject();
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
             $username = array_shift($objects)["value"];
             $password = array_shift($objects)["value"];
 
             $interaction->acknowledge()
-                ->done(function () use ($interaction, $plan, $account, $email, $password, $username, $session) {
+                ->done(function () use ($interaction, $plan, $account, $email, $password, $username) {
                     $accountRegistry = $account->getRegistry()->create(
                         $email,
                         $password,
                         $username,
                         null,
                         null,
-                        null,
-                        $session
+                        null
                     );
 
                     if ($accountRegistry->isPositiveOutcome()) {
@@ -54,25 +50,22 @@ class AccountModalImplementationListener
                                   Interaction $interaction,
                                   mixed       $objects): void
     {
-        $account = new Account($plan->applicationID);
-        $session = $account->getSession();
-        $session->setCustomKey("discord", $interaction->user->id);
-        $account = $session->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
-            $account = $account->getObject();
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
             $password = array_shift($objects)["value"];
 
             $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $email, $password, $account, $session) {
+            use ($interaction, $plan, $email, $password, $account) {
                 $account = $account->getNew(null, $email);
 
                 if ($account->exists()) {
-                    $result = $account->getActions()->logIn($password, $session, false);
+                    $result = $account->getActions()->logIn($password, false);
 
                     if ($result->isPositiveOutcome()) {
                         $response = null;
@@ -103,11 +96,9 @@ class AccountModalImplementationListener
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $username = array_shift($objects->toArray())["value"];
 
             // Separator
@@ -126,11 +117,9 @@ class AccountModalImplementationListener
                                      Interaction $interaction,
                                      mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $email = array_shift($objects->toArray())["value"];
 
             $interaction->acknowledge()->done(function () use ($interaction, $account, $email) {
@@ -147,11 +136,9 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $code = array_shift($objects->toArray())["value"];
 
             $interaction->acknowledge()->done(function () use ($interaction, $account, $code) {
@@ -168,11 +155,9 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $cacheKey = array(
                 $interaction->user->id,
                 "contact-form"
@@ -218,7 +203,7 @@ class AccountModalImplementationListener
         if (has_memory_cooldown($cacheKey, null, false)) {
             $response = "Please wait a few minutes before contacting us again.";
         } else {
-            $account = new Account($plan->applicationID);
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = strip_tags(array_shift($objects)["value"]);
             $content = $account->getEmail()->getSupportEmailDetails(
@@ -247,13 +232,12 @@ class AccountModalImplementationListener
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
-            $account = $account->getObject();
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
 
@@ -277,13 +261,10 @@ class AccountModalImplementationListener
                                              Interaction $interaction,
                                              mixed       $objects): void
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
-        } else {
-            $account = new Account($plan->applicationID);
+        if ($account === null) {
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
         }
         $objects = $objects->toArray();
         $code = array_shift($objects)["value"];

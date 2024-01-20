@@ -12,96 +12,179 @@ use Discord\Parts\Interactions\Interaction;
 class AccountMessageCreationListener
 {
 
+    public const
+        IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
+        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
+    private const
+        VISIONARY_ID = 1195532368551878696,
+        INVESTOR_ID = 1195532375677997166,
+        SPONSOR_ID = 1195532379532558476,
+        MOTIVATOR_ID = 1195532382363725945;
+
+    public static function getAccountObject(?Interaction $interaction,
+                                            DiscordPlan  $plan): object
+    {
+        $account = new Account($plan->applicationID);
+
+        if ($interaction !== null) {
+            $account->getSession()->setCustomKey("discord", $interaction->member->id);
+        }
+        return $account;
+    }
+
+    public static function findAccountFromSession(?Interaction $interaction,
+                                                  DiscordPlan  $plan): ?object
+    {
+        if ($interaction === null) {
+            return null;
+        }
+        $account = self::getAccountObject($interaction, $plan);
+        $method = $account->getSession()->find();
+
+        if ($method->isPositiveOutcome()) {
+            $account = $method->getObject();
+
+            if (!$plan->permissions->hasRole(
+                $interaction->member, array(
+                    self::VISIONARY_ID,
+                    self::INVESTOR_ID,
+                    self::SPONSOR_ID,
+                    self::MOTIVATOR_ID
+                )
+            )) {
+                $permissions = $account->getPermissions();
+
+                if ($permissions->hasPermission("patreon.subscriber.visionary")) {
+                    $plan->permissions->addDiscordRole($interaction->member, self::VISIONARY_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                } else if ($permissions->hasPermission("patreon.subscriber.investor")) {
+                    $plan->permissions->addDiscordRole($interaction->member, self::INVESTOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                } else if ($permissions->hasPermission("patreon.subscriber.sponsor")) {
+                    $plan->permissions->addDiscordRole($interaction->member, self::SPONSOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                } else if ($permissions->hasPermission("patreon.subscriber.motivator")) {
+                    $plan->permissions->addDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                } else {
+                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
+                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
+                }
+            }
+            return $account;
+        } else {
+            return null;
+        }
+    }
+
     public static function my_account(DiscordPlan    $plan,
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = new Account($plan->applicationID);
-        $session = $account->getSession();
-        $productObject = $account->getProduct();
-        $products = $productObject->find(null, true);
+        try {
+            $account = self::findAccountFromSession($interaction, $plan);
 
-        if ($products->isPositiveOutcome()) {
-            $select = SelectMenu::new();
-            $select->setMinValues(1);
-            $select->setMaxValues(1);
-            $select->setPlaceholder("Select a product to view/download.");
-
-            foreach ($products->getObject() as $product) {
-                if ($product->independent !== null) {
-                    $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
-                    $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
-                    $select->addOption($option);
-                }
+            if ($account === null) {
+                $account = self::getAccountObject($interaction, $plan);
             }
+            $productObject = $account->getProduct();
+            $products = $productObject->find(null, true);
 
-            // Separator
+            if ($products->isPositiveOutcome()) {
+                $select = SelectMenu::new();
+                $select->setMinValues(1);
+                $select->setMaxValues(1);
+                $select->setPlaceholder("Select a product to view/download.");
 
-            $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($productObject, $plan, $select, $session) {
-                $interaction->acknowledge()->done(function ()
-                use ($plan, $interaction, $session, $productObject, $options) {
-                    $product = $productObject->find($options[0]->getValue(), true);
+                foreach ($products->getObject() as $product) {
+                    if ($product->independent !== null) {
+                        $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
+                        $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
+                        $select->addOption($option);
+                    }
+                }
 
-                    if ($product->isPositiveOutcome()) {
-                        $interaction->sendFollowUpMessage(
-                            self::loadProduct(
-                                $interaction,
-                                MessageBuilder::new(),
-                                $plan,
-                                $session,
-                                $product->getObject()[0]
-                            ),
-                            true
+                // Separator
+
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($productObject, $plan, $select, $account) {
+                    $interaction->acknowledge()->done(function ()
+                    use ($plan, $interaction, $account, $productObject, $options) {
+                        $product = $productObject->find($options[0]->getValue(), true);
+
+                        if ($product->isPositiveOutcome()) {
+                            $interaction->sendFollowUpMessage(
+                                self::loadProduct(
+                                    $interaction,
+                                    MessageBuilder::new(),
+                                    $plan,
+                                    $account,
+                                    $product->getObject()[0]
+                                ),
+                                true
+                            );
+                        }
+                    });
+                }, $plan->bot->discord);
+                $messageBuilder->addComponent($select);
+
+                // Separator
+
+                $productGiveaway = $account->getProductGiveaway();
+                $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
+
+                if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
+                    $embed = new Embed($plan->bot->discord);
+                    $currentGiveaway = $currentGiveaway->getObject();
+                    $lastGiveawayInformation = $productGiveaway->getLast();
+
+                    if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
+                        $lastGiveawayInformation = $lastGiveawayInformation->getObject();
+                        $lastGiveawayWinners = $lastGiveawayInformation[0];
+                        $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
+                        $productToWinName = strip_tags($currentGiveaway->product->name);
+                        $nextWinnersText = $currentGiveaway->amount > 1
+                            ? $currentGiveaway->amount . " winners"
+                            : "the winner";
+
+                        if (!empty($lastGiveawayWinners)) { // Check if winners exist
+                            $description = "**" . implode(", ", $lastGiveawayWinners)
+                                . "** recently won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "**. ";
+                        } else {
+                            $description = "";
+                        }
+                        $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
+                            . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
+                        $embed->setAuthor(
+                            "GIVEAWAY",
+                            $currentGiveaway->product->image,
+                        );
+                        $embed->setTitle($productToWinName);
+                        $embed->setDescription($description);
+                        $embed->addFieldValues(
+                            DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
+                            DiscordSyntax::HEAVY_CODE_BLOCK
+                            . "Create an account and verify your email. "
+                            . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
+                            . DiscordSyntax::HEAVY_CODE_BLOCK
                         );
                     }
-                });
-            }, $plan->bot->discord);
-            $messageBuilder->addComponent($select);
-
-            // Separator
-
-            $productGiveaway = $account->getProductGiveaway();
-            $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
-
-            if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
-                $embed = new Embed($plan->bot->discord);
-                $currentGiveaway = $currentGiveaway->getObject();
-                $lastGiveawayInformation = $productGiveaway->getLast();
-
-                if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
-                    $lastGiveawayInformation = $lastGiveawayInformation->getObject();
-                    $lastGiveawayWinners = $lastGiveawayInformation[0];
-                    $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
-                    $productToWinName = strip_tags($currentGiveaway->product->name);
-                    $nextWinnersText = $currentGiveaway->amount > 1
-                        ? $currentGiveaway->amount . " winners"
-                        : "the winner";
-
-                    if (!empty($lastGiveawayWinners)) { // Check if winners exist
-                        $description = "**" . implode(", ", $lastGiveawayWinners)
-                            . "** recently won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "**. ";
-                    } else {
-                        $description = "";
-                    }
-                    $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
-                        . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
-                    $embed->setAuthor(
-                        "GIVEAWAY",
-                        $currentGiveaway->product->image,
-                    );
-                    $embed->setTitle($productToWinName);
-                    $embed->setDescription($description);
-                    $embed->addFieldValues(
-                        DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
-                        DiscordSyntax::HEAVY_CODE_BLOCK
-                        . "Create an account and verify your email. "
-                        . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
-                        . DiscordSyntax::HEAVY_CODE_BLOCK
-                    );
+                    $messageBuilder->addEmbed($embed);
                 }
-                $messageBuilder->addEmbed($embed);
             }
+        } catch (Throwable $e) {
+            var_dump($e->getLine());
+            var_dump($e->getMessage());
         }
         return $messageBuilder;
     }
@@ -109,13 +192,10 @@ class AccountMessageCreationListener
     private static function loadProduct(Interaction    $interaction,
                                         MessageBuilder $messageBuilder,
                                         DiscordPlan    $plan,
-                                        object         $session,
+                                        object         $account,
                                         object         $product): MessageBuilder
     {
-        $session->setCustomKey("discord", $interaction->user->id);
-        $account = $session->getSession();
-        $isLoggedIn = $account->isPositiveOutcome();
-        $account = $account->getObject();
+        $isLoggedIn = $account->exists();
         $productID = $product->id;
         $isFree = $product->is_free;
         $hasPurchased = $isFree
@@ -385,12 +465,9 @@ class AccountMessageCreationListener
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
         if ($interaction !== null) {
-            $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-            $account = $account->getSession();
+            $account = self::findAccountFromSession($interaction, $plan);
 
-            if ($account->isPositiveOutcome()) {
-                $account = $account->getObject();
-
+            if ($account !== null) {
                 foreach ($messageBuilder->getComponents() as $component) {
                     if ($component instanceof SelectMenu) {
                         foreach ($component->getOptions() as $option) {
@@ -414,15 +491,13 @@ class AccountMessageCreationListener
 
     public static function connect_account(DiscordPlan    $plan,
                                            ?Interaction   $interaction,
-                                           MessageBuilder $messageBuilder): MessageBuilder
+                                           MessageBuilder $messageBuilder,
+                                           bool           $addIfEmpty = true): MessageBuilder
     {
         if ($interaction !== null) {
-            $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-            $account = $account->getSession();
+            $account = self::findAccountFromSession($interaction, $plan);
 
-            if ($account->isPositiveOutcome()) {
-                $account = $account->getObject();
-
+            if ($account !== null) {
                 foreach ($messageBuilder->getComponents() as $component) {
                     if ($component instanceof SelectMenu) {
                         $accounts = $account->getAccounts()->getAvailable(array("id", "name"));
@@ -431,8 +506,9 @@ class AccountMessageCreationListener
                             $component->removeOption($option);
                         }
                         if (!empty($accounts)) {
+                            $added = false;
+
                             foreach ($accounts as $accountObject) {
-                                $option = Option::new($accountObject->name, $accountObject->id);
                                 $description = $account->getAccounts()->getAdded(
                                     $accountObject->id,
                                     DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
@@ -440,20 +516,27 @@ class AccountMessageCreationListener
                                 );
 
                                 if (!empty($description)) {
+                                    $option = Option::new($accountObject->name, $accountObject->id);
+                                    $added = true;
                                     $rows = array();
 
                                     foreach ($description as $row) {
                                         $rows[] = $row->credential;
                                     }
-                                    $description = substr(implode(", ", $rows), 0, 100);
-                                } else {
-                                    $description = "No accounts added.";
+                                    $option->setDescription(substr(implode(", ", $rows), 0, 100));
+                                    $component->addOption($option);
+                                } else if ($addIfEmpty) {
+                                    $option = Option::new($accountObject->name, "empty");
+                                    $option->setDescription("No accounts added.");
+                                    $component->addOption($option);
                                 }
-                                $option->setDescription($description);
-                                $component->addOption($option);
+                            }
+
+                            if (!$added) {
+                                $component->addOption(Option::new("No accounts added.", "empty"));
                             }
                         } else {
-                            $component->addOption(Option::new("No accounts available."));
+                            $component->addOption(Option::new("No accounts available to add.", "empty"));
                         }
                         break;
                     }
@@ -469,23 +552,21 @@ class AccountMessageCreationListener
                                               ?Interaction   $interaction,
                                               MessageBuilder $messageBuilder): MessageBuilder
     {
-        return self::connect_account($plan, $interaction, $messageBuilder);
+        return self::connect_account($plan, $interaction, $messageBuilder, false);
     }
 
     public static function logged_in(DiscordPlan    $plan,
                                      ?Interaction   $interaction,
                                      MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = AccountMessageImplementationListener::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = self::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             global $website_domain;
-            $account = $account->getObject();
             $embed = new Embed($plan->bot->discord);
             $embed->setAuthor(
-                AccountMessageImplementationListener::IDEALISTIC_NAME,
-                AccountMessageImplementationListener::IDEALISTIC_LOGO,
+                self::IDEALISTIC_NAME,
+                self::IDEALISTIC_LOGO,
                 $website_domain
             );
             $embed->setFooter("Support Code: " . $account->getIdentification()->get());
@@ -516,68 +597,70 @@ class AccountMessageCreationListener
 
             // Separator
 
-                $history = $account->getHistory()->get(
-                    array("action_id", "creation_date"),
-                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
-                );
+            $history = $account->getHistory()->get(
+                array("action_id", "creation_date"),
+                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
+            );
 
-                if ($history->isPositiveOutcome()) {
-                    $history = $history->getObject();
-                    $size = sizeof($history);
+            if ($history->isPositiveOutcome()) {
+                $history = $history->getObject();
+                $size = sizeof($history);
 
-                    if ($size > 0) {
-                        $limit = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED;
-                        $select = SelectMenu::new()
-                            ->setMaxValues(1)
-                            ->setMinValues(1)
-                            ->setPlaceholder("Select a time period to view history.");
+                if ($size > 0) {
+                    $limit = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED;
+                    $select = SelectMenu::new()
+                        ->setMaxValues(1)
+                        ->setMinValues(1)
+                        ->setPlaceholder("Select a time period to view history.");
 
-                        for ($i = 0; $i < ceil($size / $limit); $i++) {
-                            $counter = $i * $limit;
+                    for ($i = 0; $i < ceil($size / $limit); $i++) {
+                        $counter = $i * $limit;
+                        $max = min($counter + $limit, $size);
+                        $select->addOption(Option::new(
+                            get_full_date($history[$counter]->creation_date)
+                            . " - "
+                            . get_full_date($history[$max - 1]->creation_date),
+                            $i
+                        ));
+                    }
+                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    use ($size, $plan, $select, $history, $limit) {
+                        $account = self::findAccountFromSession($interaction, $plan);
+
+                        if ($account !== null) {
+                            $count = $options[0]->getValue();
+                            $messageBuilder = MessageBuilder::new();
+
+                            $counter = $count * $limit;
                             $max = min($counter + $limit, $size);
-                            $select->addOption(Option::new(
+                            $divisor = 0;
+                            $embed = new Embed($plan->bot->discord);
+                            $embed->setTitle("Account History");
+                            $embed->setDescription(
                                 get_full_date($history[$counter]->creation_date)
                                 . " - "
-                                . get_full_date($history[$max - 1]->creation_date),
-                                $i
-                            ));
-                        }
-                        $select->setListener(function (Interaction $interaction, Collection $options)
-                        use ($size, $plan, $select, $history, $limit, $account) {
-                            if ($account->isPositiveOutcome()) {
-                                $count = $options[0]->getValue();
-                                $messageBuilder = MessageBuilder::new();
+                                . get_full_date($history[$max - 1]->creation_date)
+                            );
 
-                                $counter = $count * $limit;
-                                $max = min($counter + $limit, $size);
-                                $divisor = 0;
-                                $embed = new Embed($plan->bot->discord);
-                                $embed->setTitle("Account History");
-                                $embed->setDescription(
-                                    get_full_date($history[$counter]->creation_date)
-                                    . " - "
-                                    . get_full_date($history[$max - 1]->creation_date)
+                            for ($x = $counter; $x < $max; $x++) {
+                                $row = $history[$x];
+                                $embed->addFieldValues(
+                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                    "```" . get_full_date($row->creation_date) . "```",
+                                    $divisor % 3 !== 0
                                 );
-
-                                for ($x = $counter; $x < $max; $x++) {
-                                    $row = $history[$x];
-                                    $embed->addFieldValues(
-                                        "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                        "```" . get_full_date($row->creation_date) . "```",
-                                        $divisor % 3 !== 0
-                                    );
-                                    $divisor++;
-                                }
-                                $messageBuilder->addEmbed($embed);
-                                $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                            } else {
-                                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
-                                $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                                $divisor++;
                             }
-                        }, $plan->bot->discord);
-                        $messageBuilder->addComponent($select);
-                    }
+                            $messageBuilder->addEmbed($embed);
+                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        } else {
+                            $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        }
+                    }, $plan->bot->discord);
+                    $messageBuilder->addComponent($select);
                 }
+            }
         }
         return $messageBuilder;
     }
@@ -587,12 +670,12 @@ class AccountMessageCreationListener
                                               MessageBuilder $messageBuilder): MessageBuilder
     {
         global $website_domain;
-        $account = new Account($plan->applicationID);
+        $account = self::getAccountObject($interaction, $plan);
         $accounts = $account->getRegistry()->getAccountAmount();
         $embed = new Embed($plan->bot->discord);
         $embed->setAuthor(
-            AccountMessageImplementationListener::IDEALISTIC_NAME,
-            AccountMessageImplementationListener::IDEALISTIC_LOGO,
+            self::IDEALISTIC_NAME,
+            self::IDEALISTIC_LOGO,
             $website_domain
         );
 

@@ -11,73 +11,14 @@ use Discord\Parts\Interactions\Interaction;
 class AccountMessageImplementationListener
 {
 
-    public const
-        IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
-        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
-    private const
-        VISIONARY_ID = 1195532368551878696,
-        INVESTOR_ID = 1195532375677997166,
-        SPONSOR_ID = 1195532379532558476,
-        MOTIVATOR_ID = 1195532382363725945;
-
-    public static function getAccountSession(Interaction $interaction,
-                                             DiscordPlan $plan): object
-    {
-        $account = new Account($plan->applicationID);
-        $session = $account->getSession();
-        $session->setCustomKey("discord", $interaction->member->id);
-        $account = $session->getSession();
-
-        if ($account->isPositiveOutcome()
-            && !$plan->permissions->hasRole(
-                $interaction->member, array(
-                    self::VISIONARY_ID,
-                    self::INVESTOR_ID,
-                    self::SPONSOR_ID,
-                    self::MOTIVATOR_ID
-                )
-            )) {
-            $permissions = $account->getObject()->getPermissions();
-
-            if ($permissions->hasPermission("patreon.subscriber.visionary")) {
-                $plan->permissions->addDiscordRole($interaction->member, self::VISIONARY_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-            } else if ($permissions->hasPermission("patreon.subscriber.investor")) {
-                $plan->permissions->addDiscordRole($interaction->member, self::INVESTOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-            } else if ($permissions->hasPermission("patreon.subscriber.sponsor")) {
-                $plan->permissions->addDiscordRole($interaction->member, self::SPONSOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-            } else if ($permissions->hasPermission("patreon.subscriber.motivator")) {
-                $plan->permissions->addDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-            } else {
-                $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-            }
-        }
-        return $session;
-    }
-
     public static function my_account(DiscordPlan    $plan,
                                       Interaction    $interaction,
                                       MessageBuilder $messageBuilder,
                                       mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
@@ -89,10 +30,9 @@ class AccountMessageImplementationListener
                                     MessageBuilder $messageBuilder,
                                     mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-register");
@@ -104,10 +44,9 @@ class AccountMessageImplementationListener
                                   MessageBuilder $messageBuilder,
                                   mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -119,11 +58,11 @@ class AccountMessageImplementationListener
                                    MessageBuilder $messageBuilder,
                                    mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
         $plan->utilities->acknowledgeMessage(
             $interaction,
             MessageBuilder::new()->setContent(
-                $account->getSession()->getObject()->getActions()->logOut($account)->getMessage()
+                $account->getActions()->logOut()->getMessage()
             ),
             true
         );
@@ -134,10 +73,9 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-change_email", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -149,10 +87,9 @@ class AccountMessageImplementationListener
                                      MessageBuilder $messageBuilder,
                                      mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-new_email");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -164,10 +101,9 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-verify_email");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -179,10 +115,9 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-change_password", true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -194,12 +129,9 @@ class AccountMessageImplementationListener
                                             MessageBuilder $messageBuilder,
                                             mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
-
+        if ($account !== null) {
             $interaction->acknowledge()->done(function () use ($interaction, $account) {
                 $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
                     $account->getPassword()->requestChange(true)->getMessage()
@@ -215,10 +147,9 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-complete_password");
         } else {
             $plan->persistentMessages->send($interaction, "0-log_in", true);
@@ -230,10 +161,9 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-forgot_password");
@@ -245,10 +175,9 @@ class AccountMessageImplementationListener
                                              MessageBuilder $messageBuilder,
                                              mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
             $plan->component->showModal($interaction, "0-complete_password");
@@ -260,32 +189,10 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-change_username");
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
-    }
-
-    public static function view_support_code(DiscordPlan    $plan,
-                                             Interaction    $interaction,
-                                             MessageBuilder $messageBuilder,
-                                             mixed          $objects): void
-    {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
-
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
-            $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($plan->bot->discord);
-            $embed->setTitle($account->getIdentification()->get());
-            $embed->setDescription("Send this code when asked by our team to help us identify you.");
-            $messageBuilder->addEmbed($embed);
-            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
         } else {
             $plan->component->showModal($interaction, "0-log_in");
         }
@@ -296,11 +203,9 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $plan->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
@@ -317,12 +222,11 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $selectedAccountID = $objects[0]->getValue();
+
             $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
 
             if (!empty($selectedAccountName)) {
@@ -365,55 +269,62 @@ class AccountMessageImplementationListener
                                               MessageBuilder $messageBuilder,
                                               mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
-            $account = $account->getObject();
+        if ($account !== null) {
             $selectedAccountID = $objects[0]->getValue();
-            $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
 
-            if (!empty($selectedAccountName)) {
-                $accounts = $account->getAccounts()->getAdded(
-                    $selectedAccountID,
-                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+            if (!is_numeric($selectedAccountID)) {
+                $plan->utilities->acknowledgeMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent($objects[0]->getLabel()),
                     true
                 );
+            } else {
+                $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
 
-                if (!empty($accounts)) {
-                    $selectedAccountName = $selectedAccountName[0]->name;
-                    $messageBuilder = MessageBuilder::new();
-                    $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
-                    $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
+                if (!empty($selectedAccountName)) {
+                    $accounts = $account->getAccounts()->getAdded(
+                        $selectedAccountID,
+                        DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+                        true
+                    );
 
-                    foreach ($accounts as $row) {
-                        $option = Option::new(substr($row->credential, 0, 100), $row->id);
-                        $select->addOption($option);
-                    }
-                    $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($plan, $account, $selectedAccountID) {
+                    if (!empty($accounts)) {
+                        $selectedAccountName = $selectedAccountName[0]->name;
+                        $messageBuilder = MessageBuilder::new();
+                        $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
+                        $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
+
+                        foreach ($accounts as $row) {
+                            $option = Option::new(substr($row->credential, 0, 100), $row->id);
+                            $select->addOption($option);
+                        }
+                        $select->setListener(function (Interaction $interaction, Collection $options)
+                        use ($plan, $account, $selectedAccountID) {
+                            $plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent(
+                                    $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                                ), true
+                            );
+                        }, $plan->bot->discord);
+                        $messageBuilder->addComponent($select);
+                        $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                    } else {
                         $plan->utilities->acknowledgeMessage(
                             $interaction,
-                            MessageBuilder::new()->setContent(
-                                $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
-                            ), true
+                            MessageBuilder::new()->setContent("No accounts found."),
+                            true
                         );
-                    }, $plan->bot->discord);
-                    $messageBuilder->addComponent($select);
-                    $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                    }
                 } else {
                     $plan->utilities->acknowledgeMessage(
                         $interaction,
-                        MessageBuilder::new()->setContent("No accounts found."),
+                        MessageBuilder::new()->setContent("Account not found."),
                         true
                     );
                 }
-            } else {
-                $plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent("Account not found."),
-                    true
-                );
             }
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -425,10 +336,9 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->utilities->acknowledgeMessage(
                 $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-toggle_settings"),
@@ -444,10 +354,9 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->utilities->acknowledgeMessage(
                 $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts"),
@@ -463,10 +372,9 @@ class AccountMessageImplementationListener
                                                     MessageBuilder $messageBuilder,
                                                     mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->utilities->acknowledgeMessage(
                 $interaction,
                 $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts"),
@@ -482,10 +390,9 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-contact_form");
         } else {
             $plan->component->showModal($interaction, "0-log_in");
@@ -497,10 +404,9 @@ class AccountMessageImplementationListener
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = self::getAccountSession($interaction, $plan);
-        $account = $account->getSession();
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account->isPositiveOutcome()) {
+        if ($account !== null) {
             $plan->component->showModal($interaction, "0-contact_form");
         } else {
             $plan->component->showModal($interaction, "0-contact_form_offline");
