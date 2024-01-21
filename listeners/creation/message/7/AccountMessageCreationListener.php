@@ -91,106 +91,99 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        try {
-            $account = self::findAccountFromSession($interaction, $plan);
+        $account = self::findAccountFromSession($interaction, $plan);
 
-            if ($account === null) {
-                $account = self::getAccountObject($interaction, $plan);
-            }
-            $productObject = $account->getProduct();
-            $products = $productObject->find(null, true);
+        if ($account === null) {
+            $account = self::getAccountObject($interaction, $plan);
+        }
+        $productObject = $account->getProduct();
+        $products = $productObject->find(null, true);
 
-            if ($products->isPositiveOutcome()) {
-                $select = SelectMenu::new();
-                $select->setMinValues(1);
-                $select->setMaxValues(1);
-                $select->setPlaceholder("Select a product to view/download.");
+        if ($products->isPositiveOutcome()) {
+            $select = SelectMenu::new();
+            $select->setMinValues(1);
+            $select->setMaxValues(1);
+            $select->setPlaceholder("Select a product to view/download.");
 
-                foreach ($products->getObject() as $product) {
-                    if ($product->independent !== null) {
-                        $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
-                        $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
-                        $select->addOption($option);
-                    }
-                }
-
-                // Separator
-
-                $select->setListener(function (Interaction $interaction, Collection $options)
-                use ($productObject, $plan, $select, $account) {
-                    $interaction->acknowledge()->done(function ()
-                    use ($plan, $interaction, $account, $productObject, $options) {
-                        $product = $productObject->find($options[0]->getValue(), true);
-
-                        if ($product->isPositiveOutcome()) {
-                            $interaction->sendFollowUpMessage(
-                                self::loadProduct(
-                                    $interaction,
-                                    MessageBuilder::new(),
-                                    $plan,
-                                    $account,
-                                    $product->getObject()[0]
-                                ),
-                                true
-                            );
-                        }
-                    });
-                }, $plan->bot->discord);
-                $messageBuilder->addComponent($select);
-
-                // Separator
-
-                $productGiveaway = $account->getProductGiveaway();
-                $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
-
-                if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
-                    $embed = new Embed($plan->bot->discord);
-                    $currentGiveaway = $currentGiveaway->getObject();
-                    $lastGiveawayInformation = $productGiveaway->getLast();
-
-                    if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
-                        $lastGiveawayInformation = $lastGiveawayInformation->getObject();
-                        $lastGiveawayWinners = $lastGiveawayInformation[0];
-                        $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
-                        $productToWinName = strip_tags($currentGiveaway->product->name);
-                        $nextWinnersText = $currentGiveaway->amount > 1
-                            ? $currentGiveaway->amount . " winners"
-                            : "the winner";
-
-                        if (!empty($lastGiveawayWinners)) { // Check if winners exist
-                            $description = "**" . implode(", ", $lastGiveawayWinners)
-                                . "** recently won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "**. ";
-                        } else {
-                            $description = "";
-                        }
-                        $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
-                            . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
-                        $embed->setAuthor(
-                            "GIVEAWAY",
-                            $currentGiveaway->product->image,
-                        );
-                        $embed->setTitle($productToWinName);
-                        $embed->setDescription($description);
-                        $embed->addFieldValues(
-                            DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
-                            DiscordSyntax::HEAVY_CODE_BLOCK
-                            . "Create an account and verify your email. "
-                            . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
-                            . DiscordSyntax::HEAVY_CODE_BLOCK
-                        );
-                    }
-                    $messageBuilder->addEmbed($embed);
+            foreach ($products->getObject() as $product) {
+                if ($product->independent !== null) {
+                    $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
+                    $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
+                    $select->addOption($option);
                 }
             }
-        } catch (Throwable $e) {
-            var_dump($e->getLine());
-            var_dump($e->getMessage());
+
+            // Separator
+
+            $select->setListener(function (Interaction $interaction, Collection $options)
+            use ($productObject, $plan, $select, $account) {
+                $interaction->acknowledge()->done(function ()
+                use ($plan, $interaction, $account, $productObject, $options) {
+                    $product = $productObject->find($options[0]->getValue(), true);
+
+                    if ($product->isPositiveOutcome()) {
+                        $interaction->sendFollowUpMessage(
+                            self::loadProduct(
+                                MessageBuilder::new(),
+                                $plan,
+                                $account,
+                                $product->getObject()[0]
+                            ),
+                            true
+                        );
+                    }
+                });
+            }, $plan->bot->discord);
+            $messageBuilder->addComponent($select);
+
+            // Separator
+
+            $productGiveaway = $account->getProductGiveaway();
+            $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
+
+            if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
+                $embed = new Embed($plan->bot->discord);
+                $currentGiveaway = $currentGiveaway->getObject();
+                $lastGiveawayInformation = $productGiveaway->getLast();
+
+                if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
+                    $lastGiveawayInformation = $lastGiveawayInformation->getObject();
+                    $lastGiveawayWinners = $lastGiveawayInformation[0];
+                    $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
+                    $productToWinName = strip_tags($currentGiveaway->product->name);
+                    $nextWinnersText = $currentGiveaway->amount > 1
+                        ? $currentGiveaway->amount . " winners"
+                        : "the winner";
+
+                    if (!empty($lastGiveawayWinners)) { // Check if winners exist
+                        $description = "**" . implode(", ", $lastGiveawayWinners)
+                            . "** recently won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "**. ";
+                    } else {
+                        $description = "";
+                    }
+                    $description .= "Next giveaway will end in **" . $days . " " . ($days == 1 ? "day" : "days")
+                        . "** and **$nextWinnersText** will receive **" . $productToWinName . "** for **free**.";
+                    $embed->setAuthor(
+                        "GIVEAWAY",
+                        $currentGiveaway->product->image,
+                    );
+                    $embed->setTitle($productToWinName);
+                    $embed->setDescription($description);
+                    $embed->addFieldValues(
+                        DiscordSyntax::UNDERLINE . "How to Participate" . DiscordSyntax::UNDERLINE,
+                        DiscordSyntax::HEAVY_CODE_BLOCK
+                        . "Create an account and verify your email. "
+                        . "Then, simply download a product you own or will buy and you will be automatically included in all future giveaways."
+                        . DiscordSyntax::HEAVY_CODE_BLOCK
+                    );
+                }
+                $messageBuilder->addEmbed($embed);
+            }
         }
         return $messageBuilder;
     }
 
-    private static function loadProduct(Interaction    $interaction,
-                                        MessageBuilder $messageBuilder,
+    private static function loadProduct(MessageBuilder $messageBuilder,
                                         DiscordPlan    $plan,
                                         object         $account,
                                         object         $product): MessageBuilder

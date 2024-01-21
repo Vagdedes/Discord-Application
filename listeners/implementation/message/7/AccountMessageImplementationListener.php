@@ -59,6 +59,10 @@ class AccountMessageImplementationListener
                                    mixed          $objects): void
     {
         $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+
+        if ($account === null) {
+            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+        }
         $plan->utilities->acknowledgeMessage(
             $interaction,
             MessageBuilder::new()->setContent(
