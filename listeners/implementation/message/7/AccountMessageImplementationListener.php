@@ -226,7 +226,6 @@ class AccountMessageImplementationListener
 
         if ($account !== null) {
             $selectedAccountID = $objects[0]->getValue();
-
             $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
 
             if (!empty($selectedAccountName)) {

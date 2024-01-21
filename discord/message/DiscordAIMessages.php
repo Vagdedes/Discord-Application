@@ -350,6 +350,7 @@ class DiscordAIMessages
                                                 if ($reply[0]) {
                                                     $model = $reply[1];
                                                     $assistance = $chatAI->getText($model, $modelReply);
+                                                    $initialAssistance = $assistance;
 
                                                     if ($assistance !== null) {
                                                         $assistance .= $instructions[1];
@@ -377,10 +378,11 @@ class DiscordAIMessages
                                                     }
                                                 } else {
                                                     $assistance = null;
+                                                    $initialAssistance = null;
                                                     $logger->logError($this->plan->planID, $modelReply);
                                                 }
 
-                                                if ($assistance === null || $assistance == DiscordProperties::NO_REPLY) {
+                                                if ($assistance === null || $initialAssistance == DiscordProperties::NO_REPLY) {
                                                     if ($channel->failure_message !== null) {
                                                         $this->plan->utilities->editMessage(
                                                             $message,
