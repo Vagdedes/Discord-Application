@@ -91,11 +91,7 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = self::findAccountFromSession($interaction, $plan);
-
-        if ($account === null) {
-            $account = self::getAccountObject($interaction, $plan);
-        }
+        $account = self::getAccountObject($interaction, $plan);
         $productObject = $account->getProduct();
         $products = $productObject->find(null, true);
 
@@ -116,7 +112,8 @@ class AccountMessageCreationListener
             // Separator
 
             $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($productObject, $plan, $select, $account) {
+            use ($productObject, $plan, $select) {
+                $account = self::findAccountFromSession($interaction, $plan);
                 $interaction->acknowledge()->done(function ()
                 use ($plan, $interaction, $account, $productObject, $options) {
                     $product = $productObject->find($options[0]->getValue(), true);
