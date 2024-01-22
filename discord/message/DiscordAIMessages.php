@@ -13,8 +13,7 @@ class DiscordAIMessages
     public ?array $model;
     private array $messageCounter;
 
-    //todo dalle-3 to discord-ai
-    //todo sound to discord-ai
+    //todo image ai
 
     public function __construct(DiscordPlan $plan)
     {
@@ -180,8 +179,7 @@ class DiscordAIMessages
             return true;
         } else if ($this->plan->userTickets->track($message)
             || $this->plan->userTargets->track($message)
-            || $this->plan->userQuestionnaire->track($message, $object)
-            || $this->plan->countingChannels->track($message)) {
+            || $this->plan->userQuestionnaire->track($message, $object)) {
             return true;
         } else {
             $mute = $this->plan->bot->mute->isMuted($member, $message->channel, DiscordMute::TEXT);
@@ -192,7 +190,10 @@ class DiscordAIMessages
                     $member,
                     $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
+            } else if ($this->plan->countingChannels->track($message)) {
+                return true;
             } else {
+                $this->plan->channelNotifications->executeMessage($message);
                 $channel = $object->channel;
 
                 if ($channel !== null) {

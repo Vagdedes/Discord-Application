@@ -304,10 +304,16 @@ function initiate_discord_bot(): void
         // Separator
 
         $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger, $createdDiscordBot) {
+            $threadBool = false;
+
             foreach ($createdDiscordBot->plans as $plan) {
                 $plan->statisticsChannels->refresh();
+
+                if (!$threadBool && $plan->channelNotifications->executeThread($thread)) {
+                    $threadBool = true;
+                }
             }
-            $logger->logInfo($thread->guild, null, Event::THREAD_CREATE, $thread);
+            $logger->logInfo($thread->guild, $thread->owner_id, Event::THREAD_CREATE, $thread);
         });
 
         $discord->on(Event::THREAD_UPDATE, function (Thread $thread, Discord $discord, ?Thread $oldThread) use ($logger) {
