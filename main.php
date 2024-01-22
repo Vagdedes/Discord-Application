@@ -42,6 +42,7 @@ require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
 require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
 require '/root/discord_bot/discord/channel/DiscordObjectiveChannels.php';
+require '/root/discord_bot/discord/channel/DiscordChannelNotifications.php';
 
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
 require '/root/discord_bot/discord/message/DiscordAIMessages.php';
