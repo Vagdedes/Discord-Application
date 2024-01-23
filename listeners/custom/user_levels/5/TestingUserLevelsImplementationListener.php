@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Parts\Channel\Channel;
+use DiscordPlan;
 
 class TestingUserLevelsImplementationListener // Name can be changed
 {

@@ -21,13 +21,13 @@ class DiscordListener
         IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
 
-        IMPLEMENTATION_USER_TICKETS = "/root/discord_bot/listeners/implementation/user_tickets/",
-        IMPLEMENTATION_CHANNEL_COUNTING = "/root/discord_bot/listeners/implementation/channel_counting/",
-        IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/implementation/invite_tracker/",
-        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/implementation/user_level/",
-        IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/implementation/channel_statistics/",
-        IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/implementation/reminder_message/",
-        IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/implementation/status_message/";
+        IMPLEMENTATION_USER_TICKETS = "/root/discord_bot/listeners/custom/user_tickets/",
+        IMPLEMENTATION_CHANNEL_COUNTING = "/root/discord_bot/listeners/custom/channel_counting/",
+        IMPLEMENTATION_INVITE_TRACKER = "/root/discord_bot/listeners/custom/invite_tracker/",
+        IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/custom/user_level/",
+        IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/custom/channel_statistics/",
+        IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/custom/reminder_message/",
+        IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/custom/status_message/";
 
     public function __construct(DiscordPlan $plan)
     {

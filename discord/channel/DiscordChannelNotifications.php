@@ -57,11 +57,7 @@ class DiscordChannelNotifications
                     && $notification->server_id == $thread->guild_id
                     && ($notification->category_id === null || $notification->category_id == $thread->parent->parent_id)
                     && ($notification->channel_id === null || $notification->channel_id == $thread->parent_id)) {
-                    $thread->messages->fetch($thread->last_message_id)->done(
-                        function (Message $message) use ($notification) {
-                            $this->run($message, $notification);
-                        }
-                    );
+                    $this->run($thread, $notification);
                     $bool = true;
                 }
             }
@@ -89,34 +85,56 @@ class DiscordChannelNotifications
         }
     }
 
-    private function run(Message $message, object $notification): void
+    private function run(Message|Thread $originalMessage, object $notification): void
     {
+        $date = get_current_date();
+        $isThread = $originalMessage instanceof Thread;
+        $userID = $isThread ? $originalMessage->owner_id : $originalMessage->member;
+        //set_sql_cache();
+
+        if (!empty(get_sql_query(
+            BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_TRACKING,
+            array("notification_id"),
+            array(
+                array("user_id", $userID),
+                array("notification_id", $notification->id),
+                array("deletion_date", null),
+                array("expiration_date", "IS NOT", null),
+                array("expiration_date", ">", $date),
+            ),
+            null,
+            1
+        ))) {
+            return;
+        }
+
         if (!empty($notification->roles)) {
             foreach ($notification->roles as $role) {
-                if ($role->has_role !== $this->plan->permissions->hasRole($message->member, $role->role_id)) {
+                if ($role->has_role !== $this->plan->permissions->hasRole($userID, $role->role_id)) {
                     return;
                 }
             }
         }
-        $original = $message->channel;
+        $original = $isThread ? $originalMessage : $originalMessage->channel;
         $notificationMessage = $notification->notification;
 
         $original->sendMessage(MessageBuilder::new()->setContent($notificationMessage))->done(
-            function (Message $message) use ($original, $notificationMessage, $notification) {
-                $channel = $this->plan->utilities->getChannel($original);
+            function (Message $message)
+            use ($original, $notificationMessage, $notification, $isThread, $originalMessage, $date, $userID) {
+                $channel = $isThread ? $originalMessage->parent : $this->plan->utilities->getChannel($original);
 
                 if (!sql_insert(
                     BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_TRACKING,
                     array(
                         "notification_id" => $notification->id,
                         "message_id" => $message->id,
-                        "user_id" => $message->member->id,
-                        "server_id" => $message->guild_id,
+                        "user_id" => $userID,
+                        "server_id" => $originalMessage->guild_id,
                         "category_id" => $channel->parent_id,
                         "channel_id" => $channel->id,
-                        "thread_id" => $original instanceof Thread ? $original->id : null,
+                        "thread_id" => $isThread || $original instanceof Thread ? $original->id : null,
                         "notification" => $notificationMessage,
-                        "creation_date" => get_current_date(),
+                        "creation_date" => $date,
                         "expiration_date" => $notification->duration !== null ? get_future_date($notification->duration) : null
                     )
                 )) {

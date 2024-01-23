@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Parts\Channel\Invite;
+
 class TestingInviteTrackerImplementationListener // Name can be changed
 {
 

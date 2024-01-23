@@ -299,6 +299,10 @@ class DiscordAIMessages
                                             ) {
                                                 $instructions = $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions);
                                                 $reference = $message->message_reference?->content ?? null;
+
+                                                if (empty($instructions[0])) {
+                                                    $instructions[0] = "";
+                                                }
                                                 $reply = $this->rawTextAssistance(
                                                     $member,
                                                     $channelObj,
@@ -315,17 +319,10 @@ class DiscordAIMessages
                                                 $modelReply = $reply[2];
 
                                                 if ($channel->debug !== null) {
-                                                    if (!empty($instructions[0])) {
-                                                        foreach (str_split($instructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                                                            $this->plan->utilities->replyMessage(
-                                                                $message,
-                                                                MessageBuilder::new()->setContent($split)
-                                                            );
-                                                        }
-                                                    } else {
+                                                    foreach (str_split($instructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                                                         $this->plan->utilities->replyMessage(
                                                             $message,
-                                                            MessageBuilder::new()->setContent("NO MESSAGE")
+                                                            MessageBuilder::new()->setContent($split)
                                                         );
                                                     }
                                                     if (!empty($instructions[1])) {
