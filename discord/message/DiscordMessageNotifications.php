@@ -1,12 +1,8 @@
 <?php
 
-namespace message;
-
-use BotDatabaseTable;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
-use DiscordPlan;
 
 class DiscordMessageNotifications
 {
@@ -113,10 +109,23 @@ class DiscordMessageNotifications
         }
 
         if (!empty($notification->roles)) {
+            $dealtHas = false;
+            $has = false;
+
             foreach ($notification->roles as $role) {
-                if ($role->has_role !== $this->plan->permissions->hasRole($userID, $role->role_id)) {
+                if ($role->has_role !== null) {
+                    $dealtHas = true;
+
+                    if ($this->plan->permissions->hasRole($userID, $role->role_id)) {
+                        $has = true;
+                    }
+                } else if ($this->plan->permissions->hasRole($userID, $role->role_id)) {
                     return;
                 }
+            }
+
+            if ($dealtHas && !$has) {
+                return;
             }
         }
         $original = $isThread ? $originalMessage : $originalMessage->channel;

@@ -1,7 +1,4 @@
 <?php
-
-use message\DiscordMessageNotifications;
-
 class DiscordPlan
 {
     public int $planID;
