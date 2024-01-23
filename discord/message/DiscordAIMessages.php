@@ -243,7 +243,7 @@ class DiscordAIMessages
                                 }
 
                                 if ($mention) {
-                                    $limits = $this->isLimited($model, $originalMessage->guild_id, $originalMessage->channel_id, $member->id);
+                                    $limits = $this->isLimited($model, $originalMessage);
 
                                     if (!empty($limits)) {
                                         foreach ($limits as $limit) {
@@ -286,9 +286,7 @@ class DiscordAIMessages
                                             $originalMessage->reply(MessageBuilder::new()->setContent(
                                                 $promptMessage
                                             ))->done(function (Message $message)
-                                            use (
-                                                $object, $model, $cacheKey, $channel, $originalMessage
-                                            ) {
+                                            use ($object, $model, $cacheKey, $channel, $originalMessage) {
                                                 $reply = $this->rawTextAssistance(
                                                     $originalMessage,
                                                     $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions),
@@ -662,17 +660,20 @@ class DiscordAIMessages
         }
     }
 
-    private function isLimited(object     $model,
-                               int|string $serverID,
-                               int|string $channelID,
-                               int|string $userID): array
+    private function isLimited(object $model, Message $message): array
     {
         $array = array();
+        $serverID = $message->guild_id;
+        $channelID = $this->plan->utilities->getChannel($message->channel)->id;
+        $threadID = $message->thread?->id;
+        $userID = $message->member->id;
 
         if (!empty($model->messageLimits)) {
             foreach ($model->messageLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
-                    && ($limit->channel_id === null || $limit->channel_id === $channelID)) {
+                    && ($limit->channel_id === null || $limit->channel_id === $channelID)
+                    && ($limit->thread_id === null || $limit->thread_id === $threadID)
+                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
                     $loopUserID = $limit->user !== null ? $userID : null;
                     $count = $this->getMessageCount(
                         $limit->server_id,
@@ -702,12 +703,14 @@ class DiscordAIMessages
             foreach ($model->costLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
-                    && $this->getCost(
-                        $limit->server_id,
-                        $limit->channel_id,
-                        $limit->user !== null ? $userID : null,
-                        $limit->past_lookup
-                    ) >= $limit->limit) {
+                    && ($limit->thread_id === null || $limit->thread_id === $threadID)
+                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id)
+                        && $this->getCost(
+                            $limit->server_id,
+                            $limit->channel_id,
+                            $limit->user !== null ? $userID : null,
+                            $limit->past_lookup
+                        ) >= $limit->limit)) {
                     $array[] = $limit;
                 }
             }

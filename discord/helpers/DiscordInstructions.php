@@ -101,11 +101,10 @@ class DiscordInstructions
                         : DiscordProperties::STRICT_REPLY_INSTRUCTIONS)
                     . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
             }
-            if (!empty($information)) {
-                return array($information, $disclaimer);
-            }
+            return array($information, $disclaimer);
+        } else {
+            return array("", "");
         }
-        return array("", "");
     }
 
     public function getObject(?Guild              $server = null,
