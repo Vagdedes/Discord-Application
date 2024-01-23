@@ -152,9 +152,9 @@ class DiscordCountingChannels
     public function restore(object $message): bool
     {
         if ($this->getCountingChannelObject($message) !== null) {
-            $message->channel->sendMessage(
+            $message->channel?->sendMessage(
                 (isset($message->author) ? "<@{$message->author->id}> " : "<" . $message->id . "> ")
-                . strip_tags($message->content)
+                . trim(strip_tags($message->content))
             );
             return true;
         }
