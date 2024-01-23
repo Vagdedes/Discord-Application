@@ -488,7 +488,7 @@ function initiate_discord_bot(): void
             $logger->logInfo($integration->guild, null, Event::INTEGRATION_UPDATE, $integration->getRawAttributes(), $oldIntegration?->getRawAttributes());
         });
 
-        $discord->on(Event::INTEGRATION_DELETE, function (object $integration, Discord $discord) use ($logger) {
+        $discord->on(Event::INTEGRATION_DELETE, function (?object $integration, Discord $discord) use ($logger) {
             if ($integration instanceof Integration) {
                 $logger->logInfo($integration->guild, null, Event::INTEGRATION_DELETE, $integration);
             } else {
