@@ -94,6 +94,7 @@ class DiscordPermissions
         return array_key_exists($hash, $this->userPermissions)
             && in_array($permission, $this->userPermissions[$hash])
             || $recursive && ($this->userHasPermission($serverID, null, $permission, false)
+                || $this->userHasPermission(null, $userID, $permission, false)
                 || $this->userHasPermission(null, null, $permission, false));
     }
 

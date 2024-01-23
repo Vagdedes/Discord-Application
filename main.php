@@ -544,6 +544,7 @@ function initiate_discord_bot(): void
                     DiscordUserLevels::REACTION_POINTS,
                     $reaction
                 );
+                $plan->component->handleReaction($reaction);
             }
             $logger->logInfo($reaction->guild, $reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction->getRawAttributes());
         });

@@ -8,16 +8,20 @@ use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordComponent
 {
     private DiscordPlan $plan;
+    private array $reactions;
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->reactions = array();
     }
 
     // Separator
@@ -172,9 +176,60 @@ class DiscordComponent
 
     // Separator
 
+    public function addReactions(Message    $message,
+                                 int|string $componentID): void
+    {
+        set_sql_cache(null, self::class);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_REACTION_COMPONENTS,
+            null,
+            array(
+                array(is_numeric($componentID) ? "controlled_message_id" : "name", $componentID),
+                array("deletion_date", null),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ),
+            array(
+                "DESC",
+                "priority"
+            )
+        );
+
+        if (!empty($query)) {
+            $this->reactions[$message->id] = array();
+
+            foreach ($query as $row) {
+                $this->reactions[$message->id][$row->emoji] = $row;
+                $message->react($row->emoji);
+            }
+        }
+    }
+
+    public function handleReaction(MessageReaction $reaction): void
+    {
+        $reactionObjects = $this->reactions[$reaction->message_id] ?? null;
+
+        if (!empty($reactionObjects)) {
+            $reactionObject = $reactionObjects[$reaction->emoji->name] ?? null;
+
+            if ($reactionObject !== null) {
+                $this->plan->listener->callReactionCreation(
+                    $reaction,
+                    $reactionObject->listener_class,
+                    $reactionObject->listener_method
+                );
+            }
+        }
+    }
+
+    // Separator
+
     public function addButtons(?Interaction   $interaction,
                                MessageBuilder $messageBuilder,
-                               int|string     $componentID): MessageBuilder
+                               int|string     $componentID,
+                               bool           $listener = true): MessageBuilder
     {
         set_sql_cache(null, self::class);
         $query = get_sql_query(
@@ -319,7 +374,8 @@ class DiscordComponent
 
     public function addSelection(?Interaction   $interaction,
                                  MessageBuilder $messageBuilder,
-                                 int|string     $componentID): MessageBuilder
+                                 int|string     $componentID,
+                                 bool           $listener = true): MessageBuilder
     {
         set_sql_cache(null, self::class);
         $query = get_sql_query(

@@ -10,6 +10,8 @@ class DiscordAIMessages
     public ?array $model;
     private array $messageCounter;
 
+    private const REACTION_COMPONENT_NAME = "positive_negative";
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -306,6 +308,7 @@ class DiscordAIMessages
                                                     }
                                                 } else {
                                                     set_key_value_pair($cacheKey, $reply);
+                                                    $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
                                                     $this->plan->utilities->replyMessageInPieces($message, $reply);
                                                 }
                                             });
@@ -673,17 +676,17 @@ class DiscordAIMessages
         $threadID = $message->thread?->id;
         $userID = $message->member->id;
 
-        if (!empty($model->messageLimits)) {
+        if (!empty($model->messageLimits)
+            && !$this->plan->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
             foreach ($model->messageLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
                     && ($limit->thread_id === null || $limit->thread_id === $threadID)
                     && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
-                    $loopUserID = $limit->user !== null ? $userID : null;
                     $count = $this->getMessageCount(
                         $limit->server_id,
                         $limit->channel_id,
-                        $loopUserID,
+                        $limit->user !== null ? $userID : null,
                         $limit->past_lookup,
                     );
                     $hash = string_to_integer(
@@ -704,18 +707,19 @@ class DiscordAIMessages
                 }
             }
         }
-        if (!empty($model->costLimits)) {
+        if (!empty($model->costLimits)
+            && !$this->plan->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
             foreach ($model->costLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
                     && ($limit->thread_id === null || $limit->thread_id === $threadID)
-                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id)
-                        && $this->getCost(
-                            $limit->server_id,
-                            $limit->channel_id,
-                            $limit->user !== null ? $userID : null,
-                            $limit->past_lookup
-                        ) >= $limit->limit)) {
+                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))
+                    && $this->getCost(
+                        $limit->server_id,
+                        $limit->channel_id,
+                        $limit->user !== null ? $userID : null,
+                        $limit->past_lookup
+                    ) >= $limit->limit) {
                     $array[] = $limit;
                 }
             }

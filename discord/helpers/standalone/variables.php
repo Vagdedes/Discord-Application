@@ -79,6 +79,7 @@ class BotDatabaseTable
         BOT_TICKET_MESSAGES = "discord.botTicketMessages",
         BOT_MODAL_COMPONENTS = "discord.botModalComponents",
         BOT_MODAL_SUB_COMPONENTS = "discord.botModalSubComponents",
+        BOT_REACTION_COMPONENTS = "discord.botReactionComponents",
         BOT_BUTTON_COMPONENTS = "discord.botButtonComponents",
         BOT_SELECTION_COMPONENTS = "discord.botSelectionComponents",
         BOT_SELECTION_SUB_COMPONENTS = "discord.botSelectionSubComponents",

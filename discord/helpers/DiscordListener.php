@@ -9,6 +9,7 @@ use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
+use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordListener
 {
@@ -16,6 +17,7 @@ class DiscordListener
     private const
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
+        CREATION_REACTION = "/root/discord_bot/listeners/creation/reaction/",
 
         IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
         IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
@@ -250,9 +252,9 @@ class DiscordListener
         return $messageBuilder;
     }
 
-    public function callNotificationMessageImplementation(object $message,
-                                                         ?string        $class, ?string $method,
-                                                         object         $object): string
+    public function callNotificationMessageImplementation(object  $message,
+                                                          ?string $class, ?string $method,
+                                                          object  $object): string
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_NOTIFICATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
@@ -262,6 +264,18 @@ class DiscordListener
             );
         } else {
             return $message;
+        }
+    }
+
+    public function callReactionCreation(MessageReaction $reaction,
+                                         ?string         $class, ?string $method): void
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::CREATION_REACTION . $this->plan->planID . "/" . $class . '.php');
+            call_user_func_array(
+                array($class, $method),
+                array($this->plan, $reaction)
+            );
         }
     }
 }

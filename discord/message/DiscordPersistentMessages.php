@@ -158,12 +158,14 @@ class DiscordPersistentMessages
         $messageBuilder = $this->plan->component->addButtons(
             $interaction,
             $messageBuilder,
-            $messageRow->id
+            $messageRow->id,
+            false
         );
         $messageBuilder = $this->plan->component->addSelection(
             $interaction,
             $messageBuilder,
-            $messageRow->id
+            $messageRow->id,
+            false
         );
         $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
             $interaction,
@@ -241,6 +243,7 @@ class DiscordPersistentMessages
     {
         $channel->sendMessage($this->build(null, $messageRow))->done(
             function (Message $message) use ($messageRow, $oldMessageRow, $array, $position) {
+                $this->plan->component->addReactions($message, $messageRow->id);
                 $messageRow->message_id = $message->id;
                 set_sql_query(
                     BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
@@ -266,6 +269,7 @@ class DiscordPersistentMessages
         try {
             $channel->messages->fetch($oldMessageRow->message_id)->done(
                 function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
+                    $this->plan->component->addReactions($message, $messageRow->id);
                     if ($message->user_id == $this->plan->bot->botID) {
                         if ($custom) {
                             $messageRow->message_id = $message->id;
