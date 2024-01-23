@@ -173,12 +173,7 @@ function initiate_discord_bot(): void
 
             if ($ai || $userLevel) {
                 foreach ($createdDiscordBot->plans as $plan) {
-                    if ($ai
-                        && $plan->aiMessages->textAssistance(
-                            $message,
-                            $message->member,
-                            $message->content,
-                        )) {
+                    if ($ai && $plan->aiMessages->textAssistance($message)) {
                         $ai = false;
                     }
                     if ($userLevel) {
