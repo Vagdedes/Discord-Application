@@ -5,7 +5,6 @@ use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
-use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class AccountMessageImplementationListener

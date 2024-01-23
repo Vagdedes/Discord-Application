@@ -2,7 +2,6 @@
 
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Guild\Guild;
-use DiscordPlan;
 
 class TestingChannelStatisticsImplementationListener // Name can be changed
 {

@@ -2,7 +2,6 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Interaction;
-use DiscordPlan;
 
 class TestingTicketImplementationListener // Name can be changed
 {

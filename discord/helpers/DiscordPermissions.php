@@ -167,8 +167,8 @@ class DiscordPermissions
                 }
             }
             return false;
-        } else if (!empty($member->guild->roles->first())) {
-            foreach ($member->guild->roles as $serverRole) {
+        } else if (!empty($member->roles->first())) {
+            foreach ($member->roles as $serverRole) {
                 if ($serverRole->id == $roleID) {
                     return true;
                 }

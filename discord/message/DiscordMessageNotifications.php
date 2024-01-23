@@ -13,7 +13,7 @@ class DiscordMessageNotifications
     {
         $this->plan = $plan;
         $this->notifications = get_sql_query(
-            BotDatabaseTable::BOT_CHANNEL_NOTIFICATIONS,
+            BotDatabaseTable::BOT_MESSAGE_NOTIFICATIONS,
             null,
             array(
                 array("deletion_date", null),
@@ -30,19 +30,32 @@ class DiscordMessageNotifications
         );
 
         if (!empty($this->notifications)) {
-            foreach ($this->notifications as $notification) {
+            foreach ($this->notifications as $arrayKey => $notification) {
                 $notification->roles = get_sql_query(
-                    BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_ROLES,
+                    BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_ROLES,
                     null,
                     array(
                         array("deletion_date", null),
-                        array("plan_id", $this->plan->planID),
+                        array("notification_id", $notification->id),
                         null,
                         array("expiration_date", "IS", null, 0),
                         array("expiration_date", ">", get_current_date()),
                         null
                     )
                 );
+                $notification->instructions = get_sql_query(
+                    BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_INSTRUCTIONS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("notification_id", $notification->id),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                $this->notifications[$arrayKey] = $notification;
             }
         }
     }
@@ -89,14 +102,14 @@ class DiscordMessageNotifications
     {
         $date = get_current_date();
         $isThread = $originalMessage instanceof Thread;
-        $userID = $isThread ? $originalMessage->owner_id : $originalMessage->member;
+        $user = $isThread ? $originalMessage->owner_member : $originalMessage->member;
         set_sql_cache("1 second");
 
         if (!empty(get_sql_query(
-            BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_TRACKING,
+            BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,
             array("notification_id"),
             array(
-                array("user_id", $userID),
+                array("user_id", $user->id),
                 array("notification_id", $notification->id),
                 array("deletion_date", null),
                 array("expiration_date", "IS NOT", null),
@@ -116,32 +129,46 @@ class DiscordMessageNotifications
                 if ($role->has_role !== null) {
                     $dealtHas = true;
 
-                    if ($this->plan->permissions->hasRole($userID, $role->role_id)) {
+                    if ($this->plan->permissions->hasRole($user, $role->role_id)) {
                         $has = true;
                     }
-                } else if ($this->plan->permissions->hasRole($userID, $role->role_id)) {
+                } else if ($this->plan->permissions->hasRole($user, $role->role_id)) {
                     return;
                 }
             }
 
-            if ($dealtHas && !$has) {
+            if ($dealtHas && $has) {
                 return;
             }
         }
         $original = $isThread ? $originalMessage : $originalMessage->channel;
         $notificationMessage = $notification->notification;
+        $builder = $this->plan->listener->callNotificationMessageImplementation(
+            MessageBuilder::new()->setContent($notificationMessage),
+            $notification->listener_class,
+            $notification->listener_method,
+            $notification
+        );
 
-        $original->sendMessage(MessageBuilder::new()->setContent($notificationMessage))->done(
+        $original->sendMessage($builder)->done(
             function (Message $message)
-            use ($original, $notificationMessage, $notification, $isThread, $originalMessage, $date, $userID) {
+            use ($original, $notificationMessage, $notification, $isThread, $originalMessage, $date, $user) {
                 $channel = $isThread ? $originalMessage->parent : $this->plan->utilities->getChannel($original);
 
+                if ($isThread) {
+                    if ($notification->lock_thread !== null) {
+                        $original->locked = true;
+                        $channel->threads->save($original);
+                    }
+                } else if ($notification->delete_message !== null) {
+                    $originalMessage->delete();
+                }
                 if (!sql_insert(
-                    BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_TRACKING,
+                    BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,
                     array(
                         "notification_id" => $notification->id,
                         "message_id" => $message->id,
-                        "user_id" => $userID,
+                        "user_id" => $user->id,
                         "server_id" => $originalMessage->guild_id,
                         "category_id" => $channel->parent_id,
                         "channel_id" => $channel->id,

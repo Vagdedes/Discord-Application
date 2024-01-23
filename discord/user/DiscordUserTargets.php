@@ -567,9 +567,7 @@ class DiscordUserTargets
                     $query->server_id,
                     $query->created_thread_id === null ? $query->channel_id : null,
                     $query->created_thread_id === null ? null : $query->created_thread_id,
-                    $query->user_id,
-                    null,
-                    false
+                    $query->user_id
                 );
                 rsort($query->messages);
                 set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
@@ -615,9 +613,7 @@ class DiscordUserTargets
                             $row->server_id,
                             $row->created_thread_id === null ? $row->channel_id : null,
                             $row->created_thread_id === null ? null : $row->created_thread_id,
-                            $row->user_id,
-                            null,
-                            false
+                            $row->user_id
                         );
                         rsort($row->messages);
                     }

@@ -3,7 +3,6 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\User\Member;
-use DiscordPlan;
 
 class TestingStatusMessageImplementationListener // Name can be changed
 {
