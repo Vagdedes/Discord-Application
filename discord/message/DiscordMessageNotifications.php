@@ -2,6 +2,7 @@
 
 namespace message;
 
+use BotDatabaseTable;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;

@@ -27,7 +27,17 @@ class DiscordListener
         IMPLEMENTATION_USER_LEVELS = "/root/discord_bot/listeners/custom/user_level/",
         IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/custom/channel_statistics/",
         IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/custom/reminder_message/",
-        IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/custom/status_message/";
+        IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/custom/status_message/",
+        IMPLEMENTATION_CUSTOM_MUTE = "/root/discord_bot/listeners/custom/custom_mute/",
+        IMPLEMENTATION_CUSTOM_LOGS = "/root/discord_bot/listeners/custom/custom_logs/",
+        IMPLEMENTATION_NOTIFICATION_MESSAGE = "/root/discord_bot/listeners/custom/notification_message/",
+        IMPLEMENTATION_AI_TEXT = "/root/discord_bot/listeners/custom/ai_text/",
+        IMPLEMENTATION_AI_IMAGE = "/root/discord_bot/listeners/custom/ai_image/",
+        IMPLEMENTATION_SOCIAL_ALERTS = "/root/discord_bot/listeners/custom/social_alerts/",
+        IMPLEMENTATION_CHANNEL_OBJECTIVE = "/root/discord_bot/listeners/custom/user_objective/",
+        IMPLEMENTATION_USER_NOTES = "/root/discord_bot/listeners/custom/user_notes/",
+        IMPLEMENTATION_USER_TARGETS = "/root/discord_bot/listeners/custom/user_targets/",
+        IMPLEMENTATION_REACTION_ROLES = "/root/discord_bot/listeners/custom/reaction_roles/";
 
     public function __construct(DiscordPlan $plan)
     {

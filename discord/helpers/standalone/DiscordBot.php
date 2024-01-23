@@ -2,16 +2,16 @@
 
 /*
  * Bot Features:
- * Custom Mute (Listener)****
- * Custom Logs (Listener)****
+ * Custom Mute
+ * Custom Logs
  * Custom Commands
  * -
- * Social Alerts (Listener)****
- * Reaction Roles (Listener)****
+ * Social Alerts
+ * Reaction Roles
  * Invite Tracker
  * -
- * AI Text Messages (Listener)****
- * AI Image Messages (Listener)****
+ * AI Text Messages
+ * AI Image Messages
  * Persistent Messages
  * Reminder Messages
  * Welcome & Goodbye Messages
@@ -23,10 +23,10 @@
  * Counting Channels
  * Statistics Channels
  * Temporary Channels
- * Objective Channels (Listener)****
+ * Objective Channels
  * -
- * User Notes (Listener)****
- * User Targets (Listener)***
+ * User Notes
+ * User Targets
  * User Giveaways
  * User Polls
  * User Tickets

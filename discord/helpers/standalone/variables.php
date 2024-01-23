@@ -70,6 +70,7 @@ class BotDatabaseTable
         BOT_CHANNEL_NOTIFICATIONS = "discord.botChannelNotifications",
         BOT_CHANNEL_NOTIFICATION_TRACKING = "discord.botChannelNotificationTracking",
         BOT_CHANNEL_NOTIFICATION_ROLES = "discord.botChannelNotificationRoles",
+        BOT_CHANNEL_NOTIFICATION_INSTRUCTIONS = "discord.botChannelNotificationInstructions",
         BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",
         BOT_TICKETS = "discord.botTickets",
         BOT_TICKET_ROLES = "discord.botTicketRoles",
