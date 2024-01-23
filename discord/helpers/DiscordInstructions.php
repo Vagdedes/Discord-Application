@@ -102,12 +102,7 @@ class DiscordInstructions
                     . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
             }
             if (!empty($information)) {
-                return array(
-                    $information,
-                    (!empty($disclaimer)
-                        ? DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $disclaimer . DiscordSyntax::SPOILER
-                        : "")
-                );
+                return array($information, $disclaimer);
             }
         }
         return array("", "");

@@ -250,18 +250,18 @@ class DiscordListener
         return $messageBuilder;
     }
 
-    public function callNotificationMessageImplementation(MessageBuilder $messageBuilder,
+    public function callNotificationMessageImplementation(object $message,
                                                          ?string        $class, ?string $method,
-                                                         object         $object): MessageBuilder
+                                                         object         $object): string
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_NOTIFICATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $messageBuilder, $object)
+                array($this->plan, $message, $object)
             );
         } else {
-            return $messageBuilder;
+            return $message;
         }
     }
 }

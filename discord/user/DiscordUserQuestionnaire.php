@@ -535,45 +535,24 @@ class DiscordUserQuestionnaire
                         );
                     }
                 } else {
-                    $instructions = $this->plan->instructions->build($object, $questionnaire->instructions);
                     $reply = $this->plan->aiMessages->rawTextAssistance(
-                        $message->member,
-                        $message->channel,
-                        $instructions[0],
-                        $answersString,
+                        $message,
+                        $this->plan->instructions->build($object, $questionnaire->instructions),
                         self::AI_HASH
                     );
 
-                    if ($reply[0]) {
-                        $model = $reply[1];
-                        $modelReply = $reply[2];
-                        $hasNoCost = is_string($modelReply);
-                        $assistance = $hasNoCost
-                            ? $modelReply
-                            : $this->plan->aiMessages->getChatAI()->getText($model, $modelReply);
-                        $currency = $hasNoCost ? null : new DiscordCurrency($model->currency->code);
-
-                        if ($assistance !== null) {
-                            $assistance .= $instructions[1];
-                            $messageContent = $assistance;
-                            $this->plan->utilities->sendMessageInPieces($message->member, $messageContent);
-                        } else {
-                            $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
-                            $message->author->sendMessage($messageContent);
-                        }
+                    if ($reply !== null) {
+                        $this->plan->utilities->sendMessageInPieces($message->member, $reply);
                     } else {
-                        $hasNoCost = true;
-                        $messageContent = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
-                        $message->author->sendMessage($messageContent);
+                        $reply = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
+                        $message->author->sendMessage($reply);
                     }
 
                     if (set_sql_query(
                         BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
                         array(
                             "completion_date" => get_current_date(),
-                            "outcome_message" => $messageContent,
-                            "cost" => $hasNoCost ? null : ($modelReply->usage->prompt_tokens * $model->sent_token_cost) + ($modelReply->usage->completion_tokens * $model->received_token_cost),
-                            "currency_id" => $hasNoCost ? null : ($currency->exists ? $currency->id : null)
+                            "outcome_message" => $reply,
                         ),
                         array(
                             array("id", $query->id)

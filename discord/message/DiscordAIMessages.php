@@ -1,19 +1,14 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
-use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
-use Discord\Parts\User\Member;
-use Discord\Parts\User\User;
 
 class DiscordAIMessages
 {
     private DiscordPlan $plan;
     public ?array $model;
     private array $messageCounter;
-
-    //todo image ai
 
     public function __construct(DiscordPlan $plan)
     {
@@ -292,8 +287,7 @@ class DiscordAIMessages
                                                 $promptMessage
                                             ))->done(function (Message $message)
                                             use (
-                                                $object, $messageContent, $member, $model,
-                                                $cacheKey, $channel, $originalMessage
+                                                $object, $model, $cacheKey, $channel, $originalMessage
                                             ) {
                                                 $reply = $this->rawTextAssistance(
                                                     $originalMessage,
@@ -343,14 +337,24 @@ class DiscordAIMessages
         return false;
     }
 
-    public function rawTextAssistance(Message $message,
-                                      array   $systemInstructions,
-                                      int     $extraHash = null,
-                                      bool    $debug = false): ?string
+    public function rawTextAssistance(Message|array $source,
+                                      array         $systemInstructions,
+                                      int           $extraHash = null,
+                                      bool          $debug = false): ?string
     {
-        $channel = $message->channel;
+        if (is_array($source)) {
+            $hasMessage = false;
+            $debug = false;
+            $channel = array_shift($source);
+            $user = array_shift($source);
+            $content = array_shift($source);
+        } else {
+            $hasMessage = true;
+            $channel = $source->channel;
+            $user = $source->member;
+            $content = $source->content;
+        }
         $parent = $this->plan->utilities->getChannel($channel);
-        $user = $message->member;
         $chatAI = $this->getChatAI($parent->id);
 
         if ($chatAI !== null) {
@@ -369,27 +373,21 @@ class DiscordAIMessages
                         ),
                         array(
                             "role" => "user",
-                            "content" => $message->content
+                            "content" => $content
                         )
                     )
                 )
             );
 
             if ($debug) {
-                if (!empty($systemInstructions[0])) {
-                    foreach (str_split($systemInstructions[0], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                        $this->plan->utilities->replyMessage(
-                            $message,
-                            MessageBuilder::new()->setContent($split)
-                        );
-                    }
-                }
-                if (!empty($systemInstructions[1])) {
-                    foreach (str_split($systemInstructions[1], DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                        $this->plan->utilities->replyMessage(
-                            $message,
-                            MessageBuilder::new()->setContent($split)
-                        );
+                foreach ($systemInstructions as $instruction) {
+                    if (!empty($instruction)) {
+                        foreach (str_split($instruction, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                            $this->plan->utilities->replyMessage(
+                                $source,
+                                MessageBuilder::new()->setContent($split)
+                            );
+                        }
                     }
                 }
             }
@@ -401,7 +399,7 @@ class DiscordAIMessages
                         }
                         foreach (str_split($part, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                             $this->plan->utilities->replyMessage(
-                                $message,
+                                $source,
                                 MessageBuilder::new()->setContent($split)
                             );
                         }
@@ -415,15 +413,18 @@ class DiscordAIMessages
                     if ($content == DiscordProperties::NO_REPLY) {
                         return null;
                     } else {
-                        $content .= $systemInstructions[1];
-                        $reference = $message->message_reference;
+                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
 
-                        if ($reference instanceof Message) {
-                            $content .= DiscordProperties::NEW_LINE
-                                . DiscordProperties::NEW_LINE
-                                . "Referenced Message by '" . $reference->author->username . "':"
-                                . DiscordProperties::NEW_LINE
-                                . $reference->content;
+                        if ($hasMessage) {
+                            $reference = $source->message_reference;
+
+                            if ($reference instanceof Message) {
+                                $content .= DiscordProperties::NEW_LINE
+                                    . DiscordProperties::NEW_LINE
+                                    . "Referenced Message by '" . $reference->author->username . "':"
+                                    . DiscordProperties::NEW_LINE
+                                    . $reference->content;
+                            }
                         }
                         $cost = $chatAI->getCost($model, $reply);
                         $currency = new DiscordCurrency($model->currency->code);
@@ -439,7 +440,7 @@ class DiscordAIMessages
                                 "channel_id" => $parent->id,
                                 "thread_id" => $thread,
                                 "user_id" => $user->id,
-                                "message_id" => $message->id,
+                                "message_id" => $hasMessage ? $source->id : null,
                                 "message_content" => $content,
                                 "creation_date" => $date,
                             )
@@ -453,7 +454,7 @@ class DiscordAIMessages
                                 "channel_id" => $parent->id,
                                 "thread_id" => $thread,
                                 "user_id" => $user->id,
-                                "message_id" => $message->id,
+                                "message_id" => $hasMessage ? $source->id : null,
                                 "message_content" => $content,
                                 "cost" => $cost,
                                 "currency_id" => $currency->exists ? $currency->id : null,

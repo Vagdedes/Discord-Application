@@ -9,6 +9,8 @@ class DiscordMessageNotifications
     private DiscordPlan $plan;
     private array $notifications;
 
+    private const AI_HASH = 634512434;
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -43,7 +45,7 @@ class DiscordMessageNotifications
                         null
                     )
                 );
-                $notification->instructions = get_sql_query(
+                $instructions = get_sql_query(
                     BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_INSTRUCTIONS,
                     null,
                     array(
@@ -55,6 +57,14 @@ class DiscordMessageNotifications
                         null
                     )
                 );
+
+                if (!empty($instructions)) {
+                    $notification->instructions = array();
+
+                    foreach ($instructions as $instruction) {
+                        $notification->instructions[] = $instruction->instruction_id;
+                    }
+                }
                 $this->notifications[$arrayKey] = $notification;
             }
         }
@@ -142,13 +152,33 @@ class DiscordMessageNotifications
             }
         }
         $original = $isThread ? $originalMessage : $originalMessage->channel;
-        $notificationMessage = $notification->notification;
-        $builder = $this->plan->listener->callNotificationMessageImplementation(
-            MessageBuilder::new()->setContent($notificationMessage),
+
+        if (!empty($notification->instructions)) {
+            $notificationMessage = $this->plan->aiMessages->rawTextAssistance(
+                $isThread ? array($originalMessage, $user, "The user has left no information.") : $originalMessage,
+                $notification->instructions,
+                self::AI_HASH
+            );
+
+            if ($notificationMessage === null) {
+                global $logger;
+                $logger->logError(
+                    $this->plan,
+                    "Failed to get AI message for message notification with ID: " . $notification->id
+                );
+                $notificationMessage = $notification->notification;
+            }
+        } else {
+            $notificationMessage = $notification->notification;
+        }
+        $builder = MessageBuilder::new()->setContent(
+            $this->plan->listener->callNotificationMessageImplementation(
+            $notificationMessage,
             $notification->listener_class,
             $notification->listener_method,
             $notification
-        );
+        )
+    );
 
         $original->sendMessage($builder)->done(
             function (Message $message)
