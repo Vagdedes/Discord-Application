@@ -1,10 +1,13 @@
 <?php
 
+namespace message;
+
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
+use DiscordPlan;
 
-class DiscordChannelNotifications
+class DiscordMessageNotifications
 {
     private DiscordPlan $plan;
     private array $notifications;
@@ -90,7 +93,7 @@ class DiscordChannelNotifications
         $date = get_current_date();
         $isThread = $originalMessage instanceof Thread;
         $userID = $isThread ? $originalMessage->owner_id : $originalMessage->member;
-        //set_sql_cache();
+        set_sql_cache("1 second");
 
         if (!empty(get_sql_query(
             BotDatabaseTable::BOT_CHANNEL_NOTIFICATION_TRACKING,

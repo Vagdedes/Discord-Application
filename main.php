@@ -42,7 +42,6 @@ require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
 require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
 require '/root/discord_bot/discord/channel/DiscordObjectiveChannels.php';
-require '/root/discord_bot/discord/channel/DiscordChannelNotifications.php';
 
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
 require '/root/discord_bot/discord/message/DiscordAIMessages.php';
@@ -50,6 +49,7 @@ require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 require '/root/discord_bot/discord/message/DiscordChatFilteredMessages.php';
 require '/root/discord_bot/discord/message/DiscordTransferredMessages.php';
+require '/root/discord_bot/discord/message/DiscordMessageNotifications.php';
 
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
@@ -309,7 +309,7 @@ function initiate_discord_bot(): void
             foreach ($createdDiscordBot->plans as $plan) {
                 $plan->statisticsChannels->refresh();
 
-                if (!$threadBool && $plan->channelNotifications->executeThread($thread)) {
+                if (!$threadBool && $plan->messageNotifications->executeThread($thread)) {
                     $threadBool = true;
                 }
             }

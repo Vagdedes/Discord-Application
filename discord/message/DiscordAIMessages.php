@@ -193,7 +193,7 @@ class DiscordAIMessages
             } else if ($this->plan->countingChannels->track($message)) {
                 return true;
             } else {
-                $this->plan->channelNotifications->executeMessage($message);
+                $this->plan->messageNotifications->executeMessage($message);
                 $channel = $object->channel;
 
                 if ($channel !== null) {

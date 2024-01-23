@@ -4,33 +4,34 @@
  * Bot Features:
  * Custom Mute (Listener)****
  * Custom Logs (Listener)****
- * Custom Commands (Listener)
+ * Custom Commands
  * -
  * Social Alerts (Listener)****
  * Reaction Roles (Listener)****
- * Invite Tracker (Listener)
+ * Invite Tracker
  * -
  * AI Text Messages (Listener)****
  * AI Image Messages (Listener)****
- * Persistent Messages (Listener)
- * Reminder Messages (Listener)
- * Welcome & Goodbye Messages (Listener)
- * Filtered Messages (Listener)
- * Transferred Messages (Listener)
+ * Persistent Messages
+ * Reminder Messages
+ * Welcome & Goodbye Messages
+ * Filtered Messages
+ * Transferred Messages
+ * Notification Messages
  * -
  * Anti-Expiration Threads
- * Counting Channels (Listener)
- * Statistics Channels (Listener)
- * Temporary Channels (Listener)
+ * Counting Channels
+ * Statistics Channels
+ * Temporary Channels
  * Objective Channels (Listener)****
  * -
  * User Notes (Listener)****
  * User Targets (Listener)***
- * User Giveaways (Listener)
- * User Polls (Listener)
- * User Tickets (Listener)
- * User Levels (Listener)
- * User Questionnaire (Listener)
+ * User Giveaways
+ * User Polls
+ * User Tickets
+ * User Levels
+ * User Questionnaires
  */
 
 use Discord\Discord;
