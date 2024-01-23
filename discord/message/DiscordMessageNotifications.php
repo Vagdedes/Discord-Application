@@ -156,6 +156,7 @@ class DiscordMessageNotifications
         if (!empty($notification->instructions)) {
             $notificationMessage = $this->plan->aiMessages->rawTextAssistance(
                 $isThread ? array($originalMessage, $user, "The user has left no information.") : $originalMessage,
+                null,
                 $notification->instructions,
                 self::AI_HASH
             );

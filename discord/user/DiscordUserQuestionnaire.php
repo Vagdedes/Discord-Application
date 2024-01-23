@@ -537,6 +537,7 @@ class DiscordUserQuestionnaire
                 } else {
                     $reply = $this->plan->aiMessages->rawTextAssistance(
                         $message,
+                        null,
                         $this->plan->instructions->build($object, $questionnaire->instructions),
                         self::AI_HASH
                     );

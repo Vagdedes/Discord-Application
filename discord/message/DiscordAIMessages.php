@@ -289,6 +289,7 @@ class DiscordAIMessages
                                             use ($object, $model, $cacheKey, $channel, $originalMessage) {
                                                 $reply = $this->rawTextAssistance(
                                                     $originalMessage,
+                                                    $message,
                                                     $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions),
                                                     null,
                                                     $channel->debug != null
@@ -336,10 +337,13 @@ class DiscordAIMessages
     }
 
     public function rawTextAssistance(Message|array $source,
+                                      ?Message      $self,
                                       array         $systemInstructions,
                                       int           $extraHash = null,
                                       bool          $debug = false): ?string
     {
+        $hasSelf = $self !== null;
+
         if (is_array($source)) {
             $hasMessage = false;
             $debug = false;
@@ -348,8 +352,9 @@ class DiscordAIMessages
             $content = array_shift($source);
         } else {
             $hasMessage = true;
-            $channel = $source->channel;
-            $user = $source->member;
+            $debug &= $hasSelf;
+            $channel = $self->channel;
+            $user = $self->member;
             $content = $source->content;
         }
         $parent = $this->plan->utilities->getChannel($channel);
@@ -382,7 +387,7 @@ class DiscordAIMessages
                     if (!empty($instruction)) {
                         foreach (str_split($instruction, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                             $this->plan->utilities->replyMessage(
-                                $source,
+                                $self,
                                 MessageBuilder::new()->setContent($split)
                             );
                         }
@@ -397,7 +402,7 @@ class DiscordAIMessages
                         }
                         foreach (str_split($part, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                             $this->plan->utilities->replyMessage(
-                                $source,
+                                $self,
                                 MessageBuilder::new()->setContent($split)
                             );
                         }
@@ -438,7 +443,7 @@ class DiscordAIMessages
                                 "channel_id" => $parent->id,
                                 "thread_id" => $thread,
                                 "user_id" => $user->id,
-                                "message_id" => $hasMessage ? $source->id : null,
+                                "message_id" => $hasSelf ? $self->id : null,
                                 "message_content" => $content,
                                 "creation_date" => $date,
                             )
@@ -452,7 +457,7 @@ class DiscordAIMessages
                                 "channel_id" => $parent->id,
                                 "thread_id" => $thread,
                                 "user_id" => $user->id,
-                                "message_id" => $hasMessage ? $source->id : null,
+                                "message_id" => $hasSelf ? $self->id : null,
                                 "message_content" => $content,
                                 "cost" => $cost,
                                 "currency_id" => $currency->exists ? $currency->id : null,
