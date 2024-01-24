@@ -51,7 +51,7 @@ class DiscordObjectiveChannels
 
     public function trackCreation(Message $message): bool
     {
-        if (!empty($this->channels)) {
+        if (!empty($this->channels) && $message->author->id != $this->plan->bot->botID) {
             foreach ($this->channels as $channel) {
                 if ($channel->start_server_id === $message->guild_id
                     && $channel->start_channel_id == $message->channel_id
@@ -103,41 +103,44 @@ class DiscordObjectiveChannels
 
             if ($channel !== null) {
                 $message = $data[1];
-                $messageBuilder = MessageBuilder::new();
-                $embed = new Embed($this->plan->bot->discord);
-                $embed->setAuthor($message->author->username, $message->author->avatar);
-                $embed->setDescription($message->content);
-                $messageBuilder->addEmbed($embed);
 
-                $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {
-                    $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
+                if ($message->author->id != $this->plan->bot->botID) {
+                    $messageBuilder = MessageBuilder::new();
+                    $embed = new Embed($this->plan->bot->discord);
+                    $embed->setAuthor($message->author->username, $message->author->avatar);
+                    $embed->setDescription($message->content);
+                    $messageBuilder->addEmbed($embed);
 
-                    if (!set_sql_query(
-                        BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
-                        array(
-                            "end_server_id" => $endMessage->guild_id,
-                            "end_category_id" => $channelObj->parent_id,
-                            "end_channel_id" => $channelObj->id,
-                            "end_thread_id" => $endMessage->thread?->id,
-                            "end_message_id" => $endMessage->id,
-                            "end_user_id" => $endMessage->user_id,
-                            "transfer_date" => get_current_date()
-                        ),
-                        array(
-                            array("start_server_id", $message->guild_id),
-                            array("start_category_id", $message->channel->parent_id),
-                            array("start_channel_id", $message->channel_id),
-                            array("start_thread_id", $message->channel_id),
-                            array("start_message_id", $message->id),
-                            array("start_user_id", $message->user_id)
-                        ),
-                        null,
-                        1
-                    )) {
-                        global $logger;
-                        $logger->logError($this->plan->planID, "Failed to update objective-channel message-deletion with ID: " . $message->id);
-                    }
-                });
+                    $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {
+                        $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
+
+                        if (!set_sql_query(
+                            BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
+                            array(
+                                "end_server_id" => $endMessage->guild_id,
+                                "end_category_id" => $channelObj->parent_id,
+                                "end_channel_id" => $channelObj->id,
+                                "end_thread_id" => $endMessage->thread?->id,
+                                "end_message_id" => $endMessage->id,
+                                "end_user_id" => $endMessage->user_id,
+                                "transfer_date" => get_current_date()
+                            ),
+                            array(
+                                array("start_server_id", $message->guild_id),
+                                array("start_category_id", $message->channel->parent_id),
+                                array("start_channel_id", $message->channel_id),
+                                array("start_thread_id", $message->channel_id),
+                                array("start_message_id", $message->id),
+                                array("start_user_id", $message->user_id)
+                            ),
+                            null,
+                            1
+                        )) {
+                            global $logger;
+                            $logger->logError($this->plan->planID, "Failed to update objective-channel message-deletion with ID: " . $message->id);
+                        }
+                    });
+                }
             } else {
                 global $logger;
                 $logger->logError(
@@ -148,27 +151,59 @@ class DiscordObjectiveChannels
         }
     }
 
-    private function createChannel(object $channel): ?Channel
+    private function createChannel(object $channel, bool $creation, bool $thread): void
     {
-        return null;
+        $rolePermissions = array();
+
+        if (!empty($channel->roles)) {
+            foreach ($channel->roles as $role) {
+                $rolePermissions[] = array(
+                    "id" => $role->role_id,
+                    "type" => "role",
+                    "allow" => 8192, // Manage Messages
+                    "deny" => 0
+                );
+            }
+        }
+        $this->plan->utilities->createChannel(
+            $creation ? $channel->start_server_id : $channel->end_server_id,
+            Channel::TYPE_TEXT,
+            $creation ? $channel->start_category_id : $channel->end_category_id,
+            "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id,
+            null,
+            $rolePermissions
+        )->done(function (Channel $channelObj) use ($channel, $thread, $creation) {
+            //todo update database
+
+            if ($thread) {
+                $this->createThread($channel, $channelObj, $creation);
+            }
+        });
     }
 
-    private function createThread(object $channel): ?Thread
+    private function createThread(object $channel, Channel $channelObj, bool $creation): void
     {
-        return null;
+        $channelObj->startThread(
+            MessageBuilder::new()->setContent(
+                "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id
+            )
+        )->done(function (Thread $thread) {
+            //todo update database
+        });
     }
 
     private function getChannel(object $channel, bool $creation): Channel|Thread|null
     {
+        $hasThread = $creation ? ($channel->start_thread_id !== null) : ($channel->end_thread_id !== null);
+
         if ($creation ? ($channel->start_channel_id !== null) : ($channel->end_channel_id !== null)) {
             $channelObj = $this->plan->bot->discord->getChannel(
                 $creation
                     ? $channel->start_channel_id
                     : $channel->end_channel_id
             );
-
             if ($channelObj !== null) {
-                if ($creation ? ($channel->start_thread_id !== null) : ($channel->end_thread_id !== null)) {
+                if ($hasThread) {
                     if (!empty($channelObj->threads->first())) {
                         foreach ($channelObj->threads as $thread) {
                             if ($thread instanceof Thread
@@ -179,15 +214,16 @@ class DiscordObjectiveChannels
                             }
                         }
                     }
-                    return $this->createThread($channel);
+                    $this->createThread($channel, $channelObj, $creation);
                 } else {
                     return $channelObj;
                 }
             } else {
-                return $this->createChannel($channel);
+                $this->createChannel($channel, $creation, $hasThread);
             }
         } else {
-            return $this->createChannel($channel);
+            $this->createChannel($channel, $creation, $hasThread);
         }
+        return null;
     }
 }
