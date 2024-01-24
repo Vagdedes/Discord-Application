@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Parts\Channel\Message;
+
 class DiscordTransferredMessages
 {
     private DiscordPlan $plan;
@@ -20,5 +22,33 @@ class DiscordTransferredMessages
                 null
             )
         );
+
+        if (!empty($this->channels)) {
+            foreach ($this->channels as $arrayKey => $channel) {
+                $channel->channels = get_sql_query(
+                    BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_CHANNELS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("message_transferrer_id", $channel->id),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                $this->channels[$arrayKey] = $channel;
+            }
+        }
+    }
+
+    public function trackCreation(Message $message): void
+    {
+
+    }
+
+    public function trackDeletion(object $message): void
+    {
+
     }
 }

@@ -204,6 +204,7 @@ function initiate_discord_bot(): void
                     $plan->countingChannels->ignoreDeletion--;
                 }
                 $plan->objectiveChannels->trackDeletion($message);
+                $plan->tranferredMessages->trackDeletion($message);
             }
             $logger->logInfo($message?->guild, null, Event::MESSAGE_DELETE, $message);
         });

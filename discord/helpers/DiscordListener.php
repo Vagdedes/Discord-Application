@@ -39,7 +39,15 @@ class DiscordListener
         IMPLEMENTATION_CHANNEL_OBJECTIVE = "/root/discord_bot/listeners/custom/user_objective/",
         IMPLEMENTATION_USER_NOTES = "/root/discord_bot/listeners/custom/user_notes/",
         IMPLEMENTATION_USER_TARGETS = "/root/discord_bot/listeners/custom/user_targets/",
-        IMPLEMENTATION_REACTION_ROLES = "/root/discord_bot/listeners/custom/reaction_roles/";
+        IMPLEMENTATION_REACTION_ROLES = "/root/discord_bot/listeners/custom/reaction_roles/",
+        IMPLEMENTATION_CHANNEL_TEMPORARY = "/root/discord_bot/listeners/custom/channel_temporary/",
+        IMPLEMENTATION_MESSAGE_TRANSFER = "/root/discord_bot/listeners/custom/transfer_message/",
+        IMPLEMENTATION_MESSAGE_FILTER = "/root/discord_bot/listeners/custom/filter_message/",
+        IMPLEMENTATION_MESSAGE_ANTI_EXPIRATION_THREAD = "/root/discord_bot/listeners/custom/anti_expiration_thread/",
+        IMPLEMENTATION_USER_QUESTIONNAIRE = "/root/discord_bot/listeners/custom/user_questionnaires/",
+        IMPLEMENTATION_USER_GIVEAWAYS = "/root/discord_bot/listeners/custom/user_giveaways/",
+        IMPLEMENTATION_USER_POLLS = "/root/discord_bot/listeners/custom/user_polls/",
+        IMPLEMENTATION_MESSAGE_OBJECTIVE = "/root/discord_bot/listeners/custom/objective_message/";
 
     public function __construct(DiscordPlan $plan)
     {

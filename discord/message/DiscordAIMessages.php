@@ -193,6 +193,7 @@ class DiscordAIMessages
                 return true;
             } else {
                 $this->plan->messageNotifications->executeMessage($originalMessage);
+                $this->plan->tranferredMessages->trackDeletion($originalMessage);
                 $channel = $object->channel;
 
                 if ($channel !== null) {
