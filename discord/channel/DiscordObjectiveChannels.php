@@ -173,10 +173,24 @@ class DiscordObjectiveChannels
             null,
             $rolePermissions
         )->done(function (Channel $channelObj) use ($channel, $thread, $creation) {
-            //todo update database
-
-            if ($thread) {
-                $this->createThread($channel, $channelObj, $creation);
+            if (set_sql_query(
+                BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
+                array(
+                    ($creation ? "start" : "end") . "_category_id" => $channelObj->parent_id,
+                    ($creation ? "start" : "end") . "_channel_id" => $channelObj->id
+                ),
+                array(
+                    array("id", $channel->id)
+                ),
+                null,
+                1
+            )) {
+                if ($thread) {
+                    $this->createThread($channel, $channelObj, $creation);
+                }
+            } else {
+                global $logger;
+                $logger->logError($this->plan->planID, "Failed to update objective-channel channel with ID: " . $channel->id);
             }
         });
     }
@@ -187,8 +201,21 @@ class DiscordObjectiveChannels
             MessageBuilder::new()->setContent(
                 "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id
             )
-        )->done(function (Thread $thread) {
-            //todo update database
+        )->done(function (Thread $thread) use ($channel, $creation) {
+            if (!set_sql_query(
+                BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
+                array(
+                    ($creation ? "start" : "end") . "_thread_id" => $thread->id
+                ),
+                array(
+                    array("id", $channel->id)
+                ),
+                null,
+                1
+            )) {
+                global $logger;
+                $logger->logError($this->plan->planID, "Failed to update objective-channel thread with ID: " . $channel->id);
+            }
         });
     }
 
