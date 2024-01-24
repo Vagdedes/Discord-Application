@@ -53,6 +53,7 @@ class BotDatabaseTable
         BOT_MUTE = "discord.botMute",
         BOT_OBJECTIVE_CHANNELS = "discord.botObjectiveChannels",
         BOT_OBJECTIVE_CHANNEL_TRACKING = "discord.botObjectiveChannelTracking",
+        BOT_OBJECTIVE_CHANNEL_ROLES = "discord.botObjectiveChannelRoles",
         BOT_MESSAGE_TRANSFERRER = "discord.botMessageTransferrer",
         BOT_MESSAGE_TRANSFERRER_CHANNELS = "discord.botMessageTransferrerChannels",
         BOT_MESSAGE_TRANSFERRER_TRACKING = "discord.botMessageTransferrerTracking",

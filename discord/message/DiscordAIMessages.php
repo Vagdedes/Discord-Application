@@ -176,10 +176,6 @@ class DiscordAIMessages
                 ));
             }
             return true;
-        } else if ($this->plan->userTickets->track($originalMessage)
-            || $this->plan->userTargets->track($originalMessage)
-            || $this->plan->userQuestionnaire->track($originalMessage, $object)) {
-            return true;
         } else {
             $mute = $this->plan->bot->mute->isMuted($member, $originalMessage->channel, DiscordMute::TEXT);
 
@@ -189,7 +185,11 @@ class DiscordAIMessages
                     $member,
                     $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
-            } else if ($this->plan->countingChannels->track($originalMessage)) {
+            } else if ($this->plan->userTickets->track($originalMessage)
+                || $this->plan->userTargets->track($originalMessage)
+                || $this->plan->userQuestionnaire->track($originalMessage, $object)
+                || $this->plan->countingChannels->track($originalMessage)
+                || $this->plan->objectiveChannels->trackCreation($originalMessage)) {
                 return true;
             } else {
                 $this->plan->messageNotifications->executeMessage($originalMessage);
@@ -313,8 +313,15 @@ class DiscordAIMessages
                                                     set_key_value_pair($cacheKey, $reply);
                                                     $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
                                                     $this->plan->utilities->replyMessageInPieces($message, $reply);
-                                                    $this->messageReplies[$message->id] = $message;
-                                                    $this->messageFeedback[$message->id] = array();
+
+                                                    $hash = $this->plan->utilities->hash(
+                                                        $message->guild_id,
+                                                        $message->channel_id,
+                                                        $message->thread?->id,
+                                                        $message->id
+                                                    );
+                                                    $this->messageReplies[$hash] = $message;
+                                                    $this->messageFeedback[$hash] = array();
                                                 }
                                             });
                                         }
@@ -736,11 +743,17 @@ class DiscordAIMessages
 
     public function sendFeedback(MessageReaction $reaction, int $value): void
     {
-        $message = $this->messageReplies[$reaction->message_id] ?? null;
+        $hash = $this->plan->utilities->hash(
+            $reaction->guild_id,
+            $reaction->channel_id,
+            $reaction->message->thread?->id,
+            $reaction->message_id
+        );
+        $message = $this->messageReplies[$hash] ?? null;
 
         if ($message !== null
             && !empty($message->mentions->first())
-            && !in_array($reaction->member->id, $this->messageFeedback[$message->id])) {
+            && !in_array($reaction->member->id, $this->messageFeedback[$hash])) {
             $channel = $this->plan->utilities->getChannel($message->channel);
 
             if (!empty(get_sql_query(
@@ -765,7 +778,7 @@ class DiscordAIMessages
             foreach ($message->mentions as $mention) {
                 if ($reaction->member->id == $mention->id) {
                     $found = true;
-                    $this->messageFeedback[$message->id][] = $reaction->member->id;
+                    $this->messageFeedback[$hash][] = $reaction->member->id;
                     sql_insert(
                         BotDatabaseTable::BOT_AI_FEEDBACK,
                         array(
@@ -784,7 +797,7 @@ class DiscordAIMessages
             }
 
             if (!$found) {
-                $this->messageFeedback[$message->id][] = $reaction->member->id;
+                $this->messageFeedback[$hash][] = $reaction->member->id;
                 sql_insert(
                     BotDatabaseTable::BOT_AI_FEEDBACK,
                     array(

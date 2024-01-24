@@ -191,10 +191,12 @@ class DiscordPersistentMessages
                     if ($messageRow->thread_id !== null) {
                         $finalChannel = null;
 
-                        foreach ($channel->threads as $thread) {
-                            if ($thread instanceof Thread && $messageRow->thread_id == $thread->id) {
-                                $finalChannel = $thread;
-                                break;
+                        if (!empty($channel->threads->first())) {
+                            foreach ($channel->threads as $thread) {
+                                if ($thread instanceof Thread && $messageRow->thread_id == $thread->id) {
+                                    $finalChannel = $thread;
+                                    break;
+                                }
                             }
                         }
                     } else if ($channel->allowText()) {

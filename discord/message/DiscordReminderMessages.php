@@ -34,7 +34,7 @@ class DiscordReminderMessages
                         && $channel->allowText()
                         && $channel->guild_id == $row->server_id) {
                         $this->execute($channel, $row);
-                    } else {
+                    } else if (!empty($channel->threads->first())) {
                         foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $row->thread_id == $thread->id) {
                                 $this->execute($thread, $row);

@@ -90,7 +90,7 @@ class DiscordLogs
                                             $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
                                         );
                                     }
-                                } else {
+                                } else if (!empty($channel->threads->first())) {
                                     foreach ($channel->threads as $thread) {
                                         if ($thread instanceof Thread
                                             && $row->thread_id == $thread->id) {
