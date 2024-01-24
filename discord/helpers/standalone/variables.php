@@ -95,7 +95,6 @@ class BotDatabaseTable
         BOT_AI_MENTIONS = "discord.botAIMentions",
         BOT_AI_MESSAGES = "discord.botAIMessages",
         BOT_AI_REPLIES = "discord.botAIReplies",
-        CURRENCIES = "discord.currencies",
         BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
         BOT_USER_PERMISSIONS = "discord.botUserPermissions",
         BOT_COMMANDS = "discord.botCommands",

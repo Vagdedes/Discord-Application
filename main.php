@@ -53,7 +53,6 @@ require '/root/discord_bot/discord/message/DiscordMessageNotifications.php';
 
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
-require '/root/discord_bot/discord/helpers/standalone/DiscordCurrency.php';
 require '/root/discord_bot/discord/helpers/standalone/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';

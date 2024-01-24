@@ -445,7 +445,6 @@ class DiscordAIMessages
                             }
                         }
                         $cost = $chatAI->getCost($model, $reply);
-                        $currency = new DiscordCurrency($model->currency->code);
                         $thread = $channel instanceof Thread ? $channel->id : null;
                         $date = get_current_date();
 
@@ -475,7 +474,7 @@ class DiscordAIMessages
                                 "message_id" => $hasSelf ? $self->id : null,
                                 "message_content" => $content,
                                 "cost" => $cost,
-                                "currency_id" => $currency->exists ? $currency->id : null,
+                                "currency_id" => $model->currency->id,
                                 "creation_date" => $date,
                             )
                         );
