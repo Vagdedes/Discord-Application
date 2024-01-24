@@ -218,6 +218,8 @@ function initiate_discord_bot(): void
                 } else {
                     $plan->countingChannels->ignoreDeletion--;
                 }
+                $plan->objectiveChannels->trackModification($message);
+                $plan->tranferredMessages->trackModification($message);
             }
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
         });

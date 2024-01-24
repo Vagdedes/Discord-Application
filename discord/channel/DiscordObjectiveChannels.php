@@ -88,6 +88,54 @@ class DiscordObjectiveChannels
         return false;
     }
 
+    public function trackModification(Message $message): void
+    {
+        $hash = $this->plan->utilities->hash(
+            $message->guild_id,
+            $message->channel_id,
+            $message->id
+        );
+
+        if (array_key_exists(
+            $hash,
+            $this->messages
+        )) {
+            $data = $this->messages[$hash];
+            $channel = $this->getChannel($data[0], true);
+
+            if ($channel !== null) {
+                if (set_sql_query(
+                    BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
+                    array(
+                        "message_content" => $message->content,
+                    ),
+                    array(
+                        array("start_server_id", $message->guild_id),
+                        array("start_category_id", $message->channel->parent_id),
+                        array("start_channel_id", $message->channel_id),
+                        array("start_thread_id", $message->thread?->id),
+                        array("start_message_id", $message->id),
+                        array("start_user_id", $message->user_id)
+                    ),
+                    null,
+                    1
+                )) {
+                    $data[1] = $message;
+                    $this->messages[$hash] = $data;
+                } else {
+                    global $logger;
+                    $logger->logError($this->plan->planID, "Failed to update objective-channel message-modification with ID: " . $message->id);
+                }
+            } else {
+                global $logger;
+                $logger->logError(
+                    $this->plan->planID,
+                    "Failed to get channel for objective-channel message-modification with ID: " . $message->id
+                );
+            }
+        }
+    }
+
     public function trackDeletion(object $message): void
     {
         $hash = $this->plan->utilities->hash(

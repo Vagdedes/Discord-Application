@@ -44,6 +44,10 @@ class DiscordTransferredMessages
 
     public function trackCreation(Message $message): void
     {
+    }
+
+    public function trackModification(Message $message): void
+    {
 
     }
 
