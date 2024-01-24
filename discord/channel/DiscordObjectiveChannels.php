@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
@@ -61,13 +62,14 @@ class DiscordObjectiveChannels
                     if (sql_insert(
                         BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
                         array(
-                            "plan_id" => $this->plan->planID,
+                            "objective_channel_id" => $channel->id,
                             "start_server_id" => $message->guild_id,
                             "start_category_id" => $channelObj->parent_id,
                             "start_channel_id" => $channelObj->id,
                             "start_thread_id" => $message->thread?->id,
                             "start_message_id" => $message->id,
                             "start_user_id" => $message->user_id,
+                            "message_content" => $message->content,
                             "creation_date" => get_current_date()
                         ))) {
                         // Only these because more cannot be held by just a deleted message object
@@ -99,48 +101,46 @@ class DiscordObjectiveChannels
             $this->messages
         )) {
             $data = $this->messages[$hash];
+            unset($this->messages[$hash]);
             $channel = $this->getChannel($data[0], false);
 
             if ($channel !== null) {
                 $message = $data[1];
+                $messageBuilder = MessageBuilder::new();
+                $embed = new Embed($this->plan->bot->discord);
+                $embed->setAuthor($message->author->username, $message->author->avatar);
+                $embed->setDescription($message->content);
+                $messageBuilder->addEmbed($embed);
 
-                if ($message->author->id != $this->plan->bot->botID) {
-                    $messageBuilder = MessageBuilder::new();
-                    $embed = new Embed($this->plan->bot->discord);
-                    $embed->setAuthor($message->author->username, $message->author->avatar);
-                    $embed->setDescription($message->content);
-                    $messageBuilder->addEmbed($embed);
+                $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {
+                    $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
 
-                    $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {
-                        $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
-
-                        if (!set_sql_query(
-                            BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
-                            array(
-                                "end_server_id" => $endMessage->guild_id,
-                                "end_category_id" => $channelObj->parent_id,
-                                "end_channel_id" => $channelObj->id,
-                                "end_thread_id" => $endMessage->thread?->id,
-                                "end_message_id" => $endMessage->id,
-                                "end_user_id" => $endMessage->user_id,
-                                "transfer_date" => get_current_date()
-                            ),
-                            array(
-                                array("start_server_id", $message->guild_id),
-                                array("start_category_id", $message->channel->parent_id),
-                                array("start_channel_id", $message->channel_id),
-                                array("start_thread_id", $message->channel_id),
-                                array("start_message_id", $message->id),
-                                array("start_user_id", $message->user_id)
-                            ),
-                            null,
-                            1
-                        )) {
-                            global $logger;
-                            $logger->logError($this->plan->planID, "Failed to update objective-channel message-deletion with ID: " . $message->id);
-                        }
-                    });
-                }
+                    if (!set_sql_query(
+                        BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
+                        array(
+                            "end_server_id" => $endMessage->guild_id,
+                            "end_category_id" => $channelObj->parent_id,
+                            "end_channel_id" => $channelObj->id,
+                            "end_thread_id" => $endMessage->thread?->id,
+                            "end_message_id" => $endMessage->id,
+                            "end_user_id" => $endMessage->user_id,
+                            "transfer_date" => get_current_date()
+                        ),
+                        array(
+                            array("start_server_id", $message->guild_id),
+                            array("start_category_id", $message->channel->parent_id),
+                            array("start_channel_id", $message->channel_id),
+                            array("start_thread_id", $message->thread?->id),
+                            array("start_message_id", $message->id),
+                            array("start_user_id", $message->user_id)
+                        ),
+                        null,
+                        1
+                    )) {
+                        global $logger;
+                        $logger->logError($this->plan->planID, "Failed to update objective-channel message-deletion with ID: " . $message->id);
+                    }
+                });
             } else {
                 global $logger;
                 $logger->logError(
@@ -154,16 +154,33 @@ class DiscordObjectiveChannels
     private function createChannel(object $channel, bool $creation, bool $thread): void
     {
         $rolePermissions = array();
+        $everyone = 534723737664;
 
-        if (!empty($channel->roles)) {
-            foreach ($channel->roles as $role) {
-                $rolePermissions[] = array(
-                    "id" => $role->role_id,
-                    "type" => "role",
-                    "allow" => 8192, // Manage Messages
-                    "deny" => 0
-                );
+        if ($creation) {
+            $rolePermissions[] = array(
+                "id" => $channel->start_server_id,
+                "type" => "role",
+                "allow" => $everyone,
+                "deny" => 0
+            );
+
+            if (!empty($channel->roles)) {
+                foreach ($channel->roles as $role) {
+                    $rolePermissions[] = array(
+                        "id" => $role->role_id,
+                        "type" => "role",
+                        "allow" => 274877917184, // Specific
+                        "deny" => 0
+                    );
+                }
             }
+        } else {
+            $rolePermissions[] = array(
+                "id" => $channel->end_server_id,
+                "type" => "role",
+                "allow" => $everyone,
+                "deny" => 0
+            );
         }
         $this->plan->utilities->createChannel(
             $creation ? $channel->start_server_id : $channel->end_server_id,
@@ -229,6 +246,7 @@ class DiscordObjectiveChannels
                     ? $channel->start_channel_id
                     : $channel->end_channel_id
             );
+
             if ($channelObj !== null) {
                 if ($hasThread) {
                     if (!empty($channelObj->threads->first())) {
@@ -237,12 +255,32 @@ class DiscordObjectiveChannels
                                 && ($creation
                                     ? $channel->start_thread_id
                                     : $channel->end_thread_id) == $thread->id) {
+                                $thread->getMessageHistory([
+                                    'limit' => 100,
+                                ])->done(function (Collection $messages) use ($channel, $channelObj) {
+                                    foreach ($messages as $message) {
+                                        $this->messages[$this->plan->utilities->hash(
+                                            $channelObj->guild_id,
+                                            $channelObj->id,
+                                            $message->id)] = array($channel, $message);
+                                    }
+                                });
                                 return $thread;
                             }
                         }
                     }
                     $this->createThread($channel, $channelObj, $creation);
                 } else {
+                    $channelObj->getMessageHistory([
+                        'limit' => 100,
+                    ])->done(function (Collection $messages) use ($channel, $channelObj) {
+                        foreach ($messages as $message) {
+                            $this->messages[$this->plan->utilities->hash(
+                                $channelObj->guild_id,
+                                $channelObj->id,
+                                $message->id)] = array($channel, $message);
+                        }
+                    });
                     return $channelObj;
                 }
             } else {
