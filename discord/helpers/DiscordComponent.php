@@ -209,17 +209,19 @@ class DiscordComponent
 
     public function handleReaction(MessageReaction $reaction): void
     {
-        $reactionObjects = $this->reactions[$reaction->message_id] ?? null;
+        if ($reaction->member->id != $this->plan->bot->botID) {
+            $reactionObjects = $this->reactions[$reaction->message_id] ?? null;
 
-        if (!empty($reactionObjects)) {
-            $reactionObject = $reactionObjects[$reaction->emoji->name] ?? null;
+            if (!empty($reactionObjects)) {
+                $reactionObject = $reactionObjects[$reaction->emoji->name] ?? null;
 
-            if ($reactionObject !== null) {
-                $this->plan->listener->callReactionCreation(
-                    $reaction,
-                    $reactionObject->listener_class,
-                    $reactionObject->listener_method
-                );
+                if ($reactionObject !== null) {
+                    $this->plan->listener->callReactionCreation(
+                        $reaction,
+                        $reactionObject->listener_class,
+                        $reactionObject->listener_method
+                    );
+                }
             }
         }
     }

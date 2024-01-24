@@ -3,19 +3,22 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
+use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordAIMessages
 {
     private DiscordPlan $plan;
     public ?array $model;
-    private array $messageCounter;
+    private array $messageCounter, $messageReplies, $messageFeedback;
 
-    private const REACTION_COMPONENT_NAME = "positive_negative";
+    private const REACTION_COMPONENT_NAME = "general-feedback";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
         $this->messageCounter = array();
+        $this->messageReplies = array();
+        $this->messageFeedback = array();
         $query = get_sql_query(
             BotDatabaseTable::BOT_AI_CHAT_MODEL,
             null,
@@ -142,7 +145,7 @@ class DiscordAIMessages
             : $this?->model[0];
     }
 
-    public function getChatAI(?int $channelID = null): ?ChatAI
+    public function getChatAI(?int $channelID = null): mixed
     {
         return $this->getModel($channelID)?->chatAI;
     }
@@ -310,6 +313,8 @@ class DiscordAIMessages
                                                     set_key_value_pair($cacheKey, $reply);
                                                     $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
                                                     $this->plan->utilities->replyMessageInPieces($message, $reply);
+                                                    $this->messageReplies[$message->id] = $message;
+                                                    $this->messageFeedback[$message->id] = array();
                                                 }
                                             });
                                         }
@@ -725,5 +730,75 @@ class DiscordAIMessages
             }
         }
         return $array;
+    }
+
+    // Separator
+
+    public function sendFeedback(MessageReaction $reaction, int $value): void
+    {
+        $message = $this->messageReplies[$reaction->message_id] ?? null;
+
+        if ($message !== null
+            && !empty($message->mentions->first())
+            && !in_array($reaction->member->id, $this->messageFeedback[$message->id])) {
+            $channel = $this->plan->utilities->getChannel($message->channel);
+
+            if (!empty(get_sql_query(
+                BotDatabaseTable::BOT_AI_FEEDBACK,
+                null,
+                array(
+                    array("server_id", $message->guild_id),
+                    array("channel_id", $channel->id),
+                    array("thread_id", $message->thread?->id),
+                    array("message_id", $message->id),
+                    array("user_id", $reaction->member->id),
+                    array("deletion_date", null),
+                ),
+                null,
+                1
+            ))) {
+                return;
+            }
+            $found = false;
+            $date = get_current_date();
+
+            foreach ($message->mentions as $mention) {
+                if ($reaction->member->id == $mention->id) {
+                    $found = true;
+                    $this->messageFeedback[$message->id][] = $reaction->member->id;
+                    sql_insert(
+                        BotDatabaseTable::BOT_AI_FEEDBACK,
+                        array(
+                            "plan_id" => $this->plan->planID,
+                            "server_id" => $message->guild_id,
+                            "channel_id" => $channel->id,
+                            "thread_id" => $message->thread?->id,
+                            "user_id" => $reaction->member->id,
+                            "assisted_user" => 1,
+                            "message_id" => $message->id,
+                            "value" => $value,
+                            "creation_date" => $date,
+                        )
+                    );
+                }
+            }
+
+            if (!$found) {
+                $this->messageFeedback[$message->id][] = $reaction->member->id;
+                sql_insert(
+                    BotDatabaseTable::BOT_AI_FEEDBACK,
+                    array(
+                        "plan_id" => $this->plan->planID,
+                        "server_id" => $message->guild_id,
+                        "channel_id" => $channel->id,
+                        "thread_id" => $message->thread?->id,
+                        "user_id" => $reaction->member->id,
+                        "message_id" => $message->id,
+                        "value" => $value,
+                        "creation_date" => $date,
+                    )
+                );
+            }
+        }
     }
 }
