@@ -103,11 +103,14 @@ class DiscordObjectiveChannels
             $data = $this->messages[$hash];
             $channel = $this->getChannel($data[0], true);
 
-            if ($channel !== null) {
+            if ($channel !== null
+                && $channel->allowText()
+                && $channel->guild_id == $message->guild_id) {
                 if (set_sql_query(
                     BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
                     array(
                         "message_content" => $message->content,
+                        "edited" => true
                     ),
                     array(
                         array("start_server_id", $message->guild_id),
@@ -152,8 +155,11 @@ class DiscordObjectiveChannels
             unset($this->messages[$hash]);
             $channel = $this->getChannel($data[0], false);
 
-            if ($channel !== null) {
+            if ($channel !== null
+                && $channel->allowText()
+                && $channel->guild_id == $message->guild_id) {
                 $message = $data[1];
+                $date = get_current_date();
                 $messageBuilder = MessageBuilder::new();
                 $embed = new Embed($this->plan->bot->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);
@@ -162,7 +168,8 @@ class DiscordObjectiveChannels
                 );
                 $messageBuilder->addEmbed($embed);
 
-                $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {
+                $channel->sendMessage($messageBuilder)->done(function (Message $endMessage)
+                use ($message, $date) {
                     $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
 
                     if (!set_sql_query(
@@ -174,7 +181,7 @@ class DiscordObjectiveChannels
                             "end_thread_id" => $endMessage->thread?->id,
                             "end_message_id" => $endMessage->id,
                             "end_user_id" => $endMessage->user_id,
-                            "transfer_date" => get_current_date()
+                            "transfer_date" => $date
                         ),
                         array(
                             array("start_server_id", $message->guild_id),
