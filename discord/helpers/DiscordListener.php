@@ -260,7 +260,7 @@ class DiscordListener
         return $messageBuilder;
     }
 
-    public function callNotificationMessageImplementation(object  $message,
+    public function callNotificationMessageImplementation(string  $message,
                                                           ?string $class, ?string $method,
                                                           object  $object): string
     {

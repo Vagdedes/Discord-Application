@@ -55,4 +55,9 @@ class DiscordTransferredMessages
     {
 
     }
+
+    private function getMessage()
+    {
+
+    }
 }
