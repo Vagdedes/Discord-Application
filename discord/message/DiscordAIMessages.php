@@ -208,7 +208,7 @@ class DiscordAIMessages
                             if (get_key_value_pair($cooldownKey) === null) {
                                 set_key_value_pair($cooldownKey, true);
                                 if ($member->id != $this->plan->bot->botID) {
-                                    if ($channel->require_mention) {
+                                    if ($channel->require_mention !== null) {
                                         $mention = false;
 
                                         if (!empty($originalMessage->mentions->first())) {
@@ -227,6 +227,17 @@ class DiscordAIMessages
                                                             break 2;
                                                         }
                                                     }
+                                                }
+                                            }
+                                        }
+                                    } else if ($channel->ignore_mention !== null) {
+                                        $mention = true;
+
+                                        if (!empty($originalMessage->mentions->first())) {
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                    $mention = false;
+                                                    break;
                                                 }
                                             }
                                         }
