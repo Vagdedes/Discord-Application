@@ -89,7 +89,7 @@ class DiscordCountingChannels
                                                     }
                                                 }
 
-                                                if ($count >= $row->max_repetitions) {
+                                                if ($count == $row->max_repetitions) {
                                                     $this->sendNotification($row, $message, "Too Many Repetitions");
                                                     return true;
                                                 }

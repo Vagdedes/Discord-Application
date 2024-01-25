@@ -157,7 +157,9 @@ class DiscordObjectiveChannels
                 $messageBuilder = MessageBuilder::new();
                 $embed = new Embed($this->plan->bot->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);
-                $embed->setDescription($message->content);
+                $embed->setDescription(
+                    DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
+                );
                 $messageBuilder->addEmbed($embed);
 
                 $channel->sendMessage($messageBuilder)->done(function (Message $endMessage) use ($message) {

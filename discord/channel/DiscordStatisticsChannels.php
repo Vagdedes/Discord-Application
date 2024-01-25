@@ -309,7 +309,7 @@ class DiscordStatisticsChannels
                 break;
         }
         if ($statistic !== null) {
-            $statistic = number_format($statistic, 0, ",", ".");
+            $statistic = number_format($statistic);
             return $placeholder . $statistic;
         } else {
             return null;
