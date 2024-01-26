@@ -96,8 +96,7 @@ class DiscordReminderMessages
                     $row,
                     $this->plan->instructions->getObject(
                         $channel->guild,
-                        $channel instanceof Channel ? $channel : $channel->parent_id,
-                        $channel instanceof Thread ? $channel : null
+                        $channel
                     )
                 );
                 if ($messageBuilder !== null) {

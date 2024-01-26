@@ -235,7 +235,6 @@ class DiscordUserQuestionnaire
                                                 $this->plan->instructions->getObject(
                                                     $member->guild,
                                                     $channel,
-                                                    null,
                                                     $member
                                                 )
                                             )[0]
@@ -246,7 +245,6 @@ class DiscordUserQuestionnaire
                                             $this->plan->instructions->getObject(
                                                 $member->guild,
                                                 $channel,
-                                                null,
                                                 $member
                                             )
                                         );
@@ -277,7 +275,6 @@ class DiscordUserQuestionnaire
                                             $this->plan->instructions->getObject(
                                                 $member->guild,
                                                 $channel,
-                                                null,
                                                 $member
                                             )
                                         )[0]
@@ -289,7 +286,6 @@ class DiscordUserQuestionnaire
                                             $this->plan->instructions->getObject(
                                                 $member->guild,
                                                 $channel,
-                                                null,
                                                 $member
                                             )
                                         )

@@ -69,7 +69,6 @@ class DiscordComponent
                 $object = $this->plan->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
-                    $interaction->message?->thread,
                     $interaction->user,
                     $interaction->message,
                 );
@@ -507,7 +506,6 @@ class DiscordComponent
                     $this->plan->instructions->getObject(
                         $interaction->guild,
                         $interaction->channel,
-                        $interaction->message?->thread,
                         $interaction->user,
                         $interaction->message,
                     ))[0]

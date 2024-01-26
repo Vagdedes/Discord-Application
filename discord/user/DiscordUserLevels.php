@@ -195,9 +195,6 @@ class DiscordUserLevels
                         $this->plan->instructions->getObject(
                             $channel->guild,
                             $channel,
-                            $reference instanceof Message
-                                ? $reference->thread
-                                : ($reference instanceof MessageReaction ? $reference->message->thread : null),
                             $user,
                             $reference instanceof Message
                                 ? $reference

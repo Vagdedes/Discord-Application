@@ -203,7 +203,6 @@ class DiscordUserTargets
                                         $this->plan->instructions->getObject(
                                             $member->guild,
                                             $channel,
-                                            null,
                                             $member
                                         )
                                     )[0]
@@ -229,7 +228,6 @@ class DiscordUserTargets
                                     $this->plan->instructions->getObject(
                                         $member->guild,
                                         $channel,
-                                        null,
                                         $member
                                     )
                                 )[0]

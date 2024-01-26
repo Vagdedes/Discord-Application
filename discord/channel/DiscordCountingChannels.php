@@ -251,7 +251,6 @@ class DiscordCountingChannels
                             $this->plan->instructions->getObject(
                                 $message->guild,
                                 $message->channel,
-                                $message->thread,
                                 $message->member,
                                 $message
                             )

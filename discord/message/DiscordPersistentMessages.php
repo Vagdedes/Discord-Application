@@ -77,7 +77,6 @@ class DiscordPersistentMessages
         $object = $this->plan->instructions->getObject(
             $interaction->guild,
             $interaction->channel,
-            $interaction->message?->thread,
             $interaction->user,
             $interaction->message,
         );
@@ -146,7 +145,6 @@ class DiscordPersistentMessages
                 $this->plan->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
-                    $interaction->message?->thread,
                     $interaction->member,
                     $interaction->message
                 )

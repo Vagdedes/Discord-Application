@@ -109,21 +109,24 @@ class DiscordInstructions
 
     public function getObject(?Guild              $server = null,
                               Channel|Thread|null $channel = null,
-                              ?Thread             $thread = null,
                               Member|User|null    $user = null,
                               ?Message            $message = null): object
     {
         $object = new stdClass();
         $object->serverID = $server?->id;
         $object->serverName = $server?->name;
-        $object->channelID = $channel instanceof Thread
-            ? $channel->parent?->id
-            : $channel?->id;
-        $object->channelName = $channel instanceof Thread
-            ? $channel->parent?->name
-            : $channel?->name;
-        $object->threadID = $thread?->id;
-        $object->threadName = $thread?->name;
+
+        if ($channel instanceof Thread) {
+            $object->channelID = $channel->parent->id;
+            $object->channelName = $channel->parent->name;
+            $object->threadID = $channel->id;
+            $object->threadName = $channel->name;
+        } else {
+            $object->channelID = $channel?->id;
+            $object->channelName = $channel?->name;
+            $object->threadID = null;
+            $object->threadName = null;
+        }
         $object->userID = $user?->id;
         $object->userTag = "<@" . $object->userID . ">";
         $object->userName = $user?->username;

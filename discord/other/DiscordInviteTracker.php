@@ -267,7 +267,6 @@ class DiscordInviteTracker
                         $this->plan->instructions->getObject(
                             $invite->guild,
                             $invite->channel,
-                            null,
                             $invite->inviter
                         ),
                     );

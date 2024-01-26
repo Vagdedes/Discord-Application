@@ -104,7 +104,6 @@ class DiscordObjectiveChannels
             $channel = $this->getChannel($data[0], true);
 
             if ($channel !== null
-                && $channel->allowText()
                 && $channel->guild_id == $message->guild_id) {
                 if (set_sql_query(
                     BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
@@ -156,7 +155,6 @@ class DiscordObjectiveChannels
             $channel = $this->getChannel($data[0], false);
 
             if ($channel !== null
-                && $channel->allowText()
                 && $channel->guild_id == $message->guild_id) {
                 $message = $data[1];
                 $date = get_current_date();
@@ -304,7 +302,8 @@ class DiscordObjectiveChannels
                     : $channel->end_channel_id
             );
 
-            if ($channelObj !== null) {
+            if ($channelObj !== null
+                && $channelObj->allowText()) {
                 if ($hasThread) {
                     if (!empty($channelObj->threads->first())) {
                         foreach ($channelObj->threads as $thread) {

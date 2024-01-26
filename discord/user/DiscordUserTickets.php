@@ -62,7 +62,6 @@ class DiscordUserTickets
         $object = $this->plan->instructions->getObject(
             $interaction->guild,
             $interaction->channel,
-            $interaction->message?->thread,
             $interaction->user,
             $interaction->message,
         );

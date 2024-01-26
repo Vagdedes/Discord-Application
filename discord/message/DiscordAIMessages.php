@@ -158,7 +158,6 @@ class DiscordAIMessages
         $object = $this->plan->instructions->getObject(
             $originalMessage->guild,
             $originalMessage->channel,
-            $originalMessage->thread,
             $member,
             $originalMessage
         );
