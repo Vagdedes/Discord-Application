@@ -342,12 +342,14 @@ class DiscordComponent
                             }, $this->plan->bot->discord);
                         }
                     }
-                    $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
-                        $interaction,
-                        $messageBuilder,
-                        $buttonObject->creation_listener_class,
-                        $buttonObject->creation_listener_method
-                    );
+                    if ($listener) {
+                        $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                            $interaction,
+                            $messageBuilder,
+                            $buttonObject->creation_listener_class,
+                            $buttonObject->creation_listener_method
+                        );
+                    }
                 }
                 $messageBuilder->addComponent($actionRow);
             }
@@ -440,13 +442,15 @@ class DiscordComponent
                     $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
-                $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
-                    $interaction,
-                    $messageBuilder,
-                    $query->creation_listener_class,
-                    $query->creation_listener_method
-                );
 
+                if ($listener) {
+                    $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                        $interaction,
+                        $messageBuilder,
+                        $query->creation_listener_class,
+                        $query->creation_listener_method
+                    );
+                }
                 if (!$select->isDisabled()) {
                     $select->setListener(function (Interaction $interaction, Collection $options)
                     use ($query, $select, $messageBuilder) {

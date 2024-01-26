@@ -49,11 +49,12 @@ class DiscordPersistentMessages
         $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
-            $this->plan->utilities->acknowledgeMessage(
-                $interaction,
-                $this->build($interaction, $message),
-                $ephemeral
-            );
+            $interaction->acknowledge()->done(function () use ($interaction, $ephemeral, $message) {
+                $interaction->sendFollowUpMessage(
+                    $this->build($interaction, $message),
+                    $ephemeral
+                );
+            });
             return true;
         } else {
             return false;
@@ -157,13 +158,13 @@ class DiscordPersistentMessages
             $interaction,
             $messageBuilder,
             $messageRow->id,
-            false
+            $messageRow->listener_recursion !== null
         );
         $messageBuilder = $this->plan->component->addSelection(
             $interaction,
             $messageBuilder,
             $messageRow->id,
-            false
+            $messageRow->listener_recursion !== null
         );
         $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
             $interaction,

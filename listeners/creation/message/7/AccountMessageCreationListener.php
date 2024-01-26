@@ -35,9 +35,6 @@ class AccountMessageCreationListener
     public static function findAccountFromSession(?Interaction $interaction,
                                                   DiscordPlan  $plan): ?object
     {
-        if ($interaction === null) {
-            return null;
-        }
         $account = self::getAccountObject($interaction, $plan);
         $method = $account->getSession()->find();
 
@@ -454,27 +451,25 @@ class AccountMessageCreationListener
                                            ?Interaction   $interaction,
                                            MessageBuilder $messageBuilder): MessageBuilder
     {
-        if ($interaction !== null) {
-            $account = self::findAccountFromSession($interaction, $plan);
+        $account = self::findAccountFromSession($interaction, $plan);
 
-            if ($account !== null) {
-                foreach ($messageBuilder->getComponents() as $component) {
-                    if ($component instanceof SelectMenu) {
-                        foreach ($component->getOptions() as $option) {
-                            if ($option instanceof Option) {
-                                $option->setDescription(
-                                    $account->getSettings()->isEnabled($option->getValue())
-                                        ? "Enabled"
-                                        : "Disabled"
-                                );
-                            }
+        if ($account !== null) {
+            foreach ($messageBuilder->getComponents() as $component) {
+                if ($component instanceof SelectMenu) {
+                    foreach ($component->getOptions() as $option) {
+                        if ($option instanceof Option) {
+                            $option->setDescription(
+                                $account->getSettings()->isEnabled($option->getValue())
+                                    ? "Enabled"
+                                    : "Disabled"
+                            );
                         }
-                        break;
                     }
+                    break;
                 }
-            } else {
-                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
             }
+        } else {
+            $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
         }
         return $messageBuilder;
     }
@@ -484,57 +479,55 @@ class AccountMessageCreationListener
                                            MessageBuilder $messageBuilder,
                                            bool           $addIfEmpty = true): MessageBuilder
     {
-        if ($interaction !== null) {
-            $account = self::findAccountFromSession($interaction, $plan);
+        $account = self::findAccountFromSession($interaction, $plan);
 
-            if ($account !== null) {
-                foreach ($messageBuilder->getComponents() as $component) {
-                    if ($component instanceof SelectMenu) {
-                        $accounts = $account->getAccounts()->getAvailable(array("id", "name"));
+        if ($account !== null) {
+            foreach ($messageBuilder->getComponents() as $component) {
+                if ($component instanceof SelectMenu) {
+                    $accounts = $account->getAccounts()->getAvailable(array("id", "name"));
 
-                        foreach ($component->getOptions() as $option) {
-                            $component->removeOption($option);
-                        }
-                        if (!empty($accounts)) {
-                            $added = false;
-
-                            foreach ($accounts as $accountObject) {
-                                $description = $account->getAccounts()->getAdded(
-                                    $accountObject->id,
-                                    DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
-                                    true
-                                );
-
-                                if (!empty($description)) {
-                                    $option = Option::new($accountObject->name, $accountObject->id);
-                                    $added = true;
-                                    $rows = array();
-
-                                    foreach ($description as $row) {
-                                        $rows[] = $row->credential;
-                                    }
-                                    $option->setDescription(substr(implode(", ", $rows), 0, 100));
-                                    $component->addOption($option);
-                                } else if ($addIfEmpty) {
-                                    $added = true;
-                                    $option = Option::new($accountObject->name, $accountObject->id);
-                                    $option->setDescription("No accounts added.");
-                                    $component->addOption($option);
-                                }
-                            }
-
-                            if (!$added) {
-                                $component->addOption(Option::new("No accounts added."));
-                            }
-                        } else {
-                            $component->addOption(Option::new("No accounts available to add."));
-                        }
-                        break;
+                    foreach ($component->getOptions() as $option) {
+                        $component->removeOption($option);
                     }
+                    if (!empty($accounts)) {
+                        $added = false;
+
+                        foreach ($accounts as $accountObject) {
+                            $description = $account->getAccounts()->getAdded(
+                                $accountObject->id,
+                                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+                                true
+                            );
+
+                            if (!empty($description)) {
+                                $option = Option::new($accountObject->name, $accountObject->id);
+                                $added = true;
+                                $rows = array();
+
+                                foreach ($description as $row) {
+                                    $rows[] = $row->credential;
+                                }
+                                $option->setDescription(substr(implode(", ", $rows), 0, 100));
+                                $component->addOption($option);
+                            } else if ($addIfEmpty) {
+                                $added = true;
+                                $option = Option::new($accountObject->name, $accountObject->id);
+                                $option->setDescription("No accounts added.");
+                                $component->addOption($option);
+                            }
+                        }
+
+                        if (!$added) {
+                            $component->addOption(Option::new("No accounts added."));
+                        }
+                    } else {
+                        $component->addOption(Option::new("No accounts available to add."));
+                    }
+                    break;
                 }
-            } else {
-                $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
             }
+        } else {
+            $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
         }
         return $messageBuilder;
     }

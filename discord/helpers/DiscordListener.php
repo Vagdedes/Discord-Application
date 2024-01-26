@@ -87,11 +87,10 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
-            $outcome = call_user_func_array(
+            return call_user_func_array(
                 array($class, $method),
                 array($this->plan, $interaction, $messageBuilder)
             );
-            return $outcome;
         } else {
             return $messageBuilder;
         }
