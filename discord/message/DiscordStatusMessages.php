@@ -8,7 +8,7 @@ class DiscordStatusMessages
 {
     private DiscordPlan $plan;
 
-    private const
+    public const
         WELCOME = 1,
         GOODBYE = 2;
 
@@ -17,74 +17,36 @@ class DiscordStatusMessages
         $this->plan = $plan;
     }
 
-    public function welcome(Member $member): void
+    public function run(Member $member, int $type): void
     {
         $serverID = $member->guild_id;
         $userID = $member->id;
 
-        if (!$this->hasCooldown($serverID, $userID, self::WELCOME)
+        if (!$this->hasCooldown($serverID, $userID, $type)
             && !empty($this->plan->channels->getList())) {
             foreach ($this->plan->channels->getList() as $channel) {
                 if ($channel->server_id == $serverID
-                    && $channel->welcome_message !== null) {
+                    && $channel->{$type === self::WELCOME ? "welcome_message" : "goodbye_message"} !== null) {
                     if ($channel->whitelist === null) {
                         $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                         if ($channelFound !== null
-                            && $channelFound->allowText()) {
-                            $this->process($channelFound, $member, $channel, self::WELCOME);
+                            && $channelFound->allowText()
+                            && $channelFound->guild_id == $serverID) {
+                            $this->process($channelFound, $member, $channel, $type);
                         }
                     } else if (!empty($this->plan->channels->getWhitelist())) {
                         foreach ($this->plan->channels->getWhitelist() as $whitelist) {
                             if ($whitelist->user_id == $userID
                                 && ($whitelist->server_id === null
-                                    || $whitelist->server_id === $serverID
-                                    && ($whitelist->channel_id === null
-                                        || $whitelist->channel_id === $channel->channel_id))) {
+                                    || $whitelist->server_id == $serverID
+                                    && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id))) {
                                 $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                                 if ($channelFound !== null
-                                    && $channelFound->allowText()) {
-                                    $this->process($channelFound, $member, $channel, self::WELCOME);
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public function goodbye(Member $member): void
-    {
-        $serverID = $member->guild_id;
-        $userID = $member->id;
-
-        if (!$this->hasCooldown($serverID, $userID, self::GOODBYE)
-            && !empty($this->plan->channels->getList())) {
-            foreach ($this->plan->channels->getList() as $channel) {
-                if ($channel->server_id == $serverID
-                    && $channel->goodbye_message !== null) {
-                    if ($channel->whitelist === null) {
-                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
-
-                        if ($channelFound !== null
-                            && $channelFound->allowText()) {
-                            $this->process($channelFound, $member, $channel, self::GOODBYE);
-                        }
-                    } else if (!empty($this->plan->channels->getWhitelist())) {
-                        foreach ($this->plan->channels->getWhitelist() as $whitelist) {
-                            if ($whitelist->user_id == $userID
-                                && ($whitelist->server_id === null
-                                    || $whitelist->server_id === $serverID
-                                    && ($whitelist->channel_id === null
-                                        || $whitelist->channel_id === $channel->channel_id))) {
-                                $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
-
-                                if ($channelFound !== null
-                                    && $channelFound->allowText()) {
-                                    $this->process($channelFound, $member, $channel, self::GOODBYE);
+                                    && $channelFound->allowText()
+                                    && $channelFound->guild_id == $serverID) {
+                                    $this->process($channelFound, $member, $channel, $type);
                                 }
                                 break;
                             }
@@ -109,7 +71,7 @@ class DiscordStatusMessages
                         $channel,
                         $member,
                         MessageBuilder::new()->setContent(
-                            "<@" . $member->id . "> " . $object->welcome_message
+                            $this->plan->instructions->replace(array($object->welcome_message), $object)[0]
                         ),
                         $object,
                         $case
@@ -125,7 +87,7 @@ class DiscordStatusMessages
                         $channel,
                         $member,
                         MessageBuilder::new()->setContent(
-                            $member->username . " " . $object->goodbye_message
+                            $this->plan->instructions->replace(array($object->goodbye_message), $object)[0]
                         ),
                         $object,
                         $case

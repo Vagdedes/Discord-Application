@@ -443,8 +443,9 @@ class DiscordAIMessages
                     if ($content == DiscordProperties::NO_REPLY) {
                         return null;
                     } else {
-                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
-
+                        if (!empty($systemInstructions[1])) {
+                            $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
+                        }
                         if ($hasMessage) {
                             $reference = $source->message_reference;
 

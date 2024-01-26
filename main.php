@@ -409,7 +409,7 @@ function initiate_discord_bot(): void
         $discord->on(Event::GUILD_MEMBER_REMOVE, function (mixed $member, Discord $discord) use ($logger, $createdDiscordBot) {
             if ($member instanceof Member) {
                 foreach ($createdDiscordBot->plans as $plan) {
-                    $plan->statusMessages->goodbye($member);
+                    $plan->statusMessages->run($member, DiscordStatusMessages::GOODBYE);
                     $plan->statisticsChannels->refresh();
                 }
                 $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
@@ -420,7 +420,7 @@ function initiate_discord_bot(): void
 
         $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $createdDiscordBot) {
             foreach ($createdDiscordBot->plans as $plan) {
-                $plan->statusMessages->welcome($member);
+                $plan->statusMessages->run($member, DiscordStatusMessages::WELCOME);
                 $plan->statisticsChannels->refresh();
             }
             $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());

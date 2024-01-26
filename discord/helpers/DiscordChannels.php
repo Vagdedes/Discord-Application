@@ -121,6 +121,7 @@ class DiscordChannels
             $object->whitelist = null;
             $object->debug = null;
             $object->require_mention = null;
+            $object->ignore_mention = null;
             $object->strict_reply = null;
             $object->require_starting_text = null;
             $object->require_contained_text = null;

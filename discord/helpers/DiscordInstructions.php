@@ -125,6 +125,7 @@ class DiscordInstructions
         $object->threadID = $thread?->id;
         $object->threadName = $thread?->name;
         $object->userID = $user?->id;
+        $object->userTag = "<@" . $object->userID . ">";
         $object->userName = $user?->username;
         $object->displayName = $user?->displayname;
         $object->messageContent = $message?->content;
