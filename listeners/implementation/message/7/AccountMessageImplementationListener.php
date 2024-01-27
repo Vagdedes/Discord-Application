@@ -293,26 +293,35 @@ class AccountMessageImplementationListener
                     );
 
                     if (!empty($accounts)) {
-                        $selectedAccountName = $selectedAccountName[0]->name;
-                        $messageBuilder = MessageBuilder::new();
-                        $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
-                        $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
-
-                        foreach ($accounts as $row) {
-                            $option = Option::new(substr($row->credential, 0, 100), $row->id);
-                            $select->addOption($option);
-                        }
-                        $select->setListener(function (Interaction $interaction, Collection $options)
-                        use ($plan, $account, $selectedAccountID) {
+                        if (sizeof($accounts) === 1) {
                             $plan->utilities->acknowledgeMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent(
-                                    $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                                    $account->getAccounts()->remove($selectedAccountID, $accounts[0]->id, 1)->getMessage()
                                 ), true
                             );
-                        }, $plan->bot->discord);
-                        $messageBuilder->addComponent($select);
-                        $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        } else {
+                            $selectedAccountName = $selectedAccountName[0]->name;
+                            $messageBuilder = MessageBuilder::new();
+                            $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
+                            $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
+
+                            foreach ($accounts as $row) {
+                                $option = Option::new(substr($row->credential, 0, 100), $row->id);
+                                $select->addOption($option);
+                            }
+                            $select->setListener(function (Interaction $interaction, Collection $options)
+                            use ($plan, $account, $selectedAccountID) {
+                                $plan->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    MessageBuilder::new()->setContent(
+                                        $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                                    ), true
+                                );
+                            }, $plan->bot->discord);
+                            $messageBuilder->addComponent($select);
+                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
+                        }
                     } else {
                         $plan->utilities->acknowledgeMessage(
                             $interaction,
