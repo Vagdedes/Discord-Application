@@ -80,8 +80,7 @@ class DiscordMessageNotifications
                     && $notification->server_id == $thread->guild_id
                     && ($notification->category_id === null || $notification->category_id == $thread->parent->parent_id)
                     && ($notification->channel_id === null || $notification->channel_id == $thread->parent_id)) {
-                    $this->run($thread, $notification);
-                    $bool = true;
+                    $bool |= $this->run($thread, $notification);
                 }
             }
             return $bool;
@@ -89,9 +88,11 @@ class DiscordMessageNotifications
         return false;
     }
 
-    public function executeMessage(Message $message): void
+    public function executeMessage(Message $message): bool
     {
         if (!empty($this->notifications)) {
+            $bool = false;
+
             foreach ($this->notifications as $notification) {
                 if ($notification->is_thread === null
                     && $notification->server_id == $message->guild_id) {
@@ -101,14 +102,16 @@ class DiscordMessageNotifications
                     if (($notification->category_id === null || $notification->category_id == $channel->parent_id)
                         && ($notification->channel_id === null || $notification->channel_id == $channel->id)
                         && ($notification->thread_id === null || $original instanceof Thread && $notification->thread_id == $original->id)) {
-                        $this->run($message, $notification);
+                        $bool |= $this->run($message, $notification);
                     }
                 }
             }
+            return $bool;
         }
+        return false;
     }
 
-    private function run(Message|Thread $originalMessage, object $notification): void
+    private function run(Message|Thread $originalMessage, object $notification): bool
     {
         $date = get_current_date();
         $isThread = $originalMessage instanceof Thread;
@@ -128,7 +131,7 @@ class DiscordMessageNotifications
             null,
             1
         ))) {
-            return;
+            return false;
         }
 
         if (!empty($notification->roles)) {
@@ -143,12 +146,12 @@ class DiscordMessageNotifications
                         $has = true;
                     }
                 } else if ($this->plan->permissions->hasRole($user, $role->role_id)) {
-                    return;
+                    return false;
                 }
             }
 
             if ($dealtHas && $has) {
-                return;
+                return false;
             }
         }
         $original = $isThread ? $originalMessage : $originalMessage->channel;
@@ -174,24 +177,29 @@ class DiscordMessageNotifications
         }
         $builder = MessageBuilder::new()->setContent(
             $this->plan->listener->callNotificationMessageImplementation(
-            $notificationMessage,
-            $notification->listener_class,
-            $notification->listener_method,
-            $notification
-        )
-    );
+                $notificationMessage,
+                $notification->listener_class,
+                $notification->listener_method,
+                $notification
+            )
+        );
+        $lockThread = $notification->lock_thread !== null;
+        $deleteMessage = $notification->delete_message !== null;
 
         $original->sendMessage($builder)->done(
             function (Message $message)
-            use ($original, $notificationMessage, $notification, $isThread, $originalMessage, $date, $user) {
+            use (
+                $original, $notificationMessage, $notification, $isThread,
+                $originalMessage, $date, $user, $lockThread, $deleteMessage
+            ) {
                 $channel = $isThread ? $originalMessage->parent : $this->plan->utilities->getChannel($original);
 
                 if ($isThread) {
-                    if ($notification->lock_thread !== null) {
+                    if ($lockThread) {
                         $original->locked = true;
                         $channel->threads->save($original);
                     }
-                } else if ($notification->delete_message !== null) {
+                } else if ($deleteMessage) {
                     $originalMessage->delete();
                 }
                 if (!sql_insert(
@@ -217,5 +225,6 @@ class DiscordMessageNotifications
                 }
             }
         );
+        return $lockThread || $deleteMessage;
     }
 }

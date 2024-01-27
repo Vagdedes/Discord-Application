@@ -6,7 +6,7 @@ use Discord\Parts\Guild\Guild;
 class DiscordInviteTracker
 {
     private DiscordPlan $plan;
-    private array $goals;
+    private array $goals, $cached_invites;
     private int $invite_links, $invited_users;
 
     private static bool $isInitialized = false;
@@ -18,6 +18,7 @@ class DiscordInviteTracker
         $this->plan = $plan;
         $this->invite_links = 0;
         $this->invited_users = 0;
+        $this->cached_invites = array();
         $this->goals = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER_GOALS,
             null,
@@ -143,11 +144,19 @@ class DiscordInviteTracker
         }
     }
 
+    public function getInvite(Guild $guild): ?string
+    {
+        return $this->cached_invites[$guild->id][0] ?? null;
+    }
+
     public function track(Guild $guild): void
     {
         $this->invite_links = 0;
-        $guild->getInvites()->done(function (mixed $invites) {
+        $guild->getInvites()->done(function (mixed $invites) use ($guild) {
+            $cached = array();
+
             foreach ($invites as $invite) {
+                $cached[] = $invite->invite_url;
                 $totalUses = $invite->uses ?? null;
                 $code = $invite->code ?? null;
                 $serverID = $invite->guild_id ?? null;
@@ -226,6 +235,7 @@ class DiscordInviteTracker
                     }
                 }
             }
+            $this->cached_invites[$guild->id] = $cached;
         });
     }
 
