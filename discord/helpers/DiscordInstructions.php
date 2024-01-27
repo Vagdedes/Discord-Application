@@ -25,6 +25,8 @@ class DiscordInstructions
     }
 
     public function replace(array  $messages, ?object $object,
+                            ?array $allow = null,
+                            ?array $dismiss = null,
                             string $placeholderStart = self::DEFAULT_PLACEHOLDER_START,
                             string $placeholderMiddle = self::DEFAULT_PLACEHOLDER_MIDDLE,
                             string $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
@@ -38,7 +40,10 @@ class DiscordInstructions
                 $messages,
                 $object,
                 array(
-                    "publicInstructions" => array($this->instructions, "getPublic", array()),
+                    "publicInstructions" => array($this->instructions, "getPublic", array(
+                        $allow,
+                        $dismiss
+                    )),
                     "botReplies" => array($this->plan->aiMessages, "getReplies", array(
                         $object->serverID,
                         $object->channelID,

@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Parts\Channel\Message;
+
 class DiscordChatFilteredMessages
 {
     private DiscordPlan $plan;
@@ -12,6 +14,8 @@ class DiscordChatFilteredMessages
         $this->plan = $plan;
     }
 
-    //todo keywords to trigger if not empty
-    //todo use of ai with specific return constants/enums for handling
+    public function run(Message $message): ?string
+    {
+        return false;
+    }
 }
