@@ -206,7 +206,7 @@ function initiate_discord_bot(): void
                 $plan->objectiveChannels->trackDeletion($message);
                 $plan->tranferredMessages->trackDeletion($message);
             }
-            $logger->logInfo($message?->guild, null, Event::MESSAGE_DELETE, $message);
+            $logger->logInfo($message?->guild_id, null, Event::MESSAGE_DELETE, $message);
         });
 
         $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $createdDiscordBot) {

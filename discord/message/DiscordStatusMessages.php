@@ -35,7 +35,7 @@ class DiscordStatusMessages
                         if ($channelFound !== null
                             && $channelFound->allowText()
                             && $channelFound->guild_id == $serverID) {
-                            $this->process($channelFound, $member, $channel, $messageColumn, $type);
+                            $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                         }
                     } else if (!empty($this->plan->channels->getWhitelist())) {
                         foreach ($this->plan->channels->getWhitelist() as $whitelist) {
@@ -48,7 +48,7 @@ class DiscordStatusMessages
                                 if ($channelFound !== null
                                     && $channelFound->allowText()
                                     && $channelFound->guild_id == $serverID) {
-                                    $this->process($channelFound, $member, $channel, $messageColumn, $type);
+                                    $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                                 }
                                 break;
                             }
@@ -93,7 +93,7 @@ class DiscordStatusMessages
 
     private function hasCooldown(Member $member, int $case): bool
     {
-        return !has_memory_cooldown(
+        return has_memory_cooldown(
             array(self::class, $member->guild_id, $member->id, $case),
             "5 minutes", false);
     }

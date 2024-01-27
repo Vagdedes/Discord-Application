@@ -32,11 +32,19 @@ class DiscordLogs
             );
     }
 
-    public function logInfo(?Guild          $guild,
+    public function logInfo(Guild|int|string|null          $guild,
                             int|string|null $userID, ?string $action,
                             mixed           $object, mixed $oldObject = null,
                             bool            $refresh = true): bool
     {
+        if ($guild !== null && !($guild instanceof Guild)) {
+            foreach ($this->bot?->discord->guilds as $guildFound) {
+                if ($guildFound->id == $guild) {
+                    $guild = $guildFound;
+                    break;
+                }
+            }
+        }
         $hasGuild = $guild !== null;
 
         if ($this->ignoreAction > 0) {
