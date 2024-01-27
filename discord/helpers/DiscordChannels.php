@@ -1,6 +1,8 @@
 <?php
 
 use Discord\Parts\Channel\Channel;
+use Discord\Parts\User\Member;
+use Discord\Parts\User\User;
 
 class DiscordChannels
 {
@@ -52,9 +54,15 @@ class DiscordChannels
         return $this->whitelist;
     }
 
-    public function getIfHasAccess(int|string $serverID, int|string $channelID, int|string $userID): ?object
+    public function getIfHasAccess(Channel $channel, Member|User $member): ?object
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID);
+        $cacheKey = array(
+            __METHOD__,
+            $this->plan->planID,
+            $channel->guild_id,
+            $channel->id,
+            $member->id,
+        );
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -64,21 +72,25 @@ class DiscordChannels
             $list = $this->getList();
 
             if (!empty($list)) {
-                foreach ($list as $channel) {
-                    if ($channel->server_id == $serverID
-                        && ($channel->channel_id == $channelID
-                            || $channel->channel_id === null)) {
-                        if ($channel->whitelist === null) {
-                            $result = $channel;
+                foreach ($list as $channelRow) {
+                    if ($channelRow->server_id == $channel->guild_id
+                        && ($channelRow->category_id === null
+                            || $channelRow->category_id == $channel->parent_id)
+                        && ($channelRow->channel_id === null
+                            || $channelRow->channel_id == $channel->id)) {
+                        if ($channelRow->whitelist === null) {
+                            $result = $channelRow;
                             break;
                         } else if (!empty($this->whitelist)) {
                             foreach ($this->whitelist as $whitelist) {
-                                if ($whitelist->user_id == $userID
+                                if ($whitelist->user_id == $member->id
                                     && ($whitelist->server_id === null
-                                        || $whitelist->server_id === $serverID
+                                        || $whitelist->server_id == $channel->guild_id
+                                        && ($whitelist->category_id === null
+                                            || $whitelist->category_id == $channel->parent_id)
                                         && ($whitelist->channel_id === null
-                                            || $whitelist->channel_id === $channelID))) {
-                                    $result = $channel;
+                                            || $whitelist->channel_id == $channel->id))) {
+                                    $result = $channelRow;
                                     break 2;
                                 }
                             }
@@ -117,7 +129,10 @@ class DiscordChannels
             }
             $object->plan_id = $this->plan->planID;
             $object->server_id = $channel->guild_id;
+            $object->category_id = $channel->parent_id;
             $object->channel_id = $channel->id;
+            $object->assistance = null;
+            $object->filter = null;
             $object->whitelist = null;
             $object->debug = null;
             $object->require_mention = null;

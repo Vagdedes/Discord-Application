@@ -91,6 +91,8 @@ class DiscordInstructions
                             $instruction->disclaimer
                         ),
                         $object,
+                        null,
+                        null,
                         $instruction->placeholder_start,
                         $instruction->placeholder_middle,
                         $instruction->placeholder_end
@@ -122,11 +124,13 @@ class DiscordInstructions
         $object->serverName = $server?->name;
 
         if ($channel instanceof Thread) {
+            $original = $channel->parent;
             $object->channelID = $channel->parent->id;
             $object->channelName = $channel->parent->name;
             $object->threadID = $channel->id;
             $object->threadName = $channel->name;
         } else {
+            $original = $channel;
             $object->channelID = $channel?->id;
             $object->channelName = $channel?->name;
             $object->threadID = null;
@@ -147,8 +151,8 @@ class DiscordInstructions
         $object->hour = date("H");
         $object->minute = date("i");
         $object->second = date("s");
-        $object->channel = $object->serverID === null || $object->channelID === null || $object->userID === null ? null
-            : $this->plan->channels->getIfHasAccess($object->serverID, $object->channelID, $object->userID);
+        $object->channel = $original === null || $user === null ? null
+            : $this->plan->channels->getIfHasAccess($original, $user);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

@@ -192,6 +192,7 @@ class DiscordUserTargets
                                 $this->plan->channels->addTemporary($channel, array(
                                     "message_retention" => "1 minute",
                                     "message_cooldown" => 1,
+                                    "assistance" => 1,
                                     "failure_message" => $query->failure_message,
                                     "cooldown_message" => $query->cooldown_message,
                                     "prompt_message" => $query->prompt_message,

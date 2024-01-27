@@ -184,7 +184,11 @@ class DiscordAIMessages
                     $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
             } else {
-                $filter = $this->plan->chatFilteredMessages->run($originalMessage);
+                $channel = $object->channel;
+                $foundChannel = $channel !== null;
+                $filter = $foundChannel && $channel->filter !== null
+                    ? $this->plan->chatFilteredMessages->run($originalMessage)
+                    : null;
 
                 if ($filter !== null) {
                     $originalMessage->delete();
@@ -201,172 +205,175 @@ class DiscordAIMessages
                         || $this->plan->userQuestionnaire->track($originalMessage, $object)
                         || $this->plan->countingChannels->track($originalMessage)
                         || $this->plan->objectiveChannels->trackCreation($originalMessage)
-                        || $this->plan->messageNotifications->executeMessage($originalMessage);
+                        || $this->plan->messageNotifications->executeMessage($originalMessage); //todo all
                     $this->plan->tranferredMessages->trackCreation($originalMessage);
 
-                    if (!$stop) {
-                        $channel = $object->channel;
+                    if (!$stop && $foundChannel) {
+                        $model = $this->getModel($channel->channel_id);
 
-                        if ($channel !== null) {
-                            $model = $this->getModel($channel->channel_id);
+                        if ($model !== null) {
+                            $chatAI = $model->chatAI;
 
-                            if ($model !== null) {
-                                $chatAI = $model->chatAI;
+                            if ($chatAI->exists) {
+                                $cooldownKey = array(__METHOD__, $this->plan->planID, $member->id);
 
-                                if ($chatAI->exists) {
-                                    $cooldownKey = array(__METHOD__, $this->plan->planID, $member->id);
-
-                                    if (get_key_value_pair($cooldownKey) === null) {
-                                        set_key_value_pair($cooldownKey, true);
-                                        if ($member->id != $this->plan->bot->botID) {
-                                            if ($channel->require_mention !== null) {
-                                                $mention = false;
-
-                                                if (!empty($originalMessage->mentions->first())) {
-                                                    foreach ($originalMessage->mentions as $userObj) {
-                                                        if ($userObj->id == $this->plan->bot->botID) {
-                                                            $mention = true;
-                                                            break;
-                                                        }
-                                                    }
-
-                                                    if (!$mention && !empty($model->mentions)) {
-                                                        foreach ($model->mentions as $alternativeMention) {
-                                                            foreach ($originalMessage->mentions as $userObj) {
-                                                                if ($userObj->id == $alternativeMention->user_id) {
-                                                                    $mention = true;
-                                                                    break 2;
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else if ($channel->ignore_mention !== null) {
-                                                $mention = true;
-
-                                                if (!empty($originalMessage->mentions->first())) {
-                                                    foreach ($originalMessage->mentions as $userObj) {
-                                                        if ($userObj->id == $this->plan->bot->botID) {
-                                                            $mention = false;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                $mention = true;
-                                            }
-
-                                            if (!$mention && !empty($model->keywords)) {
-                                                foreach ($model->keywords as $keyword) {
-                                                    if ($keyword->keyword !== null) {
-                                                        if (str_contains($messageContent, $keyword->keyword)) {
-                                                            $mention = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
+                                if (get_key_value_pair($cooldownKey) === null) {
+                                    set_key_value_pair($cooldownKey, true);
+                                    if ($member->id != $this->plan->bot->botID) {
+                                        if ($channel->require_mention !== null) {
                                             $mention = false;
-                                        }
 
-                                        if ($mention) {
-                                            $limits = $this->isLimited($model, $originalMessage);
+                                            if (!empty($originalMessage->mentions->first())) {
+                                                $secondCheck = true;
 
-                                            if (!empty($limits)) {
-                                                foreach ($limits as $limit) {
-                                                    if ($limit->message !== null) {
-                                                        $originalMessage->reply(MessageBuilder::new()->setContent(
-                                                            $this->plan->instructions->replace(array($limit->message), $object)[0]
-                                                        ));
+                                                foreach ($originalMessage->mentions as $userObj) {
+                                                    if ($userObj->id == $this->plan->bot->botID) {
+                                                        if ($channel->assistance !== null) {
+                                                            $mention = true;
+                                                        } else {
+                                                            $secondCheck = false;
+                                                        }
                                                         break;
                                                     }
                                                 }
-                                            } else {
-                                                $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
-                                                $cache = get_key_value_pair($cacheKey);
 
-                                                if ($cache !== null) {
-                                                    $this->plan->utilities->replyMessageInPieces($originalMessage, $cache);
-                                                } else {
-                                                    if ($channel->require_starting_text !== null
-                                                        && !starts_with($messageContent, $channel->require_starting_text)
-                                                        || $channel->require_contained_text !== null
-                                                        && !str_contains($messageContent, $channel->require_contained_text)
-                                                        || $channel->require_ending_text !== null
-                                                        && !ends_with($messageContent, $channel->require_ending_text)
-                                                        || $channel->min_message_length !== null
-                                                        && strlen($messageContent) < $channel->min_message_length
-                                                        || $channel->max_message_length !== null
-                                                        && strlen($messageContent) > $channel->max_message_length) {
-                                                        if ($channel->failure_message !== null) {
-                                                            $originalMessage->reply(MessageBuilder::new()->setContent(
-                                                                $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
-                                                            ));
-                                                        }
-                                                        return;
-                                                    }
-                                                    if ($channel->prompt_message !== null) {
-                                                        $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
-                                                    } else {
-                                                        $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
-                                                    }
-                                                    $originalMessage->reply(MessageBuilder::new()->setContent(
-                                                        $promptMessage
-                                                    ))->done(function (Message $message)
-                                                    use ($object, $model, $cacheKey, $channel, $originalMessage) {
-                                                        $reply = $this->rawTextAssistance(
-                                                            $originalMessage,
-                                                            $message,
-                                                            $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions),
-                                                            null,
-                                                            $channel->debug != null
-                                                        );
-
-                                                        if ($reply === null) {
-                                                            if ($channel->failure_message !== null) {
-                                                                $this->plan->utilities->editMessage(
-                                                                    $message,
-                                                                    $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
-                                                                );
-                                                            } else if ($channel->debug === null) {
-                                                                $this->plan->utilities->deleteMessage($message);
+                                                if ($secondCheck && !$mention && !empty($model->mentions)) {
+                                                    foreach ($model->mentions as $alternativeMention) {
+                                                        foreach ($originalMessage->mentions as $userObj) {
+                                                            if ($userObj->id == $alternativeMention->user_id) {
+                                                                $mention = $channel->assistance !== null;
+                                                                break 2;
                                                             }
-                                                        } else {
-                                                            set_key_value_pair($cacheKey, $reply);
-                                                            $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
-                                                            $this->plan->utilities->replyMessageInPieces($message, $reply);
-
-                                                            $hash = $this->plan->utilities->hash(
-                                                                $message->guild_id,
-                                                                $message->channel_id,
-                                                                $message->thread?->id,
-                                                                $message->id
-                                                            );
-                                                            $this->messageReplies[$hash] = $message;
-                                                            $this->messageFeedback[$hash] = array();
                                                         }
-                                                    });
+                                                    }
+                                                }
+                                            }
+                                        } else if ($channel->ignore_mention !== null) {
+                                            $mention = $channel->assistance !== null;
+
+                                            if ($mention
+                                                && !empty($originalMessage->mentions->first())) {
+                                                foreach ($originalMessage->mentions as $userObj) {
+                                                    if ($userObj->id == $this->plan->bot->botID) {
+                                                        $mention = false;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            $mention = $channel->assistance !== null;
+                                        }
+
+                                        if (!$mention && !empty($model->keywords)) {
+                                            foreach ($model->keywords as $keyword) {
+                                                if ($keyword->keyword !== null) {
+                                                    if (str_contains($messageContent, $keyword->keyword)) {
+                                                        $mention = true;
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
-                                        if ($channel->message_cooldown !== null) {
-                                            set_key_value_pair($cooldownKey, true, $channel->message_cooldown);
-                                        } else {
-                                            clear_memory(array($cooldownKey));
-                                        }
-                                    } else if ($channel->cooldown_message !== null
-                                        && $channel->message_cooldown !== null) {
-                                        $originalMessage->reply(MessageBuilder::new()->setContent(
-                                            $this->plan->instructions->replace(array($channel->cooldown_message), $object)[0]
-                                        ));
+                                    } else {
+                                        $mention = false;
                                     }
-                                } else {
-                                    $logger->logError($this->plan->planID, "Failed to find an existent chat-model for plan: " . $this->plan->planID);
+
+                                    if ($mention) {
+                                        $limits = $this->isLimited($model, $originalMessage);
+
+                                        if (!empty($limits)) {
+                                            foreach ($limits as $limit) {
+                                                if ($limit->message !== null) {
+                                                    $originalMessage->reply(MessageBuilder::new()->setContent(
+                                                        $this->plan->instructions->replace(array($limit->message), $object)[0]
+                                                    ));
+                                                    break;
+                                                }
+                                            }
+                                        } else {
+                                            $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
+                                            $cache = get_key_value_pair($cacheKey);
+
+                                            if ($cache !== null) {
+                                                $this->plan->utilities->replyMessageInPieces($originalMessage, $cache);
+                                            } else {
+                                                if ($channel->require_starting_text !== null
+                                                    && !starts_with($messageContent, $channel->require_starting_text)
+                                                    || $channel->require_contained_text !== null
+                                                    && !str_contains($messageContent, $channel->require_contained_text)
+                                                    || $channel->require_ending_text !== null
+                                                    && !ends_with($messageContent, $channel->require_ending_text)
+                                                    || $channel->min_message_length !== null
+                                                    && strlen($messageContent) < $channel->min_message_length
+                                                    || $channel->max_message_length !== null
+                                                    && strlen($messageContent) > $channel->max_message_length) {
+                                                    if ($channel->failure_message !== null) {
+                                                        $originalMessage->reply(MessageBuilder::new()->setContent(
+                                                            $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
+                                                        ));
+                                                    }
+                                                    return;
+                                                }
+                                                if ($channel->prompt_message !== null) {
+                                                    $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
+                                                } else {
+                                                    $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
+                                                }
+                                                $originalMessage->reply(MessageBuilder::new()->setContent(
+                                                    $promptMessage
+                                                ))->done(function (Message $message)
+                                                use ($object, $model, $cacheKey, $channel, $originalMessage) {
+                                                    $reply = $this->rawTextAssistance(
+                                                        $originalMessage,
+                                                        $message,
+                                                        $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions),
+                                                        null,
+                                                        $channel->debug != null
+                                                    );
+
+                                                    if ($reply === null) {
+                                                        if ($channel->failure_message !== null) {
+                                                            $this->plan->utilities->editMessage(
+                                                                $message,
+                                                                $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
+                                                            );
+                                                        } else if ($channel->debug === null) {
+                                                            $this->plan->utilities->deleteMessage($message);
+                                                        }
+                                                    } else {
+                                                        set_key_value_pair($cacheKey, $reply);
+                                                        $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
+                                                        $this->plan->utilities->replyMessageInPieces($message, $reply);
+
+                                                        $hash = $this->plan->utilities->hash(
+                                                            $message->guild_id,
+                                                            $message->channel_id,
+                                                            $message->thread?->id,
+                                                            $message->id
+                                                        );
+                                                        $this->messageReplies[$hash] = $message;
+                                                        $this->messageFeedback[$hash] = array();
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                    if ($channel->message_cooldown !== null) {
+                                        set_key_value_pair($cooldownKey, true, $channel->message_cooldown);
+                                    } else {
+                                        clear_memory(array($cooldownKey));
+                                    }
+                                } else if ($channel->cooldown_message !== null
+                                    && $channel->message_cooldown !== null) {
+                                    $originalMessage->reply(MessageBuilder::new()->setContent(
+                                        $this->plan->instructions->replace(array($channel->cooldown_message), $object)[0]
+                                    ));
                                 }
                             } else {
-                                $logger->logError($this->plan->planID, "Failed to find any chat-model for plan: " . $this->plan->planID);
+                                $logger->logError($this->plan->planID, "Failed to find an existent chat-model for plan: " . $this->plan->planID);
                             }
+                        } else {
+                            $logger->logError($this->plan->planID, "Failed to find any chat-model for plan: " . $this->plan->planID);
                         }
                     }
                 }
