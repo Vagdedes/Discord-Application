@@ -335,7 +335,7 @@ class DiscordComponent
                         }
                         $actionRow->addComponent($button);
 
-                        if (!$button->isDisabled()) {
+                        if (!$button->isDisabled() && $button->getStyle() !== Button::STYLE_LINK) {
                             $button->setListener(function (Interaction $interaction)
                             use ($actionRow, $button, $buttonObject, $messageBuilder) {
                                 $this->extract($interaction, $messageBuilder, $buttonObject, $button);
