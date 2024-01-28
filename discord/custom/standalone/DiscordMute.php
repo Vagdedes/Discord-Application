@@ -123,7 +123,7 @@ class DiscordMute
         ));
     }
 
-    public function mute(Member         $self, Member $member,
+    public function mute(Member|User         $self, Member $member,
                          Channel|Thread|null $channelOrThread, string $reason,
                          ?string             $type = self::ALL,
                          ?string             $expiration = null): array
@@ -174,7 +174,7 @@ class DiscordMute
         }
     }
 
-    public function unmute(Member         $self, Member $member,
+    public function unmute(Member|User         $self, Member $member,
                            Channel|Thread|null $channelOrThread, string $reason,
                            ?string             $type = self::ALL): array
     {

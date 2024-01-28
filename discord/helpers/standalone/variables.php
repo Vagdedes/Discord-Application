@@ -62,7 +62,7 @@ class BotDatabaseTable
         BOT_MESSAGE_MESSAGE_FILTER_LETTER_CORRELATIONS = "discord.botMessageFilterLetterCorrelations",
         BOT_MESSAGE_MESSAGE_FILTER_INSTRUCTIONS = "discord.botMessageFilterInstructions",
         BOT_MESSAGE_MESSAGE_FILTER_CONSTANTS = "discord.botMessageFilterConstants",
-        BOT_MESSAGE_MESSAGE_FILTER_KEYWORDS = "discord.botMesageFilterKeywords",
+        BOT_MESSAGE_MESSAGE_FILTER_KEYWORDS = "discord.botMessageFilterKeywords",
         BOT_MESSAGE_MESSAGE_FILTER_TRACKING = "discord.botMessageFilterTracking",
         BOT_GIVEAWAYS = "discord.botGiveaways",
         BOT_GIVEAWAY_TRACKING = "discord.botGiveawayTracking",

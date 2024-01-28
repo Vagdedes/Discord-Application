@@ -150,7 +150,7 @@ class DiscordAIMessages
         return $this->getModel($channelID)?->chatAI;
     }
 
-    public function textAssistance(Message $originalMessage): void
+    public function textAssistance(Message $originalMessage): bool
     {
         global $logger;
         $messageContent = $originalMessage->content;
@@ -174,6 +174,7 @@ class DiscordAIMessages
                     $this->plan->instructions->replace(array($command), $object)[0]
                 ));
             }
+            return true;
         } else {
             $mute = $this->plan->bot->mute->isMuted($member, $originalMessage->channel, DiscordMute::TEXT);
 
@@ -183,6 +184,7 @@ class DiscordAIMessages
                     $member,
                     $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
+                return true;
             } else {
                 $channel = $object->channel;
                 $foundChannel = $channel !== null;
@@ -199,6 +201,7 @@ class DiscordAIMessages
                             $this->plan->instructions->replace(array($filter), $object)[0]
                         );
                     }
+                    return true;
                 } else {
                     $stop = $this->plan->userTickets->track($originalMessage) //todo all
                         || $this->plan->userTargets->track($originalMessage)
@@ -312,7 +315,7 @@ class DiscordAIMessages
                                                             $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
                                                         ));
                                                     }
-                                                    return;
+                                                    return false;
                                                 }
                                                 if ($channel->prompt_message !== null) {
                                                     $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
@@ -379,6 +382,7 @@ class DiscordAIMessages
                 }
             }
         }
+        return false;
     }
 
     public function rawTextAssistance(Message|array $source,

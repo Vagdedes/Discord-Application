@@ -87,7 +87,7 @@ class DiscordChatFilteredMessages
                     array(
                         array("deletion_date", null),
                         array("filter_id", $filter->id),
-                        array("public", 1),
+                        array("public", "IS NOT", null),
                         null,
                         array("expiration_date", "IS", null, 0),
                         array("expiration_date", ">", get_current_date()),
@@ -150,17 +150,22 @@ class DiscordChatFilteredMessages
                     if (!empty($filter->blockedWords)) {
                         foreach ($filter->blockedWords as $blockedWord) {
                             foreach ($this->getCombinations($filter, $blockedWord->word) as $word) {
-                                if (str_contains($message->content, $word)
-                                    && $this->canBlock($message, $blockedWord)) {
-                                    return $this->plan->instructions->replace(
-                                        array($blockedWord->message ?? ""),
-                                        $object
-                                    )[0];
+                                if (str_contains($message->content, $word)) {
+                                    $blockMessage = $this->getBlockMessage(
+                                        $message,
+                                        $object,
+                                        $blockedWord
+                                    );
+
+                                    if ($blockMessage !== null) {
+                                        return $blockMessage;
+                                    }
                                 }
                             }
                         }
                     }
-                    if (!empty($filter->localInstructions)) {
+                    if (!empty($filter->localInstructions)
+                        && !empty($filter->constants)) {
                         $reply = $this->plan->aiMessages->rawTextAssistance(
                             $message,
                             null,
@@ -171,6 +176,24 @@ class DiscordChatFilteredMessages
                             ),
                             self::AI_HASH
                         );
+
+                        if ($reply !== null) {
+                            foreach ($filter->constants as $constant) {
+                                if ($reply == $constant->constant_key) {
+                                    $blockMessage = $this->getBlockMessage(
+                                        $message,
+                                        $object,
+                                        $constant,
+                                        $constant->id
+                                    );
+
+                                    if ($blockMessage !== null) {
+                                        return $blockMessage;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -178,7 +201,10 @@ class DiscordChatFilteredMessages
         return null;
     }
 
-    private function canBlock(Message $message, object $row, int|string $constantID = null): bool
+    private function getBlockMessage(Message    $message,
+                                     object     $object,
+                                     object     $row,
+                                     int|string $constantID = null): ?string
     {
         if ($row->points === null
             || $row->seconds_period === null) {
@@ -198,18 +224,18 @@ class DiscordChatFilteredMessages
             if (!sql_insert(
                 BotDatabaseTable::BOT_MESSAGE_MESSAGE_FILTER_TRACKING,
                 array(
-                    array("filter_id", $row->id),
-                    array("constant_id", $constantID),
-                    array("server_id", $channel->guild_id),
-                    array("category_id", $channel->parent_id),
-                    array("channel_id", $channel->id),
-                    array("thread_id", $message->thread?->id),
-                    array("user_id", $message->user_id),
-                    array("message_id", $message->id),
-                    array("message_content", $message->content),
-                    array("message", $row->message),
-                    array("mute_period", $row->mute_period),
-                    array("creation_date", get_current_date())
+                    "filter_id" => $row->id,
+                    "constant_id" => $constantID,
+                    "server_id" => $channel->guild_id,
+                    "category_id" => $channel->parent_id,
+                    "channel_id" => $channel->id,
+                    "thread_id" => $message->thread?->id,
+                    "user_id" => $message->user_id,
+                    "message_id" => $message->id,
+                    "message_content" => $message->content,
+                    "message" => $row->message,
+                    "mute_period" => $row->mute_period,
+                    "creation_date" => get_current_date()
                 )
             )) {
                 global $logger;
@@ -219,8 +245,24 @@ class DiscordChatFilteredMessages
                     . ($constantID !== null ? " constant " : " ") . "ID: " . $row->id
                 );
             }
+            $blockMessage = $this->plan->instructions->replace(
+                array($row->message ?? ""),
+                $object
+            )[0];
+
+            if (!empty($blockMessage) && $row->mute_period !== null) {
+                $this->plan->bot->mute->mute(
+                    $this->plan->bot->discord->user,
+                    $message->member,
+                    $message->channel,
+                    $blockMessage,
+                    DiscordMute::TEXT,
+                    $row->mute_period
+                );
+            }
+            return $blockMessage;
         }
-        return $block;
+        return null;
     }
 
     private function getCombinations(object $filter, string $word): array
