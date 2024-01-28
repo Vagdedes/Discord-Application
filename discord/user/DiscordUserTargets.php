@@ -312,31 +312,8 @@ class DiscordUserTargets
             if (!empty($query)) {
                 $query = $query[0];
 
-                if ($query->deletion_date !== null) {
-                    if ($query->created_thread_id !== null) {
-                        $this->ignoreThreadDeletion++;
-                        $this->plan->utilities->deleteThread(
-                            $channel,
-                            $query->created_thread_id
-                        );
-                    } else {
-                        $this->ignoreChannelDeletion++;
-                        $channel->guild->channels->delete($channel);
-                    }
-                    $this->initiate($query->target_id);
-                    return true;
-                } else if (get_current_date() > $query->expiration_date) {
-                    if (set_sql_query(
-                        BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                        array(
-                            "expired" => 1
-                        ),
-                        array(
-                            array("id", $query->id)
-                        ),
-                        null,
-                        1
-                    )) {
+                if (array_key_exists($query->target_id, $this->targets)) {
+                    if ($query->deletion_date !== null) {
                         if ($query->created_thread_id !== null) {
                             $this->ignoreThreadDeletion++;
                             $this->plan->utilities->deleteThread(
@@ -348,14 +325,39 @@ class DiscordUserTargets
                             $channel->guild->channels->delete($channel);
                         }
                         $this->initiate($query->target_id);
-                    } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "(1) Failed to close expired target with ID: " . $query->id
-                        );
+                        return true;
+                    } else if (get_current_date() > $query->expiration_date) {
+                        if (set_sql_query(
+                            BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+                            array(
+                                "expired" => 1
+                            ),
+                            array(
+                                array("id", $query->id)
+                            ),
+                            null,
+                            1
+                        )) {
+                            if ($query->created_thread_id !== null) {
+                                $this->ignoreThreadDeletion++;
+                                $this->plan->utilities->deleteThread(
+                                    $channel,
+                                    $query->created_thread_id
+                                );
+                            } else {
+                                $this->ignoreChannelDeletion++;
+                                $channel->guild->channels->delete($channel);
+                            }
+                            $this->initiate($query->target_id);
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                $this->plan->planID,
+                                "(1) Failed to close expired target with ID: " . $query->id
+                            );
+                        }
+                        return true;
                     }
-                    return true;
                 }
             }
         }

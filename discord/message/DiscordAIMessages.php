@@ -223,12 +223,12 @@ class DiscordAIMessages
                     }
                     return true;
                 } else {
-                    $stop = $this->plan->userTickets->track($originalMessage) //todo all
+                    $stop = $this->plan->userTickets->track($originalMessage)
                         || $this->plan->userTargets->track($originalMessage)
                         || $this->plan->userQuestionnaire->track($originalMessage, $object)
                         || $this->plan->countingChannels->track($originalMessage)
                         || $this->plan->objectiveChannels->trackCreation($originalMessage)
-                        || $this->plan->messageNotifications->executeMessage($originalMessage); //todo all
+                        || $this->plan->messageNotifications->executeMessage($originalMessage);
                     $this->plan->tranferredMessages->trackCreation($originalMessage);
 
                     if (!$stop

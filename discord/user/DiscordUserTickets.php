@@ -11,32 +11,39 @@ class DiscordUserTickets
 {
     private DiscordPlan $plan;
     public int $ignoreDeletion;
+    private array $tickets;
     private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->tickets = array();
         $this->ignoreDeletion = 0;
+        $tickets = get_sql_query(
+            BotDatabaseTable::BOT_TICKETS,
+            null,
+            array(
+                array("deletion_date", null),
+                array("plan_id", $this->plan->planID),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
+        if (!empty($tickets)) {
+            foreach ($tickets as $ticket) {
+                $this->tickets[$ticket->id] = $ticket;
+                $this->tickets[$ticket->name] = $ticket;
+            }
+        }
         $this->checkExpired();
     }
 
     public function call(Interaction $interaction, string $key): bool
     {
-        set_sql_cache(null, self::class);
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_TICKETS,
-            null,
-            array(
-                array("deletion_date", null),
-                array("name", $key),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            ),
-            null,
-            1
-        );
+        $query = $this->tickets[$key] ?? null;
 
         if (!empty($query)) {
             $query = $query[0];
@@ -277,7 +284,7 @@ class DiscordUserTickets
             set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
-                array("id", "ticket_creation_id", "expiration_date"),
+                array("id", "ticket_id", "ticket_creation_id", "expiration_date"),
                 array(
                     array("created_channel_server_id", $channel->guild_id),
                     array("created_channel_id", $channel->id),
@@ -292,43 +299,45 @@ class DiscordUserTickets
             if (!empty($query)) {
                 $query = $query[0];
 
-                if ($query->deletion_date !== null) {
-                    $this->ignoreDeletion++;
-                    $channel->guild->channels->delete($channel);
-                } else if ($query->expiration_date !== null
-                    && get_current_date() > $query->expiration_date) {
-                    if (set_sql_query(
-                        BotDatabaseTable::BOT_TICKET_CREATIONS,
-                        array(
-                            "expired" => 1
-                        ),
-                        array(
-                            array("id", $query->id)
-                        ),
-                        null,
-                        1
-                    )) {
+                if (array_key_exists($query->ticket_id, $this->tickets)) {
+                    if ($query->deletion_date !== null) {
                         $this->ignoreDeletion++;
                         $channel->guild->channels->delete($channel);
+                    } else if ($query->expiration_date !== null
+                        && get_current_date() > $query->expiration_date) {
+                        if (set_sql_query(
+                            BotDatabaseTable::BOT_TICKET_CREATIONS,
+                            array(
+                                "expired" => 1
+                            ),
+                            array(
+                                array("id", $query->id)
+                            ),
+                            null,
+                            1
+                        )) {
+                            $this->ignoreDeletion++;
+                            $channel->guild->channels->delete($channel);
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                $this->plan->planID,
+                                "(1) Failed to close expired ticket with ID: " . $query->id
+                            );
+                        }
                     } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "(1) Failed to close expired ticket with ID: " . $query->id
+                        sql_insert(
+                            BotDatabaseTable::BOT_TICKET_MESSAGES,
+                            array(
+                                "ticket_creation_id" => $query->ticket_creation_id,
+                                "user_id" => $message->author->id,
+                                "message_id" => $message->id,
+                                "message_content" => $message->content,
+                                "creation_date" => get_current_date(),
+                            )
                         );
+                        return true;
                     }
-                } else {
-                    sql_insert(
-                        BotDatabaseTable::BOT_TICKET_MESSAGES,
-                        array(
-                            "ticket_creation_id" => $query->ticket_creation_id,
-                            "user_id" => $message->author->id,
-                            "message_id" => $message->id,
-                            "message_content" => $message->content,
-                            "creation_date" => get_current_date(),
-                        )
-                    );
-                    return true;
                 }
             }
         }
