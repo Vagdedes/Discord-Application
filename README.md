@@ -1,1 +1,1 @@
- # [Click to learn more.](https://github.com/IdealisticAI/.github/blob/main/products/ai_discord_bot.md)
+ # [Click to learn more.](https://www.idealistic.ai/github/reader/?path=.github/blob/main/products/ai_communication_tools.md)
