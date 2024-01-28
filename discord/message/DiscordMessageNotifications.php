@@ -45,24 +45,40 @@ class DiscordMessageNotifications
                         null
                     )
                 );
-                $instructions = get_sql_query(
+                $notification->localInstructions = get_sql_query(
                     BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_INSTRUCTIONS,
                     null,
                     array(
                         array("deletion_date", null),
                         array("notification_id", $notification->id),
+                        array("public", null),
                         null,
                         array("expiration_date", "IS", null, 0),
                         array("expiration_date", ">", get_current_date()),
                         null
                     )
                 );
-
-                if (!empty($instructions)) {
-                    $notification->instructions = array();
-
-                    foreach ($instructions as $instruction) {
-                        $notification->instructions[] = $instruction->instruction_id;
+                if (!empty($notification->localInstructions)) {
+                    foreach ($notification->localInstructions as $childKey => $instruction) {
+                        $notification->localInstructions[$childKey] = $instruction->instruction_id;
+                    }
+                }
+                $notification->publicInstructions = get_sql_query(
+                    BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_INSTRUCTIONS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("notification_id", $notification->id),
+                        array("public", "IS NOT", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                if (!empty($notification->publicInstructions)) {
+                    foreach ($notification->publicInstructions as $childKey => $instruction) {
+                        $notification->publicInstructions[$childKey] = $instruction->instruction_id;
                     }
                 }
                 $this->notifications[$arrayKey] = $notification;
@@ -155,12 +171,22 @@ class DiscordMessageNotifications
             }
         }
         $original = $isThread ? $originalMessage : $originalMessage->channel;
+        $object = $this->plan->instructions->getObject(
+            $originalMessage->guild,
+            $originalMessage->channel,
+            $originalMessage->member,
+            $originalMessage
+        );
 
-        if (!empty($notification->instructions)) {
+        if (!empty($notification->localInstructions)) {
             $notificationMessage = $this->plan->aiMessages->rawTextAssistance(
                 $isThread ? array($originalMessage, $user, "The user has left no information.") : $originalMessage,
                 null,
-                $notification->instructions,
+                $this->plan->instructions->build(
+                    $object,
+                    $notification->localInstructions,
+                    $notification->publicInstructions
+                ),
                 self::AI_HASH
             );
 
@@ -170,10 +196,10 @@ class DiscordMessageNotifications
                     $this->plan,
                     "Failed to get AI message for message notification with ID: " . $notification->id
                 );
-                $notificationMessage = $notification->notification;
+                $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
             }
         } else {
-            $notificationMessage = $notification->notification;
+            $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
         }
         $builder = MessageBuilder::new()->setContent(
             $this->plan->listener->callNotificationMessageImplementation(

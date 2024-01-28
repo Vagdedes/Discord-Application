@@ -81,6 +81,9 @@ class DiscordInstructions
             $disclaimer = "";
             $hasSpecific = $specificLocal !== null;
 
+            if (empty($specificPublic)) {
+                $specificPublic = null;
+            }
             foreach ($this->instructions->getLocal() as $instruction) {
                 if (!$hasSpecific || in_array($instruction->id, $specificLocal)) {
                     $replacements = $this->replace(

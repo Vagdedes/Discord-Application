@@ -64,23 +64,40 @@ class DiscordUserQuestionnaire
                 foreach ($query as $row) {
                     $questionnaire->questions[$row->id] = $row;
                 }
-                $query = get_sql_query(
+                $questionnaire->localInstructions = get_sql_query(
                     BotDatabaseTable::BOT_QUESTIONNAIRE_INSTRUCTIONS,
-                    array("instruction_id"),
+                    null,
                     array(
-                        array("questionnaire_id", $questionnaire->id),
                         array("deletion_date", null),
+                        array("target_id", $questionnaire->id),
+                        array("public", null),
                         null,
                         array("expiration_date", "IS", null, 0),
                         array("expiration_date", ">", get_current_date()),
                         null
                     )
                 );
-                $questionnaire->instructions = array();
-
-                if (!empty($query)) {
-                    foreach ($query as $arrayChildKey => $row) {
-                        $questionnaire->instructions[$arrayChildKey] = $row->instruction_id;
+                if (!empty($questionnaire->localInstructions)) {
+                    foreach ($questionnaire->localInstructions as $childKey => $instruction) {
+                        $questionnaire->localInstructions[$childKey] = $instruction->instruction_id;
+                    }
+                }
+                $questionnaire->publicInstructions = get_sql_query(
+                    BotDatabaseTable::BOT_QUESTIONNAIRE_INSTRUCTIONS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("target_id", $questionnaire->id),
+                        array("public", "IS NOT", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                if (!empty($questionnaire->publicInstructions)) {
+                    foreach ($questionnaire->publicInstructions as $childKey => $instruction) {
+                        $questionnaire->publicInstructions[$childKey] = $instruction->instruction_id;
                     }
                 }
                 $this->questionnaires[$questionnaire->id] = $questionnaire;
@@ -534,7 +551,11 @@ class DiscordUserQuestionnaire
                     $reply = $this->plan->aiMessages->rawTextAssistance(
                         $message,
                         null,
-                        $this->plan->instructions->build($object, $questionnaire->instructions),
+                        $this->plan->instructions->build(
+                            $object,
+                            $questionnaire->localInstructions,
+                            $questionnaire->publicInstructions
+                        ),
                         self::AI_HASH
                     );
 

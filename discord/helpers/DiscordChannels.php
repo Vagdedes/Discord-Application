@@ -155,6 +155,8 @@ class DiscordChannels
             $object->expiration_reason = null;
             $object->deletion_date = null;
             $object->deletion_reason = null;
+            $object->local_instructions = null;
+            $object->public_instructions = null;
 
             if ($properties !== null) {
                 foreach ($properties as $key => $value) {

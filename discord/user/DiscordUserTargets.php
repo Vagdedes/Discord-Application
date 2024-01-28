@@ -19,7 +19,8 @@ class DiscordUserTargets
         $this->plan = $plan;
         $this->ignoreChannelDeletion = 0;
         $this->ignoreThreadDeletion = 0;
-        $this->targets = get_sql_query(
+        $this->targets = array();
+        $targets = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGES,
             null,
             array(
@@ -32,29 +33,47 @@ class DiscordUserTargets
             )
         );
 
-        foreach ($this->targets as $arrayKey => $target) {
-            unset($this->targets[$arrayKey]);
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_TARGETED_MESSAGE_INSTRUCTIONS,
-                array("instruction_id"),
-                array(
-                    array("target_id", $target->id),
-                    array("deletion_date", null),
+        if (!empty($targets)) {
+            foreach ($targets as $target) {
+                $target->localInstructions = get_sql_query(
+                    BotDatabaseTable::BOT_TARGETED_MESSAGE_INSTRUCTIONS,
                     null,
-                    array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
-                    null
-                )
-            );
-            $target->instructions = array();
-
-            if (!empty($query)) {
-                foreach ($query as $arrayChildKey => $row) {
-                    $target->instructions[$arrayChildKey] = $row->instruction_id;
+                    array(
+                        array("deletion_date", null),
+                        array("target_id", $target->id),
+                        array("public", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                if (!empty($target->localInstructions)) {
+                    foreach ($target->localInstructions as $childKey => $instruction) {
+                        $target->localInstructions[$childKey] = $instruction->instruction_id;
+                    }
                 }
+                $target->publicInstructions = get_sql_query(
+                    BotDatabaseTable::BOT_TARGETED_MESSAGE_INSTRUCTIONS,
+                    null,
+                    array(
+                        array("deletion_date", null),
+                        array("target_id", $target->id),
+                        array("public", "IS NOT", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null
+                    )
+                );
+                if (!empty($target->publicInstructions)) {
+                    foreach ($target->publicInstructions as $childKey => $instruction) {
+                        $target->publicInstructions[$childKey] = $instruction->instruction_id;
+                    }
+                }
+                $this->targets[$target->id] = $target;
+                $this->initiate($target);
             }
-            $this->targets[$target->id] = $target;
-            $this->initiate($target);
         }
     }
 
@@ -196,7 +215,8 @@ class DiscordUserTargets
                                     "failure_message" => $query->failure_message,
                                     "cooldown_message" => $query->cooldown_message,
                                     "prompt_message" => $query->prompt_message,
-                                    "instructions" => $query->instructions
+                                    "local_instructions" => $query->localInstructions,
+                                    "public_instructions" => $query->publicInstructions,
                                 ));
                                 $message = MessageBuilder::new()->setContent(
                                     $this->plan->instructions->replace(

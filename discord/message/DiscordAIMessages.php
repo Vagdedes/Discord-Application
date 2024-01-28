@@ -48,7 +48,6 @@ class DiscordAIMessages
                         $row->completions,
                         $row->top_p,
                     );
-                    $object->instructions = array();
                     $object->mentions = get_sql_query(
                         BotDatabaseTable::BOT_AI_MENTIONS,
                         null,
@@ -109,11 +108,12 @@ class DiscordAIMessages
                             null
                         )
                     );
-                    $childQuery = get_sql_query(
+                    $object->localInstructions = get_sql_query(
                         BotDatabaseTable::BOT_AI_INSTRUCTIONS,
-                        array("instruction_id"),
+                        null,
                         array(
                             array("deletion_date", null),
+                            array("public", null),
                             null,
                             array("ai_model_id", "IS", null, 0),
                             array("ai_model_id", $row->id),
@@ -124,10 +124,30 @@ class DiscordAIMessages
                             null
                         )
                     );
-
-                    if (!empty($childQuery)) {
-                        foreach ($childQuery as $arrayChildKey => $childRow) {
-                            $object->instructions[$arrayChildKey] = $childRow->instruction_id;
+                    if (!empty($object->localInstructions)) {
+                        foreach ($object->localInstructions as $childKey => $instruction) {
+                            $object->localInstructions[$childKey] = $instruction->instruction_id;
+                        }
+                    }
+                    $object->publicInstructions = get_sql_query(
+                        BotDatabaseTable::BOT_AI_INSTRUCTIONS,
+                        null,
+                        array(
+                            array("deletion_date", null),
+                            array("public", "IS NOT", null),
+                            null,
+                            array("ai_model_id", "IS", null, 0),
+                            array("ai_model_id", $row->id),
+                            null,
+                            null,
+                            array("expiration_date", "IS", null, 0),
+                            array("expiration_date", ">", get_current_date()),
+                            null
+                        )
+                    );
+                    if (!empty($object->publicInstructions)) {
+                        foreach ($object->publicInstructions as $childKey => $instruction) {
+                            $object->publicInstructions[$childKey] = $instruction->instruction_id;
                         }
                     }
                     $this->model[$row->channel_id ?? 0] = $object;
@@ -211,7 +231,9 @@ class DiscordAIMessages
                         || $this->plan->messageNotifications->executeMessage($originalMessage); //todo all
                     $this->plan->tranferredMessages->trackCreation($originalMessage);
 
-                    if (!$stop && $foundChannel) {
+                    if (!$stop
+                        && $foundChannel
+                        && $channel->assistance !== null) {
                         $model = $this->getModel($channel->channel_id);
 
                         if ($model !== null) {
@@ -227,20 +249,14 @@ class DiscordAIMessages
                                             $mention = false;
 
                                             if (!empty($originalMessage->mentions->first())) {
-                                                $secondCheck = true;
-
                                                 foreach ($originalMessage->mentions as $userObj) {
                                                     if ($userObj->id == $this->plan->bot->botID) {
-                                                        if ($channel->assistance !== null) {
-                                                            $mention = true;
-                                                        } else {
-                                                            $secondCheck = false;
-                                                        }
+                                                        $mention = true;
                                                         break;
                                                     }
                                                 }
 
-                                                if ($secondCheck && !$mention && !empty($model->mentions)) {
+                                                if (!$mention && !empty($model->mentions)) {
                                                     foreach ($model->mentions as $alternativeMention) {
                                                         foreach ($originalMessage->mentions as $userObj) {
                                                             if ($userObj->id == $alternativeMention->user_id) {
@@ -252,10 +268,9 @@ class DiscordAIMessages
                                                 }
                                             }
                                         } else if ($channel->ignore_mention !== null) {
-                                            $mention = $channel->assistance !== null;
+                                            $mention = true;
 
-                                            if ($mention
-                                                && !empty($originalMessage->mentions->first())) {
+                                            if (!empty($originalMessage->mentions->first())) {
                                                 foreach ($originalMessage->mentions as $userObj) {
                                                     if ($userObj->id == $this->plan->bot->botID) {
                                                         $mention = false;
@@ -264,7 +279,7 @@ class DiscordAIMessages
                                                 }
                                             }
                                         } else {
-                                            $mention = $channel->assistance !== null;
+                                            $mention = true;
                                         }
 
                                         if (!$mention && !empty($model->keywords)) {
@@ -330,7 +345,11 @@ class DiscordAIMessages
                                                     $reply = $this->rawTextAssistance(
                                                         $originalMessage,
                                                         $message,
-                                                        $this->plan->instructions->build($object, $channel->instructions ?? $model->instructions),
+                                                        $this->plan->instructions->build(
+                                                            $object,
+                                                            $channel->local_instructions ?? $model->localInstructions,
+                                                            $channel->public_instructions ?? $model->publicInstructions,
+                                                        ),
                                                         null,
                                                         $channel->debug != null
                                                     );
