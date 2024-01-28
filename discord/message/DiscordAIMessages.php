@@ -293,6 +293,7 @@ class DiscordAIMessages
                                                     break;
                                                 }
                                             }
+                                            return true;
                                         } else {
                                             $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
                                             $cache = get_key_value_pair($cacheKey);
@@ -727,9 +728,10 @@ class DiscordAIMessages
         if (!empty($model->messageLimits)
             && !$this->plan->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
             foreach ($model->messageLimits as $limit) {
-                if (($limit->server_id === null || $limit->server_id === $serverID)
-                    && ($limit->channel_id === null || $limit->channel_id === $channelID)
-                    && ($limit->thread_id === null || $limit->thread_id === $threadID)
+                if (($limit->server_id === null
+                        || $limit->server_id === $serverID
+                        && ($limit->channel_id === null || $limit->channel_id === $channelID)
+                        && ($limit->thread_id === null || $limit->thread_id === $threadID))
                     && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
                     $count = $this->getMessageCount(
                         $limit->server_id,

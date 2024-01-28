@@ -526,6 +526,19 @@ function is_base64_image(?string $string): bool
 
 // Strings
 
+function find_character_occurrences(string $string, string $character): array
+{
+    $array = array();
+
+    for ($i = 0; $i < strlen($string); $i++) {
+        if ($string[$i] == $character) {
+            $array[] = $i;
+        }
+    }
+    return $array;
+}
+
+
 function unstuck_words_from_capital_letters(string $word): string
 {
     $rebuild = strtoupper($word[0]);
