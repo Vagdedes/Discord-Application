@@ -63,6 +63,18 @@ class DiscordChatFilteredMessages
                         null
                     )
                 );
+
+                if (!empty($filter->letterCorrelations)) {
+                    foreach ($filter->letterCorrelations as $childKey => $correlation) {
+                        unset($filter->letterCorrelations[$childKey]);
+
+                        if (array_key_exists($correlation->letter, $filter->letterCorrelations)) {
+                            $filter->letterCorrelations[$correlation->letter][] = $correlation->letter_correlation;
+                        } else {
+                            $filter->letterCorrelations[$correlation->letter] = array($correlation->letter_correlation);
+                        }
+                    }
+                }
                 $filter->localInstructions = get_sql_query(
                     BotDatabaseTable::BOT_MESSAGE_MESSAGE_FILTER_INSTRUCTIONS,
                     null,
@@ -268,8 +280,24 @@ class DiscordChatFilteredMessages
     private function getCombinations(object $filter, string $word): array
     {
         if (!empty($filter->letterCorrelations)) {
-            $array = array($word);
-            //todo
+            $array = array();
+
+            foreach ($filter->letterCorrelations as $letter => $correlations) {
+                $correlations[] = $letter;
+                $occurrences = find_character_occurrences($word, $letter);
+                $correlationCount = sizeof($correlations);
+
+                for ($i = 0; $i < pow($correlationCount, sizeof($occurrences)); $i++) {
+                    $wordCopy = $word;
+                    $count = $i;
+
+                    foreach ($occurrences as $occurrence) {
+                        $wordCopy[$occurrence] = $correlations[$count % $correlationCount];
+                        $count /= $correlationCount;
+                    }
+                    $array[] = $wordCopy;
+                }
+            }
             return $array;
         } else {
             return array($word);
