@@ -76,22 +76,24 @@ class DiscordInstructions
         }
     }
 
-    public function build(object $object, ?array $specific = null): array
+    public function build(object $object,
+                          ?array $specificLocal = null,
+                          ?array $specificPublic = null): array
     {
         if (!empty($this->instructions->getLocal())) {
             $information = "";
             $disclaimer = "";
-            $hasSpecific = $specific !== null;
+            $hasSpecific = $specificLocal !== null;
 
             foreach ($this->instructions->getLocal() as $instruction) {
-                if (!$hasSpecific || in_array($instruction->id, $specific)) {
+                if (!$hasSpecific || in_array($instruction->id, $specificLocal)) {
                     $replacements = $this->replace(
                         array(
                             $instruction->information,
                             $instruction->disclaimer
                         ),
                         $object,
-                        null,
+                        $specificPublic,
                         null,
                         $instruction->placeholder_start,
                         $instruction->placeholder_middle,

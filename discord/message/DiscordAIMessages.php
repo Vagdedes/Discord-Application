@@ -483,6 +483,7 @@ class DiscordAIMessages
                             BotDatabaseTable::BOT_AI_MESSAGES,
                             array(
                                 "plan_id" => $this->plan->planID,
+                                "ai_hash" => $extraHash,
                                 "bot_id" => $this->plan->bot->botID,
                                 "server_id" => $channel->guild_id,
                                 "channel_id" => $parent->id,
@@ -497,6 +498,7 @@ class DiscordAIMessages
                             BotDatabaseTable::BOT_AI_REPLIES,
                             array(
                                 "plan_id" => $this->plan->planID,
+                                "ai_hash" => $extraHash,
                                 "bot_id" => $this->plan->bot->botID,
                                 "server_id" => $channel->guild_id,
                                 "channel_id" => $parent->id,
