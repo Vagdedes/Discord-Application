@@ -423,4 +423,12 @@ class AccountMessageImplementationListener
             $plan->component->showModal($interaction, "0-contact_form_offline");
         }
     }
+
+    public static function download_plugins(DiscordPlan    $plan,
+                                              Interaction    $interaction,
+                                              MessageBuilder $messageBuilder,
+                                              mixed          $objects): void
+    {
+        $plan->persistentMessages->send($interaction, "0-download_plugins", true);
+    }
 }

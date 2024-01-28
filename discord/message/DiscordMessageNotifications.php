@@ -173,9 +173,9 @@ class DiscordMessageNotifications
         $original = $isThread ? $originalMessage : $originalMessage->channel;
         $object = $this->plan->instructions->getObject(
             $originalMessage->guild,
-            $originalMessage->channel,
-            $originalMessage->member,
-            $originalMessage
+            $original,
+            $user,
+            $isThread ? null : $originalMessage
         );
 
         if (!empty($notification->localInstructions)) {

@@ -14,8 +14,6 @@ use Discord\Parts\User\User;
 class DiscordUtilities
 {
 
-    // todo create matches family with null allowance for objects and database rows
-
     private Discord $discord;
     private ?DiscordPlan $plan;
 
