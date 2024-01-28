@@ -771,7 +771,7 @@ class DiscordAIMessages
 
     // Separator
 
-    public function sendFeedback(MessageReaction $reaction, int $value): void
+    public function sendFeedback(MessageReaction $reaction, ?int $value): void
     {
         $hash = $this->plan->utilities->hash(
             $reaction->guild_id,

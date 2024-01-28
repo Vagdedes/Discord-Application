@@ -20,6 +20,6 @@ class AccountReactionCreationListener
     public static function feedback_neutral(DiscordPlan     $plan,
                                             MessageReaction $reaction): void
     {
-        $plan->aiMessages->sendFeedback($reaction, 0);
+        $plan->aiMessages->sendFeedback($reaction, null);
     }
 }
