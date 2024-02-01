@@ -216,40 +216,39 @@ class AccountMessageCreationListener
                 $embed->setColor($product->color);
             }
 
-            $embed->setDescription(DiscordSyntax::htmlToDiscord($product->description));
-
             if ($downloadURL !== null) {
                 $embed->setURL($downloadURL);
-                $embed->setTitle("Click to Download"
+                $embed->setTitle("Download"
                     . ($product->download_note !== null
-                        ? " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")"
+                        ? ":\n" . DiscordSyntax::htmlToDiscord($product->download_note)
                         : ""));
+                $canDownload = true;
             } else if (!empty($product->downloads)) {
                 $embed->setTitle("Log In to be able to download this");
+                $canDownload = true;
+            } else {
+                $canDownload = false;
             }
             if ($product->image !== null) {
                 $embed->setImage($product->image);
             }
             $embed->setAuthor(
-                strip_tags($product->name),
+                strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
                 null,
                 $downloadURL
             );
-            $release = $product->latest_version !== null ? $product->latest_version : null;
+            //$release = $product->latest_version !== null ? $product->latest_version : null;
             $hasTiers = sizeof($product->tiers->paid) > 1;
             $tier = array_shift($product->tiers->paid);
             $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
-            $activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
+            //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
             $legalInformation = $product->legal_information !== null
-                ? "[By purchasing/downloading, you acknowledge and accept this product/service's __legal information__](" . $product->legal_information . ")"
+                ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
                 : null;
 
             foreach (array(
-                         "On Development For" => get_date_days_difference($product->creation_date) . " Days",
-                         "Last Version Release" => $release,
-                         "Price" => $price,
-                         "Customers" => $activeCustomers,
-                         "Legal Information" => $legalInformation
+                         DiscordSyntax::htmlToDiscord($product->description) => "On Development For " . get_date_days_difference($product->creation_date) . " Days",
+                         $price => $legalInformation
                      ) as $arrayKey => $arrayValue) {
                 if ($arrayValue !== null) {
                     $embed->addFieldValues($arrayKey, $arrayValue);
