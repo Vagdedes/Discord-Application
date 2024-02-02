@@ -154,9 +154,47 @@ class AccountModalImplementationListener
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $interaction->acknowledge()->done(function () use ($interaction, $objects, $plan) {
+            $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
-        if ($account !== null) {
+            if ($account !== null) {
+                $cacheKey = array(
+                    $interaction->user->id,
+                    "contact-form"
+                );
+                if (has_memory_cooldown($cacheKey, null, false)) {
+                    $response = "Please wait a few minutes before contacting us again.";
+                } else {
+                    $objects = $objects->toArray();
+                    $content = $account->getEmail()->getSupportEmailDetails(
+                        strip_tags(array_shift($objects)["value"]), // Subject
+                        strip_tags(array_shift($objects)["value"]) // Info
+                    );
+
+                    if (services_self_email($content[0], $content[1], $content[2]) === true) {
+                        has_memory_cooldown($cacheKey, "5 minutes");
+                        $response = "Thanks for taking the time to contact us.";
+                    } else {
+                        global $email_default_email_name;
+                        $response = "An error occurred, please contact us at: " . $email_default_email_name;
+                    }
+                }
+                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                    $response
+                ), true);
+            } else {
+                $interaction->sendFollowUpMessage(
+                    $plan->persistentMessages->get($interaction, "0-register_or_log_in")
+                );
+            }
+        });
+    }
+
+    public static function contact_form_offline(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                mixed       $objects): void
+    {
+        $interaction->acknowledge()->done(function () use ($interaction, $objects, $plan) {
             $cacheKey = array(
                 $interaction->user->id,
                 "contact-form"
@@ -165,11 +203,13 @@ class AccountModalImplementationListener
             if (has_memory_cooldown($cacheKey, null, false)) {
                 $response = "Please wait a few minutes before contacting us again.";
             } else {
+                $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                 $objects = $objects->toArray();
+                $email = strip_tags(array_shift($objects)["value"]);
                 $content = $account->getEmail()->getSupportEmailDetails(
-                    true,
                     strip_tags(array_shift($objects)["value"]), // Subject
-                    strip_tags(array_shift($objects)["value"]) // Info
+                    strip_tags(array_shift($objects)["value"]), // Info
+                    $email
                 );
 
                 if (services_self_email($content[0], $content[1], $content[2]) === true) {
@@ -180,47 +220,6 @@ class AccountModalImplementationListener
                     $response = "An error occurred, please contact us at: " . $email_default_email_name;
                 }
             }
-            $interaction->acknowledge()->done(function () use ($interaction, $response) {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $response
-                ), true);
-            });
-        } else {
-            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-        }
-    }
-
-    public static function contact_form_offline(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                mixed       $objects): void
-    {
-        $cacheKey = array(
-            $interaction->user->id,
-            "contact-form"
-        );
-
-        if (has_memory_cooldown($cacheKey, null, false)) {
-            $response = "Please wait a few minutes before contacting us again.";
-        } else {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-            $objects = $objects->toArray();
-            $email = strip_tags(array_shift($objects)["value"]);
-            $content = $account->getEmail()->getSupportEmailDetails(
-                false,
-                strip_tags(array_shift($objects)["value"]), // Subject
-                strip_tags(array_shift($objects)["value"]), // Info
-                $email
-            );
-
-            if (services_self_email($content[0], $content[1], $content[2]) === true) {
-                has_memory_cooldown($cacheKey, "5 minutes");
-                $response = "Thanks for taking the time to contact us.";
-            } else {
-                global $email_default_email_name;
-                $response = "An error occurred, please contact us at: " . $email_default_email_name;
-            }
-        }
-        $interaction->acknowledge()->done(function () use ($interaction, $response) {
             $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
                 $response
             ), true);
