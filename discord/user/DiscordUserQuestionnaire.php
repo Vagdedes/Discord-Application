@@ -247,26 +247,28 @@ class DiscordUserQuestionnaire
                                 if ($question === true) {
                                     $this->closeByChannelOrThread($channel);
                                 } else {
+                                    $object = $this->plan->instructions->getObject(
+                                        $member->guild,
+                                        $channel,
+                                        $member
+                                    );
+
                                     if (is_string($question)) {
                                         $message = MessageBuilder::new()->setContent(
                                             $this->plan->instructions->replace(
                                                 array($question),
-                                                $this->plan->instructions->getObject(
-                                                    $member->guild,
-                                                    $channel,
-                                                    $member
-                                                )
+                                                $object
                                             )[0]
                                         );
                                     } else {
-                                        $message = $this->plan->utilities->buildMessageFromObject(
-                                            $question,
-                                            $this->plan->instructions->getObject(
-                                                $member->guild,
-                                                $channel,
-                                                $member
-                                            )
-                                        );
+                                        $message = $question->message_name !== null
+                                            ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                            : MessageBuilder::new()->setContent(
+                                                $this->plan->instructions->replace(
+                                                    array($question->message_content),
+                                                    $object
+                                                )[0]
+                                            );
                                     }
                                     $channel->sendMessage($message);
                                 }
@@ -287,28 +289,28 @@ class DiscordUserQuestionnaire
                             $question = $this->getQuestion($insert);
 
                             if ($question !== true) {
+                                $object = $this->plan->instructions->getObject(
+                                    $member->guild,
+                                    $channel,
+                                    $member
+                                );
+
                                 if (is_string($question)) {
                                     $message = MessageBuilder::new()->setContent(
                                         $this->plan->instructions->replace(
                                             array($question),
-                                            $this->plan->instructions->getObject(
-                                                $member->guild,
-                                                $channel,
-                                                $member
-                                            )
+                                            $object
                                         )[0]
                                     );
                                 } else {
-                                    $message = MessageBuilder::new()->setContent(
-                                        $this->plan->utilities->buildMessageFromObject(
-                                            $question,
-                                            $this->plan->instructions->getObject(
-                                                $member->guild,
-                                                $channel,
-                                                $member
-                                            )
-                                        )
-                                    );
+                                    $message = $question->message_name !== null
+                                        ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                        : MessageBuilder::new()->setContent(
+                                            $this->plan->instructions->replace(
+                                                array($question->message_content),
+                                                $object
+                                            )[0]
+                                        );
                                 }
 
                                 $channel->startThread($message, $questionnaireID)->done(function (Thread $thread)
@@ -448,7 +450,14 @@ class DiscordUserQuestionnaire
                                         $this->plan->instructions->replace(array($question), $object)[0]
                                     );
                                 } else {
-                                    $messageBuilder = $this->plan->utilities->buildMessageFromObject($question, $object);
+                                    $messageBuilder = $question->message_name !== null
+                                        ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                        : MessageBuilder::new()->setContent(
+                                            $this->plan->instructions->replace(
+                                                array($question->message_content),
+                                                $object
+                                            )[0]
+                                        );
                                 }
                                 $message->reply($messageBuilder);
                             }
