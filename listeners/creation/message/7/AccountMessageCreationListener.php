@@ -16,8 +16,8 @@ class AccountMessageCreationListener
         IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
         IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png",
         IDEALISTIC_URL = "https://www.idealistic.ai",
-        IDEALISTIC_DISCORD_ACCOUNT_CHANNEL = "https://discord.com/channels/289384242075533313/760150094225211413",
-        IDEALISTIC_DISCORD_NEWS_CHANNEL = "https://discord.com/channels/289384242075533313/932540672974667836";
+        IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
+        IDEALISTIC_DISCORD_NEWS_CHANNEL = 932540672974667836;
     private const
         VISIONARY_ID = 1195532368551878696,
         INVESTOR_ID = 1195532375677997166,
@@ -141,7 +141,7 @@ class AccountMessageCreationListener
                         self::IDEALISTIC_URL
                     );
                     $announcementEmbed->setTitle("Click to Participate!");
-                    $announcementEmbed->setURL(self::IDEALISTIC_DISCORD_ACCOUNT_CHANNEL);
+                    $announcementEmbed->setURL(self::IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL);
                     $announcementEmbed->setDescription(
                         "Congratulations to **" . $lastGiveawayWinners
                         . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
