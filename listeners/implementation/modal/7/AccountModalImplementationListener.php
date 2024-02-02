@@ -166,7 +166,7 @@ class AccountModalImplementationListener
                     $response = "Please wait a few minutes before contacting us again.";
                 } else {
                     $objects = $objects->toArray();
-                    $content = $account->getEmail()->getSupportEmailDetails(
+                    $content = $account->getEmail()->createTicket(
                         strip_tags(array_shift($objects)["value"]), // Subject
                         strip_tags(array_shift($objects)["value"]) // Info
                     );
@@ -206,7 +206,7 @@ class AccountModalImplementationListener
                 $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                 $objects = $objects->toArray();
                 $email = strip_tags(array_shift($objects)["value"]);
-                $content = $account->getEmail()->getSupportEmailDetails(
+                $content = $account->getEmail()->createTicket(
                     strip_tags(array_shift($objects)["value"]), // Subject
                     strip_tags(array_shift($objects)["value"]), // Info
                     $email
