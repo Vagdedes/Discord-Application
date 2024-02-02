@@ -19,13 +19,12 @@ class AccountModalImplementationListener
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
             $username = array_shift($objects)["value"];
-            $password = array_shift($objects)["value"];
 
             $interaction->acknowledge()
-                ->done(function () use ($interaction, $plan, $account, $email, $password, $username) {
+                ->done(function () use ($interaction, $plan, $account, $email, $username) {
                     $accountRegistry = $account->getRegistry()->create(
                         $email,
-                        $password,
+                        null,
                         $username,
                         null,
                         null,
@@ -58,14 +57,14 @@ class AccountModalImplementationListener
             $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
-            $password = array_shift($objects)["value"];
+            $code = empty($objects) ? null : array_shift($objects)["value"]; // Check for empty since it's optional
 
             $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $email, $password, $account) {
+            use ($interaction, $plan, $email, $code, $account) {
                 $account = $account->getNew(null, $email);
 
                 if ($account->exists()) {
-                    $result = $account->getActions()->logIn($password, false);
+                    $result = $account->getActions()->logIn(null, empty($code) ? "" : $code);
 
                     if ($result->isPositiveOutcome()) {
                         $response = null;
@@ -225,62 +224,6 @@ class AccountModalImplementationListener
             $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
                 $response
             ), true);
-        });
-    }
-
-    public static function forgot_password(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           mixed       $objects): void
-    {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
-
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-            $objects = $objects->toArray();
-            $email = array_shift($objects)["value"];
-
-            $interaction->acknowledge()->done(function () use ($interaction, $email, $account) {
-                $account = $account->getNew(null, $email);
-
-                if ($account->exists()) {
-                    $response = $account->getPassword()->requestChange(true)->getMessage();
-                } else {
-                    $response = "Account with this email address does not exist.";
-                }
-
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $response
-                ), true);
-            });
-        }
-    }
-
-    public static function complete_password(DiscordPlan $plan,
-                                             Interaction $interaction,
-                                             mixed       $objects): void
-    {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
-
-        if ($account === null) {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-        }
-        $objects = $objects->toArray();
-        $code = array_shift($objects)["value"];
-        $password1 = array_shift($objects)["value"];
-        $password2 = array_shift($objects)["value"];
-
-        $interaction->acknowledge()->done(function () use ($interaction, $account, $password1, $password2, $code) {
-            if ($password1 == $password2) {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getPassword()->completeChange($code, $password1, true)->getMessage()
-                ), true);
-            } else {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    "Passwords do not match each other."
-                ), true);
-            }
         });
     }
 }
