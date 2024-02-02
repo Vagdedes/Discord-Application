@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
@@ -92,13 +93,16 @@ class DiscordReminderMessages
                     );
                 }
             } else {
-                $messageBuilder = $this->plan->utilities->buildMessageFromObject(
-                    $row,
-                    $this->plan->instructions->getObject(
-                        $channel->guild,
-                        $channel
-                    )
+                $object = $this->plan->instructions->getObject(
+                    $channel->guild,
+                    $channel
                 );
+                $messageBuilder = $row->message_name !== null
+                    ? $this->plan->persistentMessages->get($object, $row->message_name)
+                    : MessageBuilder::new()->setContent(
+                        $this->plan->instructions->replace(array($row->message_content), $object)[0]
+                    );
+
                 if ($messageBuilder !== null) {
                     $messageBuilder = $this->plan->listener->callReminderMessageImplementation(
                         $row->listener_class,

@@ -246,15 +246,17 @@ class DiscordCountingChannels
                             "creation_date" => get_current_date()
                         )
                     )) {
-                        $messageBuilder = $this->plan->utilities->buildMessageFromObject(
-                            $goal,
-                            $this->plan->instructions->getObject(
-                                $message->guild,
-                                $message->channel,
-                                $message->member,
-                                $message
-                            )
+                        $object = $this->plan->instructions->getObject(
+                            $message->guild,
+                            $message->channel,
+                            $message->member,
+                            $message
                         );
+                        $messageBuilder = $goal->message_name !== null
+                            ? $this->plan->persistentMessages->get($object, $goal)
+                            : MessageBuilder::new()->setContent(
+                                $this->plan->instructions->replace(array($goal->message_content), $object)[0]
+                            );
 
                         if ($messageBuilder !== null) {
                             $message->reply($messageBuilder);

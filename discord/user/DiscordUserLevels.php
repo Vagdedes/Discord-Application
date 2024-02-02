@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Guild;
@@ -190,17 +191,19 @@ class DiscordUserLevels
                 }
 
                 if ($proceed) {
-                    $messageBuilder = $this->plan->utilities->buildMessageFromObject(
-                        $configuration,
-                        $this->plan->instructions->getObject(
-                            $channel->guild,
-                            $channel,
-                            $user,
-                            $reference instanceof Message
-                                ? $reference
-                                : ($reference instanceof MessageReaction ? $reference->message : null),
-                        )
+                    $object = $this->plan->instructions->getObject(
+                        $channel->guild,
+                        $channel,
+                        $user,
+                        $reference instanceof Message
+                            ? $reference
+                            : ($reference instanceof MessageReaction ? $reference->message : null),
                     );
+                    $messageBuilder = $configuration->message_name !== null
+                        ? $this->plan->persistentMessages->get($object, $configuration->message_name)
+                        : MessageBuilder::new()->setContent(
+                            $this->plan->instructions->replace(array($configuration->message_content), $object)[0]
+                        );
 
                     if ($messageBuilder !== null) {
                         $channel->sendMessage($messageBuilder);

@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Invite;
 use Discord\Parts\Guild\Guild;
 
@@ -272,14 +273,16 @@ class DiscordInviteTracker
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $messageBuilder = $this->plan->utilities->buildMessageFromObject(
-                        $goal,
-                        $this->plan->instructions->getObject(
-                            $invite->guild,
-                            $invite->channel,
-                            $invite->inviter
-                        ),
+                    $object = $this->plan->instructions->getObject(
+                        $invite->guild,
+                        $invite->channel,
+                        $invite->inviter
                     );
+                    $messageBuilder = $goal->message_name !== null
+                        ? $this->plan->persistentMessages->get($object, $goal->message_name)
+                        : MessageBuilder::new()->setContent(
+                            $this->plan->instructions->replace(array($goal->message_content), $object)[0]
+                        );
 
                     if ($messageBuilder !== null) {
                         $channel = $this->plan->bot->discord->getChannel($goal->message_channel_id);
