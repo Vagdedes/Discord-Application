@@ -8,24 +8,41 @@ class DefaultCommandImplementationListener
 {
 
     public static function create_embed_message(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+                                                Interaction $interaction,
+                                                object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
 
         $message = MessageBuilder::new();
         $embed = new Embed($plan->bot->discord);
         $embed->setAuthor(
-            $arguments["authorName"]["value"] ?? null,
-            $arguments["authorIconURL"]["value"] ?? null,
-            $arguments["authorRedirectURL"]["value"] ?? null
+            $arguments["author-name"]["value"] ?? null,
+            $arguments["author-icon-url"]["value"] ?? null,
+            $arguments["author-redirect-url"]["value"] ?? null
         );
-        $embed->setTitle($arguments["title"]["value"] ?? null);
-        $embed->setDescription($arguments["description"]["value"] ?? null);
-        $embed->setImage($arguments["imageURL"]["value"] ?? null);
+        $color = $arguments["color"]["value"] ?? null;
+
+        if ($color !== null) {
+            $embed->setColor($color);
+        }
+        $title = $arguments["title"]["value"] ?? null;
+
+        if ($title !== null) {
+            $embed->setTitle($title);
+        }
+        $description = $arguments["description"]["value"] ?? null;
+
+        if ($description !== null) {
+            $embed->setDescription($description);
+        }
+        $image = $arguments["image-url"]["value"] ?? null;
+
+        if ($image !== null) {
+            $embed->setImage($image);
+        }
         $embed->setFooter(
-            $arguments["footerName"]["value"] ?? null,
-            $arguments["footerIconURL"]["value"] ?? null
+            $arguments["footer-name"]["value"] ?? null,
+            $arguments["footer-icon-url"]["value"] ?? null
         );
         $fields = $arguments["fields"]["value"] ?? null;
 
