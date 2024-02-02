@@ -57,19 +57,64 @@ class AccountModalImplementationListener
             $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
             $objects = $objects->toArray();
             $email = array_shift($objects)["value"];
-            $code = empty($objects) ? null : array_shift($objects)["value"]; // Check for empty since it's optional
 
             $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $email, $code, $account) {
+            use ($interaction, $plan, $email, $account) {
                 $account = $account->getNew(null, $email);
 
                 if ($account->exists()) {
-                    $result = $account->getActions()->logIn(null, empty($code) ? "" : $code);
+                    $result = $account->getActions()->logIn(null, "");
 
                     if ($result->isPositiveOutcome()) {
                         $response = null;
                     } else {
                         $response = $result->getMessage();
+                        AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
+                    }
+                } else {
+                    $response = "Account with this email does not exist.";
+                }
+
+                // Separator
+
+                if ($response === null) {
+                    $interaction->sendFollowUpMessage(
+                        $plan->persistentMessages->get($interaction, "0-logged_in"),
+                        true
+                    );
+                } else {
+                    $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                        $response
+                    ), true);
+                }
+            });
+        }
+    }
+
+    public static function log_in_verification(DiscordPlan $plan,
+                                  Interaction $interaction,
+                                  mixed       $objects): void
+    {
+        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+
+        if ($account !== null) {
+            $plan->persistentMessages->send($interaction, "0-logged_in", true);
+        } else {
+            $objects = $objects->toArray();
+            $code = array_shift($objects)["value"];
+
+            $interaction->acknowledge()->done(function ()
+            use ($interaction, $plan, $code, $account) {
+                $account = AccountMessageCreationListener::getAttemptedAccountSession($interaction, $plan);
+
+                if ($account->exists()) {
+                    $result = $account->getActions()->logIn(null, $code);
+
+                    if ($result->isPositiveOutcome()) {
+                        $response = null;
+                    } else {
+                        $response = $result->getMessage();
+                        AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
                     }
                 } else {
                     $response = "Account with this email does not exist.";

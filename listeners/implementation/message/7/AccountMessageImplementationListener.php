@@ -48,7 +48,14 @@ class AccountMessageImplementationListener
         if ($account !== null) {
             $plan->persistentMessages->send($interaction, "0-logged_in", true);
         } else {
-            $plan->component->showModal($interaction, "0-log_in");
+            $account = AccountMessageCreationListener::getAttemptedAccountSession($interaction, $plan);
+
+            if ($account !== null
+                && $account->getTwoFactorAuthentication()->isPending()) {
+                $plan->component->showModal($interaction, "0-log_in_verification");
+            } else {
+                $plan->component->showModal($interaction, "0-log_in");
+            }
         }
     }
 
@@ -69,6 +76,7 @@ class AccountMessageImplementationListener
             ),
             true
         );
+        AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
     }
 
     public static function change_email(DiscordPlan    $plan,
@@ -339,9 +347,9 @@ class AccountMessageImplementationListener
     }
 
     public static function contact_form_offline(DiscordPlan    $plan,
-                                        Interaction    $interaction,
-                                        MessageBuilder $messageBuilder,
-                                        mixed          $objects): void
+                                                Interaction    $interaction,
+                                                MessageBuilder $messageBuilder,
+                                                mixed          $objects): void
     {
         $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
@@ -353,9 +361,9 @@ class AccountMessageImplementationListener
     }
 
     public static function download_plugins(DiscordPlan    $plan,
-                                              Interaction    $interaction,
-                                              MessageBuilder $messageBuilder,
-                                              mixed          $objects): void
+                                            Interaction    $interaction,
+                                            MessageBuilder $messageBuilder,
+                                            mixed          $objects): void
     {
         $plan->persistentMessages->send($interaction, "0-download_plugins", true);
     }

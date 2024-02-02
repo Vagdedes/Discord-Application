@@ -22,16 +22,14 @@ class AccountModalCreationListener
                                   TextInput   $input,
                                   int         $position): TextInput
     {
-        if ($position === 0) {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-            $object = $account->getSession()->getLastKnown();
+        $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+        $object = $account->getSession()->getLastKnown();
 
-            if ($object !== null) {
-                $account = $account->getNew($object->account_id);
+        if ($object !== null) {
+            $account = $account->getNew($object->account_id);
 
-                if ($account->exists()) {
-                    $input->setValue($account->getDetail("email_address"));
-                }
+            if ($account->exists()) {
+                $input->setValue($account->getDetail("email_address"));
             }
         }
         return $input;

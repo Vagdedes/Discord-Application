@@ -25,6 +25,47 @@ class AccountMessageCreationListener
         MOTIVATOR_ID = 1195532382363725945;
     private static bool $dealtGiveaway = false;
 
+    public static function getAttemptedAccountSession(Interaction $interaction,
+                                                      DiscordPlan $plan): mixed
+    {
+        return get_key_value_pair(
+            array(
+                $interaction->member->id,
+                $plan->applicationID,
+                "attempted-account-session"
+            )
+        );
+    }
+
+    public static function setAttemptedAccountSession(Interaction $interaction,
+                                                      DiscordPlan $plan,
+                                                      object      $object): void
+    {
+        set_key_value_pair(
+            array(
+                $interaction->member->id,
+                $plan->applicationID,
+                "attempted-account-session"
+            ),
+            $object,
+            "5 minutes"
+        );
+    }
+
+    public static function clearAttemptedAccountSession(Interaction $interaction,
+                                                        DiscordPlan $plan): void
+    {
+        clear_memory(
+            array(
+                array(
+                    $interaction->member->id,
+                    $plan->applicationID,
+                    "attempted-account-session"
+                )
+            )
+        );
+    }
+
     public static function getAccountObject(?Interaction $interaction,
                                             DiscordPlan  $plan): object
     {
