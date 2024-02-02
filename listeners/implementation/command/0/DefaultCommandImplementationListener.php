@@ -7,6 +7,45 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function create_embed_message(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+
+        $message = MessageBuilder::new();
+        $embed = new Embed($plan->bot->discord);
+        $embed->setAuthor(
+            $arguments["authorName"]["value"] ?? null,
+            $arguments["authorIconURL"]["value"] ?? null,
+            $arguments["authorRedirectURL"]["value"] ?? null
+        );
+        $embed->setTitle($arguments["title"]["value"] ?? null);
+        $embed->setDescription($arguments["description"]["value"] ?? null);
+        $embed->setImage($arguments["imageURL"]["value"] ?? null);
+        $embed->setFooter(
+            $arguments["footerName"]["value"] ?? null,
+            $arguments["footerIconURL"]["value"] ?? null
+        );
+        $fields = $arguments["fields"]["value"] ?? null;
+
+        if (!empty($fields)) {
+            $fields = explode("//", $fields);
+
+            foreach ($fields as $field) {
+                $field = explode("/", $field);
+                $embed->addFieldValues($field[0], $field[1], strtolower($field[2]) == "true");
+            }
+        }
+        $message->addEmbed($embed);
+
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message,
+            $arguments["ephemeral"]["value"]
+        );
+    }
+
     public static function mute_user(DiscordPlan $plan,
                                      Interaction $interaction,
                                      object      $command): void
