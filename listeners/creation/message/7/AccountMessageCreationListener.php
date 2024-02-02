@@ -14,12 +14,16 @@ class AccountMessageCreationListener
 
     public const
         IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
-        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png";
+        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png",
+        IDEALISTIC_URL = "https://www.idealistic.ai",
+        IDEALISTIC_DISCORD_ACCOUNT_CHANNEL = "https://discord.com/channels/289384242075533313/760150094225211413",
+        IDEALISTIC_DISCORD_NEWS_CHANNEL = "https://discord.com/channels/289384242075533313/932540672974667836";
     private const
         VISIONARY_ID = 1195532368551878696,
         INVESTOR_ID = 1195532375677997166,
         SPONSOR_ID = 1195532379532558476,
         MOTIVATOR_ID = 1195532382363725945;
+    private static bool $dealtGiveaway = false;
 
     public static function getAccountObject(?Interaction $interaction,
                                             DiscordPlan  $plan): object
@@ -90,22 +94,25 @@ class AccountMessageCreationListener
     {
         $account = self::getAccountObject($interaction, $plan);
         $productGiveaway = $account->getProductGiveaway();
-        $currentGiveaway = $productGiveaway->getCurrent(null, 1, "14 days");
+        $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days");
+        $currentGiveaway = $currentGiveawayOutcome->getObject();
 
-        if ($currentGiveaway->isPositiveOutcome()) { // Check if current giveaway exists
+        if ($currentGiveaway !== null) { // Check if current giveaway exists
             $embed = new Embed($plan->bot->discord);
-            $currentGiveaway = $currentGiveaway->getObject();
             $lastGiveawayInformation = $productGiveaway->getLast();
 
             if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
                 $lastGiveawayInformation = $lastGiveawayInformation->getObject();
                 $lastGiveawayWinners = $lastGiveawayInformation[0];
+                $lastGiveawayProduct = $lastGiveawayInformation[1];
+                $hasWinners = !empty($lastGiveawayWinners);
                 $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
                 $productToWinName = strip_tags($currentGiveaway->product->name);
 
-                if (!empty($lastGiveawayWinners)) { // Check if winners exist
-                    $description = "**" . implode(", ", $lastGiveawayWinners)
-                        . "** won the product **" . strip_tags($lastGiveawayInformation[1]->name) . "** in the last giveaway.";
+                if ($hasWinners) { // Check if winners exist
+                    $lastGiveawayWinners = implode(", ", $lastGiveawayWinners);
+                    $description = "**" . $lastGiveawayWinners
+                        . "** won the product **" . strip_tags($lastGiveawayProduct->name) . "** in the last giveaway.";
                 } else {
                     $description = "";
                 }
@@ -118,6 +125,37 @@ class AccountMessageCreationListener
                     "To participate, create an account, verify your email, and finally download a product you own or will buy."
                     . " You will be included in this and all future giveaways."
                 );
+
+                // Separator
+
+                if (!self::$dealtGiveaway
+                    && $hasWinners
+                    && $currentGiveawayOutcome->isPositiveOutcome()) {
+                    self::$dealtGiveaway = true;
+                    $announcement = MessageBuilder::new();
+                    $announcement->setContent("||@everyone||");
+                    $announcementEmbed = new Embed($plan->bot->discord);
+                    $announcementEmbed->setAuthor(
+                        "GIVEAWAY WINNER",
+                        self::IDEALISTIC_LOGO,
+                        self::IDEALISTIC_URL
+                    );
+                    $announcementEmbed->setTitle("Click to Participate!");
+                    $announcementEmbed->setURL(self::IDEALISTIC_DISCORD_ACCOUNT_CHANNEL);
+                    $announcementEmbed->setDescription(
+                        "Congratulations to **" . $lastGiveawayWinners
+                        . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
+                    );
+                    $announcementEmbed->setImage($lastGiveawayProduct->image);
+                    $announcementEmbed->setTimestamp(time());
+                    $announcement->addEmbed($announcementEmbed);
+                    $channel = $plan->bot->discord->getChannel(self::IDEALISTIC_DISCORD_NEWS_CHANNEL);
+
+                    if ($channel !== null
+                        && $channel->allowText()) {
+                        $channel->sendMessage($announcement);
+                    }
+                }
             }
             $messageBuilder->addEmbed($embed);
         }
