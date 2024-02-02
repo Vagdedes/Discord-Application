@@ -198,16 +198,19 @@ class DiscordMessageNotifications
                 );
                 $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
             }
+            $notificationMessage = MessageBuilder::new()->setContent($notificationMessage);
+        } else if ($notification->message_name !== null) {
+            $notificationMessage = $this->plan->persistentMessages->get($object, $notification->message_name);
         } else {
-            $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
+            $notificationMessage = MessageBuilder::new()->setContent(
+                $this->plan->instructions->replace(array($notification->notification), $object)[0]
+            );
         }
-        $builder = MessageBuilder::new()->setContent(
-            $this->plan->listener->callNotificationMessageImplementation(
-                $notificationMessage,
-                $notification->listener_class,
-                $notification->listener_method,
-                $notification
-            )
+        $builder = $this->plan->listener->callNotificationMessageImplementation(
+            $notificationMessage,
+            $notification->listener_class,
+            $notification->listener_method,
+            $notification
         );
         $lockThread = $notification->lock_thread !== null;
         $deleteMessage = $notification->delete_message !== null;

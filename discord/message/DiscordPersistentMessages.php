@@ -61,7 +61,7 @@ class DiscordPersistentMessages
         }
     }
 
-    public function get(?Interaction $interaction, string|object $key): ?MessageBuilder
+    public function get(?object $interaction, string|object $key): ?MessageBuilder
     {
         $message = $this->messages[$key] ?? null;
 
@@ -138,36 +138,36 @@ class DiscordPersistentMessages
         return true;
     }
 
-    private function build(?Interaction $interaction, object $messageRow): MessageBuilder
+    private function build(?object $interaction, object $messageRow): MessageBuilder
     {
         $messageBuilder = $this->plan->utilities->buildMessageFromObject(
             $messageRow,
-            $interaction === null ? null :
+            $interaction instanceof Interaction ?
                 $this->plan->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
                     $interaction->member,
                     $interaction->message
-                )
+                ) : null
         );
 
         if ($messageBuilder === null) {
             $messageBuilder = MessageBuilder::new();
         }
         $messageBuilder = $this->plan->component->addButtons(
-            $interaction,
+            $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->id,
             $messageRow->listener_recursion !== null
         );
         $messageBuilder = $this->plan->component->addSelection(
-            $interaction,
+            $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->id,
             $messageRow->listener_recursion !== null
         );
         $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
-            $interaction,
+            $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->listener_class,
             $messageRow->listener_method
