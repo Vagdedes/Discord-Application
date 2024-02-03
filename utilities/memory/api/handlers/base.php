@@ -27,17 +27,6 @@ class IndividualMemoryBlock
         return $this->originalKey;
     }
 
-    public function getSize(): int
-    {
-        global $memory_array;
-
-        if (array_key_exists($this->key, $memory_array)) {
-            return strlen(serialize($memory_array[$this->key]));
-        } else {
-            return 0;
-        }
-    }
-
     public function set(mixed $value, $expiration = false): void
     {
         global $memory_array;

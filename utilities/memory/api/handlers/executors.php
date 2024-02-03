@@ -91,10 +91,12 @@ function set_key_value_pair(mixed $key, mixed $value = null, string|int|null $fu
 // Separator
 
 function clear_memory(array|null $keys, bool $abstractSearch = false,
-                      int|string   $stopAfterSuccessfulIterations = 0): void
+                      int|string $stopAfterSuccessfulIterations = 0,
+                      ?callable  $valueVerifier = null): void
 {
+    share_clear_memory($keys, $abstractSearch);
+
     if (!empty($keys)) {
-        share_clear_memory($keys, $abstractSearch);
         $hasLimit = is_numeric($stopAfterSuccessfulIterations) && $stopAfterSuccessfulIterations > 0;
 
         if ($hasLimit) {
@@ -112,7 +114,8 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                     $memoryBlock = new IndividualMemoryBlock($memoryID);
                     $memoryKey = $memoryBlock->get("key");
 
-                    if ($memoryKey !== null) {
+                    if ($memoryKey !== null
+                        && ($valueVerifier === null || $valueVerifier($memoryBlock->get()))) {
                         foreach ($keys as $arrayKey => $key) {
                             if (is_array($key)) {
                                 foreach ($key as $subKey) {
@@ -151,7 +154,10 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                 foreach ($keys as $key) {
                     $name .= $key;
                     $memoryBlock = new IndividualMemoryBlock($name);
-                    $memoryBlock->clear();
+
+                    if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
+                        $memoryBlock->clear();
+                    }
                 }
             }
         }

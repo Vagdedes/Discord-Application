@@ -29,10 +29,10 @@ class AccountMessageCreationListener
                                                       DiscordPlan $plan): mixed
     {
         return get_key_value_pair(
-            array(
-                $interaction->member->id,
-                $plan->applicationID,
-                "attempted-account-session"
+            string_to_integer(
+                $interaction->member->id
+                . $plan->applicationID
+                . "attempted-account-session"
             )
         );
     }
@@ -42,10 +42,10 @@ class AccountMessageCreationListener
                                                       object      $object): void
     {
         set_key_value_pair(
-            array(
-                $interaction->member->id,
-                $plan->applicationID,
-                "attempted-account-session"
+            string_to_integer(
+                $interaction->member->id
+                . $plan->applicationID
+                . "attempted-account-session"
             ),
             $object,
             "5 minutes"
@@ -57,12 +57,17 @@ class AccountMessageCreationListener
     {
         clear_memory(
             array(
-                array(
-                    $interaction->member->id,
-                    $plan->applicationID,
-                    "attempted-account-session"
+                string_to_integer(
+                    $interaction->member->id
+                    . $plan->applicationID
+                    . "attempted-account-session"
                 )
-            )
+            ),
+            false,
+            1,
+            function ($value) {
+                return is_object($value);
+            }
         );
     }
 

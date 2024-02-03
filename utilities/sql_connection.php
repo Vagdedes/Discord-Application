@@ -17,7 +17,7 @@ function load_previous_sql_database(): void
         global $current_sql_database;
         $current_sql_database = $previous_sql_database;
         $previous_sql_database = null;
-        sql_sql_credentials($current_sql_database[0],
+        set_sql_credentials($current_sql_database[0],
             $current_sql_database[1],
             $current_sql_database[2],
             null,
@@ -42,7 +42,7 @@ function load_sql_database($file = SqlDatabaseCredentials::STORAGE): void
     if ($current_sql_database === null) {
         exit("database failure: " . $file);
     } else {
-        sql_sql_credentials(
+        set_sql_credentials(
             $current_sql_database[0],
             $current_sql_database[1],
             $current_sql_database[2],

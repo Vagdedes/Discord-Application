@@ -14,7 +14,7 @@ $is_sql_usable = false;
 $debug = false;
 
 // Connection
-function sql_sql_credentials(string          $hostname,
+function set_sql_credentials(string          $hostname,
                              string          $username,
                              ?string         $password = null,
                              ?string         $database = null,
@@ -36,18 +36,25 @@ function sql_sql_credentials(string          $hostname,
         $duration === null ? null : get_future_date($duration),
         $showErrors
     );
-    $sql_credentials[] = string_to_integer(serialize($sql_credentials));
+    $sql_credentials[] = string_to_integer(json_encode($sql_credentials));
 }
 
 function has_sql_credentials(): bool
 {
+    global $sql_credentials;
     return !empty($sql_credentials);
 }
 
 function get_sql_connection(): ?object
 {
-    global $sql_connections, $sql_credentials;
-    return !empty($sql_credentials) ? $sql_connections[$sql_credentials[10]] : null;
+    global $sql_credentials;
+
+    if (!empty($sql_credentials)) {
+        global $sql_connections;
+        return $sql_connections[$sql_credentials[10]] ?? null;
+    } else {
+        return null;
+    }
 }
 
 function reset_all_sql_connections(): void
@@ -185,7 +192,7 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
                 $queryKey[] = ($close ? 2 : 3);
             }
         } else if (is_string($single)) {
-            if (!empty($single)) {
+            if (isset($single[0])) {
                 $query .= " " . $single . " ";
 
                 if ($buildKey) {
@@ -264,13 +271,10 @@ function set_sql_cache($time = null, mixed $tag = null): void
 
 // Encoding
 
-function properly_sql_encode(string $string, bool $partial = false, bool $extra = false): ?string
+function properly_sql_encode(string $string, bool $partial = false): ?string
 {
     global $is_sql_usable;
 
-    if ($extra) {
-        $string = extra_sql_encode($string);
-    }
     if (!$is_sql_usable) {
         return $partial ? $string : htmlspecialchars($string);
     } else {
@@ -280,19 +284,14 @@ function properly_sql_encode(string $string, bool $partial = false, bool $extra 
     }
 }
 
-function extra_sql_encode(string $string): string
+function abstract_search_sql_encode(string $string): string
 {
     return str_replace("_", "\_", str_replace("%", "\%", $string));
 }
 
-function reverse_extra_sql_encode(string $string): string
-{
-    return str_replace("\_", "_", str_replace("\%", "%", $string));
-}
-
 // Get
 
-function sql_debug()
+function sql_debug(): void
 {
     global $debug;
     $debug = true;
@@ -300,7 +299,7 @@ function sql_debug()
 
 function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
 {
-    global $sql_cache_time, $debug;
+    global $sql_cache_time;
     $hasWhere = $where !== null;
 
     if ($hasWhere) {
@@ -344,10 +343,6 @@ function get_sql_query(string $table, array $select = null, array $where = null,
         $query .= " LIMIT " . $limit;
     }
 
-    if ($debug) {
-        $debug = false;
-        var_dump($query);
-    }
     $query = sql_query($query . ";");
     $array = array();
 
@@ -367,23 +362,19 @@ function get_sql_query(string $table, array $select = null, array $where = null,
     return $array;
 }
 
-function sql_query_row(?object $query): ?object
-{
-    return isset($query->num_rows) && $query->num_rows > 0 ? $query->fetch_assoc() : null;
-}
-
 /**
  * @throws Exception
  */
-function sql_query(string $command, bool $debug = false)
+function sql_query(string $command): mixed
 {
     $sqlConnection = create_sql_connection();
-    global $is_sql_usable;
+    global $is_sql_usable, $debug;
 
+    if ($debug) {
+        $debug = false;
+        var_dump($command);
+    }
     if ($is_sql_usable) {
-        if ($debug && !isset($command[0])) {
-            throw new Exception("Empty Query: " . getcwd());
-        }
         global $sql_credentials;
         $show_sql_errors = $sql_credentials[9];
 
@@ -402,7 +393,8 @@ function sql_query(string $command, bool $debug = false)
         if (!$query) {
             $query = $command;
             $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
-                . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"]) . "', '" . $query . "', '" . properly_sql_encode($sqlConnection->error) . "');";
+                . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
+                . "', '" . $query . "', '" . properly_sql_encode($sqlConnection->error) . "');";
 
             if ($show_sql_errors) {
                 $sqlConnection->query($command);
@@ -412,74 +404,11 @@ function sql_query(string $command, bool $debug = false)
                 try {
                     $sqlConnection->query($command);
                 } catch (Exception $e) {
-
                 }
                 error_reporting(E_ALL);
             }
         }
         return $query;
-    }
-    return null;
-}
-
-// Custom
-
-class CustomQuery
-{
-    private array $fetch;
-    public int $num_rows, $fetcher, $fetcherLimit;
-
-    function __construct($fetch, int $count)
-    {
-        $this->fetch = $fetch;
-        $this->num_rows = $count;
-
-        $this->fetcher = -1;
-        $this->fetcherLimit = $count - 1;
-    }
-
-    function fetch_assoc()
-    {
-        if ($this->fetcher === $this->fetcherLimit) {
-            return false;
-        }
-        $this->fetcher++;
-        return $this->fetch[$this->fetcher];
-    }
-}
-
-function sql_local_query($command): bool|CustomQuery|null
-{
-    global $sql_credentials;
-
-    if ($sql_credentials[0] === "127.0.0.1") {
-        if (substr($command, 0, 6) === "SELECT") {
-            $query = array();
-            exec('/usr/bin/mysql --user=' . $sql_credentials[1]
-                . ' --password=' . $sql_credentials[2]
-                . ' -e "' . htmlspecialchars($command) . '"', $query);
-            $count = sizeof($query);
-
-            if ($count > 1) {
-                $character = chr(9);
-                $keys = explode($character, $query[0]);
-                $keyCount = sizeof($keys);
-                unset($query[0]);
-                $fetch = array();
-
-                foreach ($query as $row) {
-                    $columns = array();
-
-                    foreach (explode($character, $row, $keyCount) as $position => $contents) { // add support for dates
-                        $columns[$keys[$position]] = ($contents === "NULL" ? null : $contents);
-                    }
-                    $fetch[] = $columns;
-                }
-                return new CustomQuery($fetch, $count - 1);
-            }
-        } else {
-            return true;
-        }
     }
     return null;
 }
@@ -538,7 +467,9 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
             $sql_cache_time = null;
             $array = array($sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
-            clear_memory($array, true);
+            clear_memory($array, true, 0, function ($value) {
+                return is_array($value);
+            });
         }
         return true;
     } else {
@@ -573,7 +504,9 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
             $sql_cache_time = null;
             $array = array($sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
-            clear_memory($array, true);
+            clear_memory($array, true, 0, function ($value) {
+                return is_array($value);
+            });
         }
         return true;
     } else {
@@ -588,39 +521,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
     }
 }
 
-// Et ce tera
-
-function get_sql_overhead_rows(string $table, int $minimum = 1, string $column = "id"): array
-{
-    $query = sql_query("SELECT " . $column . " FROM " . $table . " ORDER BY " . $column . " ASC;");
-    $array = array();
-
-    if (!isset($query->num_rows) || $query->num_rows === 0) {
-        for ($i = 1; $i <= $minimum; $i++) {
-            $array[] = $i;
-        }
-        return $array;
-    }
-    $counter = 1;
-    $size = 0;
-
-    while ($row = $query->fetch_assoc()) {
-        if ($row[$column] != $counter) {
-            $array[] = $counter;
-            $size++;
-
-            if ($size == $minimum) {
-                return $array;
-            }
-        }
-        $counter++;
-    }
-
-    for ($i = $counter; $i <= ($counter + ($minimum - $size)); $i++) {
-        $array[] = $i;
-    }
-    return $array;
-}
+// Local
 
 function get_sql_database_tables(string $database): array
 {
