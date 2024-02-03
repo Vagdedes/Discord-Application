@@ -167,7 +167,10 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
         if (!empty($memory_array)) {
             foreach (array_keys($memory_array) as $memoryID) {
                 $memoryBlock = new IndividualMemoryBlock($memoryID);
-                $memoryBlock->clear();
+
+                if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
+                    $memoryBlock->clear();
+                }
             }
         }
     }

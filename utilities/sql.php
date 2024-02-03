@@ -128,15 +128,15 @@ function close_sql_connection(bool $clear = false): bool
     global $sql_credentials;
 
     if (!empty($sql_credentials)) {
-        global $is_sql_usable;
+        global $is_sql_usable, $sql_cache_time, $sql_cache_tag;
+        $sql_cache_time = false;
+        $sql_cache_tag = null;
 
         if ($is_sql_usable) {
-            global $sql_connections, $sql_cache_time, $sql_cache_tag;
+            global $sql_connections;
             $hash = $sql_credentials[10];
             $result = $sql_connections[$hash]->close();
             unset($sql_connections[$hash]);
-            $sql_cache_time = false;
-            $sql_cache_tag = null;
             $is_sql_usable = false;
 
             if ($clear) {
@@ -144,10 +144,8 @@ function close_sql_connection(bool $clear = false): bool
             }
             return $result;
         } else {
-            global $sql_connections, $sql_cache_time, $sql_cache_tag;
+            global $sql_connections;
             unset($sql_connections[$sql_credentials[10]]);
-            $sql_cache_time = false;
-            $sql_cache_tag = null;
             $is_sql_usable = false;
 
             if ($clear) {
@@ -162,6 +160,16 @@ function close_sql_connection(bool $clear = false): bool
 
 function sql_build_where(array $where, bool $buildKey = false): string|array
 {
+    $cacheKey = array(
+        $where,
+        $buildKey,
+        __METHOD__
+    );
+    $cache = get_key_value_pair($cacheKey);
+
+    if ($buildKey ? is_array($cache) : is_string($cache)) {
+        return $cache;
+    }
     if ($buildKey) {
         $queryKey = array();
     }
@@ -238,7 +246,9 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
             }
         }
     }
-    return $buildKey ? array($query, $queryKey) : $query;
+    $query = $buildKey ? array($query, $queryKey) : $query;
+    set_key_value_pair($cacheKey, $query);
+    return $query;
 }
 
 function sql_build_order(string|array|null $order): ?string
@@ -253,13 +263,11 @@ function sql_build_order(string|array|null $order): ?string
 
 // Cache
 
-function get_sql_cache_key(mixed $key, mixed $value): string
+function get_sql_cache_key(mixed $key, mixed $value = null): string
 {
-    return substr(
-        serialize(array($key => $value)),
-        5,
-        -1
-    );
+    return $value === null
+        ? serialize($key)
+        : substr(serialize(array($key => $value)), 5, -1);
 }
 
 function set_sql_cache($time = null, mixed $tag = null): void
@@ -320,7 +328,17 @@ function get_sql_query(string $table, array $select = null, array $where = null,
         );
 
         if ($sql_cache_tag !== null) {
-            $cacheKey[] = $sql_cache_tag;
+            if (is_array($sql_cache_tag)) {
+                foreach ($sql_cache_tag as $key => $value) {
+                    if (is_numeric($key)) {
+                        $cacheKey[] = $value;
+                    } else {
+                        $cacheKey[$key] = $value;
+                    }
+                }
+            } else {
+                $cacheKey[] = $sql_cache_tag;
+            }
             $sql_cache_tag = null;
         }
         $cache = get_key_value_pair($cacheKey);
@@ -465,7 +483,7 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
         if ($sql_cache_time !== false) {
             global $sql_cache_tag;
             $sql_cache_time = null;
-            $array = array($sql_cache_tag); // Not needed but will help with speed
+            $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
@@ -502,7 +520,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
         if ($sql_cache_time !== false) {
             global $sql_cache_tag;
             $sql_cache_time = null;
-            $array = array($sql_cache_tag); // Not needed but will help with speed
+            $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
