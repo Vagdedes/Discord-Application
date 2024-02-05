@@ -36,6 +36,7 @@ class DiscordPlan
     public DiscordObjectiveChannels $objectiveChannels;
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordMessageNotifications $messageNotifications;
+    public DiscordJoinRoles $joinRoles;
 
     public function __construct(DiscordBot $bot, int|string $planID)
     {
@@ -90,6 +91,7 @@ class DiscordPlan
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
         $this->messageNotifications = new DiscordMessageNotifications($this);
+        $this->joinRoles = new DiscordJoinRoles($this);
     }
 
 }

@@ -424,6 +424,7 @@ function initiate_discord_bot(): void
             foreach ($createdDiscordBot->plans as $plan) {
                 $plan->statusMessages->run($member, DiscordStatusMessages::WELCOME);
                 $plan->statisticsChannels->refresh();
+                $plan->joinRoles->run($member);
             }
             $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
         });
