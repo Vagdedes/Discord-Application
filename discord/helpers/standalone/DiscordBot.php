@@ -7,8 +7,10 @@
  * Custom Commands
  * -
  * Social Alerts
- * Reaction Roles
  * Invite Tracker
+ * -
+ * Reaction Roles
+ * Join Roles
  * -
  * AI Text Messages
  * AI Image Messages

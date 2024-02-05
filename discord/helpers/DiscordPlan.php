@@ -1,4 +1,5 @@
 <?php
+
 class DiscordPlan
 {
     public int $planID;
