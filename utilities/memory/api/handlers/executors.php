@@ -92,10 +92,12 @@ function set_key_value_pair(mixed $key, mixed $value = null, string|int|null $fu
 
 function clear_memory(array|null $keys, bool $abstractSearch = false,
                       int|string $stopAfterSuccessfulIterations = 0,
-                      ?callable  $valueVerifier = null): void
+                      ?callable  $valueVerifier = null,
+                      bool       $share = false): void
 {
-    share_clear_memory($keys, $abstractSearch);
-
+    if ($share) {
+        share_clear_memory($keys, $abstractSearch);
+    }
     if (!empty($keys)) {
         $hasLimit = is_numeric($stopAfterSuccessfulIterations) && $stopAfterSuccessfulIterations > 0;
 
@@ -114,8 +116,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                     $memoryBlock = new IndividualMemoryBlock($memoryID);
                     $memoryKey = $memoryBlock->get("key");
 
-                    if ($memoryKey !== null
-                        && ($valueVerifier === null || $valueVerifier($memoryBlock->get()))) {
+                    if ($memoryKey !== null) {
                         foreach ($keys as $arrayKey => $key) {
                             if (is_array($key)) {
                                 foreach ($key as $subKey) {
@@ -123,16 +124,19 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                                         continue 2;
                                     }
                                 }
-                                $memoryBlock->clear();
+                                if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
+                                    $memoryBlock->clear();
 
-                                if ($hasLimit) {
-                                    $iterations[$arrayKey]++;
+                                    if ($hasLimit) {
+                                        $iterations[$arrayKey]++;
 
-                                    if ($iterations[$arrayKey] === $stopAfterSuccessfulIterations) {
-                                        break 2;
+                                        if ($iterations[$arrayKey] === $stopAfterSuccessfulIterations) {
+                                            break 2;
+                                        }
                                     }
                                 }
-                            } else if (str_contains($memoryKey, $key)) {
+                            } else if (str_contains($memoryKey, $key)
+                                && ($valueVerifier === null || $valueVerifier($memoryBlock->get()))) {
                                 $memoryBlock->clear();
 
                                 if ($hasLimit) {
@@ -154,10 +158,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                 foreach ($keys as $key) {
                     $name .= $key;
                     $memoryBlock = new IndividualMemoryBlock($name);
-
-                    if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
-                        $memoryBlock->clear();
-                    }
+                    $memoryBlock->clear();
                 }
             }
         }
@@ -167,10 +168,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
         if (!empty($memory_array)) {
             foreach (array_keys($memory_array) as $memoryID) {
                 $memoryBlock = new IndividualMemoryBlock($memoryID);
-
-                if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
-                    $memoryBlock->clear();
-                }
+                $memoryBlock->clear();
             }
         }
     }

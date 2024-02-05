@@ -487,7 +487,7 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
-            });
+            }, true);
         }
         return true;
     } else {
@@ -524,7 +524,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
-            });
+            }, true);
         }
         return true;
     } else {
