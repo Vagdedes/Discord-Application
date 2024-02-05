@@ -121,7 +121,7 @@ class DiscordBot
             reset_all_sql_connections();
             clear_memory(null);
 
-            if (false && $this->counter === 10) {
+            if ($this->counter === 10) {
                 $this->counter = 0;
                 $this->discord->close(true);
                 initiate_discord_bot();

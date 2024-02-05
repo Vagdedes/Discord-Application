@@ -160,16 +160,6 @@ function close_sql_connection(bool $clear = false): bool
 
 function sql_build_where(array $where, bool $buildKey = false): string|array
 {
-    $cacheKey = array(
-        $where,
-        $buildKey,
-        __METHOD__
-    );
-    $cache = get_key_value_pair($cacheKey);
-
-    if ($buildKey ? is_array($cache) : is_string($cache)) {
-        return $cache;
-    }
     if ($buildKey) {
         $queryKey = array();
     }
@@ -246,9 +236,7 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
             }
         }
     }
-    $query = $buildKey ? array($query, $queryKey) : $query;
-    set_key_value_pair($cacheKey, $query);
-    return $query;
+    return $buildKey ? array($query, $queryKey) : $query;
 }
 
 function sql_build_order(string|array|null $order): ?string
