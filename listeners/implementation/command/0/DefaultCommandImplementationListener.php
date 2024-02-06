@@ -19,9 +19,9 @@ class DefaultCommandImplementationListener
                 $arguments["name"]["value"],
                 $arguments["title"]["value"],
                 $arguments["description"]["value"],
-                $arguments["allowDeletion"]["value"],
-                $arguments["maxChoices"]["value"],
-                $arguments["allowSameChoice"]["value"]
+                $arguments["allow-choice-deletion"]["value"],
+                $arguments["max-choices"]["value"],
+                $arguments["allow-same-choice"]["value"]
             ) ?? MessageBuilder::new()->setContent("Poll successfully created."),
             true
         );
