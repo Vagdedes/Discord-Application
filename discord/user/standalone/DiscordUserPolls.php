@@ -1,6 +1,8 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Interactions\Interaction;
 
@@ -147,7 +149,7 @@ class DiscordUserPolls
                             "copy" => true
                         )
                     )) {
-                        $this->update($running);
+                        $this->update($running, $get);
                         return null;
                     } else {
                         return MessageBuilder::new()->setContent(
@@ -182,12 +184,13 @@ class DiscordUserPolls
                         "server_id" => $interaction->guild_id,
                         "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
                         "thread_id" => $interaction->channel_id,
+                        "user_id" => $interaction->member->id,
                         "expiration_date" => get_future_date($duration),
                         "running" => true,
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $this->update($pollCreationID);
+                    $this->update($pollCreationID, $get);
                     return null;
                 } else {
                     return MessageBuilder::new()->setContent(
@@ -250,14 +253,77 @@ class DiscordUserPolls
         return empty($query) ? null : $query[0];
     }
 
-    private function update(object|int $query): void
+    private function update(object|int $query, object $parent = null, ?Message $message = null): void
     {
-        $builder = MessageBuilder::new();
-
         if (is_numeric($query)) {
+            $query = get_sql_query(
+                BotDatabaseTable::BOT_POLL_TRACKING,
+                null,
+                array(
+                    array("poll_creation_id", $query)
+                ),
+                null,
+                1
+            );
 
+            if (!empty($query)) {
+                $query = $query[0];
+            } else {
+                return;
+            }
+        }
+        if ($parent === null) {
+            $parent = get_sql_query(
+                BotDatabaseTable::BOT_POLLS,
+                null,
+                array(
+                    array("id", $query->poll_id)
+                ),
+                null,
+                1
+            );
+
+            if (!empty($parent)) {
+                $parent = $parent[0];
+            } else {
+                return;
+            }
+        }
+        $builder = MessageBuilder::new();
+        $embed = new Embed($this->plan->bot->discord);
+        $embed->setTitle($parent->title);
+        $embed->setDescription($parent->description);
+        $builder->addEmbed($embed);
+
+        if ($query->message_id === null) {
+            $channel = $this->plan->utilities->getChannel($query->channel_id);
+
+            if ($query->thread_id === null) {
+                $channel->sendMessage($builder);
+            } else if (!empty($channel->threads->first())) {
+                foreach ($channel->threads as $thread) {
+                    if ($thread->id == $query->thread_id) {
+                        $thread->sendMessage($builder);
+                        break;
+                    }
+                }
+            }
+        } else if ($message !== null) {
+            $message->edit($builder);
         } else {
+            $channel = $this->plan->utilities->getChannel($query->channel_id);
 
+            if (!empty($channel->threads->first())) {
+                foreach ($channel->threads as $thread) {
+                    if ($thread->id == $query->thread_id) {
+                        $channel = $thread;
+                        break;
+                    }
+                }
+            }
+            $channel->messages->fetch($message->message_id)->done(function (Message $message) use ($builder) {
+                $message->edit($builder);
+            });
         }
     }
 
@@ -437,7 +503,7 @@ class DiscordUserPolls
                             "creation_date" => get_current_date()
                         )
                     )) {
-                        $this->update($running);
+                        $this->update($running, $get, $interaction->message);
                         return null;
                     } else {
                         return MessageBuilder::new()->setContent(
@@ -479,7 +545,7 @@ class DiscordUserPolls
                                     null,
                                     1
                                 )) {
-                                    $this->update($running);
+                                    $this->update($running, $get, $interaction->message);
                                     return null;
                                 } else {
                                     return MessageBuilder::new()->setContent(
