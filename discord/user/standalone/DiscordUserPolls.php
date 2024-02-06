@@ -30,7 +30,6 @@ class DiscordUserPolls
     // commands:
     // idealistic-create-poll, idealistic-delete-poll
     // idealistic-start-poll, idealistic-end-poll
-    // idealistic-get-poll
     // idealistic-add-poll-choice, idealistic-remove-poll-choice
     // idealistic-add-poll-permission, idealistic-remove-poll-permission
     // idealistic-add-poll-role, idealistic-remove-poll-role
@@ -321,9 +320,12 @@ class DiscordUserPolls
                     }
                 }
             }
-            $channel->messages->fetch($message->message_id)->done(function (Message $message) use ($builder) {
-                $message->edit($builder);
-            });
+            try {
+                $channel->messages->fetch($message->message_id)->done(function (Message $message) use ($builder) {
+                    $message->edit($builder);
+                });
+            } catch (Throwable $ignored) {
+            }
         }
     }
 

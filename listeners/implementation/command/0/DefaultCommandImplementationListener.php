@@ -7,6 +7,176 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function create_poll(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->create(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["title"]["value"],
+                $arguments["description"]["value"],
+                $arguments["allowDeletion"]["value"],
+                $arguments["maxChoices"]["value"],
+                $arguments["allowSameChoice"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll successfully created."),
+            true
+        );
+    }
+
+    public static function delete_poll(DiscordPlan $plan,
+                                       Interaction $interaction,
+                                       object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->delete(
+                $interaction,
+                $arguments["name"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll successfully deleted."),
+            true
+        );
+    }
+
+    public static function start_poll(DiscordPlan $plan,
+                                      Interaction $interaction,
+                                      object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->start(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["duration"]["value"],
+                $arguments["copy"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll successfully started."),
+            true
+        );
+    }
+
+    public static function end_poll(DiscordPlan $plan,
+                                    Interaction $interaction,
+                                    object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->end(
+                $interaction,
+                $arguments["name"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll successfully ended."),
+            true
+        );
+    }
+
+    public static function add_poll_choice(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setChoice(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["choice"]["value"],
+                $arguments["description"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll choice successfully added."),
+            true
+        );
+    }
+
+    public static function remove_poll_choice(DiscordPlan $plan,
+                                              Interaction $interaction,
+                                              object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setChoice(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["choice"]["value"],
+                $arguments["description"]["value"],
+                false
+            ) ?? MessageBuilder::new()->setContent("Poll choice successfully removed."),
+            true
+        );
+    }
+
+    public static function add_poll_permission(DiscordPlan $plan,
+                                               Interaction $interaction,
+                                               object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setRequiredPermission(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["permission"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully added."),
+            true
+        );
+    }
+
+    public static function remove_poll_permission(DiscordPlan $plan,
+                                                  Interaction $interaction,
+                                                  object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setRequiredPermission(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["permission"]["value"],
+                false
+            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully removed."),
+            true
+        );
+    }
+
+    public static function add_poll_role(DiscordPlan $plan,
+                                         Interaction $interaction,
+                                         object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setRequiredRole(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["role"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
+            true
+        );
+    }
+
+    public static function remove_poll_role(DiscordPlan $plan,
+                                            Interaction $interaction,
+                                            object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userPolls->setRequiredRole(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["role"]["value"],
+                false
+            ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
+            true
+        );
+    }
+
+    // Separator
+
     public static function create_embed_message(DiscordPlan $plan,
                                                 Interaction $interaction,
                                                 object      $command): void
