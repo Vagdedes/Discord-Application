@@ -2,12 +2,11 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Guild\Guild;
-use Discord\Parts\User\Member;
+use Discord\Parts\Interactions\Interaction;
 
 class DiscordUserPolls
 {
     private DiscordPlan $plan;
-    private array $polls;
 
     private const
         REFRESH_TIME = "15 seconds",
@@ -24,32 +23,55 @@ class DiscordUserPolls
         $this->checkExpired();
     }
 
-    //todo max 25 choices, commands
+    //todo max 25 choices
+    // commands:
+    // idealistic-create-poll, idealistic-delete-poll
+    // idealistic-start-poll, idealistic-end-poll
+    // idealistic-get-poll
+    // idealistic-add-poll-choice, idealistic-remove-poll-choice
+    // idealistic-add-poll-permission, idealistic-remove-poll-permission
+    // idealistic-add-poll-role, idealistic-remove-poll-role
 
-    public function create(Member           $member,
+    public function create(Interaction      $interaction,
                            int|float|string $name,
                            int|float|string $title, int|float|string $description,
-                           bool             $interactionBased, bool $commandBased,
                            bool             $allowDeletion,
-                           bool             $maxChoices, bool $allowSameChoice): ?string
+                           bool             $maxChoices,
+                           bool             $allowSameChoice): ?string
     {
-        $get = $this->get($member->guild, $name);
+        $get = $this->getBase($interaction, $name);
 
         if ($get !== null) {
             return "This user poll already exists.";
         }
-        //todo
-        return null;
+        if (sql_insert(
+            BotDatabaseTable::BOT_POLLS,
+            array(
+                "server_id" => $interaction->guild_id,
+                "user_id" => $interaction->member->id,
+                "name" => $name,
+                "title" => $title,
+                "description" => $description,
+                "allow_choice_deletion" => $allowDeletion,
+                "max_choices" => $maxChoices,
+                "allow_same_choice" => $allowSameChoice,
+                "creation_date" => get_current_date()
+            )
+        )) {
+            return null;
+        } else {
+            return "Failed to insert this user poll into the database.";
+        }
     }
 
-    public function delete(Member           $member,
+    public function delete(Interaction      $interaction,
                            int|float|string $name): ?string
     {
-        $get = $this->get($member->guild, $name);
+        $get = $this->getBase($interaction, $name);
 
         if ($get === null) {
             return "This user poll does not exist.";
-        } else if (!$this->owns($member, $get)) {
+        } else if (!$this->owns($interaction, $get)) {
             return self::NOT_OWNED;
         } else {
             $result = $this->endRaw($get);
@@ -74,38 +96,89 @@ class DiscordUserPolls
         }
     }
 
-    // Separator
-
-    public function start(Member           $member,
-                          int|float|string $name, string $duration): ?string
+    private function getBase(Interaction $interaction, int|float|string $name): ?object
     {
-        $get = $this->get($member->guild, $name);
-
-        if ($get === null) {
-            return self::NOT_EXISTS;
-        } else if (!$this->owns($member, $get)) {
-            return self::NOT_OWNED;
-        } else {
-            $running = $this->getRunning($member->guild, $get);
-
-            if (!empty($running)) {
-                return "This user poll is already running.";
-            }
-        }
-        //todo
-        return null;
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_POLLS,
+            array("id"),
+            array(
+                array("server_id", $interaction->guild_id),
+                array("deletion_date", null),
+                array("name", $name),
+            ),
+            null,
+            1
+        );
+        return empty($query) ? null : $query[0];
     }
 
-    public function end(Member           $member,
+    // Separator
+
+    public function start(Interaction      $interaction,
+                          int|float|string $name,
+                          string           $duration,
+                          bool             $embed): ?MessageBuilder
+    {
+        $get = $this->getBase($interaction, $name);
+
+        if ($get === null) {
+            return MessageBuilder::new()->setContent(self::NOT_EXISTS);
+        } else if (!$this->owns($interaction, $get)) {
+            return MessageBuilder::new()->setContent(self::NOT_OWNED);
+        } else {
+            $running = $this->getRunning($interaction->guild, $get);
+
+            if (!empty($running)) {
+                return MessageBuilder::new()->setContent("This user poll is already running.");
+            } else if (empty($this->getChoices($get))) {
+                return MessageBuilder::new()->setContent("This user poll does not have any choices.");
+            }
+        }
+        while (true) {
+            $pollCreationID = random_number(19);
+
+            if (empty(get_sql_query(
+                BotDatabaseTable::BOT_POLL_TRACKING,
+                array("poll_creation_id"),
+                array(
+                    array("poll_creation_id", $pollCreationID)
+                ),
+                null,
+                1
+            ))) {
+                if (sql_insert(
+                    BotDatabaseTable::BOT_POLL_TRACKING,
+                    array(
+                        "poll_id" => $get->id,
+                        "poll_creation_id" => $pollCreationID,
+                        "server_id" => $interaction->guild_id,
+                        "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
+                        "thread_id" => $interaction->channel_id,
+                        "expiration_date" => get_future_date($duration),
+                        "running" => true,
+                        "creation_date" => get_current_date()
+                    )
+                )) {
+                    return $this->getMessage($interaction, $name);
+                } else {
+                    return MessageBuilder::new()->setContent(
+                        "Failed to insert this user poll into the database."
+                    );
+                }
+            }
+        }
+    }
+
+    public function end(Interaction      $interaction,
                         int|float|string $name): ?string
     {
-        $get = $this->get($member->guild, $name);
+        $get = $this->getBase($interaction, $name);
 
         if ($get === null) {
             return "This user poll does not exist.";
-        } else if (!$this->owns($member, $get)) {
+        } else if (!$this->owns($interaction, $get)) {
             return self::NOT_OWNED;
-        } else if (!$this->isRunning($member->guild, $get)) {
+        } else if (empty($this->getRunning($interaction->guild, $get))) {
             return self::NOT_RUNNING;
         }
         return $this->endRaw($get);
@@ -117,41 +190,151 @@ class DiscordUserPolls
         return null;
     }
 
-    private function finish(object $running): void
+    private function getRunning(Guild $guild, object $query): ?object
+    {
+        $this->checkExpired();
+        set_sql_cache("1 second");
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_POLL_TRACKING,
+            null,
+            array(
+                array("server_id", $guild->id),
+                array("deletion_date", null),
+                array("running", null),
+                array("poll_id", $query->id)
+            ),
+            null,
+            1
+        );
+        return empty($query) ? null : $query[0];
+    }
+
+    private function update(object $query): void
     {
         //todo
     }
 
-    // Separator
+    // Choices
 
-    private function getPicks(Member $member, object $running): array
+    private function getChoices(object $query, bool $cache = true): array
+    {
+        if ($cache) {
+            set_sql_cache("1 second");
+        }
+        return get_sql_query(
+            BotDatabaseTable::BOT_POLL_CHOICES,
+            null,
+            array(
+                array("deletion_date", null),
+                array("poll_id", $query->id)
+            ),
+            null,
+            self::MAX_CHOICES
+        );
+    }
+
+    public function setChoice(Interaction      $interaction,
+                              int|float|string $name,
+                              int|float|string $choiceToAdd, int|string $description, bool $set = true): ?string
+    {
+        $query = $this->getBase($interaction, $name);
+
+        if ($query === null) {
+            return self::NOT_EXISTS;
+        } else if (!empty($this->getRunning($interaction->guild, $query))) {
+            return "This user poll is currently running.";
+        } else {
+            $choices = $this->getChoices($query, false);
+
+            if ($set) {
+                $size = sizeof($choices);
+
+                if ($size > 0) {
+                    if ($size == self::MAX_CHOICES) {
+                        return "This user poll already has the maximum amount of choices.";
+                    } else {
+                        foreach ($choices as $choice) {
+                            if ($choice->name == $choiceToAdd) {
+                                return "This choice is already added to this user poll.";
+                            }
+                        }
+                    }
+                }
+                if (sql_insert(
+                    BotDatabaseTable::BOT_POLL_CHOICES,
+                    array(
+                        "poll_id" => $query->id,
+                        "choice" => $choiceToAdd,
+                        "description" => $description,
+                        "creation_date" => get_current_date(),
+                        "created_by" => $interaction->member->id
+                    )
+                )) {
+                    return null;
+                } else {
+                    return "Failed to insert this choice into the database.";
+                }
+            } else {
+                $notMessage = "This choice is not added to this user poll.";
+
+                if (empty($choices)) {
+                    return $notMessage;
+                } else {
+                    foreach ($choices as $choice) {
+                        if ($choice->name == $choiceToAdd) {
+                            if (set_sql_query(
+                                BotDatabaseTable::BOT_POLL_CHOICES,
+                                array(
+                                    "deletion_date" => get_current_date(),
+                                    "deleted_by" => $interaction->member->id
+                                ),
+                                array(
+                                    array("id", $choice->id)
+                                ),
+                                null,
+                                1
+                            )) {
+                                return null;
+                            } else {
+                                return "Failed to delete this choice from the database.";
+                            }
+                        }
+                    }
+                    return $notMessage;
+                }
+            }
+        }
+    }
+
+    // Choice Picking
+
+    private function getPicks(Interaction $interaction, object $query): array
     {
         return get_sql_query(
             BotDatabaseTable::BOT_POLL_CHOICE_TRACKING,
             null,
             array(
                 array("deletion_date", null),
-                array("poll_creation_id", $running->poll_creation_id),
-                array("user_id", $member->id)
+                array("poll_creation_id", $query->poll_creation_id),
+                array("user_id", $interaction->member->id)
             )
         );
     }
 
-    public function setPick(Member           $member,
+    public function setPick(Interaction      $interaction,
                             int|float|string $name, int|float|string $choice, bool $set = true): ?string
     {
-        $get = $this->get($member->guild, $name);
+        $get = $this->getBase($interaction, $name);
 
         if ($get === null) {
             return self::NOT_EXISTS;
         } else {
-            $running = $this->getRunning($member->guild, $get);
+            $running = $this->getRunning($interaction->guild, $get);
 
             if (empty($running)) {
                 return self::NOT_RUNNING;
             } else if ($running->expiration_date <= get_current_date()) {
-                $this->finish($running);
-                return self::NOT_RUNNING;
+                return $this->endRaw($running);
             } else if ($set) {
                 $choiceID = null;
 
@@ -165,7 +348,7 @@ class DiscordUserPolls
                 if ($choiceID === null) {
                     return "This user poll does not have this choice.";
                 } else {
-                    $picks = $this->getPicks($member, $running);
+                    $picks = $this->getPicks($interaction, $running);
 
                     if (!empty($picks)) {
                         $counter = 0;
@@ -189,7 +372,7 @@ class DiscordUserPolls
                         array(
                             "poll_creation_id" => $running->poll_creation_id,
                             "choice_id" => $choiceID,
-                            "user_id" => $member->id,
+                            "user_id" => $interaction->member->id,
                             "creation_date" => get_current_date()
                         )
                     )) {
@@ -212,7 +395,7 @@ class DiscordUserPolls
                 if ($choiceID === null) {
                     return "This user poll does not have this choice.";
                 } else {
-                    $picks = $this->getPicks($member, $running);
+                    $picks = $this->getPicks($interaction, $running);
                     $notMessage = "You have not picked this choice.";
 
                     if (empty($picks)) {
@@ -247,99 +430,7 @@ class DiscordUserPolls
         }
     }
 
-    // Separator
-
-    private function getChoices(object $query, bool $cache = true): array
-    {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
-        return get_sql_query(
-            BotDatabaseTable::BOT_POLL_CHOICES,
-            null,
-            array(
-                array("deletion_date", null),
-                array("poll_id", $query->id)
-            ),
-            null,
-            self::MAX_CHOICES
-        );
-    }
-
-    public function setChoice(Member           $member,
-                              int|float|string $name,
-                              int|float|string $choiceToAdd, int|string $description, bool $set = true): ?string
-    {
-        $query = $this->get($member->guild, $name);
-
-        if ($query === null) {
-            return self::NOT_EXISTS;
-        } else if (!empty($this->getRunning($member->guild, $query))) {
-            return "This user poll is currently running.";
-        } else {
-            $choices = $this->getChoices($query, false);
-
-            if ($set) {
-                $size = sizeof($choices);
-
-                if ($size > 0) {
-                    if ($size == self::MAX_CHOICES) {
-                        return "This user poll already has the maximum amount of choices.";
-                    } else {
-                        foreach ($choices as $choice) {
-                            if ($choice->name == $choiceToAdd) {
-                                return "This choice is already added to this user poll.";
-                            }
-                        }
-                    }
-                }
-                if (sql_insert(
-                    BotDatabaseTable::BOT_POLL_CHOICES,
-                    array(
-                        "poll_id" => $query->id,
-                        "choice" => $choiceToAdd,
-                        "description" => $description,
-                        "creation_date" => get_current_date(),
-                        "created_by" => $member->id
-                    )
-                )) {
-                    return null;
-                } else {
-                    return "Failed to insert this choice into the database.";
-                }
-            } else {
-                $notMessage = "This choice is not added to this user poll.";
-
-                if (empty($choices)) {
-                    return $notMessage;
-                } else {
-                    foreach ($choices as $choice) {
-                        if ($choice->name == $choiceToAdd) {
-                            if (set_sql_query(
-                                BotDatabaseTable::BOT_POLL_CHOICES,
-                                array(
-                                    "deletion_date" => get_current_date(),
-                                    "deleted_by" => $member->id
-                                ),
-                                array(
-                                    array("id", $choice->id)
-                                ),
-                                null,
-                                1
-                            )) {
-                                return null;
-                            } else {
-                                return "Failed to delete this choice from the database.";
-                            }
-                        }
-                    }
-                    return $notMessage;
-                }
-            }
-        }
-    }
-
-    // Separator
+    // Permissions
 
     private function getPermissions(object $query, bool $cache = true): array
     {
@@ -356,13 +447,13 @@ class DiscordUserPolls
         );
     }
 
-    private function hasPermission(Member $member, object $query): bool
+    private function hasPermission(Interaction $interaction, object $query): bool
     {
         $permissions = $this->getPermissions($query);
 
         if (!empty($permissions)) {
             foreach ($permissions as $permission) {
-                if (!$this->plan->permissions->hasPermission($member, $permission->permission_id)) {
+                if (!$this->plan->permissions->hasPermission($interaction->member, $permission->permission_id)) {
                     return false;
                 }
             }
@@ -370,10 +461,10 @@ class DiscordUserPolls
         return true;
     }
 
-    public function setRequiredPermission(Member           $member,
+    public function setRequiredPermission(Interaction      $interaction,
                                           int|float|string $name, int|string $permissionToAdd, bool $set = true): ?string
     {
-        $query = $this->get($member->guild, $name);
+        $query = $this->getBase($interaction, $name);
 
         if ($query === null) {
             return self::NOT_EXISTS;
@@ -395,7 +486,7 @@ class DiscordUserPolls
                         "poll_id" => $query->id,
                         "permission" => $permissionToAdd,
                         "creation_date" => get_current_date(),
-                        "created_by" => $member->id
+                        "created_by" => $interaction->member->id
                     )
                 )) {
                     return null;
@@ -414,7 +505,7 @@ class DiscordUserPolls
                                 BotDatabaseTable::BOT_POLL_PERMISSIONS,
                                 array(
                                     "deletion_date" => get_current_date(),
-                                    "deleted_by" => $member->id
+                                    "deleted_by" => $interaction->member->id
                                 ),
                                 array(
                                     array("id", $permission->id)
@@ -434,7 +525,7 @@ class DiscordUserPolls
         }
     }
 
-    // Separator
+    // Roles
 
     private function getRequiredRoles(object $query, bool $cache = true): array
     {
@@ -451,12 +542,12 @@ class DiscordUserPolls
         );
     }
 
-    private function hasRequiredRole(Member $member, object $query): bool
+    private function hasRequiredRole(Interaction $interaction, object $query): bool
     {
         $roles = $this->getRequiredRoles($query);
 
         if (!empty($roles)) {
-            $memberRoles = $member->roles->toArray();
+            $memberRoles = $interaction->member->roles->toArray();
 
             if (empty($memberRoles)) {
                 return false;
@@ -478,10 +569,10 @@ class DiscordUserPolls
         return false;
     }
 
-    public function setRequiredRole(Member           $member,
+    public function setRequiredRole(Interaction      $interaction,
                                     int|float|string $name, int|string $roleID, bool $set = true): ?string
     {
-        $query = $this->get($member->guild, $name);
+        $query = $this->getBase($interaction, $name);
 
         if ($query === null) {
             return self::NOT_EXISTS;
@@ -496,7 +587,7 @@ class DiscordUserPolls
                         }
                     }
                 }
-                $serverRoles = $member->guild->roles->toArray();
+                $serverRoles = $interaction->guild->roles->toArray();
                 $notMessage = "This role does not exist in this server.";
 
                 if (empty($serverRoles)) {
@@ -521,7 +612,7 @@ class DiscordUserPolls
                         "poll_id" => $query->id,
                         "role_id" => $roleID,
                         "creation_date" => get_current_date(),
-                        "created_by" => $member->id
+                        "created_by" => $interaction->member->id
                     )
                 )) {
                     return null;
@@ -540,7 +631,7 @@ class DiscordUserPolls
                                 BotDatabaseTable::BOT_POLL_ROLES,
                                 array(
                                     "deletion_date" => get_current_date(),
-                                    "deleted_by" => $member->id
+                                    "deleted_by" => $interaction->member->id
                                 ),
                                 array(
                                     array("id", $role->id)
@@ -560,11 +651,11 @@ class DiscordUserPolls
         }
     }
 
-    // Separator
+    // Utilities
 
-    public function getResults(Member $member, int|float|string $name): MessageBuilder
+    public function getMessage(Interaction $interaction, int|float|string $name): MessageBuilder
     {
-        $query = $this->get($member->guild, $name);
+        $query = $this->getBase($interaction, $name);
 
         if ($query === null) {
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
@@ -574,51 +665,6 @@ class DiscordUserPolls
             return $builder;
         }
     }
-
-    // Separator
-
-    private function get(Guild $guild, int|float|string $name): ?object
-    {
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_POLLS,
-            array("id"),
-            array(
-                array("server_id", $guild->id),
-                array("deletion_date", null),
-                array("name", $name),
-            ),
-            null,
-            1
-        );
-        return empty($query) ? null : $query[0];
-    }
-
-    private function getRunning(Guild $guild, object $query): ?object
-    {
-        set_sql_cache("1 second");
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_POLL_TRACKING,
-            null,
-            array(
-                array("server_id", $guild->id),
-                array("deletion_date", null),
-                array("running", null),
-                array("poll_id", $query->id)
-            ),
-            null,
-            1
-        );
-        return empty($query) ? null : $query[0];
-    }
-
-    private function update(object $query): void
-    {
-        //todo
-    }
-
-    // Separator
-
-    // Separator
 
     private function checkExpired(): void
     {
@@ -635,15 +681,15 @@ class DiscordUserPolls
 
         if (!empty($query)) {
             foreach ($query as $poll) {
-                $this->finish($poll);
+                $this->endRaw($poll);
             }
         }
     }
 
-    private function owns(Member $member, object $query): bool
+    private function owns(Interaction $interaction, object $query): bool
     {
         set_sql_cache("1 second");
-        return $query->user_id == $member->id
-            || $this->plan->permissions->hasPermission($member, self::MANAGE_PERMISSION);
+        return $query->user_id == $interaction->member->id
+            || $this->plan->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
     }
 }
