@@ -102,7 +102,7 @@ class DefaultCommandImplementationListener
                 $interaction,
                 $arguments["name"]["value"],
                 $arguments["choice"]["value"],
-                $arguments["description"]["value"],
+                null,
                 false
             ) ?? MessageBuilder::new()->setContent("Poll choice successfully removed."),
             true
@@ -152,7 +152,7 @@ class DefaultCommandImplementationListener
             $plan->userPolls->setRequiredRole(
                 $interaction,
                 $arguments["name"]["value"],
-                $arguments["role"]["value"]
+                $interaction->data?->resolved?->roles?->first()
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
             true
         );
@@ -168,7 +168,7 @@ class DefaultCommandImplementationListener
             $plan->userPolls->setRequiredRole(
                 $interaction,
                 $arguments["name"]["value"],
-                $arguments["role"]["value"],
+                $interaction->data?->resolved?->roles?->first(),
                 false
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
             true

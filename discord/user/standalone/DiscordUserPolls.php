@@ -350,7 +350,7 @@ class DiscordUserPolls
 
     public function setChoice(Interaction      $interaction,
                               int|float|string $name,
-                              int|float|string $choiceToAdd, int|string $description, bool $set = true): ?MessageBuilder
+                              int|float|string $choiceToAdd, int|string|null $description, bool $set = true): ?MessageBuilder
     {
         $query = $this->getBase($interaction, $name);
 
