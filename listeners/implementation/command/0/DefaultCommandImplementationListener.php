@@ -53,7 +53,6 @@ class DefaultCommandImplementationListener
                 $interaction,
                 $arguments["name"]["value"],
                 $arguments["duration"]["value"],
-                $arguments["copy"]["value"]
             ) ?? MessageBuilder::new()->setContent("Poll successfully started."),
             true
         );

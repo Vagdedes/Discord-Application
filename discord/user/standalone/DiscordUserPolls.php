@@ -38,7 +38,7 @@ class DiscordUserPolls
                            int|float|string $name,
                            int|float|string $title, int|float|string $description,
                            bool             $allowDeletion,
-                           int             $maxChoices,
+                           int              $maxChoices,
                            bool             $allowSameChoice): ?MessageBuilder
     {
         $get = $this->getBase($interaction, $name);
@@ -121,8 +121,7 @@ class DiscordUserPolls
 
     public function start(Interaction      $interaction,
                           int|float|string $name,
-                          string           $duration,
-                          bool             $copy): ?MessageBuilder
+                          string           $duration): ?MessageBuilder
     {
         $get = $this->getBase($interaction, $name);
 
@@ -134,31 +133,27 @@ class DiscordUserPolls
             $running = $this->getRunning($interaction->guild, $get);
 
             if (!empty($running)) {
-                if ($copy) {
-                    if (sql_insert(
-                        BotDatabaseTable::BOT_POLL_TRACKING,
-                        array(
-                            "plan_id" => $this->plan->planID,
-                            "poll_id" => $running->poll_id,
-                            "poll_creation_id" => $running->poll_creation_id,
-                            "server_id" => $running->server_id,
-                            "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
-                            "thread_id" => $interaction->channel_id,
-                            "user_id" => $interaction->member->id,
-                            "expiration_date" => $running->expiration_date,
-                            "creation_date" => $running->creation_date,
-                            "copy" => true
-                        )
-                    )) {
-                        $this->update($running, $get);
-                        return null;
-                    } else {
-                        return MessageBuilder::new()->setContent(
-                            "Failed to copy this user poll into the database."
-                        );
-                    }
-                } else {
+                if (sql_insert(
+                    BotDatabaseTable::BOT_POLL_TRACKING,
+                    array(
+                        "plan_id" => $this->plan->planID,
+                        "poll_id" => $running->poll_id,
+                        "poll_creation_id" => $running->poll_creation_id,
+                        "server_id" => $running->server_id,
+                        "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
+                        "thread_id" => $interaction->message->thread?->id,
+                        "user_id" => $interaction->member->id,
+                        "expiration_date" => $running->expiration_date,
+                        "creation_date" => $running->creation_date,
+                        "copy" => true
+                    )
+                )) {
+                    $this->update($running, $get);
                     return MessageBuilder::new()->setContent("This user poll is already running.");
+                } else {
+                    return MessageBuilder::new()->setContent(
+                        "Failed to copy this user poll into the database."
+                    );
                 }
             } else if (empty($this->getChoices($get))) {
                 return MessageBuilder::new()->setContent("This user poll does not have any choices.");
@@ -184,7 +179,7 @@ class DiscordUserPolls
                         "poll_creation_id" => $pollCreationID,
                         "server_id" => $interaction->guild_id,
                         "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
-                        "thread_id" => $interaction->channel_id,
+                        "thread_id" => $interaction->message->thread?->id,
                         "user_id" => $interaction->member->id,
                         "expiration_date" => get_future_date($duration),
                         "running" => true,
@@ -211,10 +206,14 @@ class DiscordUserPolls
             return MessageBuilder::new()->setContent("This user poll does not exist.");
         } else if (!$this->owns($interaction, $get)) {
             return MessageBuilder::new()->setContent(self::NOT_OWNED);
-        } else if (empty($this->getRunning($interaction->guild, $get))) {
-            return MessageBuilder::new()->setContent(self::NOT_RUNNING);
+        } else {
+            $running = $this->getRunning($interaction->guild, $get);
+
+            if (empty($running)) {
+                return MessageBuilder::new()->setContent(self::NOT_RUNNING);
+            }
         }
-        return $this->endRaw($get);
+        return $this->endRaw($running);
     }
 
     public function endRaw(object $query): ?MessageBuilder
@@ -246,7 +245,8 @@ class DiscordUserPolls
                 array("server_id", $guild->id),
                 array("deletion_date", null),
                 array("running", "IS NOT", null),
-                array("poll_id", $query->id)
+                array("poll_id", $query->id),
+                array("copy", null)
             ),
             null,
             1
@@ -263,7 +263,10 @@ class DiscordUserPolls
                 array(
                     array("poll_creation_id", $query)
                 ),
-                null,
+                array(
+                    "DESC",
+                    "id"
+                ),
                 1
             );
 
@@ -817,6 +820,7 @@ class DiscordUserPolls
             array(
                 array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
+                array("copy", null),
                 array("running", "IS NOT", null),
                 array("expiration_date", ">=", get_current_date())
             )
@@ -837,6 +841,7 @@ class DiscordUserPolls
             array(
                 array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
+                array("copy", null),
                 array("running", "IS NOT", null),
                 array("expiration_date", "<", get_current_date())
             )
