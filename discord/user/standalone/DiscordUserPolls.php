@@ -38,7 +38,7 @@ class DiscordUserPolls
                            int|float|string $name,
                            int|float|string $title, int|float|string $description,
                            bool             $allowDeletion,
-                           bool             $maxChoices,
+                           int             $maxChoices,
                            bool             $allowSameChoice): ?MessageBuilder
     {
         $get = $this->getBase($interaction, $name);
@@ -83,7 +83,8 @@ class DiscordUserPolls
             } else if (set_sql_query(
                 BotDatabaseTable::BOT_POLLS,
                 array(
-                    "deletion_date" => get_current_date()
+                    "deletion_date" => get_current_date(),
+                    "deleted_by" => $interaction->member->id
                 ),
                 array(
                     array("id", $get->id)
@@ -104,7 +105,7 @@ class DiscordUserPolls
     {
         $query = get_sql_query(
             BotDatabaseTable::BOT_POLLS,
-            array("id"),
+            null,
             array(
                 array("server_id", $interaction->guild_id),
                 array("deletion_date", null),
@@ -802,7 +803,6 @@ class DiscordUserPolls
 
     private function owns(Interaction $interaction, object $query): bool
     {
-        set_sql_cache("1 second");
         return $query->user_id == $interaction->member->id
             || $this->plan->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
     }
