@@ -214,7 +214,7 @@ class AccountMessageCreationListener
     {
         $account = self::getAccountObject($interaction, $plan);
         $productObject = $account->getProduct();
-        $products = $productObject->find(null, true);
+        $products = $productObject->find(null, true, false);
 
         if ($products->isPositiveOutcome()) {
             $select = SelectMenu::new();
@@ -240,7 +240,7 @@ class AccountMessageCreationListener
                     if ($newAccount !== null) {
                         $account = $newAccount;
                     }
-                    $product = $productObject->find($options[0]->getValue(), true);
+                    $product = $productObject->find($options[0]->getValue(), true, false);
 
                     if ($product->isPositiveOutcome()) {
                         $interaction->sendFollowUpMessage(
@@ -349,7 +349,7 @@ class AccountMessageCreationListener
                 $productCompatibilities = $product->compatibilities;
 
                 if (!empty($productCompatibilities)) {
-                    $validProducts = $account->getProduct()->find();
+                    $validProducts = $account->getProduct()->find(null, true, false);
                     $validProducts = $validProducts->getObject();
 
                     if (sizeof($validProducts) > 1) { // One because we already are quering one

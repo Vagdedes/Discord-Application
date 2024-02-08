@@ -152,7 +152,7 @@ class DefaultCommandImplementationListener
             $plan->userPolls->setRequiredRole(
                 $interaction,
                 $arguments["name"]["value"],
-                $interaction->data?->resolved?->roles?->first()
+                $interaction->data?->resolved?->roles?->first()->id
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
             true
         );
@@ -168,7 +168,7 @@ class DefaultCommandImplementationListener
             $plan->userPolls->setRequiredRole(
                 $interaction,
                 $arguments["name"]["value"],
-                $interaction->data?->resolved?->roles?->first(),
+                $interaction->data?->resolved?->roles?->first()->id,
                 false
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
             true

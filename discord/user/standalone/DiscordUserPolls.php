@@ -139,13 +139,14 @@ class DiscordUserPolls
                         BotDatabaseTable::BOT_POLL_TRACKING,
                         array(
                             "plan_id" => $this->plan->planID,
-                            "poll_id" => $get->poll_id,
-                            "poll_creation_id" => $get->poll_creation_id,
-                            "server_id" => $get->server_id,
+                            "poll_id" => $running->poll_id,
+                            "poll_creation_id" => $running->poll_creation_id,
+                            "server_id" => $running->server_id,
                             "channel_id" => $this->plan->utilities->getChannel($interaction->channel)->id,
                             "thread_id" => $interaction->channel_id,
-                            "expiration_date" => $get->expiration_date,
-                            "creation_date" => $get->creation_date,
+                            "user_id" => $interaction->member->id,
+                            "expiration_date" => $running->expiration_date,
+                            "creation_date" => $running->creation_date,
                             "copy" => true
                         )
                     )) {
@@ -222,7 +223,7 @@ class DiscordUserPolls
             BotDatabaseTable::BOT_POLL_TRACKING,
             array(
                 "deletion_date" => get_current_date(),
-                "running" => null
+                "running" => false
             ),
             array(
                 array("poll_creation_id", $query->poll_creation_id)
@@ -296,7 +297,7 @@ class DiscordUserPolls
         $builder->addEmbed($embed);
 
         if ($query->message_id === null) {
-            $channel = $this->plan->utilities->getChannel($query->channel_id);
+            $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
             if ($query->thread_id === null) {
                 $channel->sendMessage($builder);
@@ -311,7 +312,7 @@ class DiscordUserPolls
         } else if ($message !== null) {
             $message->edit($builder);
         } else {
-            $channel = $this->plan->utilities->getChannel($query->channel_id);
+            $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
             if (!empty($channel->threads->first())) {
                 foreach ($channel->threads as $thread) {
@@ -384,7 +385,7 @@ class DiscordUserPolls
                     BotDatabaseTable::BOT_POLL_CHOICES,
                     array(
                         "poll_id" => $query->id,
-                        "choice" => $choiceToAdd,
+                        "name" => $choiceToAdd,
                         "description" => $description,
                         "creation_date" => get_current_date(),
                         "created_by" => $interaction->member->id
@@ -463,7 +464,7 @@ class DiscordUserPolls
                 $choiceID = null;
 
                 foreach ($this->getChoices($get, false) as $choiceRow) {
-                    if ($choiceRow->choice == $choice) {
+                    if ($choiceRow->name == $choice) {
                         $choiceID = $choiceRow->id;
                         break;
                     }
@@ -518,7 +519,7 @@ class DiscordUserPolls
                 $choiceID = null;
 
                 foreach ($this->getChoices($get, false) as $choiceRow) {
-                    if ($choiceRow->choice == $choice) {
+                    if ($choiceRow->name == $choice) {
                         $choiceID = $choiceRow->id;
                         break;
                     }
@@ -733,15 +734,14 @@ class DiscordUserPolls
                         }
                     }
                 }
-                $serverRoles = $interaction->guild->roles->toArray();
                 $notMessage = "This role does not exist in this server.";
 
-                if (empty($serverRoles)) {
+                if (empty($interaction->guild->roles->first())) {
                     return MessageBuilder::new()->setContent($notMessage);
                 } else {
                     $continue = false;
 
-                    foreach ($serverRoles as $serverRole) {
+                    foreach ($interaction->guild->roles as $serverRole) {
                         if ($serverRole->id == $roleID) {
                             $continue = true;
                             break;
