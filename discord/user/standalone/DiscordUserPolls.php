@@ -1,5 +1,7 @@
 <?php
 
+use Discord\Builders\Components\Option;
+use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
@@ -228,6 +230,7 @@ class DiscordUserPolls
                 array("poll_creation_id", $query->poll_creation_id)
             ) // Do not limit to 1 iteration as there may be copies
         )) {
+            $this->update($query, null, null, true);
             return null;
         } else {
             return MessageBuilder::new()->setContent("Failed to end this user poll from the database.");
@@ -254,7 +257,10 @@ class DiscordUserPolls
         return empty($query) ? null : $query[0];
     }
 
-    private function update(object|int $query, object $parent = null, ?Message $message = null): void
+    private function update(object|int $query,
+                            object     $parent = null,
+                            ?Message   $message = null,
+                            bool       $end = false): void
     {
         if (is_numeric($query)) {
             $query = get_sql_query(
@@ -293,21 +299,57 @@ class DiscordUserPolls
                 return;
             }
         }
+        $choices = $this->getChoices($parent);
+
         $builder = MessageBuilder::new();
         $embed = new Embed($this->plan->bot->discord);
         $embed->setTitle($parent->title);
         $embed->setDescription($parent->description);
         $builder->addEmbed($embed);
+        $select = SelectMenu::new()
+            ->setMaxValues(1)
+            ->setMaxValues(1);
+
+        foreach ($choices as $choice) {
+            $select->addOption(
+                Option::new($choice->name, $choice->id)->setDescription($choice->description)
+            );
+        }
+        $builder->addComponent($select);
 
         if ($query->message_id === null) {
             $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
             if ($query->thread_id === null) {
-                $channel->sendMessage($builder);
+                $channel->sendMessage($builder)->done(function (Message $message) use ($query) {
+                    set_sql_query(
+                        BotDatabaseTable::BOT_POLL_TRACKING,
+                        array(
+                            "message_id" => $message->id
+                        ),
+                        array(
+                            array("id", $query->id)
+                        ),
+                        null,
+                        1
+                    );
+                });
             } else if (!empty($channel->threads->first())) {
                 foreach ($channel->threads as $thread) {
                     if ($thread->id == $query->thread_id) {
-                        $thread->sendMessage($builder);
+                        $thread->sendMessage($builder)->done(function (Message $message) use ($query) {
+                            set_sql_query(
+                                BotDatabaseTable::BOT_POLL_TRACKING,
+                                array(
+                                    "message_id" => $message->id
+                                ),
+                                array(
+                                    array("id", $query->id)
+                                ),
+                                null,
+                                1
+                            );
+                        });
                         break;
                     }
                 }
@@ -317,16 +359,18 @@ class DiscordUserPolls
         } else {
             $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
-            if (!empty($channel->threads->first())) {
-                foreach ($channel->threads as $thread) {
-                    if ($thread->id == $query->thread_id) {
-                        $channel = $thread;
-                        break;
+            if ($query->thread_id !== null) {
+                if (!empty($channel->threads->first())) {
+                    foreach ($channel->threads as $thread) {
+                        if ($thread->id == $query->thread_id) {
+                            $channel = $thread;
+                            break;
+                        }
                     }
                 }
             }
             try {
-                $channel->messages->fetch($message->message_id)->done(function (Message $message) use ($builder) {
+                $channel->messages->fetch($query->message_id)->done(function (Message $message) use ($builder) {
                     $message->edit($builder);
                 });
             } catch (Throwable $ignored) {
@@ -820,9 +864,15 @@ class DiscordUserPolls
             array(
                 array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
-                array("copy", null),
-                array("running", "IS NOT", null),
-                array("expiration_date", ">=", get_current_date())
+                array("expiration_date", ">=", get_current_date()),
+                null,
+                array("running", "IS NOT", null, 0),
+                array("copy", "IS NOT", null, 0),
+                null
+            ),
+            array(
+                "DESC",
+                "id"
             )
         );
 
