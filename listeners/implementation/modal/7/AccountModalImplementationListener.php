@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class AccountModalImplementationListener
@@ -211,8 +212,9 @@ class AccountModalImplementationListener
                     $response = "Please wait a few minutes before contacting us again.";
                 } else {
                     $objects = $objects->toArray();
+                    $subject = strip_tags(array_shift($objects)["value"]);
                     $content = $account->getEmail()->createTicket(
-                        strip_tags(array_shift($objects)["value"]), // Subject
+                        $subject, // Subject
                         strip_tags(array_shift($objects)["value"]), // Info
                         null,
                         array(
@@ -224,6 +226,7 @@ class AccountModalImplementationListener
                     if (services_self_email($content[0], $content[1], $content[2]) === true) {
                         has_memory_cooldown($cacheKey, "5 minutes");
                         $response = "Thanks for taking the time to contact us.";
+                        self::sendEmailTicketEmbed($plan, $account->getDetail("name"), null, $subject);
                     } else {
                         global $email_default_email_name;
                         $response = "An error occurred, please contact us at: " . $email_default_email_name;
@@ -256,8 +259,9 @@ class AccountModalImplementationListener
                 $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                 $objects = $objects->toArray();
                 $email = strip_tags(array_shift($objects)["value"]);
+                $subject = strip_tags(array_shift($objects)["value"]);
                 $content = $account->getEmail()->createTicket(
-                    strip_tags(array_shift($objects)["value"]), // Subject
+                    $subject, // Subject
                     strip_tags(array_shift($objects)["value"]), // Info
                     $email,
                     array(
@@ -269,6 +273,7 @@ class AccountModalImplementationListener
                 if (services_self_email($content[0], $content[1], $content[2]) === true) {
                     has_memory_cooldown($cacheKey, "5 minutes");
                     $response = "Thanks for taking the time to contact us.";
+                    self::sendEmailTicketEmbed($plan, null, $email, $subject);
                 } else {
                     global $email_default_email_name;
                     $response = "An error occurred, please contact us at: " . $email_default_email_name;
@@ -278,5 +283,50 @@ class AccountModalImplementationListener
                 $response
             ), true);
         });
+    }
+
+    private static function sendEmailTicketEmbed(DiscordPlan $plan,
+                                                 ?string     $name, ?string $email, ?string $subject): void
+    {
+        $channel = $plan->bot->discord->getChannel(AccountMessageCreationListener::IDEALISTIC_EMAIL_TICKETS_CHANNEL);
+
+        if ($channel !== null
+            && $channel->allowText()
+            && !empty($channel->threads->first())) {
+            global $website_domain;
+
+            foreach ($channel->threads as $thread) {
+                if ($thread->id == AccountMessageCreationListener::IDEALISTIC_EMAIL_TICKETS_CHANNEL_THREAD) {
+                    $message = MessageBuilder::new();
+                    $embed = new Embed($plan->bot->discord);
+                    $embed->setAuthor(
+                        AccountMessageCreationListener::IDEALISTIC_NAME,
+                        AccountMessageCreationListener::IDEALISTIC_LOGO,
+                        $website_domain
+                    );
+                    if ($name !== null) {
+                        $embed->addFieldValues(
+                            "Name",
+                            DiscordSyntax::LIGHT_CODE_BLOCK . $name . DiscordSyntax::LIGHT_CODE_BLOCK
+                        );
+                    } else {
+                        $embed->addFieldValues(
+                            "Email",
+                            DiscordSyntax::LIGHT_CODE_BLOCK
+                            . "xxxxx" . substr($email, strpos($email, "@"))
+                            . DiscordSyntax::LIGHT_CODE_BLOCK
+                        );
+                    }
+                    $embed->addFieldValues(
+                        "Subject",
+                        DiscordSyntax::LIGHT_CODE_BLOCK . $subject . DiscordSyntax::LIGHT_CODE_BLOCK
+                    );
+                    $embed->setFooter(time());
+                    $message->addEmbed($embed);
+                    $thread->sendMessage($message);
+                    break;
+                }
+            }
+        }
     }
 }

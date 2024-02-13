@@ -122,6 +122,7 @@ class DiscordSyntax
         LIST = "-",
         CODE_BLOCK = "`",
         HEAVY_CODE_BLOCK = "```",
+        LIGHT_CODE_BLOCK = "``",
         QUOTE = ">",
         MULTI_QUOTE = ">>>",
         SPOILER = "||";
