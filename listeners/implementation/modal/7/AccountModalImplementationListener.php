@@ -92,8 +92,8 @@ class AccountModalImplementationListener
     }
 
     public static function log_in_verification(DiscordPlan $plan,
-                                  Interaction $interaction,
-                                  mixed       $objects): void
+                                               Interaction $interaction,
+                                               mixed       $objects): void
     {
         $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
@@ -213,7 +213,12 @@ class AccountModalImplementationListener
                     $objects = $objects->toArray();
                     $content = $account->getEmail()->createTicket(
                         strip_tags(array_shift($objects)["value"]), // Subject
-                        strip_tags(array_shift($objects)["value"]) // Info
+                        strip_tags(array_shift($objects)["value"]), // Info
+                        null,
+                        array(
+                            "Discord-ID" => $interaction->user->id,
+                            "Discord-Username" => $interaction->user->username
+                        )
                     );
 
                     if (services_self_email($content[0], $content[1], $content[2]) === true) {
@@ -254,7 +259,11 @@ class AccountModalImplementationListener
                 $content = $account->getEmail()->createTicket(
                     strip_tags(array_shift($objects)["value"]), // Subject
                     strip_tags(array_shift($objects)["value"]), // Info
-                    $email
+                    $email,
+                    array(
+                        "Discord-ID" => $interaction->user->id,
+                        "Discord-Username" => $interaction->user->username
+                    )
                 );
 
                 if (services_self_email($content[0], $content[1], $content[2]) === true) {
