@@ -309,7 +309,9 @@ class AccountMessageCreationListener
                         : ""));
                 $canDownload = true;
             } else if (!empty($product->downloads)) {
-                $embed->setTitle("Log In to be able to download this");
+                if (!$isLoggedIn) {
+                    $embed->setTitle("Log In to be able to download this");
+                }
                 $canDownload = true;
             } else {
                 $canDownload = false;
