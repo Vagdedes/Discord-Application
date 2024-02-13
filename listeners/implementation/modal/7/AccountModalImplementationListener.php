@@ -321,7 +321,7 @@ class AccountModalImplementationListener
                         "Subject",
                         DiscordSyntax::LIGHT_CODE_BLOCK . $subject . DiscordSyntax::LIGHT_CODE_BLOCK
                     );
-                    $embed->setFooter(time());
+                    $embed->setTimestamp(time());
                     $message->addEmbed($embed);
                     $thread->sendMessage($message);
                     break;
