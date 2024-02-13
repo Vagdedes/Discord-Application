@@ -78,7 +78,9 @@ class DiscordInstructions
                           ?array  $specificPublic = null,
                           ?string $userInput = null): array
     {
-        if (!empty($this->instructions->getLocal())) {
+        $local = $this->instructions->getLocal($userInput);
+
+        if (!empty($local)) {
             $information = "";
             $disclaimer = "";
             $hasSpecific = $specificLocal !== null;
@@ -86,7 +88,7 @@ class DiscordInstructions
             if (empty($specificPublic)) {
                 $specificPublic = null;
             }
-            foreach ($this->instructions->getLocal() as $instruction) {
+            foreach ($local as $instruction) {
                 if (!$hasSpecific || in_array($instruction->id, $specificLocal)) {
                     $replacements = $this->replace(
                         array(
