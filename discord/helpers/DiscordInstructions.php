@@ -24,12 +24,13 @@ class DiscordInstructions
         $this->instructions = $plan->bot->getAccount()->getInstructions();
     }
 
-    public function replace(array  $messages, ?object $object,
-                            ?array $allow = null,
-                            string $placeholderStart = self::DEFAULT_PLACEHOLDER_START,
-                            string $placeholderMiddle = self::DEFAULT_PLACEHOLDER_MIDDLE,
-                            string $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
-                            bool   $recursive = true): array
+    public function replace(array   $messages, ?object $object,
+                            ?array  $specificPublic = null,
+                            ?string $userInput = null,
+                            string  $placeholderStart = self::DEFAULT_PLACEHOLDER_START,
+                            string  $placeholderMiddle = self::DEFAULT_PLACEHOLDER_MIDDLE,
+                            string  $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
+                            bool    $recursive = true): array
     {
         if ($object !== null) {
             $this->instructions->setPlaceholderStart($placeholderStart);
@@ -39,7 +40,7 @@ class DiscordInstructions
                 $messages,
                 $object,
                 array(
-                    "publicInstructions" => array($this->instructions, "getPublic", array($allow)),
+                    "publicInstructions" => array($this->instructions, "getPublic", array($specificPublic, $userInput)),
                     "botReplies" => array($this->plan->aiMessages, "getReplies", array(
                         $object->serverID,
                         $object->channelID,
@@ -72,9 +73,10 @@ class DiscordInstructions
         }
     }
 
-    public function build(object $object,
-                          ?array $specificLocal = null,
-                          ?array $specificPublic = null): array
+    public function build(object  $object,
+                          ?array  $specificLocal = null,
+                          ?array  $specificPublic = null,
+                          ?string $userInput = null): array
     {
         if (!empty($this->instructions->getLocal())) {
             $information = "";
@@ -93,6 +95,7 @@ class DiscordInstructions
                         ),
                         $object,
                         $specificPublic,
+                        $userInput,
                         $instruction->placeholder_start,
                         $instruction->placeholder_middle,
                         $instruction->placeholder_end

@@ -181,7 +181,7 @@ class DiscordChatFilteredMessages
                         $reply = $this->plan->aiMessages->rawTextAssistance(
                             $message,
                             null,
-                            $this->plan->instructions->build(
+                            array(
                                 $object,
                                 $filter->localInstructions,
                                 $filter->publicInstructions,

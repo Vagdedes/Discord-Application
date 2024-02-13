@@ -182,7 +182,7 @@ class DiscordMessageNotifications
             $notificationMessage = $this->plan->aiMessages->rawTextAssistance(
                 $isThread ? array($originalMessage, $user, "The user has left no information.") : $originalMessage,
                 null,
-                $this->plan->instructions->build(
+                array(
                     $object,
                     $notification->localInstructions,
                     $notification->publicInstructions

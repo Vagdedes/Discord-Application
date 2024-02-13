@@ -564,7 +564,7 @@ class DiscordUserQuestionnaire
                     $reply = $this->plan->aiMessages->rawTextAssistance(
                         $message,
                         null,
-                        $this->plan->instructions->build(
+                        array(
                             $object,
                             $questionnaire->localInstructions,
                             $questionnaire->publicInstructions

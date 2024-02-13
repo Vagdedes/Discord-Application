@@ -345,7 +345,7 @@ class DiscordAIMessages
                                                     $reply = $this->rawTextAssistance(
                                                         $originalMessage,
                                                         $message,
-                                                        $this->plan->instructions->build(
+                                                        array(
                                                             $object,
                                                             $channel->local_instructions ?? $model->localInstructions,
                                                             $channel->public_instructions ?? $model->publicInstructions,
@@ -414,17 +414,24 @@ class DiscordAIMessages
         $hasSelf = $self !== null;
 
         if (is_array($source)) {
-            $hasMessage = false;
             $debug = false;
             $channel = array_shift($source);
             $user = array_shift($source);
             $content = array_shift($source);
         } else {
-            $hasMessage = true;
             $debug &= $hasSelf;
             $channel = $self->channel;
             $user = $self->member;
             $content = $source->content;
+            $reference = $source->message_reference;
+
+            if ($reference instanceof Message) {
+                $content .= DiscordProperties::NEW_LINE
+                    . DiscordProperties::NEW_LINE
+                    . "Referenced Message by '" . $reference->author->username . "':"
+                    . DiscordProperties::NEW_LINE
+                    . $reference->content;
+            }
         }
         $parent = $this->plan->utilities->getChannel($channel);
         $chatAI = $this->getChatAI($parent->id);
@@ -435,6 +442,12 @@ class DiscordAIMessages
             if ($extraHash !== null) {
                 $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
             }
+            $systemInstructions = $this->plan->instructions->build(
+                $systemInstructions[0],
+                $systemInstructions[1],
+                $systemInstructions[2],
+                $content
+            );
             $outcome = $chatAI->getResult(
                 $hash,
                 array(
@@ -487,17 +500,6 @@ class DiscordAIMessages
                     } else {
                         if (!empty($systemInstructions[1])) {
                             $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
-                        }
-                        if ($hasMessage) {
-                            $reference = $source->message_reference;
-
-                            if ($reference instanceof Message) {
-                                $content .= DiscordProperties::NEW_LINE
-                                    . DiscordProperties::NEW_LINE
-                                    . "Referenced Message by '" . $reference->author->username . "':"
-                                    . DiscordProperties::NEW_LINE
-                                    . $reference->content;
-                            }
                         }
                         $cost = $chatAI->getCost($model, $reply);
                         $thread = $channel instanceof Thread ? $channel->id : null;
