@@ -1,1 +1,1 @@
- # [Click to learn more.](https://www.idealistic.ai/github/reader/?path=.github/blob/main/products/ai_discord_bot.md)
+Discord Bot built with AI (Artificial Intelligence) in mind that implements countless of Discord functionalities.
