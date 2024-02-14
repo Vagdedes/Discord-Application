@@ -213,13 +213,19 @@ class AccountModalImplementationListener
                 } else {
                     $objects = $objects->toArray();
                     $subject = strip_tags(array_shift($objects)["value"]);
+                    $roles = array();
+
+                    foreach ($interaction->member->roles as $role) {
+                        $roles[] = "'" . $role->name . "'";
+                    }
                     $content = $account->getEmail()->createTicket(
                         $subject, // Subject
                         strip_tags(array_shift($objects)["value"]), // Info
                         null,
                         array(
                             "Discord-ID" => $interaction->user->id,
-                            "Discord-Username" => $interaction->user->username
+                            "Discord-Username" => $interaction->user->username,
+                            "Discord-Roles" => implode(", ", $roles)
                         )
                     );
 
@@ -260,13 +266,19 @@ class AccountModalImplementationListener
                 $objects = $objects->toArray();
                 $email = strip_tags(array_shift($objects)["value"]);
                 $subject = strip_tags(array_shift($objects)["value"]);
+                $roles = array();
+
+                foreach ($interaction->member->roles as $role) {
+                    $roles[] = "'" . $role->name . "'";
+                }
                 $content = $account->getEmail()->createTicket(
                     $subject, // Subject
                     strip_tags(array_shift($objects)["value"]), // Info
                     $email,
                     array(
                         "Discord-ID" => $interaction->user->id,
-                        "Discord-Username" => $interaction->user->username
+                        "Discord-Username" => $interaction->user->username,
+                        "Discord-Roles" => implode(", ", $roles)
                     )
                 );
 
