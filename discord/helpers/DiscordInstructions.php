@@ -106,13 +106,6 @@ class DiscordInstructions
                     $disclaimer .= $replacements[1];
                 }
             }
-            if ($object->channel !== null
-                && $object->channel->strict_reply !== null) {
-                $information = ($object->channel->require_mention
-                        ? DiscordProperties::STRICT_REPLY_INSTRUCTIONS_WITH_MENTION
-                        : DiscordProperties::STRICT_REPLY_INSTRUCTIONS)
-                    . DiscordProperties::NEW_LINE . DiscordProperties::NEW_LINE . $information;
-            }
             return array($information, $disclaimer);
         } else {
             return array("", "");

@@ -254,42 +254,49 @@ class AccountModalImplementationListener
                                                 mixed       $objects): void
     {
         $interaction->acknowledge()->done(function () use ($interaction, $objects, $plan) {
-            $cacheKey = array(
-                $interaction->user->id,
-                "contact-form"
-            );
-
-            if (has_memory_cooldown($cacheKey, null, false)) {
-                $response = "Please wait a few minutes before contacting us again.";
-            } else {
-                $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-                $objects = $objects->toArray();
-                $email = strip_tags(array_shift($objects)["value"]);
-                $subject = strip_tags(array_shift($objects)["value"]);
-                $roles = array();
-
-                foreach ($interaction->member->roles as $role) {
-                    $roles[] = "'" . $role->name . "'";
-                }
-                $content = $account->getEmail()->createTicket(
-                    $subject, // Subject
-                    strip_tags(array_shift($objects)["value"]), // Info
-                    $email,
-                    array(
-                        "Discord-ID" => $interaction->user->id,
-                        "Discord-Username" => $interaction->user->username,
-                        "Discord-Roles" => implode(", ", $roles)
-                    )
+            try {
+                $cacheKey = array(
+                    $interaction->user->id,
+                    "contact-form"
                 );
 
-                if (services_self_email($content[0], $content[1], $content[2]) === true) {
-                    has_memory_cooldown($cacheKey, "5 minutes");
-                    $response = "Thanks for taking the time to contact us.";
-                    self::sendEmailTicketEmbed($plan, null, $email, $subject);
+                if (has_memory_cooldown($cacheKey, null, false)) {
+                    $response = "Please wait a few minutes before contacting us again.";
                 } else {
-                    global $email_default_email_name;
-                    $response = "An error occurred, please contact us at: " . $email_default_email_name;
+                    $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+                    $objects = $objects->toArray();
+                    $email = strip_tags(array_shift($objects)["value"]);
+                    $subject = strip_tags(array_shift($objects)["value"]);
+                    $roles = array();
+
+                    foreach ($interaction->member->roles as $role) {
+                        $roles[] = "'" . $role->name . "'";
+                    }
+                    $content = $account->getEmail()->createTicket(
+                        $subject, // Subject
+                        strip_tags(array_shift($objects)["value"]), // Info
+                        $email,
+                        array(
+                            "Discord-ID" => $interaction->user->id,
+                            "Discord-Username" => $interaction->user->username,
+                            "Discord-Roles" => implode(", ", $roles)
+                        )
+                    );
+
+                    if (services_self_email($content[0], $content[1], $content[2]) === true) {
+                        has_memory_cooldown($cacheKey, "5 minutes");
+                        $response = "Thanks for taking the time to contact us.";
+                        self::sendEmailTicketEmbed($plan, null, $email, $subject);
+                    } else {
+                        global $email_default_email_name;
+                        $response = "An error occurred, please contact us at: " . $email_default_email_name;
+                    }
                 }
+            } catch (Throwable $e) {
+                var_dump($e->getMessage());
+                var_dump($e->getLine());
+                global $email_default_email_name;
+                $response = "An error occurred, please contact us at : " . $email_default_email_name;
             }
             $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
                 $response
