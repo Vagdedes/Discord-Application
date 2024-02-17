@@ -365,7 +365,10 @@ class DiscordAIMessages
                                                         }
                                                     } else {
                                                         set_key_value_pair($cacheKey, $reply);
-                                                        $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
+
+                                                        if ($channel->feedback !== null) {
+                                                            $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
+                                                        }
                                                         $this->plan->utilities->replyMessageInPieces($message, $reply);
 
                                                         $hash = $this->plan->utilities->hash(
