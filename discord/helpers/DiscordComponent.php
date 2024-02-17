@@ -218,7 +218,8 @@ class DiscordComponent
                     $this->plan->listener->callReactionCreation(
                         $reaction,
                         $reactionObject->listener_class,
-                        $reactionObject->listener_method
+                        $reactionObject->listener_method,
+                        $reactionObject->controlled_message_id
                     );
                 }
             }

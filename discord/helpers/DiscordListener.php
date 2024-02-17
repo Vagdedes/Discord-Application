@@ -275,10 +275,13 @@ class DiscordListener
     }
 
     public function callReactionCreation(MessageReaction $reaction,
-                                         ?string         $class, ?string $method): void
+                                         ?string         $class, ?string $method,
+                                         int|string|null $customPlanID): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::CREATION_REACTION . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::CREATION_REACTION
+                . ($customPlanID === null ? 0 : $this->plan->planID)
+                . "/" . $class . '.php');
             call_user_func_array(
                 array($class, $method),
                 array($this->plan, $reaction)
