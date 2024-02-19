@@ -3,6 +3,7 @@
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
+use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
@@ -315,6 +316,9 @@ class DiscordUserPolls
                 Option::new($choice->name, $choice->id)->setDescription($choice->description)
             );
         }
+        $select->setListener(function (Interaction $interaction, Collection $options) {
+            $rowID = $options[0]->getValue();
+        }, $this->plan->bot->discord);
         $builder->addComponent($select);
 
         if ($query->message_id === null) {

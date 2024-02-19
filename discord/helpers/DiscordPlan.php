@@ -37,6 +37,8 @@ class DiscordPlan
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordMessageNotifications $messageNotifications;
     public DiscordJoinRoles $joinRoles;
+    public DiscordWebAttachments $webAttachments;
+    public DiscordFAQ $faq;
 
     public function __construct(DiscordBot $bot, int|string $planID)
     {
@@ -92,6 +94,8 @@ class DiscordPlan
         $this->tranferredMessages = new DiscordTransferredMessages($this);
         $this->messageNotifications = new DiscordMessageNotifications($this);
         $this->joinRoles = new DiscordJoinRoles($this);
+        $this->webAttachments = new DiscordWebAttachments($this);
+        $this->faq = new DiscordFAQ($this);
     }
 
 }

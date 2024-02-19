@@ -27,6 +27,8 @@ require '/root/discord_bot/discord/custom/DiscordCommands.php';
 
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/other/DiscordSocialAlerts.php';
+require '/root/discord_bot/discord/other/DiscordWebAttachments.php';
+require '/root/discord_bot/discord/other/DiscordFAQ.php';
 
 require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
 require '/root/discord_bot/discord/roles/DiscordJoinRoles.php';
