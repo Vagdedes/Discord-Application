@@ -598,8 +598,11 @@ class DiscordUserPolls
 
     // Choice Picking
 
-    private function getPicks(?Interaction $interaction, object $query): array
+    private function getPicks(?Interaction $interaction, object $query, bool $cache = true): array
     {
+        if ($cache) {
+            set_sql_cache("1 second");
+        }
         return get_sql_query(
             BotDatabaseTable::BOT_POLL_CHOICE_TRACKING,
             null,
@@ -626,7 +629,7 @@ class DiscordUserPolls
             } else if ($running->expiration_date <= get_current_date()) {
                 return $this->endRaw($running);
             } else if ($set) {
-                $picks = $this->getPicks($interaction, $running);
+                $picks = $this->getPicks($interaction, $running, false);
                 $pickCount = sizeof($picks);
 
                 if ($pickCount > 0) {
@@ -661,7 +664,7 @@ class DiscordUserPolls
                     );
                 }
             } else if ($get->allow_choice_deletion !== null) {
-                $picks = $this->getPicks($interaction, $running);
+                $picks = $this->getPicks($interaction, $running, false);
                 $notMessage = "You have not picked this choice.";
 
                 if (empty($picks)) {
@@ -695,27 +698,6 @@ class DiscordUserPolls
             } else {
                 return MessageBuilder::new()->setContent("This user poll does not allow choice deletion.");
             }
-        }
-    }
-
-    public function getPickCount(Interaction $interaction,
-                                 object      $running, int|float|string|null $choiceID = null): int
-    {
-        $picks = $this->getPicks($interaction, $running);
-
-        if ($choiceID === null) {
-            return sizeof($picks);
-        } else if (!empty($picks)) {
-            $count = 0;
-
-            foreach ($picks as $pick) {
-                if ($pick->choice_id == $choiceID) {
-                    $count++;
-                }
-            }
-            return $count;
-        } else {
-            return 0;
         }
     }
 
