@@ -37,7 +37,7 @@ class DiscordUserPolls
                            int              $maxChoices,
                            bool             $allowSameChoice): ?MessageBuilder
     {
-        $get = $this->getBase($interaction, $name);
+        $get = $this->getBase($interaction, $name, false);
 
         if ($get !== null) {
             return MessageBuilder::new()->setContent("This user poll already exists.");
@@ -97,8 +97,11 @@ class DiscordUserPolls
         }
     }
 
-    private function getBase(Interaction $interaction, int|float|string $name): ?object
+    private function getBase(Interaction $interaction, int|float|string $name, bool $cache = true): ?object
     {
+        if ($cache) {
+            set_sql_cache("1 second");
+        }
         $query = get_sql_query(
             BotDatabaseTable::BOT_POLLS,
             null,
