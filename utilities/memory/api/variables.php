@@ -11,6 +11,5 @@ $memory_segments_table = "memory.memorySegments";
 
 $memory_clearance_past = 60; // 1 minute
 $memory_clearance_row_limit = 50;
-$memory_process_default_seconds = 60;
 
 
