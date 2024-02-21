@@ -79,16 +79,16 @@ class DiscordPermissions
         return $this->userPermissions[$this->plan->utilities->hash($serverID, $userID)] ?? array();
     }
 
-    public function roleHasPermission(int|string $serverID, int|string $roleID,
-                                      string     $permission): bool
+    private function roleHasPermission(int|string $serverID, int|string $roleID,
+                                       string     $permission): bool
     {
         $hash = $this->plan->utilities->hash($serverID, $roleID);
         return array_key_exists($hash, $this->rolePermissions)
             && in_array($permission, $this->rolePermissions[$hash]);
     }
 
-    public function userHasPermission(int|string|null $serverID, int|string|null $userID,
-                                      string          $permission, bool $recursive = true): bool
+    private function userHasPermission(int|string|null $serverID, int|string|null $userID,
+                                       string          $permission, bool $recursive = true): bool
     {
         $hash = $this->plan->utilities->hash($serverID, $userID);
         return array_key_exists($hash, $this->userPermissions)
@@ -113,11 +113,13 @@ class DiscordPermissions
         } else {
             $result = false;
 
-            if ($this->userHasPermission($member->guild_id, $member->id, $permission)) {
+            if ($this->userHasPermission($member->guild_id, $member->id, "*")
+                || $this->userHasPermission($member->guild_id, $member->id, $permission)) {
                 $result = true;
             } else if (!empty($member->roles->first())) {
                 foreach ($member->roles as $role) {
-                    if ($this->roleHasPermission($role->guild_id, $role->id, $permission)) {
+                    if ($this->roleHasPermission($role->guild_id, $role->id, "*")
+                        || $this->roleHasPermission($role->guild_id, $role->id, $permission)) {
                         $result = true;
                         break;
                     }
