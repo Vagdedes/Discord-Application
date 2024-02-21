@@ -15,8 +15,9 @@ class DiscordInstructions
 
     public function __construct(DiscordPlan $plan)
     {
+        $account = new Account($plan->applicationID);
         $this->plan = $plan;
-        $this->instructions = $plan->bot->getAccount()->getInstructions();
+        $this->instructions = $account->getInstructions();
     }
 
     public function replace(array   $messages, ?object $object,

@@ -46,9 +46,9 @@ class DiscordBot
     public Discord $discord;
     public DiscordUtilities $utilities;
     public DiscordMute $mute;
-    private mixed $account;
     private int $counter;
-    private bool $administrator;
+
+    private const PERMISSION = "patreon.subscriber.discord.bot";
 
     public function __construct(Discord $discord, int|string $botID)
     {
@@ -65,7 +65,6 @@ class DiscordBot
 
     private function load(): void
     {
-        $this->account = new Account();
         $query = get_sql_query(
             BotDatabaseTable::BOT_PLANS,
             array("id", "account_id"),
@@ -81,21 +80,19 @@ class DiscordBot
 
         if (empty($query)) {
             global $logger;
-            $this->administrator = false;
             $logger->logError(null, "(1) Found no plans for bot with ID: " . $this->botID);
             // In case connection or database fails, log but do not exit
         } else {
-            $permission = "patreon.subscriber.discord.bot";
+            $account = new Account();
 
             foreach ($query as $arrayKey => $plan) {
                 if ($plan->account_id !== null) {
-                    $account = $this->account->getNew($plan->account_id);
+                    $account = $account->getNew($plan->account_id);
 
-                    if (!$account->exists() || !$account->getPermissions()->hasPermission($permission)) {
+                    if (!$account->exists() || !$account->getPermissions()->hasPermission(self::PERMISSION)) {
                         unset($query[$arrayKey]);
                         continue;
                     }
-                    $this->account = $account;
                 }
                 $this->plans[] = new DiscordPlan(
                     $this,
@@ -105,12 +102,7 @@ class DiscordBot
 
             if (empty($query)) {
                 global $logger;
-                $this->administrator = false;
                 $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
-            } else if ($this->account->exists()) {
-                $this->administrator = $this->account->getPermissions()->isAdministrator();
-            } else {
-                $this->administrator = false;
             }
         }
     }
@@ -136,15 +128,5 @@ class DiscordBot
         } else {
             return false;
         }
-    }
-
-    public function getAccount(): mixed
-    {
-        return $this->account;
-    }
-
-    public function isAdministrator(): bool
-    {
-        return $this->administrator;
     }
 }
