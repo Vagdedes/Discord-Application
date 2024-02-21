@@ -85,7 +85,7 @@ class DefaultCommandImplementationListener
                 $interaction,
                 $arguments["name"]["value"],
                 $arguments["permission"]["value"]
-            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully added."),
+            ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully added."),
             true
         );
     }
@@ -102,7 +102,7 @@ class DefaultCommandImplementationListener
                 $arguments["name"]["value"],
                 $arguments["permission"]["value"],
                 false
-            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully removed."),
+            ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully removed."),
             true
         );
     }
@@ -118,7 +118,7 @@ class DefaultCommandImplementationListener
                 $interaction,
                 $arguments["name"]["value"],
                 $interaction->data?->resolved?->roles?->first()->id
-            ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
+            ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully added."),
             true
         );
     }
@@ -135,7 +135,7 @@ class DefaultCommandImplementationListener
                 $arguments["name"]["value"],
                 $interaction->data?->resolved?->roles?->first()->id,
                 false
-            ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
+            ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully removed."),
             true
         );
     }
