@@ -13,11 +13,6 @@ class DiscordInstructions
     private DiscordPlan $plan;
     private mixed $instructions;
 
-    public const
-        DEFAULT_PLACEHOLDER_START = "%%__",
-        DEFAULT_PLACEHOLDER_MIDDLE = "__",
-        DEFAULT_PLACEHOLDER_END = "__%%";
-
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -27,15 +22,9 @@ class DiscordInstructions
     public function replace(array   $messages, ?object $object,
                             ?array  $specificPublic = null,
                             ?string $userInput = null,
-                            string  $placeholderStart = self::DEFAULT_PLACEHOLDER_START,
-                            string  $placeholderMiddle = self::DEFAULT_PLACEHOLDER_MIDDLE,
-                            string  $placeholderEnd = self::DEFAULT_PLACEHOLDER_END,
                             bool    $recursive = true): array
     {
         if ($object !== null) {
-            $this->instructions->setPlaceholderStart($placeholderStart);
-            $this->instructions->setPlaceholderMiddle($placeholderMiddle);
-            $this->instructions->setPlaceholderEnd($placeholderEnd);
             return $this->instructions->replace(
                 $messages,
                 $object,
@@ -97,10 +86,7 @@ class DiscordInstructions
                         ),
                         $object,
                         $specificPublic,
-                        $userInput,
-                        $instruction->placeholder_start,
-                        $instruction->placeholder_middle,
-                        $instruction->placeholder_end
+                        $userInput
                     );
                     $information .= $replacements[0];
                     $disclaimer .= $replacements[1];

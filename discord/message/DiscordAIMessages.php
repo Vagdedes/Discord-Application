@@ -498,50 +498,46 @@ class DiscordAIMessages
                 $content = $chatAI->getText($model, $reply);
 
                 if (!empty($content)) {
-                    if ($content == DiscordProperties::NO_REPLY) {
-                        return null;
-                    } else {
-                        if (!empty($systemInstructions[1])) {
-                            $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
-                        }
-                        $cost = $chatAI->getCost($model, $reply);
-                        $thread = $channel instanceof Thread ? $channel->id : null;
-                        $date = get_current_date();
-
-                        sql_insert(
-                            BotDatabaseTable::BOT_AI_MESSAGES,
-                            array(
-                                "plan_id" => $this->plan->planID,
-                                "ai_hash" => $extraHash,
-                                "bot_id" => $this->plan->bot->botID,
-                                "server_id" => $channel->guild_id,
-                                "channel_id" => $parent->id,
-                                "thread_id" => $thread,
-                                "user_id" => $user->id,
-                                "message_id" => $hasSelf ? $self->id : null,
-                                "message_content" => $content,
-                                "creation_date" => $date,
-                            )
-                        );
-                        sql_insert(
-                            BotDatabaseTable::BOT_AI_REPLIES,
-                            array(
-                                "plan_id" => $this->plan->planID,
-                                "ai_hash" => $extraHash,
-                                "bot_id" => $this->plan->bot->botID,
-                                "server_id" => $channel->guild_id,
-                                "channel_id" => $parent->id,
-                                "thread_id" => $thread,
-                                "user_id" => $user->id,
-                                "message_id" => $hasSelf ? $self->id : null,
-                                "message_content" => $content,
-                                "cost" => $cost,
-                                "currency_id" => $model->currency->id,
-                                "creation_date" => $date,
-                            )
-                        );
-                        return $content;
+                    if (!empty($systemInstructions[1])) {
+                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
                     }
+                    $cost = $chatAI->getCost($model, $reply);
+                    $thread = $channel instanceof Thread ? $channel->id : null;
+                    $date = get_current_date();
+
+                    sql_insert(
+                        BotDatabaseTable::BOT_AI_MESSAGES,
+                        array(
+                            "plan_id" => $this->plan->planID,
+                            "ai_hash" => $extraHash,
+                            "bot_id" => $this->plan->bot->botID,
+                            "server_id" => $channel->guild_id,
+                            "channel_id" => $parent->id,
+                            "thread_id" => $thread,
+                            "user_id" => $user->id,
+                            "message_id" => $hasSelf ? $self->id : null,
+                            "message_content" => $content,
+                            "creation_date" => $date,
+                        )
+                    );
+                    sql_insert(
+                        BotDatabaseTable::BOT_AI_REPLIES,
+                        array(
+                            "plan_id" => $this->plan->planID,
+                            "ai_hash" => $extraHash,
+                            "bot_id" => $this->plan->bot->botID,
+                            "server_id" => $channel->guild_id,
+                            "channel_id" => $parent->id,
+                            "thread_id" => $thread,
+                            "user_id" => $user->id,
+                            "message_id" => $hasSelf ? $self->id : null,
+                            "message_content" => $content,
+                            "cost" => $cost,
+                            "currency_id" => $model->currency->id,
+                            "creation_date" => $date,
+                        )
+                    );
+                    return $content;
                 } else {
                     global $logger;
                     $logger->logError(

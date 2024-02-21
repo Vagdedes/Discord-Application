@@ -217,6 +217,5 @@ class DiscordProperties
         SYSTEM_REFRESH_MILLISECONDS = 900_000, // 15 minutes
         SYSTEM_REFRESH_SECONDS = self::SYSTEM_REFRESH_MILLISECONDS / 1_000,
         SYSTEM_REFRESH_TIME = (DiscordProperties::SYSTEM_REFRESH_SECONDS / 60) . " minutes",
-        NEW_LINE = "\n",
-        NO_REPLY = DiscordInstructions::DEFAULT_PLACEHOLDER_START . "empty" . DiscordInstructions::DEFAULT_PLACEHOLDER_END;
+        NEW_LINE = "\n";
 }
