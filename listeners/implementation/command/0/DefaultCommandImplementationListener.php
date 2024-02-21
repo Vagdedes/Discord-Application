@@ -74,6 +74,72 @@ class DefaultCommandImplementationListener
         );
     }
 
+    public static function add_giveaway_permission(DiscordPlan $plan,
+                                                   Interaction $interaction,
+                                                   object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->setRequiredPermission(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["permission"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully added."),
+            true
+        );
+    }
+
+    public static function remove_giveaway_permission(DiscordPlan $plan,
+                                                      Interaction $interaction,
+                                                      object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->setRequiredPermission(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["permission"]["value"],
+                false
+            ) ?? MessageBuilder::new()->setContent("Poll required permission successfully removed."),
+            true
+        );
+    }
+
+    public static function add_giveaway_role(DiscordPlan $plan,
+                                             Interaction $interaction,
+                                             object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->setRequiredRole(
+                $interaction,
+                $arguments["name"]["value"],
+                $interaction->data?->resolved?->roles?->first()->id
+            ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
+            true
+        );
+    }
+
+    public static function remove_giveaway_role(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->setRequiredRole(
+                $interaction,
+                $arguments["name"]["value"],
+                $interaction->data?->resolved?->roles?->first()->id,
+                false
+            ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
+            true
+        );
+    }
+
     // Separator
 
     public static function create_poll(DiscordPlan $plan,
