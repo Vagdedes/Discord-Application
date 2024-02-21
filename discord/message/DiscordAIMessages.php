@@ -313,8 +313,17 @@ class DiscordAIMessages
                                             $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
                                             $cache = get_key_value_pair($cacheKey);
 
+                                            if ($channel->prompt_message !== null) {
+                                                $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
+                                            } else {
+                                                $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
+                                            }
                                             if ($cache !== null) {
-                                                $this->plan->utilities->replyMessageInPieces($originalMessage, $cache);
+                                                $originalMessage->reply(MessageBuilder::new()->setContent(
+                                                    $promptMessage
+                                                ))->done(function (Message $message) use ($cache) {
+                                                    $this->plan->utilities->replyMessageInPieces($message, $cache);
+                                                });
                                             } else {
                                                 if ($channel->require_starting_text !== null
                                                     && !starts_with($messageContent, $channel->require_starting_text)
@@ -332,11 +341,6 @@ class DiscordAIMessages
                                                         ));
                                                     }
                                                     return false;
-                                                }
-                                                if ($channel->prompt_message !== null) {
-                                                    $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
-                                                } else {
-                                                    $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
                                                 }
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage

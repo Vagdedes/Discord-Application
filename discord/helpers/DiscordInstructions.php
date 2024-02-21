@@ -67,30 +67,24 @@ class DiscordInstructions
                           ?array  $specificPublic = null,
                           ?string $userInput = null): array
     {
-        $local = $this->instructions->getLocal($userInput);
+        $local = $this->instructions->getLocal($specificLocal, $userInput);
 
         if (!empty($local)) {
             $information = "";
             $disclaimer = "";
-            $hasSpecific = $specificLocal !== null;
 
-            if (empty($specificPublic)) {
-                $specificPublic = null;
-            }
             foreach ($local as $instruction) {
-                if (!$hasSpecific || in_array($instruction->id, $specificLocal)) {
-                    $replacements = $this->replace(
-                        array(
-                            $instruction->information,
-                            $instruction->disclaimer
-                        ),
-                        $object,
-                        $specificPublic,
-                        $userInput
-                    );
-                    $information .= $replacements[0];
-                    $disclaimer .= $replacements[1];
-                }
+                $replacements = $this->replace(
+                    array(
+                        $instruction->information,
+                        $instruction->disclaimer
+                    ),
+                    $object,
+                    $specificPublic,
+                    $userInput
+                );
+                $information .= $replacements[0];
+                $disclaimer .= $replacements[1];
             }
             return array($information, $disclaimer);
         } else {
