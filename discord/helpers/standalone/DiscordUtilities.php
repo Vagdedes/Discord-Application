@@ -183,7 +183,7 @@ class DiscordUtilities
         );
 
         if (!empty($pieces)) {
-            foreach (str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+            foreach ($pieces as $split) {
                 $this->replyMessage(
                     $message,
                     MessageBuilder::new()->setContent($split)
