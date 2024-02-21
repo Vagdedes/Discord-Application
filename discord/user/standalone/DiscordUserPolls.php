@@ -128,6 +128,8 @@ class DiscordUserPolls
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else if (!$this->owns($interaction, $get)) {
             return MessageBuilder::new()->setContent(self::NOT_OWNED);
+        } else if (!is_valid_text_time($duration)) {
+            return MessageBuilder::new()->setContent("Invalid duration format.");
         } else {
             $running = $this->getRunning($interaction->guild, $get);
 

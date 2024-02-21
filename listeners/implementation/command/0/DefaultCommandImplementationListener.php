@@ -7,6 +7,75 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function create_giveaway(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->create(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["title"]["value"],
+                $arguments["description"]["value"],
+                $arguments["minimum-participants"]["value"],
+                $arguments["maximum-participants"]["value"],
+                $arguments["winner-amount"]["value"],
+                $arguments["repeat-after-ending"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Giveaway successfully created."),
+            true
+        );
+    }
+
+    public static function delete_giveaway(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->delete(
+                $interaction,
+                $arguments["name"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Giveaway successfully deleted."),
+            true
+        );
+    }
+
+    public static function start_giveaway(DiscordPlan $plan,
+                                          Interaction $interaction,
+                                          object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->start(
+                $interaction,
+                $arguments["name"]["value"],
+                $arguments["duration"]["value"],
+            ) ?? MessageBuilder::new()->setContent("Giveaway successfully started."),
+            true
+        );
+    }
+
+    public static function end_giveaway(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->userGiveaways->end(
+                $interaction,
+                $arguments["name"]["value"]
+            ) ?? MessageBuilder::new()->setContent("Giveaway successfully ended."),
+            true
+        );
+    }
+
+    // Separator
+
     public static function create_poll(DiscordPlan $plan,
                                        Interaction $interaction,
                                        object      $command): void

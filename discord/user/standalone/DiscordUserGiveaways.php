@@ -27,16 +27,16 @@ class DiscordUserGiveaways
     public function create(Interaction      $interaction,
                            int|float|string $name,
                            int|float|string $title, int|float|string $description,
-                           bool             $allowDeletion,
-                           int              $maxChoices,
-                           bool             $allowSameChoice): ?MessageBuilder
+                           int              $minParticipants,
+                           int              $maxParticipants,
+                           int              $winnerAmount,
+                           bool             $repeatAfterEnding): ?MessageBuilder
     {
         $get = $this->getBase($interaction, $name, false);
 
         if ($get !== null) {
             return MessageBuilder::new()->setContent("This user giveaway already exists.");
-        }
-        if (sql_insert(
+        } else if (sql_insert(
             BotDatabaseTable::BOT_GIVEAWAYS,
             array(
                 "server_id" => $interaction->guild_id,
@@ -44,9 +44,11 @@ class DiscordUserGiveaways
                 "name" => $name,
                 "title" => $title,
                 "description" => $description,
-                "allow_choice_deletion" => $allowDeletion,
-                "max_choices" => $maxChoices,
-                "allow_same_choice" => $allowSameChoice,
+                "duration" => $duration,
+                "min_participants" => $minParticipants,
+                "max_participants" => $maxParticipants,
+                "winner_amount" => $winnerAmount,
+                "repeat_after_ending" => $repeatAfterEnding,
                 "creation_date" => get_current_date()
             )
         )) {
@@ -122,6 +124,8 @@ class DiscordUserGiveaways
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else if (!$this->owns($interaction, $get)) {
             return MessageBuilder::new()->setContent(self::NOT_OWNED);
+        } else if (!is_valid_text_time($duration)) {
+            return MessageBuilder::new()->setContent("Invalid duration format.");
         } else {
             $running = $this->getRunning($interaction->guild, $get);
 
