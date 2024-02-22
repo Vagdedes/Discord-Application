@@ -30,7 +30,7 @@ class DefaultCommandImplementationListener
                 $arguments["time-out"]["value"],
                 $arguments["message"]["value"],
                 $interaction->data?->resolved?->roles?->first(),
-                $interaction->data?->resolved?->channels?->first(),
+                $interaction->data?->resolved?->channels?->first()
             );
 
             if ($message === null) {
@@ -72,7 +72,7 @@ class DefaultCommandImplementationListener
                 $arguments["time-out"]["value"],
                 $arguments["message"]["value"],
                 $interaction->data?->resolved?->roles?->first(),
-                $interaction->data?->resolved?->channels?->first(),
+                $interaction->data?->resolved?->channels?->first()
             );
 
             if ($message === null) {
@@ -92,8 +92,8 @@ class DefaultCommandImplementationListener
     }
 
     public static function remove_ai_cost_limit(DiscordPlan $plan,
-                                             Interaction $interaction,
-                                             object      $command): void
+                                                Interaction $interaction,
+                                                object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -121,7 +121,7 @@ class DefaultCommandImplementationListener
             if ($message === null) {
                 $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
-                    MessageBuilder::new()->setContent("Cost limit successfully set."),
+                    MessageBuilder::new()->setContent("Successfully deleted any cost limit associated."),
                     true
                 );
             } else {
@@ -135,8 +135,8 @@ class DefaultCommandImplementationListener
     }
 
     public static function remove_ai_message_limit(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+                                                   Interaction $interaction,
+                                                   object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -164,7 +164,7 @@ class DefaultCommandImplementationListener
             if ($message === null) {
                 $plan->utilities->acknowledgeCommandMessage(
                     $interaction,
-                    MessageBuilder::new()->setContent("Message limit successfully set."),
+                    MessageBuilder::new()->setContent("Successfully deleted any AI limit associated."),
                     true
                 );
             } else {

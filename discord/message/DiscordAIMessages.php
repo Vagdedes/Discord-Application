@@ -877,16 +877,99 @@ class DiscordAIMessages
         }
     }
 
-    public function setLimit(Interaction      $interaction,
-                             bool             $cost,
-                             int|float|string|null $limit, ?string $timePeriod,
-                             bool             $perUser, ?bool $timeOut,
-                             string           $message,
-                             ?Role            $role, ?Channel $channel,
-                             bool             $set = true): ?string
+    public function setLimit(Interaction           $interaction,
+                             bool                  $cost,
+                             int|float|string|null $limit, string $timePeriod,
+                             bool                  $perUser, ?bool $timeOut,
+                             ?string               $message,
+                             ?Role                 $role, ?Channel $channel,
+                             bool                  $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
-        //todo
-        return null;
+        $objectChannel = $this->plan->channels->getIfHasAccess($channel ?? $interaction->channel, $interaction->member);
+
+        if ($objectChannel === null || $objectChannel->ai_model_id === null) {
+            return "Could not find AI model related to channel.";
+        } else if ($set) {
+            $query = get_sql_query(
+                $table,
+                array("id"),
+                array(
+                    array("deletion_date", null),
+                    array("server_id", $interaction->guild_id),
+                    array("channel_id", $channel?->id),
+                    array("thread_id", null),
+                    array("role_id", $role?->id),
+                    array("past_lookup", $timePeriod),
+                    array("user", $perUser),
+                    array("ai_model_id", $objectChannel->ai_model_id),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                )
+            );
+
+            if (empty($query)) {
+                if (sql_insert(
+                    $table,
+                    array(
+                        "ai_model_id" => $objectChannel->ai_model_id,
+                        "server_id" => $interaction->guild_id,
+                        "channel_id" => $channel?->id,
+                        "role_id" => $role?->id,
+                        "past_lookup" => $timePeriod,
+                        "user" => $perUser,
+                        "limit" => $limit,
+                        "timeout" => $timeOut,
+                        "message" => $message,
+                        "creation_date" => get_current_date(),
+                    )
+                )) {
+                    return null;
+                } else {
+                    return "Failed to set limit associated in the database.";
+                }
+            } else {
+                foreach ($query as $row) {
+                    if (!set_sql_query(
+                        $table,
+                        array(
+                            "limit" => $limit,
+                            "timeout" => $timeOut,
+                            "message" => $message
+                        ),
+                        array(
+                            array("id", $row->id)
+                        ),
+                        null,
+                        1
+                    )) {
+                        return "Failed to update limit associated in the database.";
+                    }
+                }
+                return null;
+            }
+        } else if (delete_sql_query(
+            $table,
+            array(
+                array("deletion_date", null),
+                array("server_id", $interaction->guild_id),
+                array("channel_id", $channel?->id),
+                array("thread_id", null),
+                array("role_id", $role?->id),
+                array("past_lookup", $timePeriod),
+                array("user", $perUser),
+                array("ai_model_id", $objectChannel->ai_model_id),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        )) {
+            return null;
+        } else {
+            return "Failed to deleted any limit associated from the database.";
+        }
     }
 }

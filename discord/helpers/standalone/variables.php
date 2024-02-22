@@ -102,7 +102,8 @@ class BotDatabaseTable
         BOT_COMMANDS = "discord.botCommands",
         BOT_COMMAND_ARGUMENTS = "discord.botCommandArguments",
         BOT_JOIN_ROLES = "discord.botJoinRoles",
-        BOT_JOIN_ROLE_TRACKING = "discord.botJoinRoleTracking";
+        BOT_JOIN_ROLE_TRACKING = "discord.botJoinRoleTracking",
+        BOT_FAQ = "discord.botFAQ";
 }
 
 class DiscordSyntax
