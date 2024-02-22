@@ -1,7 +1,9 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Guild\Role;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\WebSockets\MessageReaction;
 
@@ -872,5 +874,15 @@ class DiscordAIMessages
                 );
             }
         }
+    }
+
+    public function setLimit(bool             $cost,
+                             int|float|string $limit, string $timePeriod,
+                             bool             $perUser, bool $timeOut,
+                             string           $message,
+                             ?Role            $role, ?Channel $channel): ?string
+    {
+        //todo
+        return null;
     }
 }

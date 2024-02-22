@@ -8,19 +8,85 @@ class DefaultCommandImplementationListener
 {
 
     public static function set_ai_cost_limit(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+                                             Interaction $interaction,
+                                             object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
+        $timePeriod = $arguments["time-period"]["value"];
 
+        if (!is_valid_text_time($timePeriod)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid time format."),
+                true
+            );
+        } else {
+            $message = $plan->aiMessages->setLimit(
+                true,
+                $arguments["currency-limit"]["value"],
+                $timePeriod,
+                $arguments["per-user"]["value"],
+                $arguments["time-out"]["value"],
+                $arguments["message"]["value"],
+                $interaction->data?->resolved?->roles?->first(),
+                $interaction->data?->resolved?->channels?->first(),
+            );
+
+            if ($message === null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Cost limit successfully set."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent($message),
+                    true
+                );
+            }
+        }
     }
 
     public static function set_ai_message_limit(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+                                                Interaction $interaction,
+                                                object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
+        $timePeriod = $arguments["time-period"]["value"];
 
+        if (!is_valid_text_time($timePeriod)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid time format."),
+                true
+            );
+        } else {
+            $message = $plan->aiMessages->setLimit(
+                false,
+                $arguments["message-limit"]["value"],
+                $timePeriod,
+                $arguments["per-user"]["value"],
+                $arguments["time-out"]["value"],
+                $arguments["message"]["value"],
+                $interaction->data?->resolved?->roles?->first(),
+                $interaction->data?->resolved?->channels?->first(),
+            );
+
+            if ($message === null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Message limit successfully set."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent($message),
+                    true
+                );
+            }
+        }
     }
 
     // Separator
