@@ -35,7 +35,35 @@ class DiscordUserGiveaways
         $get = $this->getBase($interaction, $name, false);
 
         if ($get !== null) {
-            return MessageBuilder::new()->setContent("This user giveaway already exists.");
+            if (!$this->owns($interaction, $get)) {
+                return MessageBuilder::new()->setContent(self::NOT_OWNED);
+            } else {
+                $running = $this->getRunning($interaction->guild, $get);
+
+                if (!empty($running)) {
+                    return MessageBuilder::new()->setContent("This user giveaway is currently running.");
+                } else if (set_sql_query(
+                    BotDatabaseTable::BOT_GIVEAWAYS,
+                    array(
+                        "description" => $description,
+                        "min_participants" => $minParticipants,
+                        "max_participants" => $maxParticipants,
+                        "winner_amount" => $winnerAmount,
+                        "repeat_after_ending" => $repeatAfterEnding
+                    ),
+                    array(
+                        array("id", $get->id)
+                    ),
+                    null,
+                    1
+                )) {
+                    return null;
+                } else {
+                    return MessageBuilder::new()->setContent(
+                        "Failed to update this user giveaway in the database."
+                    );
+                }
+            }
         } else if (sql_insert(
             BotDatabaseTable::BOT_GIVEAWAYS,
             array(

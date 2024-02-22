@@ -40,9 +40,36 @@ class DiscordUserPolls
         $get = $this->getBase($interaction, $name, false);
 
         if ($get !== null) {
-            return MessageBuilder::new()->setContent("This user poll already exists.");
-        }
-        if (sql_insert(
+            if (!$this->owns($interaction, $get)) {
+                return MessageBuilder::new()->setContent(self::NOT_OWNED);
+            } else {
+                $running = $this->getRunning($interaction->guild, $get);
+
+                if (!empty($running)) {
+                    return MessageBuilder::new()->setContent("This user poll is currently running.");
+                } else if (set_sql_query(
+                    BotDatabaseTable::BOT_POLLS,
+                    array(
+                        "title" => $title,
+                        "description" => $description,
+                        "allow_choice_deletion" => $allowDeletion,
+                        "max_choices" => $maxChoices,
+                        "allow_same_choice" => $allowSameChoice
+                    ),
+                    array(
+                        array("id", $get->id)
+                    ),
+                    null,
+                    1
+                )) {
+                    return null;
+                } else {
+                    return MessageBuilder::new()->setContent(
+                        "Failed to update this user poll in the database."
+                    );
+                }
+            }
+        } else if (sql_insert(
             BotDatabaseTable::BOT_POLLS,
             array(
                 "server_id" => $interaction->guild_id,
