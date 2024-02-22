@@ -8,6 +8,8 @@
  * -
  * Social Alerts
  * Invite Tracker
+ * Web Attachments
+ * Frequently Asked Questions (FAQ)
  * -
  * Reaction Roles
  * Join Roles
@@ -34,6 +36,7 @@
  * User Tickets
  * User Levels
  * User Questionnaires
+ * User Suggestions
  */
 
 use Discord\Discord;

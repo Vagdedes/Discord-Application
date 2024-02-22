@@ -40,6 +40,7 @@ require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
+require '/root/discord_bot/discord/user/DiscordUserSuggestions.php';
 
 require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';

@@ -44,7 +44,6 @@ class DiscordUserGiveaways
                 "name" => $name,
                 "title" => $title,
                 "description" => $description,
-                "duration" => $duration,
                 "min_participants" => $minParticipants,
                 "max_participants" => $maxParticipants,
                 "winner_amount" => $winnerAmount,

@@ -39,6 +39,7 @@ class DiscordPlan
     public DiscordJoinRoles $joinRoles;
     public DiscordWebAttachments $webAttachments;
     public DiscordFAQ $faq;
+    public DiscordUserSuggestions $userSuggestions;
 
     public function __construct(DiscordBot $bot, int|string $planID)
     {
@@ -96,6 +97,7 @@ class DiscordPlan
         $this->joinRoles = new DiscordJoinRoles($this);
         $this->webAttachments = new DiscordWebAttachments($this);
         $this->faq = new DiscordFAQ($this);
+        $this->userSuggestions = new DiscordUserSuggestions($this);
     }
 
 }
