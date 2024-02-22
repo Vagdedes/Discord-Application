@@ -90,6 +90,25 @@ class DiscordFAQ
     public function list(Interaction $interaction): MessageBuilder
     {
         $builder = new MessageBuilder();
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_FAQ,
+            null,
+            array(
+                array("server_id", $interaction->guild_id),
+                array("deletion_date", null)
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION
+        );
+
+        if (empty($query)) {
+            $builder->setContent("There are no frequently-asked questions set-up in this server.");
+        } else {
+
+        }
         return $builder;
     }
 }

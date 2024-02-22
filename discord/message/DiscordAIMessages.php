@@ -245,7 +245,7 @@ class DiscordAIMessages
                                     if ($member->id != $this->plan->bot->botID) {
                                         if ($channel->require_mention !== null
                                             && ($channel->not_require_mention_time === null
-                                                && get_past_date($channel->not_require_mention_time) >= $member->joined_at)) {
+                                                || strtotime(get_past_date($channel->not_require_mention_time)) > $member->joined_at->second)) {
                                             $mention = false;
 
                                             if (!empty($originalMessage->mentions->first())) {
