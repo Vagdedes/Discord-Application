@@ -7,6 +7,24 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function set_ai_cost_limit(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+
+    }
+
+    public static function set_ai_message_limit(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+
+    }
+
+    // Separator
+
     public static function create_giveaway(DiscordPlan $plan,
                                            Interaction $interaction,
                                            object      $command): void

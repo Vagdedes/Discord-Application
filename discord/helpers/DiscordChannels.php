@@ -131,7 +131,7 @@ class DiscordChannels
             $object->server_id = $channel->guild_id;
             $object->category_id = $channel->parent_id;
             $object->channel_id = $channel->id;
-            $object->assistance = null;
+            $object->ai_model_id = null;
             $object->filter = null;
             $object->whitelist = null;
             $object->debug = null;

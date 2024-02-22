@@ -255,7 +255,7 @@ class DiscordAIMessages
                                                     foreach ($model->mentions as $alternativeMention) {
                                                         foreach ($originalMessage->mentions as $userObj) {
                                                             if ($userObj->id == $alternativeMention->user_id) {
-                                                                $mention = $channel->assistance !== null;
+                                                                $mention = true;
                                                                 break 2;
                                                             }
                                                         }
@@ -342,6 +342,7 @@ class DiscordAIMessages
                                                 ))->done(function (Message $message)
                                                 use ($object, $model, $cacheKey, $channel, $originalMessage) {
                                                     $reply = $this->rawTextAssistance(
+                                                        $channel->ai_model_id,
                                                         $originalMessage,
                                                         $message,
                                                         array(
