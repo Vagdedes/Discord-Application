@@ -1,5 +1,8 @@
 <?php
 
+use Discord\Builders\MessageBuilder;
+use Discord\Parts\Interactions\Interaction;
+
 class DiscordFAQ
 {
     private DiscordPlan $plan;
@@ -9,5 +12,21 @@ class DiscordFAQ
         $this->plan = $plan;
     }
 
-    //todo create faq, delete faq, update faq, list faq
+    public function addOrEdit(Interaction $interaction,
+                              string      $question, string $answer): ?string
+    {
+        return null;
+    }
+
+    public function delete(Interaction $interaction,
+                           string      $question): ?string
+    {
+        return null;
+    }
+
+    public function list(Interaction $interaction): MessageBuilder
+    {
+        $builder = new MessageBuilder();
+        return $builder;
+    }
 }

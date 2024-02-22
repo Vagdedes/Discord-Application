@@ -7,6 +7,70 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function create_faq(DiscordPlan $plan,
+                                      Interaction $interaction,
+                                      object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $message = $plan->faq->addOrEdit(
+            $interaction,
+            $arguments["question"]["value"],
+            $arguments["answer"]["value"]
+        );
+
+        if ($message === null) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Frequently Asked Question successfully created or edited."),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($message),
+                true
+            );
+        }
+    }
+
+    public static function delete_faq(DiscordPlan $plan,
+                                      Interaction $interaction,
+                                      object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $message = $plan->faq->delete(
+            $interaction,
+            $arguments["question"]["value"]
+        );
+
+        if ($message === null) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Frequently Asked Question successfully deleted."),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($message),
+                true
+            );
+        }
+    }
+
+    public static function get_faq(DiscordPlan $plan,
+                                   Interaction $interaction,
+                                   object      $command): void
+    {
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $plan->faq->list($interaction),
+            true
+        );
+    }
+
+    // Separator
+
     public static function set_ai_cost_limit(DiscordPlan $plan,
                                              Interaction $interaction,
                                              object      $command): void
