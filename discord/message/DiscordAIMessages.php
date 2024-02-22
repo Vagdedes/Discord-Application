@@ -243,7 +243,9 @@ class DiscordAIMessages
                                 if (get_key_value_pair($cooldownKey) === null) {
                                     set_key_value_pair($cooldownKey, true);
                                     if ($member->id != $this->plan->bot->botID) {
-                                        if ($channel->require_mention !== null) {
+                                        if ($channel->require_mention !== null
+                                            && ($channel->not_require_mention_time === null
+                                                && get_past_date($channel->not_require_mention_time) >= $member->joined_at)) {
                                             $mention = false;
 
                                             if (!empty($originalMessage->mentions->first())) {
@@ -965,6 +967,7 @@ class DiscordAIMessages
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
         $objectChannel = $this->plan->channels->getIfHasAccess($channel ?? $interaction->channel, $interaction->member);
+        $timePeriod = trim($timePeriod);
 
         if ($objectChannel === null || $objectChannel->ai_model_id === null) {
             return "Could not find AI model related to channel.";
@@ -1002,6 +1005,7 @@ class DiscordAIMessages
                         "timeout" => $timeOut,
                         "message" => $message,
                         "creation_date" => get_current_date(),
+                        "created_by" => $interaction->member->id
                     )
                 )) {
                     return null;
@@ -1028,8 +1032,12 @@ class DiscordAIMessages
                 }
                 return null;
             }
-        } else if (delete_sql_query(
+        } else if (set_sql_query(
             $table,
+            array(
+                "deletion_date" => get_current_date(),
+                "deleted_by" => $interaction->member->id
+            ),
             array(
                 array("deletion_date", null),
                 array("server_id", $interaction->guild_id),

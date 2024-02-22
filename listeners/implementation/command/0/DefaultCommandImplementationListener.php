@@ -46,7 +46,7 @@ class DefaultCommandImplementationListener
         if ($message === null) {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Frequently Asked Question successfully deleted."),
+                MessageBuilder::new()->setContent("Frequently Asked Question successfully deleted if any."),
                 true
             );
         } else {

@@ -329,12 +329,10 @@ class DiscordUserGiveaways
 
         // Separator
 
-        // todo
-
         if ($end) {
-
+            // todo winners
         } else {
-
+            // todo buttons
         }
         $builder->addEmbed($embed);
 

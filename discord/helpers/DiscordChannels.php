@@ -136,6 +136,7 @@ class DiscordChannels
             $object->whitelist = null;
             $object->debug = null;
             $object->require_mention = null;
+            $object->not_require_mention_time = null;
             $object->ignore_mention = null;
             $object->feedback = null;
             $object->require_starting_text = null;
