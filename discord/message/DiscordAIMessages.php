@@ -748,6 +748,7 @@ class DiscordAIMessages
         $channelID = $this->plan->utilities->getChannel($message->channel)->id;
         $threadID = $message->thread?->id;
         $userID = $message->member->id;
+        $date = get_current_date();
 
         if (!empty($model->messageLimits)
             && !$this->plan->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
@@ -757,26 +758,65 @@ class DiscordAIMessages
                         && ($limit->channel_id === null || $limit->channel_id === $channelID)
                         && ($limit->thread_id === null || $limit->thread_id === $threadID))
                     && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
-                    $count = $this->getMessageCount(
-                        $limit->server_id,
-                        $limit->channel_id,
-                        $limit->user !== null ? $userID : null,
-                        $limit->past_lookup,
-                    );
-                    $hash = string_to_integer(
-                        serialize(get_object_vars($model)) . $serverID . $channelID . $userID,
-                        true
-                    );
+                    $hasTimeout = $limit->timeout !== null;
 
-                    if (array_key_exists($hash, $this->messageCounter)) {
-                        $this->messageCounter[$hash]++;
-                        $count = $this->messageCounter[$hash];
+                    if ($hasTimeout) {
+                        set_sql_cache("1 minute");
+                        $timeout = !empty(get_sql_query(
+                            BotDatabaseTable::BOT_AI_MESSAGE_TIMEOUTS,
+                            array("id"),
+                            array(
+                                array("limit_id", $limit->id),
+                                array("user_id", $userID),
+                                array("deletion_date", null),
+                                null,
+                                array("expiration_date", "IS", null, 0),
+                                array("expiration_date", ">", $date),
+                                null
+                            ),
+                            null,
+                            1
+                        ));
                     } else {
-                        $this->messageCounter[$hash] = $count;
+                        $timeout = false;
                     }
 
-                    if ($count >= $limit->limit) {
+                    if ($timeout) {
                         $array[] = $limit;
+                    } else {
+                        $count = $this->getMessageCount(
+                            $limit->server_id,
+                            $limit->channel_id,
+                            $limit->user !== null ? $userID : null,
+                            $limit->past_lookup,
+                        );
+                        $hash = string_to_integer(
+                            serialize(get_object_vars($model)) . $serverID . $channelID . $userID,
+                            true
+                        );
+
+                        if (array_key_exists($hash, $this->messageCounter)) {
+                            $this->messageCounter[$hash]++;
+                            $count = $this->messageCounter[$hash];
+                        } else {
+                            $this->messageCounter[$hash] = $count;
+                        }
+
+                        if ($count >= $limit->limit) {
+                            $array[] = $limit;
+
+                            if ($hasTimeout) {
+                                sql_insert(
+                                    BotDatabaseTable::BOT_AI_MESSAGE_TIMEOUTS,
+                                    array(
+                                        "limit_id" => $limit->id,
+                                        "user_id" => $userID,
+                                        "creation_date" => $date,
+                                        "expiration_date" => get_future_date($limit->past_lookup),
+                                    )
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -787,14 +827,52 @@ class DiscordAIMessages
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
                     && ($limit->thread_id === null || $limit->thread_id === $threadID)
-                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))
-                    && $this->getCost(
-                        $limit->server_id,
-                        $limit->channel_id,
-                        $limit->user !== null ? $userID : null,
-                        $limit->past_lookup
-                    ) >= $limit->limit) {
-                    $array[] = $limit;
+                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
+                    $hasTimeout = $limit->timeout !== null;
+
+                    if ($hasTimeout) {
+                        set_sql_cache("1 minute");
+                        $timeout = !empty(get_sql_query(
+                            BotDatabaseTable::BOT_AI_COST_TIMEOUTS,
+                            array("id"),
+                            array(
+                                array("limit_id", $limit->id),
+                                array("user_id", $userID),
+                                array("deletion_date", null),
+                                null,
+                                array("expiration_date", "IS", null, 0),
+                                array("expiration_date", ">", $date),
+                                null
+                            ),
+                            null,
+                            1
+                        ));
+                    } else {
+                        $timeout = false;
+                    }
+
+                    if ($timeout) {
+                        $array[] = $limit;
+                    } else if ($this->getCost(
+                            $limit->server_id,
+                            $limit->channel_id,
+                            $limit->user !== null ? $userID : null,
+                            $limit->past_lookup
+                        ) >= $limit->limit) {
+                        $array[] = $limit;
+
+                        if ($hasTimeout) {
+                            sql_insert(
+                                BotDatabaseTable::BOT_AI_COST_TIMEOUTS,
+                                array(
+                                    "limit_id" => $limit->id,
+                                    "user_id" => $userID,
+                                    "creation_date" => $date,
+                                    "expiration_date" => get_future_date($limit->past_lookup),
+                                )
+                            );
+                        }
+                    }
                 }
             }
         }
