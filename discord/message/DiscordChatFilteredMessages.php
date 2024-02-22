@@ -179,6 +179,7 @@ class DiscordChatFilteredMessages
                     if (!empty($filter->localInstructions)
                         && !empty($filter->constants)) {
                         $reply = $this->plan->aiMessages->rawTextAssistance(
+                            $filter->ai_model_id,
                             $message,
                             null,
                             array(

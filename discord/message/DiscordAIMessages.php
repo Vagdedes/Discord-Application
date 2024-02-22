@@ -16,6 +16,7 @@ class DiscordAIMessages
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
+        $this->model = array();
         $this->messageCounter = array();
         $this->messageReplies = array();
         $this->messageFeedback = array();
@@ -29,6 +30,8 @@ class DiscordAIMessages
         );
 
         if (!empty($query)) {
+            $array = array();
+
             foreach ($query as $row) {
                 $apiKey = $row->api_key !== null ? array($row->api_key) :
                     get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
@@ -150,24 +153,16 @@ class DiscordAIMessages
                             $object->publicInstructions[$childKey] = $instruction->instruction_id;
                         }
                     }
-                    $this->model[$row->channel_id ?? 0] = $object;
+                    $this->model[$row->id] = $object;
                 }
             }
-        } else {
-            $this->model = array();
         }
     }
 
-    public function getModel(?int $channelID = null): ?object
+    public function getChatAI(int|string $aiModelID): mixed
     {
-        return $channelID !== null
-            ? (array_key_exists($channelID, $this->model) ? $this->model[$channelID] : $this?->model[0])
-            : $this?->model[0];
-    }
-
-    public function getChatAI(?int $channelID = null): mixed
-    {
-        return $this->getModel($channelID)?->chatAI;
+        $model = $this->model[$aiModelID] ?? null;
+        return $model?->chatAI;
     }
 
     public function textAssistance(Message $originalMessage): bool
@@ -233,8 +228,8 @@ class DiscordAIMessages
 
                     if (!$stop
                         && $foundChannel
-                        && $channel->assistance !== null) {
-                        $model = $this->getModel($channel->channel_id);
+                        && $channel->ai_model_id !== null) {
+                        $model = $this->model[$channel->ai_model_id] ?? null;
 
                         if ($model !== null) {
                             $chatAI = $model->chatAI;
@@ -412,7 +407,8 @@ class DiscordAIMessages
         return false;
     }
 
-    public function rawTextAssistance(Message|array $source,
+    public function rawTextAssistance(int|string    $aiModelID,
+                                      Message|array $source,
                                       ?Message      $self,
                                       array         $systemInstructions,
                                       int           $extraHash = null,
@@ -441,7 +437,7 @@ class DiscordAIMessages
             }
         }
         $parent = $this->plan->utilities->getChannel($channel);
-        $chatAI = $this->getChatAI($parent->id);
+        $chatAI = $this->getChatAI($aiModelID);
 
         if ($chatAI !== null) {
             $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)$user->id);

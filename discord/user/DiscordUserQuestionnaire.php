@@ -562,6 +562,7 @@ class DiscordUserQuestionnaire
                     }
                 } else {
                     $reply = $this->plan->aiMessages->rawTextAssistance(
+                        $questionnaire->ai_model_id,
                         $message,
                         null,
                         array(
