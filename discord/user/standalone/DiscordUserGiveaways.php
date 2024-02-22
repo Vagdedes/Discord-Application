@@ -294,12 +294,15 @@ class DiscordUserGiveaways
         }
         $builder = MessageBuilder::new();
         $embed = new Embed($this->plan->bot->discord);
+        $embed->setAuthor("GIVEAWAY");
         $embed->setTitle($get->title);
         $embed->setDescription($get->description);
         $embed->setFooter($end ? "Expired" : "Last Updated");
         $embed->setTimestamp(time());
 
         // Separator
+
+        // todo
 
         if ($end) {
 

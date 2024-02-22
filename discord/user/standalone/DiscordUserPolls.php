@@ -300,6 +300,7 @@ class DiscordUserPolls
         }
         $builder = MessageBuilder::new();
         $embed = new Embed($this->plan->bot->discord);
+        $embed->setAuthor("POLL");
         $embed->setTitle($get->title);
         $embed->setDescription($get->description);
         $embed->setFooter($end ? "Expired" : "Last Updated");
