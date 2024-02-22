@@ -4,6 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Role;
+use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\WebSockets\MessageReaction;
 
@@ -876,11 +877,13 @@ class DiscordAIMessages
         }
     }
 
-    public function setLimit(bool             $cost,
-                             int|float|string $limit, string $timePeriod,
-                             bool             $perUser, bool $timeOut,
+    public function setLimit(Interaction      $interaction,
+                             bool             $cost,
+                             int|float|string|null $limit, ?string $timePeriod,
+                             bool             $perUser, ?bool $timeOut,
                              string           $message,
-                             ?Role            $role, ?Channel $channel): ?string
+                             ?Role            $role, ?Channel $channel,
+                             bool             $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
         //todo

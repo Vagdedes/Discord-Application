@@ -22,6 +22,7 @@ class DefaultCommandImplementationListener
             );
         } else {
             $message = $plan->aiMessages->setLimit(
+                $interaction,
                 true,
                 $arguments["currency-limit"]["value"],
                 $timePeriod,
@@ -63,6 +64,7 @@ class DefaultCommandImplementationListener
             );
         } else {
             $message = $plan->aiMessages->setLimit(
+                $interaction,
                 false,
                 $arguments["message-limit"]["value"],
                 $timePeriod,
@@ -71,6 +73,92 @@ class DefaultCommandImplementationListener
                 $arguments["message"]["value"],
                 $interaction->data?->resolved?->roles?->first(),
                 $interaction->data?->resolved?->channels?->first(),
+            );
+
+            if ($message === null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Message limit successfully set."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent($message),
+                    true
+                );
+            }
+        }
+    }
+
+    public static function remove_ai_cost_limit(DiscordPlan $plan,
+                                             Interaction $interaction,
+                                             object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $timePeriod = $arguments["time-period"]["value"];
+
+        if (!is_valid_text_time($timePeriod)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid time format."),
+                true
+            );
+        } else {
+            $message = $plan->aiMessages->setLimit(
+                $interaction,
+                true,
+                null,
+                $timePeriod,
+                $arguments["per-user"]["value"],
+                null,
+                null,
+                $interaction->data?->resolved?->roles?->first(),
+                $interaction->data?->resolved?->channels?->first(),
+                false
+            );
+
+            if ($message === null) {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Cost limit successfully set."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent($message),
+                    true
+                );
+            }
+        }
+    }
+
+    public static function remove_ai_message_limit(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                object      $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $timePeriod = $arguments["time-period"]["value"];
+
+        if (!is_valid_text_time($timePeriod)) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid time format."),
+                true
+            );
+        } else {
+            $message = $plan->aiMessages->setLimit(
+                $interaction,
+                false,
+                null,
+                $timePeriod,
+                $arguments["per-user"]["value"],
+                null,
+                null,
+                $interaction->data?->resolved?->roles?->first(),
+                $interaction->data?->resolved?->channels?->first(),
+                false
             );
 
             if ($message === null) {
