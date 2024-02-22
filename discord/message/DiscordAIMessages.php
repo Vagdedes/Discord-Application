@@ -882,6 +882,7 @@ class DiscordAIMessages
                              string           $message,
                              ?Role            $role, ?Channel $channel): ?string
     {
+        $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
         //todo
         return null;
     }

@@ -9,5 +9,5 @@ class DiscordFAQ
         $this->plan = $plan;
     }
 
-    // create faq, delete faq, update faq, list faq
+    //todo create faq, delete faq, update faq, list faq
 }
