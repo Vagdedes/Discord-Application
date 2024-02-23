@@ -420,17 +420,15 @@ class DiscordAIMessages
                                       int           $extraHash = null,
                                       bool          $debug = false): ?string
     {
-        $hasSelf = $self !== null;
-
         if (is_array($source)) {
             $debug = false;
             $channel = array_shift($source);
             $user = array_shift($source);
             $content = array_shift($source);
         } else {
-            $debug &= $hasSelf;
+            $debug &= $self !== null;
             $channel = $self->channel;
-            $user = $self->member;
+            $user = $source->member;
             $content = $source->content;
             $reference = $source->message_reference;
 
@@ -521,7 +519,7 @@ class DiscordAIMessages
                             "channel_id" => $parent->id,
                             "thread_id" => $thread,
                             "user_id" => $user->id,
-                            "message_id" => $hasSelf ? $self->id : null,
+                            "message_id" => $self?->id,
                             "message_content" => $content,
                             "creation_date" => $date,
                         )
@@ -536,7 +534,7 @@ class DiscordAIMessages
                             "channel_id" => $parent->id,
                             "thread_id" => $thread,
                             "user_id" => $user->id,
-                            "message_id" => $hasSelf ? $self->id : null,
+                            "message_id" => $self?->id,
                             "message_content" => $content,
                             "cost" => $cost,
                             "currency_id" => $model->currency->id,
@@ -575,7 +573,7 @@ class DiscordAIMessages
 
     public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
                                 int|string      $userID,
-                                ?int            $limit = 0, bool $object = true): array
+                                int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -593,7 +591,7 @@ class DiscordAIMessages
                 "DESC",
                 "id"
             ),
-            $limit
+            $limit !== null ? (int)$limit : 0
         );
 
         if (!$object) {
@@ -608,7 +606,7 @@ class DiscordAIMessages
 
     public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
                                int|string      $userID,
-                               ?int            $limit = 0, bool $object = true): array
+                               int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -626,7 +624,7 @@ class DiscordAIMessages
                 "DESC",
                 "id"
             ),
-            $limit
+            $limit !== null ? (int)$limit : 0
         );
 
         if (!$object) {

@@ -36,7 +36,7 @@ class DiscordInstructions
                         $object->channelID,
                         $object->threadID,
                         $object->userID,
-                        0,
+                        new stdClass(),
                         false
                     )),
                     "botMessages" => array($this->plan->aiMessages, "getMessages", array(
@@ -44,7 +44,7 @@ class DiscordInstructions
                         $object->channelID,
                         $object->threadID,
                         $object->userID,
-                        0,
+                        new stdClass(),
                         false
                     )),
                     "allMessages" => array($this->plan->aiMessages, "getConversation", array(
@@ -52,7 +52,7 @@ class DiscordInstructions
                         $object->channelID,
                         $object->threadID,
                         $object->userID,
-                        0,
+                        new stdClass(),
                         false
                     ))
                 ),
