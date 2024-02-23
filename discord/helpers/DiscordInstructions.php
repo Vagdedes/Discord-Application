@@ -56,7 +56,9 @@ class DiscordInstructions
                         false
                     ))
                 ),
-                $recursive
+                $recursive,
+                false,
+                true
             );
         } else {
             return $messages;

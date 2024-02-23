@@ -43,7 +43,7 @@ use Discord\Discord;
 
 class DiscordBot
 {
-    public int $botID;
+    public int|string $botID;
     public array $plans;
     private string $refreshDate;
     public Discord $discord;

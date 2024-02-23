@@ -50,7 +50,7 @@ class AccountMessageCreationListener
                 . "attempted-account-session"
             ),
             $object,
-            "5 minutes"
+            "10 minutes"
         );
     }
 
