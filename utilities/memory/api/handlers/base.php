@@ -7,24 +7,13 @@ class IndividualMemoryBlock
 
     public function __construct(mixed $key)
     {
-        if (is_integer($key)) { // Used for reserved or existing keys
-            $keyToInteger = $key;
+        if (is_integer($key)) {
             $this->originalKey = $key;
+            $this->key = $key;
         } else {
-            $keyToInteger = string_to_integer($key);
             $this->originalKey = $key;
+            $this->key = string_to_integer($key);
         }
-        $this->key = $keyToInteger;
-    }
-
-    public function getKey(): int
-    {
-        return $this->key;
-    }
-
-    public function getOriginalKey(): int
-    {
-        return $this->originalKey;
     }
 
     public function set(mixed $value, $expiration = false): void
@@ -46,7 +35,7 @@ class IndividualMemoryBlock
         $memory_array[$this->key] = $object;
     }
 
-    private function getRaw(): ?object
+    private function getObject(): ?object
     {
         global $memory_array;
 
@@ -65,16 +54,16 @@ class IndividualMemoryBlock
 
     public function get(string $objectKey = "value"): mixed
     {
-        $raw = $this->getRaw();
+        $raw = $this->getObject();
         return $raw?->{$objectKey};
     }
 
     public function exists(): bool
     {
-        return $this->getRaw() !== null;
+        return $this->getObject() !== null;
     }
 
-    public function clear(): void
+    public function delete(): void
     {
         global $memory_array;
         unset($memory_array[$this->key]);

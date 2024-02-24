@@ -125,7 +125,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                                     }
                                 }
                                 if ($valueVerifier === null || $valueVerifier($memoryBlock->get())) {
-                                    $memoryBlock->clear();
+                                    $memoryBlock->delete();
 
                                     if ($hasLimit) {
                                         $iterations[$arrayKey]++;
@@ -137,7 +137,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                                 }
                             } else if (str_contains($memoryKey, $key)
                                 && ($valueVerifier === null || $valueVerifier($memoryBlock->get()))) {
-                                $memoryBlock->clear();
+                                $memoryBlock->delete();
 
                                 if ($hasLimit) {
                                     $iterations[$arrayKey]++;
@@ -158,7 +158,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
                 foreach ($keys as $key) {
                     $name .= $key;
                     $memoryBlock = new IndividualMemoryBlock($name);
-                    $memoryBlock->clear();
+                    $memoryBlock->delete();
                 }
             }
         }
@@ -168,7 +168,7 @@ function clear_memory(array|null $keys, bool $abstractSearch = false,
         if (!empty($memory_array)) {
             foreach (array_keys($memory_array) as $memoryID) {
                 $memoryBlock = new IndividualMemoryBlock($memoryID);
-                $memoryBlock->clear();
+                $memoryBlock->delete();
             }
         }
     }
