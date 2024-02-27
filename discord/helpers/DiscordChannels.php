@@ -1,6 +1,7 @@
 <?php
 
 use Discord\Parts\Channel\Channel;
+use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 
@@ -23,6 +24,10 @@ class DiscordChannels
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
+            ),
+            array(
+                "DESC",
+                "thread_id"
             )
         );
         $this->whitelist = get_sql_query(
@@ -54,7 +59,7 @@ class DiscordChannels
         return $this->whitelist;
     }
 
-    public function getIfHasAccess(Channel $channel, Member|User $member): ?object
+    public function getIfHasAccess(Channel|Thread $channel, Member|User $member): ?object
     {
         $cacheKey = array(
             __METHOD__,
@@ -72,12 +77,16 @@ class DiscordChannels
             $list = $this->getList();
 
             if (!empty($list)) {
+                $parent = $channel instanceof Thread ? $channel->parent_id : $channel->id;
+
                 foreach ($list as $channelRow) {
                     if ($channelRow->server_id == $channel->guild_id
                         && ($channelRow->category_id === null
                             || $channelRow->category_id == $channel->parent_id)
                         && ($channelRow->channel_id === null
-                            || $channelRow->channel_id == $channel->id)) {
+                            || $channelRow->channel_id == $parent)
+                        && ($channelRow->thread_id === null
+                            || $channelRow->thread_id == $channel->id)) {
                         if ($channelRow->whitelist === null) {
                             $result = $channelRow;
                             break;
@@ -89,7 +98,9 @@ class DiscordChannels
                                         && ($whitelist->category_id === null
                                             || $whitelist->category_id == $channel->parent_id)
                                         && ($whitelist->channel_id === null
-                                            || $whitelist->channel_id == $channel->id))) {
+                                            || $whitelist->channel_id == $parent)
+                                        && ($whitelist->thread_id === null
+                                            || $whitelist->thread_id == $channel->id))) {
                                     $result = $channelRow;
                                     break 2;
                                 }
