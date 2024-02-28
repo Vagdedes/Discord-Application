@@ -310,7 +310,7 @@ class DiscordAIMessages
                                             }
                                             return true;
                                         } else {
-                                            $cacheKey = array(__METHOD__, $this->plan->planID, $member->id, $messageContent);
+                                            $cacheKey = array(__METHOD__, $channel->ai_model_id, $member->id, $messageContent);
                                             $cache = get_key_value_pair($cacheKey);
 
                                             if ($channel->prompt_message !== null) {
