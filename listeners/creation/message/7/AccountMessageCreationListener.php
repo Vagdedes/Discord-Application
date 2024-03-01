@@ -16,6 +16,7 @@ class AccountMessageCreationListener
         IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
         IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png",
         IDEALISTIC_URL = "https://www.idealistic.ai",
+        IDEALISTIC_PATREON_URL = self::IDEALISTIC_URL . "/patreon",
         IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
         IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184,
         IDEALISTIC_EMAIL_TICKETS_CHANNEL = 1196130350846447646,
@@ -644,12 +645,11 @@ class AccountMessageCreationListener
         $account = self::findAccountFromSession($interaction, $plan);
 
         if ($account !== null) {
-            global $website_domain;
             $embed = new Embed($plan->bot->discord);
             $embed->setAuthor(
                 self::IDEALISTIC_NAME,
                 self::IDEALISTIC_LOGO,
-                $website_domain
+                self::IDEALISTIC_URL
             );
             $embed->setFooter("Support Code: " . $account->getIdentification()->get());
             $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
@@ -751,14 +751,13 @@ class AccountMessageCreationListener
                                               ?Interaction   $interaction,
                                               MessageBuilder $messageBuilder): MessageBuilder
     {
-        global $website_domain;
         $account = self::getAccountObject($interaction, $plan);
         $accounts = $account->getRegistry()->getAccountAmount();
         $embed = new Embed($plan->bot->discord);
         $embed->setAuthor(
             self::IDEALISTIC_NAME,
             self::IDEALISTIC_LOGO,
-            $website_domain
+            self::IDEALISTIC_URL
         );
 
         if ($accounts > 0) {
@@ -766,6 +765,31 @@ class AccountMessageCreationListener
         } else {
             $embed->setDescription("Be the first to join!");
         }
+        $messageBuilder->addEmbed($embed);
+        return $messageBuilder;
+    }
+
+    public static function spartan_patreon(DiscordPlan    $plan,
+                                           ?Interaction   $interaction,
+                                           MessageBuilder $messageBuilder): MessageBuilder
+    {
+        $embed = new Embed($plan->bot->discord);
+        $embed->setAuthor(
+            self::IDEALISTIC_NAME,
+            self::IDEALISTIC_LOGO,
+            self::IDEALISTIC_URL
+        );
+        $embed->setTitle("Introducing Spartan 2.0");
+        $embed->setURL(self::IDEALISTIC_PATREON_URL);
+        $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
+        $embed->setDescription(
+            "75% better speed detections."
+            . "\n50% better step detections."
+            . "\n200% better block place detections."
+            . "\n50% better block reach detections."
+            . "\n90% better block break detections."
+            . "\n20% better exploits detections."
+        );
         $messageBuilder->addEmbed($embed);
         return $messageBuilder;
     }
