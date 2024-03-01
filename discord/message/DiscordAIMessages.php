@@ -353,11 +353,11 @@ class DiscordAIMessages
                                                         $message,
                                                         array(
                                                             $object,
-                                                            $channel->local_instructions ?? $model->localInstructions,
-                                                            $channel->public_instructions ?? $model->publicInstructions,
+                                                            $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
+                                                            $channel->public_instructions ?? (empty($model->publicInstructions) ? null : $model->publicInstructions)
                                                         ),
                                                         null,
-                                                        $channel->debug != null
+                                                        $channel->debug !== null
                                                     );
 
                                                     if ($reply === null) {
@@ -428,7 +428,7 @@ class DiscordAIMessages
             $content = array_shift($source);
         } else {
             $debug &= $self !== null;
-            $channel = $self->channel;
+            $channel = $source->channel;
             $user = $source->member;
             $content = $source->content;
             $reference = $source->message_reference;

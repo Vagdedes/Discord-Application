@@ -769,11 +769,5 @@ class AccountMessageCreationListener
         $messageBuilder->addEmbed($embed);
         return $messageBuilder;
     }
-    public static function spartan_patreon(DiscordPlan    $plan,
-                                           ?Interaction   $interaction,
-                                           MessageBuilder $messageBuilder): MessageBuilder
-    {
-        return $messageBuilder;
-    }
 
 }

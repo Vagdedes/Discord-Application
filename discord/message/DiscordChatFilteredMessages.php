@@ -184,8 +184,8 @@ class DiscordChatFilteredMessages
                             null,
                             array(
                                 $object,
-                                $filter->localInstructions,
-                                $filter->publicInstructions,
+                                empty($filter->localInstructions) ? null : $filter->localInstructions,
+                                empty($filter->publicInstructions) ? null : $filter->publicInstructions
                             ),
                             self::AI_HASH
                         );
