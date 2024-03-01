@@ -369,84 +369,87 @@ class DiscordUserPolls
                 ->setMaxValues(1)
                 ->setPlaceholder("Select up to " . $get->max_choices . " vote" . ($get->max_choices == 1 ? "" : "s") . ".");
             $select->setListener(function (Interaction $interaction, Collection $options) use ($running, $get, $choices) {
-                $interaction->acknowledge();
-                $option = $options[0];
-                $choiceID = $option->getValue();
-                $actionRow = ActionRow::new();
-                $picks = $this->getPicks($interaction, $running);
-                $count = array();
-                $totalCount = sizeof($picks);
+                $interaction->acknowledge()->done(function () use ($interaction, $options, $running, $get, $choices) {
+                    $option = $options[0];
+                    $choiceID = $option->getValue();
+                    $actionRow = ActionRow::new();
+                    $picks = $this->getPicks($interaction, $running);
+                    $count = array();
+                    $totalCount = sizeof($picks);
 
-                if ($totalCount > 0) {
-                    foreach ($picks as $pick) {
-                        if (array_key_exists($pick->choice_id, $count)) {
-                            $count[$pick->choice_id]++;
-                        } else {
-                            $count[$pick->choice_id] = 1;
+                    if ($totalCount > 0) {
+                        foreach ($picks as $pick) {
+                            if (array_key_exists($pick->choice_id, $count)) {
+                                $count[$pick->choice_id]++;
+                            } else {
+                                $count[$pick->choice_id] = 1;
+                            }
                         }
                     }
-                }
-                $button = Button::new(Button::STYLE_PRIMARY)->setLabel(
-                    "Pick ("
-                    . add_ordinal_number($count[$choiceID] + 1)
-                    . " time)"
-                );
-                $button->setListener(function (Interaction $interaction) use ($running, $option, $get, $choiceID, $choices) {
-                    $interaction->acknowledge();
-                    $pick = $this->setPick($interaction, $get->name, $choiceID);
+                    $button = Button::new(Button::STYLE_PRIMARY)->setLabel(
+                        "Pick ("
+                        . add_ordinal_number($count[$choiceID] + 1)
+                        . " time)"
+                    );
+                    $button->setListener(function (Interaction $interaction) use ($running, $option, $get, $choiceID, $choices) {
+                        $interaction->acknowledge()->done(function () use ($interaction, $get, $choiceID, $choices) {
+                            $pick = $this->setPick($interaction, $get->name, $choiceID);
 
-                    if ($pick !== null) {
-                        $interaction->sendFollowUpMessage($pick, true);
-                    } else {
-                        $interaction->sendFollowUpMessage(
-                            MessageBuilder::new()->setContent("Thanks for voting!"),
-                            true
-                        );
-                    }
-                }, $this->plan->bot->discord, true);
-                $actionRow->addComponent($button);
-
-                if ($get->allow_choice_deletion !== null && $totalCount > 0) {
-                    $button = Button::new(Button::STYLE_DANGER)->setLabel("Delete Picks");
-                    $button->setListener(function (Interaction $interaction) use ($get, $choices) {
-                        $interaction->acknowledge();
-                        $pick = $this->setPick($interaction, $get->name, null, false);
-
-                        if ($pick !== null) {
-                            $interaction->sendFollowUpMessage($pick, true);
-                        } else {
-                            $interaction->sendFollowUpMessage(
-                                MessageBuilder::new()->setContent("Your vote has been removed."),
-                                true
-                            );
-                        }
+                            if ($pick !== null) {
+                                $interaction->sendFollowUpMessage($pick, true);
+                            } else {
+                                $interaction->sendFollowUpMessage(
+                                    MessageBuilder::new()->setContent("Thanks for voting!"),
+                                    true
+                                );
+                            }
+                        });
                     }, $this->plan->bot->discord, true);
                     $actionRow->addComponent($button);
-                }
 
-                $builder = MessageBuilder::new();
-                $embed = new Embed($this->plan->bot->discord);
-                $embed->setTitle($get->title);
-                $embed->setDescription($get->description);
+                    if ($get->allow_choice_deletion !== null && $totalCount > 0) {
+                        $button = Button::new(Button::STYLE_DANGER)->setLabel("Delete Picks");
+                        $button->setListener(function (Interaction $interaction) use ($get, $choices) {
+                            $interaction->acknowledge()->done(function () use ($interaction, $get, $choices) {
+                                $pick = $this->setPick($interaction, $get->name, null, false);
 
-                if (empty($count)) {
-                    $embed->setAuthor("No Votes");
-                } else {
-                    $embed->setAuthor($totalCount . " Votes");
-
-                    foreach ($count as $key => $value) {
-                        $embed->addFieldValues(
-                            $choices[$key]->name,
-                            "``" . $value . " Votes``"
-                        );
+                                if ($pick !== null) {
+                                    $interaction->sendFollowUpMessage($pick, true);
+                                } else {
+                                    $interaction->sendFollowUpMessage(
+                                        MessageBuilder::new()->setContent("Your vote has been removed."),
+                                        true
+                                    );
+                                }
+                            }, $this->plan->bot->discord, true);
+                        }, $this->plan->bot->discord, true);
+                        $actionRow->addComponent($button);
                     }
-                }
-                $builder->addEmbed($embed);
-                $builder->addComponent($actionRow);
-                $interaction->sendFollowUpMessage(
-                    $builder,
-                    true
-                );
+
+                    $builder = MessageBuilder::new();
+                    $embed = new Embed($this->plan->bot->discord);
+                    $embed->setTitle($get->title);
+                    $embed->setDescription($get->description);
+
+                    if (empty($count)) {
+                        $embed->setAuthor("No Votes");
+                    } else {
+                        $embed->setAuthor($totalCount . " Votes");
+
+                        foreach ($count as $key => $value) {
+                            $embed->addFieldValues(
+                                $choices[$key]->name,
+                                "``" . $value . " Votes``"
+                            );
+                        }
+                    }
+                    $builder->addEmbed($embed);
+                    $builder->addComponent($actionRow);
+                    $interaction->sendFollowUpMessage(
+                        $builder,
+                        true
+                    );
+                });
             }, $this->plan->bot->discord);
         }
         foreach ($choices as $choice) {
