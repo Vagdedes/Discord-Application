@@ -242,6 +242,7 @@ class DiscordAIMessages
 
                                 if (get_key_value_pair($cooldownKey) === null) {
                                     set_key_value_pair($cooldownKey, true);
+
                                     if ($member->id != $this->plan->bot->botID) {
                                         if ($channel->require_mention !== null
                                             && ($channel->not_require_mention_time === null

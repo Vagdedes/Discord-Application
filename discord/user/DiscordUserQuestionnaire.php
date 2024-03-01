@@ -560,7 +560,7 @@ class DiscordUserQuestionnaire
                             "Failed to find questionnaire outcome channel with ID: " . $query->id
                         );
                     }
-                } else {
+                } else if ($questionnaire->ai_model_id !== null) {
                     $reply = $this->plan->aiMessages->rawTextAssistance(
                         $questionnaire->ai_model_id,
                         $message,

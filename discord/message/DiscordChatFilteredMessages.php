@@ -176,7 +176,7 @@ class DiscordChatFilteredMessages
                             }
                         }
                     }
-                    if (!empty($filter->localInstructions)
+                    if ($filter->ai_model_id !== null
                         && !empty($filter->constants)) {
                         $reply = $this->plan->aiMessages->rawTextAssistance(
                             $filter->ai_model_id,
