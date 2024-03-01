@@ -10,30 +10,11 @@ class DiscordCommands
 {
     private DiscordPlan $plan;
     public array $staticCommands, $dynamicCommands, $nativeCommands;
-    private static bool $noPlan = false;
     private static array $loaded = array();
 
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $nativeWhere = array(
-            array("deletion_date", null),
-            array("command_placeholder", "/"),
-            null,
-            array("expiration_date", "IS", null, 0),
-            array("expiration_date", ">", get_current_date()),
-            null
-        );
-
-        if (!self::$noPlan) {
-            self::$noPlan = true;
-            $nativeWhere[] = null;
-            $nativeWhere[] = array("plan_id", "IS", null, 0);
-            $nativeWhere[] = array("plan_id", $this->plan->planID);
-            $nativeWhere[] = null;
-        } else {
-            $nativeWhere[] = array("plan_id", $this->plan->planID);
-        }
         $this->staticCommands = get_sql_query(
             BotDatabaseTable::BOT_COMMANDS,
             null,
@@ -70,15 +51,26 @@ class DiscordCommands
         $this->nativeCommands = get_sql_query(
             BotDatabaseTable::BOT_COMMANDS,
             null,
-            $nativeWhere
+            array(
+                array("deletion_date", null),
+                array("command_placeholder", "/"),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ),
+            array(
+                "DESC",
+                "id"
+            )
         );
 
         if (!empty($this->nativeCommands)) {
             foreach ($this->nativeCommands as $command) {
-                if (in_array($command->command_identification, self::$loaded)) {
+                if (in_array($command->id, self::$loaded)) {
                     continue;
                 } else {
-                    self::$loaded[] = $command->command_identification;
+                    self::$loaded[] = $command->id;
                 }
                 $command->arguments = get_sql_query(
                     BotDatabaseTable::BOT_COMMAND_ARGUMENTS,

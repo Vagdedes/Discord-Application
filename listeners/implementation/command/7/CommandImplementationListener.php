@@ -10,18 +10,30 @@ class CommandImplementationListener
                                      Interaction $interaction,
                                      object      $command): void
     {
-        $interaction->acknowledge()->done(function () use ($plan, $interaction) {
-            $account = new Account($plan->applicationID);
-            $object = $account->getSession()->getLastKnown();
-            $message = new MessageBuilder();
+        $account = new Account($plan->applicationID);
+        $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
+        $object = $account->getSession()->getLastKnown();
+        $message = new MessageBuilder();
 
-            if ($object !== null) {
-                $message->setContent("https://www.idealistic.ai/contents/?path=account/panel&platform=0&id="
-                    . $account->getDetail("email_address"));
+        if ($object !== null) {
+            $account = $account->getNew($object->account_id);
+
+            if ($account->exists()) {
+                $message->setContent(
+                    AccountMessageCreationListener::IDEALISTIC_URL
+                    . "/contents/?path=account/panel&platform=0&id="
+                    . $account->getDetail("email_address")
+                );
             } else {
                 $message->setContent("Account not found.");
             }
-            $interaction->sendFollowUpMessage($message);
-        });
+        } else {
+            $message->setContent("Object not found.");
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message,
+            true
+        );
     }
 }
