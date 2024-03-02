@@ -746,9 +746,9 @@ class AccountMessageCreationListener
         return $messageBuilder;
     }
 
-    public static function spartan_patreon(DiscordPlan    $plan,
-                                           ?Interaction   $interaction,
-                                           MessageBuilder $messageBuilder): MessageBuilder
+    public static function patreon_advertisement(DiscordPlan    $plan,
+                                                 ?Interaction   $interaction,
+                                                 MessageBuilder $messageBuilder): MessageBuilder
     {
         $embed = new Embed($plan->bot->discord);
         $embed->setAuthor(
@@ -768,6 +768,13 @@ class AccountMessageCreationListener
             . "\n20% better exploits detections."
         );
         $messageBuilder->addEmbed($embed);
+
+        $row = ActionRow::new();
+        $button = Button::new(Button::STYLE_LINK)
+            ->setLabel("Start your FREE Trial today!")
+            ->setURL("https://vagdedes.com/.images/spartan/banner.png");
+        $row->addComponent($button);
+        $messageBuilder->addComponent($row);
         return $messageBuilder;
     }
 
