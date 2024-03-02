@@ -333,20 +333,6 @@ class AccountMessageImplementationListener
     }
 
     public static function contact_form(DiscordPlan    $plan,
-                                        Interaction    $interaction,
-                                        MessageBuilder $messageBuilder,
-                                        mixed          $objects): void
-    {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
-
-        if ($account !== null) {
-            $plan->component->showModal($interaction, "0-contact_form");
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
-    }
-
-    public static function contact_form_offline(DiscordPlan    $plan,
                                                 Interaction    $interaction,
                                                 MessageBuilder $messageBuilder,
                                                 mixed          $objects): void

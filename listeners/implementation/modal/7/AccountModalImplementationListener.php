@@ -232,7 +232,7 @@ class AccountModalImplementationListener
                     if (services_self_email($content[0], $content[1], $content[2]) === true) {
                         has_memory_cooldown($cacheKey, "5 minutes");
                         $response = "Thanks for taking the time to contact us.";
-                        self::sendEmailTicketEmbed($plan, $account->getDetail("name"), null, $subject);
+                        //self::sendEmailTicketEmbed($plan, $account->getDetail("name"), null, $subject);
                     } else {
                         global $email_default_email_name;
                         $response = "An error occurred, please contact us at: " . $email_default_email_name;
@@ -286,7 +286,7 @@ class AccountModalImplementationListener
                     if (services_self_email($content[0], $content[1], $content[2]) === true) {
                         has_memory_cooldown($cacheKey, "5 minutes");
                         $response = "Thanks for taking the time to contact us.";
-                        self::sendEmailTicketEmbed($plan, null, $email, $subject);
+                        //self::sendEmailTicketEmbed($plan, null, $email, $subject);
                     } else {
                         global $email_default_email_name;
                         $response = "An error occurred, please contact us at: " . $email_default_email_name;
@@ -307,7 +307,7 @@ class AccountModalImplementationListener
     private static function sendEmailTicketEmbed(DiscordPlan $plan,
                                                  ?string     $name, ?string $email, ?string $subject): void
     {
-        $channel = $plan->bot->discord->getChannel(AccountMessageCreationListener::IDEALISTIC_EMAIL_TICKETS_CHANNEL);
+        $channel = $plan->bot->discord->getChannel("TO-DO");
 
         if ($channel !== null
             && $channel->allowText()
@@ -315,7 +315,7 @@ class AccountModalImplementationListener
             global $website_domain;
 
             foreach ($channel->threads as $thread) {
-                if ($thread->id == AccountMessageCreationListener::IDEALISTIC_EMAIL_TICKETS_CHANNEL_THREAD) {
+                if ($thread->id === "TO-DO") {
                     $message = MessageBuilder::new();
                     $embed = new Embed($plan->bot->discord);
                     $embed->setAuthor(
