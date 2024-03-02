@@ -21,11 +21,7 @@ class AccountMessageCreationListener
         IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184,
         IDEALISTIC_EMAIL_TICKETS_CHANNEL = 1196130350846447646,
         IDEALISTIC_EMAIL_TICKETS_CHANNEL_THREAD = 1206925555589582889;
-    private const
-        VISIONARY_ID = 1195532368551878696,
-        INVESTOR_ID = 1195532375677997166,
-        SPONSOR_ID = 1195532379532558476,
-        MOTIVATOR_ID = 1195532382363725945;
+    private const PATREON_ID = 1195532382363725945;
     private static bool $dealtGiveaway = false;
 
     public static function getAttemptedAccountSession(Interaction $interaction,
@@ -94,42 +90,10 @@ class AccountMessageCreationListener
         if ($method->isPositiveOutcome()) {
             $account = $method->getObject();
 
-            if (!$plan->permissions->hasRole(
-                $interaction->member, array(
-                    self::VISIONARY_ID,
-                    self::INVESTOR_ID,
-                    self::SPONSOR_ID,
-                    self::MOTIVATOR_ID
-                )
-            )) {
-                $permissions = $account->getPermissions();
-
-                if ($permissions->hasPermission("patreon.subscriber.visionary")) {
-                    $plan->permissions->addDiscordRole($interaction->member, self::VISIONARY_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                } else if ($permissions->hasPermission("patreon.subscriber.investor")) {
-                    $plan->permissions->addDiscordRole($interaction->member, self::INVESTOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                } else if ($permissions->hasPermission("patreon.subscriber.sponsor")) {
-                    $plan->permissions->addDiscordRole($interaction->member, self::SPONSOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                } else if ($permissions->hasPermission("patreon.subscriber.motivator")) {
-                    $plan->permissions->addDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                } else {
-                    $plan->permissions->removeDiscordRole($interaction->member, self::VISIONARY_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::INVESTOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::SPONSOR_ID);
-                    $plan->permissions->removeDiscordRole($interaction->member, self::MOTIVATOR_ID);
-                }
+            if ($account->getPermissions()->hasPermission("patreon.subscriber.subscriber")) {
+                $plan->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
+            } else {
+                $plan->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
             }
             return $account;
         } else {
@@ -215,7 +179,14 @@ class AccountMessageCreationListener
                                             ?Interaction   $interaction,
                                             MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = self::getAccountObject($interaction, $plan);
+        $account = self::findAccountFromSession($interaction, $plan);
+
+        if ($account === null) {
+            $account = self::getAccountObject($interaction, $plan);
+            $loggedIn = false;
+        } else {
+            $loggedIn = true;
+        }
         $productObject = $account->getProduct();
         $products = $productObject->find(null, true, false);
 
@@ -238,11 +209,6 @@ class AccountMessageCreationListener
                 $interaction->acknowledge()->done(function () use (
                     $plan, $interaction, $productObject, $options, $account
                 ) {
-                    $newAccount = self::findAccountFromSession($interaction, $plan);
-
-                    if ($newAccount !== null) {
-                        $account = $newAccount;
-                    }
                     $product = $productObject->find($options[0]->getValue(), true, false);
 
                     if ($product->isPositiveOutcome()) {
@@ -263,6 +229,19 @@ class AccountMessageCreationListener
                 });
             }, $plan->bot->discord);
             $messageBuilder->addComponent($select);
+
+            if (!$loggedIn) {
+                $actionRow = ActionRow::new();
+                $button = Button::new(Button::STYLE_SUCCESS)
+                    ->setLabel("You Must be Logged In to Download")
+                    ->setListener(function (Interaction $interaction) use ($plan) {
+                        $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
+                    }, $plan->bot->discord);
+                $actionRow->addComponent($button);
+                $messageBuilder->addComponent($actionRow);
+            }
+        } else {
+            $messageBuilder->setContent("No products found.");
         }
         return $messageBuilder;
     }
