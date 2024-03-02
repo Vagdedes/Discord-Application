@@ -759,14 +759,7 @@ class AccountMessageCreationListener
         $embed->setTitle("Introducing Spartan 2.0");
         $embed->setURL(self::IDEALISTIC_PATREON_URL);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
-        $embed->setDescription(
-            "75% better speed detections."
-            . "\n50% better step detections."
-            . "\n200% better block place detections."
-            . "\n50% better block reach detections."
-            . "\n90% better block break detections."
-            . "\n20% better exploits detections."
-        );
+        $embed->setDescription("20% better detections!");
         $messageBuilder->addEmbed($embed);
 
         $row = ActionRow::new();
