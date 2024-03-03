@@ -288,22 +288,16 @@ class AccountMessageCreationListener
                         ? ":\n" . DiscordSyntax::htmlToDiscord($product->download_note)
                         : ""));
                 $canDownload = true;
-            } else if (!empty($product->downloads)) {
-                if (!$isLoggedIn) {
-                    $embed->setTitle("Log In to be able to download this");
-                }
-                $canDownload = true;
             } else {
-                $canDownload = false;
+                $canDownload = !empty($product->downloads);
             }
-            if ($product->image !== null) {
-                $embed->setImage($product->image);
-            }
+
             $embed->setAuthor(
                 strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
-                null,
+                self::IDEALISTIC_LOGO,
                 $downloadURL
             );
+            $embed->setImage($product->image);
             //$release = $product->latest_version !== null ? $product->latest_version : null;
             $hasTiers = sizeof($product->tiers->paid) > 1;
             $tier = array_shift($product->tiers->paid);
@@ -313,14 +307,8 @@ class AccountMessageCreationListener
                 ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
                 : null;
 
-            foreach (array(
-                         DiscordSyntax::htmlToDiscord($product->description) => "On Development For " . get_date_days_difference($product->creation_date) . " Days",
-                         $price => $legalInformation
-                     ) as $arrayKey => $arrayValue) {
-                if ($arrayValue !== null) {
-                    $embed->addFieldValues($arrayKey, $arrayValue);
-                }
-            }
+            $embed->addFieldValues(DiscordSyntax::htmlToDiscord($product->description), $legalInformation);
+            $embed->setFooter($price);
             $messageBuilder->addEmbed($embed);
 
             // Separator
@@ -765,7 +753,7 @@ class AccountMessageCreationListener
         $row = ActionRow::new();
         $button = Button::new(Button::STYLE_LINK)
             ->setLabel("Start your FREE Trial today!")
-            ->setURL("https://vagdedes.com/.images/spartan/banner.png");
+            ->setURL(self::IDEALISTIC_PATREON_URL);
         $row->addComponent($button);
         $messageBuilder->addComponent($row);
         return $messageBuilder;
