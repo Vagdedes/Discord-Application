@@ -313,63 +313,36 @@ class AccountMessageCreationListener
 
             // Separator
 
-            $offer = $product->show_offer;
+            $productCompatibilities = $product->compatibilities;
 
-            if ($offer === null) {
-                $productCompatibilities = $product->compatibilities;
+            if (!empty($productCompatibilities)) {
+                $validProducts = $account->getProduct()->find(null, true, false);
+                $validProducts = $validProducts->getObject();
 
-                if (!empty($productCompatibilities)) {
-                    $validProducts = $account->getProduct()->find(null, true, false);
-                    $validProducts = $validProducts->getObject();
+                if (sizeof($validProducts) > 1) { // One because we already are quering one
+                    foreach ($productCompatibilities as $compatibility) {
+                        $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
 
-                    if (sizeof($validProducts) > 1) { // One because we already are quering one
-                        foreach ($productCompatibilities as $compatibility) {
-                            $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
+                        if (is_object($compatibleProduct)) {
+                            $compatibleProductImage = $compatibleProduct->image;
 
-                            if (is_object($compatibleProduct)) {
-                                $compatibleProductImage = $compatibleProduct->image;
+                            if ($compatibleProductImage != null
+                                && (!$isLoggedIn || !$account->getPurchases()->owns($compatibleProduct->id)->isPositiveOutcome())) {
+                                $embed = new Embed($plan->bot->discord);
+                                $embed->setTitle(strip_tags($compatibleProduct->name));
 
-                                if ($compatibleProductImage != null
-                                    && (!$isLoggedIn || !$account->getPurchases()->owns($compatibleProduct->id)->isPositiveOutcome())) {
-                                    $embed = new Embed($plan->bot->discord);
-                                    $embed->setTitle(strip_tags($compatibleProduct->name));
-
-                                    if ($compatibleProduct->color !== null) {
-                                        $embed->setColor($compatibleProduct->color);
-                                    }
-                                    $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
-                                    $embed->setAuthor(
-                                        $product->compatibility_description,
-                                        $compatibleProduct->image,
-                                    );
-                                    $messageBuilder->addEmbed($embed);
+                                if ($compatibleProduct->color !== null) {
+                                    $embed->setColor($compatibleProduct->color);
                                 }
+                                $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
+                                $embed->setAuthor(
+                                    $product->compatibility_description,
+                                    $compatibleProduct->image,
+                                );
+                                $messageBuilder->addEmbed($embed);
                             }
                         }
                     }
-                }
-            } else {
-                $offer = $account->getProductOffer()->find($offer == -1 ? null : $offer);
-
-                if ($offer->isPositiveOutcome()) {
-                    $offer = $offer->getObject();
-                    $embed = new Embed($plan->bot->discord);
-                    $embed->setAuthor(
-                        strip_tags($offer->name),
-                        $offer->image
-                    );
-                    if ($offer->description !== null) {
-                        $embed->setTitle(DiscordSyntax::htmlToDiscord($offer->description));
-                    }
-                    $contents = "";
-
-                    foreach ($offer->divisions as $divisions) {
-                        foreach ($divisions as $division) {
-                            $contents .= $division->description;
-                        }
-                    }
-                    $embed->setDescription(DiscordSyntax::htmlToDiscord($contents));
-                    $messageBuilder->addEmbed($embed);
                 }
             }
 
