@@ -263,7 +263,7 @@ class AccountMessageCreationListener
                     : $product->divisions->pre_purchase);
             $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->getOrCreateValidToken(
                 $productID,
-                1,
+                30,
                 true,
                 false,
                 DiscordProperties::SYSTEM_REFRESH_TIME,
