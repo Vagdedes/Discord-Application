@@ -5,11 +5,11 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordFAQ
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
     }
 
     public function addOrEdit(Interaction $interaction,
@@ -107,7 +107,7 @@ class DiscordFAQ
         if (empty($query)) {
             $builder->setContent("There are no frequently-asked questions set-up in this server.");
         } else {
-
+            // todo
         }
         return $builder;
     }

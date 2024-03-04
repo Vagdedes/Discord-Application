@@ -21,7 +21,6 @@ class DiscordPlan
     public DiscordInviteTracker $inviteTracker;
     public DiscordInteractionRoles $interactionRoles;
     public DiscordTemporaryChannels $temporaryChannels;
-    public DiscordSocialAlerts $socialAlerts;
     public DiscordReminderMessages $reminderMessages;
     public DiscordUserQuestionnaire $userQuestionnaire;
     public DiscordStatisticsChannels $statisticsChannels;
@@ -35,8 +34,6 @@ class DiscordPlan
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordMessageNotifications $messageNotifications;
     public DiscordJoinRoles $joinRoles;
-    public DiscordWebAttachments $webAttachments;
-    public DiscordFAQ $faq;
     public DiscordUserSuggestions $userSuggestions;
 
     public function __construct(DiscordBot $bot, int|string $planID)
@@ -76,7 +73,6 @@ class DiscordPlan
         $this->userPolls = new DiscordUserPolls($this);
         $this->userLevels = new DiscordUserLevels($this);
         $this->temporaryChannels = new DiscordTemporaryChannels($this);
-        $this->socialAlerts = new DiscordSocialAlerts($this);
         $this->reminderMessages = new DiscordReminderMessages($this);
         $this->userQuestionnaire = new DiscordUserQuestionnaire($this);
         $this->aiMessages = new DiscordAIMessages($this);
@@ -91,8 +87,6 @@ class DiscordPlan
         $this->tranferredMessages = new DiscordTransferredMessages($this);
         $this->messageNotifications = new DiscordMessageNotifications($this);
         $this->joinRoles = new DiscordJoinRoles($this);
-        $this->webAttachments = new DiscordWebAttachments($this);
-        $this->faq = new DiscordFAQ($this);
         $this->userSuggestions = new DiscordUserSuggestions($this);
     }
 

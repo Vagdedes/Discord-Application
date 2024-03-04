@@ -6,7 +6,6 @@
  * Custom Logs
  * Custom Commands
  * -
- * Social Alerts
  * Invite Tracker
  * Web Attachments
  * Frequently Asked Questions (FAQ)
@@ -51,6 +50,8 @@ class DiscordBot
     public DiscordMute $mute;
     public DiscordAntiExpirationThreads $discordAntiExpirationThreads;
     public DiscordPermissions $permissions;
+    public DiscordWebAttachments $webAttachments;
+    public DiscordFAQ $faq;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -66,6 +67,8 @@ class DiscordBot
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->permissions = new DiscordPermissions($this);
+        $this->webAttachments = new DiscordWebAttachments($this);
+        $this->faq = new DiscordFAQ($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

@@ -2,11 +2,11 @@
 
 class DiscordWebAttachments
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
     }
 
     // create-web-attachment, delete-web-attachment, update-web-attachment, list-web-attachment

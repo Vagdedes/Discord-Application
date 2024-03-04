@@ -12,7 +12,7 @@ class DefaultCommandImplementationListener
                                       object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $message = $plan->faq->addOrEdit(
+        $message = $plan->bot->faq->addOrEdit(
             $interaction,
             $arguments["question"]["value"],
             $arguments["answer"]["value"]
@@ -38,7 +38,7 @@ class DefaultCommandImplementationListener
                                       object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $message = $plan->faq->delete(
+        $message = $plan->bot->faq->delete(
             $interaction,
             $arguments["question"]["value"]
         );
@@ -64,7 +64,7 @@ class DefaultCommandImplementationListener
     {
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
-            $plan->faq->list($interaction),
+            $plan->bot->faq->list($interaction),
             true
         );
     }
