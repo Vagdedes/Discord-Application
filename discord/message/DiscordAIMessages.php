@@ -8,7 +8,7 @@ use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\WebSockets\MessageReaction;
 
-class DiscordAIMessages
+class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 {
     private DiscordPlan $plan;
     public ?array $model;

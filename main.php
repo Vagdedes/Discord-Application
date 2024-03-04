@@ -36,6 +36,7 @@ require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserPolls.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserSuggestions.php';
+require '/root/discord_bot/discord/user/standalone/DiscordUserEvents.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
