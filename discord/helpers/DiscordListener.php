@@ -130,7 +130,7 @@ class DiscordListener
                         if ($mute !== null) {
                             return $mute->creation_reason;
                         } else if ($command->required_permission !== null
-                            && !$this->plan->permissions->hasPermission(
+                            && !$this->plan->bot->permissions->hasPermission(
                                 $interaction->member,
                                 $command->required_permission
                             )) {

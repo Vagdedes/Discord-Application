@@ -4,34 +4,30 @@ use Discord\Parts\User\Member;
 
 class DiscordPermissions
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $rolePermissions, $userPermissions;
     private const REFRESH_TIME = "3 seconds";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->rolePermissions = array();
         $this->userPermissions = array();
         $query = get_sql_query(
             BotDatabaseTable::BOT_ROLE_PERMISSIONS,
             array("server_id", "role_id", "permission"),
-            array(
+            array_merge(array(
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
-            )
+            ), $this->bot->utilities->getServersQuery())
         );
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $hash = $this->plan->utilities->hash($row->server_id, $row->role_id);
+                $hash = $this->bot->utilities->hash($row->server_id, $row->role_id);
 
                 if (array_key_exists($hash, $this->rolePermissions)) {
                     $this->rolePermissions[$hash][] = $row->permission;
@@ -43,22 +39,18 @@ class DiscordPermissions
         $query = get_sql_query(
             BotDatabaseTable::BOT_USER_PERMISSIONS,
             array("server_id", "user_id", "permission"),
-            array(
+            array_merge(array(
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
-            )
+            ), $this->bot->utilities->getServersQuery())
         );
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $hash = $this->plan->utilities->hash($row->server_id, $row->user_id);
+                $hash = $this->bot->utilities->hash($row->server_id, $row->user_id);
 
                 if (array_key_exists($hash, $this->userPermissions)) {
                     $this->userPermissions[$hash][] = $row->permission;
@@ -71,18 +63,18 @@ class DiscordPermissions
 
     public function getRolePermissions(int|string|null $serverID, int|string $roleID): array
     {
-        return $this->rolePermissions[$this->plan->utilities->hash($serverID, $roleID)] ?? array();
+        return $this->rolePermissions[$this->bot->utilities->hash($serverID, $roleID)] ?? array();
     }
 
     public function getUserPermissions(int|string|null $serverID, int|string|null $userID): array
     {
-        return $this->userPermissions[$this->plan->utilities->hash($serverID, $userID)] ?? array();
+        return $this->userPermissions[$this->bot->utilities->hash($serverID, $userID)] ?? array();
     }
 
     private function roleHasPermission(int|string $serverID, int|string $roleID,
                                        string     $permission): bool
     {
-        $hash = $this->plan->utilities->hash($serverID, $roleID);
+        $hash = $this->bot->utilities->hash($serverID, $roleID);
         return array_key_exists($hash, $this->rolePermissions)
             && in_array($permission, $this->rolePermissions[$hash]);
     }
@@ -90,7 +82,7 @@ class DiscordPermissions
     private function userHasPermission(int|string|null $serverID, int|string|null $userID,
                                        string          $permission, bool $recursive = true): bool
     {
-        $hash = $this->plan->utilities->hash($serverID, $userID);
+        $hash = $this->bot->utilities->hash($serverID, $userID);
         return array_key_exists($hash, $this->userPermissions)
             && in_array($permission, $this->userPermissions[$hash])
             || $recursive && ($this->userHasPermission($serverID, null, $permission, false)
@@ -102,7 +94,6 @@ class DiscordPermissions
     {
         $cacheKey = array(
             __METHOD__,
-            $this->plan->planID,
             $member->id,
             $permission
         );

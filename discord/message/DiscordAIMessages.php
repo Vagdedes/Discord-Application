@@ -752,13 +752,13 @@ class DiscordAIMessages
         $date = get_current_date();
 
         if (!empty($model->messageLimits)
-            && !$this->plan->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
+            && !$this->plan->bot->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
             foreach ($model->messageLimits as $limit) {
                 if (($limit->server_id === null
                         || $limit->server_id === $serverID
                         && ($limit->channel_id === null || $limit->channel_id === $channelID)
                         && ($limit->thread_id === null || $limit->thread_id === $threadID))
-                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
+                    && ($limit->role_id === null || $this->plan->bot->permissions->hasRole($message->member, $limit->role_id))) {
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {
@@ -823,12 +823,12 @@ class DiscordAIMessages
             }
         }
         if (!empty($model->costLimits)
-            && !$this->plan->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
+            && !$this->plan->bot->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
             foreach ($model->costLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
                     && ($limit->thread_id === null || $limit->thread_id === $threadID)
-                    && ($limit->role_id === null || $this->plan->permissions->hasRole($message->member, $limit->role_id))) {
+                    && ($limit->role_id === null || $this->plan->bot->permissions->hasRole($message->member, $limit->role_id))) {
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {

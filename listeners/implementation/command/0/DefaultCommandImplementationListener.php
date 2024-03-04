@@ -1003,7 +1003,7 @@ class DefaultCommandImplementationListener
             if (!empty($commands)) {
                 foreach ($commands as $command) {
                     if ($command->required_permission !== null
-                        && $plan->permissions->hasPermission(
+                        && $plan->bot->permissions->hasPermission(
                             $interaction->member,
                             $command->required_permission
                         )) {

@@ -159,10 +159,10 @@ class DiscordMessageNotifications
                 if ($role->has_role !== null) {
                     $dealtHas = true;
 
-                    if ($this->plan->permissions->hasRole($user, $role->role_id)) {
+                    if ($this->plan->bot->permissions->hasRole($user, $role->role_id)) {
                         $has = true;
                     }
-                } else if ($this->plan->permissions->hasRole($user, $role->role_id)) {
+                } else if ($this->plan->bot->permissions->hasRole($user, $role->role_id)) {
                     return false;
                 }
             }

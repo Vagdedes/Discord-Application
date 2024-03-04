@@ -210,7 +210,7 @@ class DiscordCommands
                             if ($mute !== null) {
                                 return $mute->creation_reason;
                             } else if ($command->required_permission !== null
-                                && !$this->plan->permissions->hasPermission(
+                                && !$this->plan->bot->permissions->hasPermission(
                                     $user,
                                     $command->required_permission
                                 )) {
@@ -235,7 +235,7 @@ class DiscordCommands
                         if ($mute !== null) {
                             return $mute->creation_reason;
                         } else if ($command->required_permission !== null
-                            && !$this->plan->permissions->hasPermission(
+                            && !$this->plan->bot->permissions->hasPermission(
                                 $user,
                                 $command->required_permission
                             )) {

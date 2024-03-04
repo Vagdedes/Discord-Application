@@ -420,7 +420,7 @@ class DiscordUserGiveaways
 
         if (!empty($permissions)) {
             foreach ($permissions as $permission) {
-                if (!$this->plan->permissions->hasPermission($interaction->member, $permission->permission_id)) {
+                if (!$this->plan->bot->permissions->hasPermission($interaction->member, $permission->permission_id)) {
                     return false;
                 }
             }
@@ -634,7 +634,7 @@ class DiscordUserGiveaways
     private function owns(Interaction $interaction, object $query): bool
     {
         return $query->user_id == $interaction->member->id
-            || $this->plan->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
+            || $this->plan->bot->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
     }
 
     // Maintenance

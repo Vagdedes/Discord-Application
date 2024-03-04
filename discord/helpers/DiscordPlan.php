@@ -12,7 +12,6 @@ class DiscordPlan
     public DiscordComponent $component;
     public DiscordPersistentMessages $persistentMessages;
     public DiscordUserTickets $userTickets;
-    public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
     public DiscordBot $bot;
     public DiscordUserTargets $userTargets;
@@ -69,7 +68,6 @@ class DiscordPlan
         $this->instructions = new DiscordInstructions($this);
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
-        $this->permissions = new DiscordPermissions($this);
 
         $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->persistentMessages = new DiscordPersistentMessages($this);

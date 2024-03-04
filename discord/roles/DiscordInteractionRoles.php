@@ -165,7 +165,7 @@ class DiscordInteractionRoles
             $role = $role[$choice->role_id] ?? null;
 
             if ($role !== null) {
-                $add = !$this->plan->permissions->hasRole($interaction->member, $choice->role_id);
+                $add = !$this->plan->bot->permissions->hasRole($interaction->member, $choice->role_id);
                 $promise = $add
                     ? $interaction->member->addRole($role)
                     : $interaction->member->removeRole($role);

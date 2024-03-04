@@ -147,7 +147,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->permissions->hasPermission($interaction->member, "idealistic.note.edit")) {
+                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.edit")) {
                 $this->plan->component->createModal(
                     $interaction,
                     "Connect Account",
@@ -244,7 +244,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->permissions->hasPermission($interaction->member, "idealistic.note.delete")) {
+                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.delete")) {
                 if (set_sql_query(
                     BotDatabaseTable::BOT_NOTES,
                     array(
@@ -372,7 +372,7 @@ class DiscordUserNotes
                 }
 
                 if ($proceed
-                    || $this->plan->permissions->hasPermission($interaction->member, "idealistic.note.get")) {
+                    || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.get")) {
                     if ($query->settings->view_public !== null
                         || $interaction->user->id == $query->user_id) {
                         return $query;
@@ -579,7 +579,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->permissions->hasPermission($interaction->member, "idealistic.note.change.setting")) {
+                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.change.setting")) {
                 if (sql_insert(
                     BotDatabaseTable::BOT_NOTE_SETTINGS,
                     array(
@@ -657,7 +657,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->permissions->hasPermission($interaction->member, "idealistic.note.modify.participant")) {
+                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.modify.participant")) {
                 $foundParticipant = null;
 
                 if (!empty($object->participants)) {

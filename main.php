@@ -59,10 +59,10 @@ require '/root/discord_bot/discord/message/DiscordMessageNotifications.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
 require '/root/discord_bot/discord/helpers/standalone/variables.php';
+require '/root/discord_bot/discord/helpers/standalone/DiscordPermissions.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
-require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
 require '/root/discord_bot/discord/helpers/DiscordChannels.php';
 

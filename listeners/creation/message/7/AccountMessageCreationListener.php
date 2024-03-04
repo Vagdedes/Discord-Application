@@ -89,9 +89,9 @@ class AccountMessageCreationListener
             $account = $method->getObject();
 
             if ($account->getPermissions()->hasPermission("patreon.subscriber.subscriber")) {
-                $plan->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
+                $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
             } else {
-                $plan->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
+                $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
             }
             return $account;
         } else {
