@@ -294,19 +294,12 @@ class DiscordUtilities
         $array = array();
 
         if (!empty($this->discord->guilds->first())) {
-            foreach ($this->discord->guilds as $guild) {
-                $array[] = $guild->id;
-            }
-            $last = sizeof($array) - 1;
+            $array[] = null;
 
-            foreach ($array as $count => $guild) {
-                if ($count === $last) {
-                    $array[$count] = array("server_id", $guild);
-                } else {
-                    $array[$count] = array("server_id", "=", $guild, 0);
-                }
+            foreach ($this->discord->guilds as $guild) {
+                $array[] = array("server_id", "=", $guild->id, 0);
             }
-            array_unshift($array, null);
+            $array[] = array("server_id", "IS", null);
             $array[] = null;
         }
         return $array;
