@@ -74,7 +74,7 @@ class BotDatabaseTable
         BOT_MESSAGE_NOTIFICATION_TRACKING = "discord.botMessageNotificationTracking",
         BOT_MESSAGE_NOTIFICATION_ROLES = "discord.botMessageNotificationRoles",
         BOT_MESSAGE_NOTIFICATION_INSTRUCTIONS = "discord.botMessageNotificationInstructions",
-        BOT_MESSAGE_REFRESH = "discord.botMessageRefresh",
+        BOT_ANTI_EXPIRATION_THREADS = "discord.botAntiExpirationThreads",
         BOT_TICKETS = "discord.botTickets",
         BOT_TICKET_ROLES = "discord.botTicketRoles",
         BOT_TICKET_CREATIONS = "discord.botTicketCreations",

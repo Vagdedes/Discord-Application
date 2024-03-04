@@ -13,7 +13,7 @@ class DiscordAntiExpirationThreads
     {
         $this->bot = $bot;
         $query = get_sql_query(
-            BotDatabaseTable::BOT_MESSAGE_REFRESH,
+            BotDatabaseTable::BOT_ANTI_EXPIRATION_THREADS,
             null,
             array_merge(array(
                 array("deletion_date", null),
