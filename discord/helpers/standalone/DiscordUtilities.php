@@ -301,9 +301,9 @@ class DiscordUtilities
 
             foreach ($array as $count => $guild) {
                 if ($count === $last) {
-                    $array[$count] = array("guild", $guild);
+                    $array[$count] = array("server_id", $guild);
                 } else {
-                    $array[$count] = array("guild", "=", $guild, 0);
+                    $array[$count] = array("server_id", "=", $guild, 0);
                 }
             }
             array_unshift($array, null);
