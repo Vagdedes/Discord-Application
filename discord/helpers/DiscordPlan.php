@@ -33,7 +33,6 @@ class DiscordPlan
     public DiscordObjectiveChannels $objectiveChannels;
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordMessageNotifications $messageNotifications;
-    public DiscordJoinRoles $joinRoles;
     public DiscordUserSuggestions $userSuggestions;
 
     public function __construct(DiscordBot $bot, int|string $planID)
@@ -66,7 +65,6 @@ class DiscordPlan
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
 
-        $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);
@@ -86,7 +84,7 @@ class DiscordPlan
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
         $this->messageNotifications = new DiscordMessageNotifications($this);
-        $this->joinRoles = new DiscordJoinRoles($this);
+        $this->interactionRoles = new DiscordInteractionRoles($this);
         $this->userSuggestions = new DiscordUserSuggestions($this);
     }
 

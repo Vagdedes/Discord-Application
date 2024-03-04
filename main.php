@@ -29,8 +29,8 @@ require '/root/discord_bot/discord/other/standalone/DiscordWebAttachments.php';
 require '/root/discord_bot/discord/other/standalone/DiscordFAQ.php';
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 
+require '/root/discord_bot/discord/roles/standalone/DiscordJoinRoles.php';
 require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
-require '/root/discord_bot/discord/roles/DiscordJoinRoles.php';
 
 require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
@@ -423,10 +423,11 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $createdDiscordBot) {
+            $createdDiscordBot->joinRoles->run($member);
+
             foreach ($createdDiscordBot->plans as $plan) {
                 $plan->statusMessages->run($member, DiscordStatusMessages::WELCOME);
                 $plan->statisticsChannels->refresh();
-                $plan->joinRoles->run($member);
             }
             $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member->getRawAttributes());
         });

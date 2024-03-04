@@ -53,6 +53,7 @@ class DiscordBot
     public DiscordWebAttachments $webAttachments;
     public DiscordFAQ $faq;
     public DiscordListener $listener;
+    public DiscordJoinRoles $joinRoles;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -65,12 +66,14 @@ class DiscordBot
         $this->plans = array();
 
         $this->utilities = new DiscordUtilities($this->discord);
+        $this->listener = new DiscordListener($this->discord);
+
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->permissions = new DiscordPermissions($this);
         $this->webAttachments = new DiscordWebAttachments($this);
         $this->faq = new DiscordFAQ($this);
-        $this->listener = new DiscordListener($this->discord);
+        $this->joinRoles = new DiscordJoinRoles($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

@@ -4,23 +4,22 @@ use Discord\Parts\User\Member;
 
 class DiscordJoinRoles
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $roles;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->roles = get_sql_query(
             BotDatabaseTable::BOT_JOIN_ROLES,
             null,
-            array(
-                array("plan_id", $this->plan->planID),
+            array_merge(array(
                 array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
-            )
+            ), $this->bot->utilities->getServersQuery())
         );
     }
 
@@ -33,7 +32,6 @@ class DiscordJoinRoles
                         sql_insert(
                             BotDatabaseTable::BOT_JOIN_ROLE_TRACKING,
                             array(
-                                "plan_id" => $this->plan->planID,
                                 "role_id" => $role->role_id,
                                 "user_id" => $member->id,
                                 "server_id" => $member->guild_id,
