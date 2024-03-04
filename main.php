@@ -323,8 +323,6 @@ function initiate_discord_bot(): void
 
             if ($thread instanceof Thread) {
                 foreach ($createdDiscordBot->plans as $plan) {
-                    $plan->statisticsChannels->refresh();
-
                     if ($plan->userTargets->ignoreThreadDeletion === 0) {
                         $plan->userTargets->closeByChannelOrThread($thread->parent);
                     } else {

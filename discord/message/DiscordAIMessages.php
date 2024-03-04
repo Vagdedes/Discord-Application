@@ -253,9 +253,17 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                         $mention = false;
 
                                         if (!empty($originalMessage->mentions->first())) {
+                                            $ignoreWhenOthersMentioned = $channel->ignore_mention_when_others_mentioned !== null;
+
                                             foreach ($originalMessage->mentions as $userObj) {
                                                 if ($userObj->id == $this->plan->bot->botID) {
                                                     $mention = true;
+
+                                                    if (!$ignoreWhenOthersMentioned) {
+                                                        break;
+                                                    }
+                                                } else if ($ignoreWhenOthersMentioned) {
+                                                    $mention = false;
                                                     break;
                                                 }
                                             }
@@ -301,27 +309,14 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
                                     // Separator
 
-                                    if (!$mention && $channel->ignore_mention_when_others_mentioned !== null) {
-                                        if (!empty($originalMessage->mentions->first())) {
-                                            $mention = true;
-
-                                            foreach ($originalMessage->mentions as $userObj) {
-                                                if ($userObj->id == $this->plan->bot->botID) {
-                                                    $mention = false;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    // Separator
-
                                     if (!$mention
                                         && $channel->ignore_mention_when_no_staff !== null
                                         && $originalMessage->channel instanceof Thread) {
                                         $mention = true;
 
                                         foreach ($originalMessage->channel->members as $memberObj) {
+                                            $memberObj = $memberObj->member;
+
                                             if ($memberObj->id !== $member->id
                                                 && $this->plan->bot->permissions->isStaff($memberObj)) {
                                                 $mention = false;
