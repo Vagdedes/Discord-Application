@@ -7,34 +7,32 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordAntiExpirationThreads
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $query = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_REFRESH,
             null,
-            array(
+            array_merge(array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
-            )
+            ), $this->bot->utilities->getServersQuery())
         );
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $channel = $this->plan->bot->discord->getChannel($row->channel_id);
+                $channel = $this->bot->discord->getChannel($row->channel_id);
 
                 if ($channel !== null
-                    && $channel->guild_id == $row->server_id) {
+                    && $channel->guild_id == $row->server_id
+                    && $channel->allowText()) {
                     if ($row->thread_id === null) {
-                        if ($channel->allowText()) {
-                            $this->execute($channel, $row);
-                        }
+                        $this->execute($channel, $row);
                     } else if (!empty($channel->threads->first())) {
                         foreach ($channel->threads as $thread) {
                             if ($thread instanceof Thread && $row->thread_id == $thread->id) {

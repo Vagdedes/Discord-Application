@@ -42,10 +42,10 @@ require '/root/discord_bot/discord/user/DiscordUserLevels.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
 require '/root/discord_bot/discord/user/DiscordUserSuggestions.php';
 
+require '/root/discord_bot/discord/channel/standalone/DiscordAntiExpirationThreads.php';
 require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
-require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
 require '/root/discord_bot/discord/channel/DiscordObjectiveChannels.php';
 
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';

@@ -49,6 +49,7 @@ class DiscordBot
     public Discord $discord;
     public DiscordUtilities $utilities;
     public DiscordMute $mute;
+    public DiscordAntiExpirationThreads $discordAntiExpirationThreads;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -59,8 +60,10 @@ class DiscordBot
         $this->discord = $discord;
         $this->botID = $botID;
         $this->plans = array();
+
         $this->utilities = new DiscordUtilities($this->discord);
         $this->mute = new DiscordMute($this);
+        $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

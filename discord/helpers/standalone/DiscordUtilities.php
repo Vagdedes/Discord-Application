@@ -288,4 +288,27 @@ class DiscordUtilities
     {
         return string_to_integer(implode("", $strings), true);
     }
+
+    public function getServersQuery(): array
+    {
+        $array = array();
+
+        if (!empty($this->discord->guilds->first())) {
+            foreach ($this->discord->guilds as $guild) {
+                $array[] = $guild->id;
+            }
+            $last = sizeof($array) - 1;
+
+            foreach ($array as $count => $guild) {
+                if ($count === $last) {
+                    $array[$count] = array("guild", $guild);
+                } else {
+                    $array[$count] = array("guild", "=", $guild, 0);
+                }
+            }
+            array_unshift($array, null);
+            $array[] = null;
+        }
+        return $array;
+    }
 }

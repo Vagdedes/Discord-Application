@@ -12,7 +12,6 @@ class DiscordPlan
     public DiscordComponent $component;
     public DiscordPersistentMessages $persistentMessages;
     public DiscordUserTickets $userTickets;
-    public DiscordAntiExpirationThreads $discordAntiExpirationThreads;
     public DiscordPermissions $permissions;
     public DiscordUtilities $utilities;
     public DiscordBot $bot;
@@ -85,7 +84,6 @@ class DiscordPlan
         $this->aiMessages = new DiscordAIMessages($this);
         $this->statusMessages = new DiscordStatusMessages($this);
         $this->userTargets = new DiscordUserTargets($this);
-        $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->userNotes = new DiscordUserNotes($this);
         $this->inviteTracker = new DiscordInviteTracker($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
