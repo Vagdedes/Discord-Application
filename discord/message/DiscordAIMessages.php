@@ -248,13 +248,12 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                     $requireMention = $channel->require_mention !== null
                                         && ($channel->not_require_mention_time === null
                                             || strtotime(get_past_date($channel->not_require_mention_time)) > $member->joined_at->second);
+                                    $ignoreWhenOthersMentioned = $channel->ignore_mention_when_others_mentioned !== null;
 
                                     if ($requireMention) {
                                         $mention = false;
 
                                         if (!empty($originalMessage->mentions->first())) {
-                                            $ignoreWhenOthersMentioned = $channel->ignore_mention_when_others_mentioned !== null;
-
                                             foreach ($originalMessage->mentions as $userObj) {
                                                 if ($userObj->id == $this->plan->bot->botID) {
                                                     $mention = true;
@@ -262,7 +261,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                                     if (!$ignoreWhenOthersMentioned) {
                                                         break;
                                                     }
-                                                } else if ($ignoreWhenOthersMentioned) {
+                                                } else if ($ignoreWhenOthersMentioned
+                                                    && $userObj->id != $member->id) {
                                                     $mention = false;
                                                     break;
                                                 }
@@ -292,6 +292,17 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                         }
                                     } else {
                                         $mention = true;
+
+                                        if ($ignoreWhenOthersMentioned
+                                            && !empty($originalMessage->mentions->first())) {
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                if ($userObj->id != $this->plan->bot->botID
+                                                    && $userObj->id != $member->id) {
+                                                    $mention = false;
+                                                    break;
+                                                }
+                                            }
+                                        }
                                     }
 
                                     // Separator
@@ -313,12 +324,21 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                         && $channel->ignore_mention_when_no_staff !== null
                                         && $originalMessage->channel instanceof Thread) {
                                         $mention = true;
+                                        $members = array();
 
-                                        foreach ($originalMessage->channel->members as $memberObj) {
-                                            $memberObj = $memberObj->member;
-
-                                            if ($memberObj->id !== $member->id
-                                                && $this->plan->bot->permissions->isStaff($memberObj)) {
+                                        foreach ($originalMessage->channel->members as $userObj) {
+                                            $members[] = $userObj->user_id;
+                                        }
+                                        if (!empty($originalMessage->mentions->first())) {
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                $members[] = $userObj->id;
+                                            }
+                                        }
+                                        var_dump($members);
+                                        foreach ($members as $loopUser) {
+                                            if ($loopUser != $member->id
+                                                && $loopUser != $this->plan->bot->botID
+                                                && $this->plan->bot->permissions->isStaff($loopUser, $originalMessage->guild)) {
                                                 $mention = false;
                                                 break;
                                             }

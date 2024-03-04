@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Parts\Guild\Guild;
 use Discord\Parts\User\Member;
 
 class DiscordPermissions
@@ -171,13 +172,34 @@ class DiscordPermissions
         return false;
     }
 
-    public function isStaff(Member $member): bool
+    public function isStaff(Member|int|string $member, Guild $guild = null): bool
     {
-        return $member->permissions->kick_members
-            || $member->permissions->ban_members
-            || $member->permissions->administrator
-            || $member->permissions->manage_guild
-            || $member->permissions->manage_nicknames
-            || $member->permissions->moderate_members;
+        if (!($member instanceof Member)) {
+            $member = $guild->members->toArray()[$member] ?? null;
+
+            if ($member === null) {
+                return false;
+            }
+        }
+        if (!empty($member->roles->first())) {
+            foreach ($member->roles as $role) {
+                if ($role->permissions->kick_members
+                    || $role->permissions->ban_members
+                    || $role->permissions->mute_members
+                    || $role->permissions->deafen_members
+                    || $role->permissions->move_members
+                    || $role->permissions->administrator
+                    || $role->permissions->manage_guild
+                    || $role->permissions->manage_nicknames
+                    || $role->permissions->manage_roles
+                    || $role->permissions->manage_threads
+                    || $role->permissions->manage_channels
+                    || $role->permissions->manage_webhooks
+                    || $role->permissions->moderate_members) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
