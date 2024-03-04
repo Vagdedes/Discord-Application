@@ -35,11 +35,11 @@ require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserPolls.php';
+require '/root/discord_bot/discord/user/standalone/DiscordUserSuggestions.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
-require '/root/discord_bot/discord/user/DiscordUserSuggestions.php';
 
 require '/root/discord_bot/discord/channel/standalone/DiscordAntiExpirationThreads.php';
 require '/root/discord_bot/discord/channel/standalone/DiscordStatisticsChannels.php';

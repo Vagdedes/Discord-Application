@@ -7,7 +7,6 @@ use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
 use Discord\Parts\Interactions\Interaction;
-use DiscordPlan;
 
 class DiscordInteractionRoles
 {
