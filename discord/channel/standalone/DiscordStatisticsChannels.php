@@ -285,13 +285,13 @@ class DiscordStatisticsChannels
                 if ($placeholder === null) {
                     $placeholder = "Invite Links: ";
                 }
-                $statistic = $this->plan->inviteTracker->getInviteLinks();
+                $statistic = DiscordInviteTracker::getInviteLinks();
                 break;
             case self::INVITED_USERS:
                 if ($placeholder === null) {
                     $placeholder = "Invited Users: ";
                 }
-                $statistic = $this->plan->inviteTracker->getInvitedUsers();
+                $statistic = DiscordInviteTracker::getInvitedUsers();
                 break;
             case self::THREADS:
                 if ($placeholder === null) {

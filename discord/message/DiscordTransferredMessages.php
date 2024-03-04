@@ -302,7 +302,7 @@ class DiscordTransferredMessages
             DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
         );
         $embed->setTitle($message->channel->name);
-        $inviteURL = $this->plan->inviteTracker->getInvite($message->guild);
+        $inviteURL = DiscordInviteTracker::getInvite($message->guild);
 
         if ($inviteURL !== null) {
             $embed->setURL($inviteURL);

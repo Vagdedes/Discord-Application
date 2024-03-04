@@ -7,9 +7,10 @@ use Discord\Parts\Guild\Guild;
 class DiscordInviteTracker
 {
     private DiscordPlan $plan;
-    private array $goals, $cached_invites;
-    private int $invite_links, $invited_users;
+    private array $goals;
 
+    private static array $cached_invites  =array();
+    private static int $invite_links = 0, $invited_users = 0;
     private static bool $isInitialized = false;
 
     private const REFRESH_TIME = "15 seconds";
@@ -17,9 +18,6 @@ class DiscordInviteTracker
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
-        $this->invite_links = 0;
-        $this->invited_users = 0;
-        $this->cached_invites = array();
         $this->goals = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER_GOALS,
             null,
@@ -42,14 +40,14 @@ class DiscordInviteTracker
         }
     }
 
-    public function getInviteLinks(): int
+    public static function getInviteLinks(): int
     {
-        return $this->invite_links;
+        return self::$invite_links;
     }
 
-    public function getInvitedUsers(): int
+    public static function getInvitedUsers(): int
     {
-        return $this->invited_users;
+        return self::$invited_users;
     }
 
     public function getUserStats(int|string $serverID, int|string $userID): object
@@ -145,14 +143,13 @@ class DiscordInviteTracker
         }
     }
 
-    public function getInvite(Guild $guild): ?string
+    public static function getInvite(Guild $guild): ?string
     {
-        return $this->cached_invites[$guild->id][0] ?? null;
+        return self::$cached_invites[$guild->id][0] ?? null;
     }
 
     public function track(Guild $guild): void
     {
-        $this->invite_links = 0;
         $guild->getInvites()->done(function (mixed $invites) use ($guild) {
             $cached = array();
 
@@ -165,8 +162,8 @@ class DiscordInviteTracker
 
                 if ($totalUses !== null && $code !== null
                     && $serverID !== null && $userID !== null) {
-                    $this->invite_links++;
-                    $this->invited_users += $totalUses;
+                    self::$invite_links++;
+                    self::$invited_users += $totalUses;
                     $query = get_sql_query(
                         BotDatabaseTable::BOT_INVITE_TRACKER,
                         array("id", "uses"),
@@ -236,7 +233,7 @@ class DiscordInviteTracker
                     }
                 }
             }
-            $this->cached_invites[$guild->id] = $cached;
+            self::$cached_invites[$guild->id] = $cached;
         });
     }
 
