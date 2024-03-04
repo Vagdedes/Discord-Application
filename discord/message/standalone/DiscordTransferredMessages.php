@@ -16,8 +16,8 @@ class DiscordTransferredMessages
         $this->sources = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_TRANSFERRER,
             null,
-            array(
-                array_merge(array("deletion_date", null),
+            array_merge(array(
+                array("deletion_date", null),
                     null,
                     array("expiration_date", "IS", null, 0),
                     array("expiration_date", ">", get_current_date()),
