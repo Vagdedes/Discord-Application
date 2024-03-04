@@ -48,12 +48,12 @@ require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordObjectiveChannels.php';
 
+require '/root/discord_bot/discord/message/standalone/DiscordTransferredMessages.php';
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
 require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 require '/root/discord_bot/discord/message/DiscordChatFilteredMessages.php';
-require '/root/discord_bot/discord/message/DiscordTransferredMessages.php';
 require '/root/discord_bot/discord/message/DiscordMessageNotifications.php';
 
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
@@ -200,6 +200,8 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $createdDiscordBot) {
+            $createdDiscordBot->tranferredMessages->trackDeletion($message);
+
             foreach ($createdDiscordBot->plans as $plan) {
                 if ($plan->countingChannels->ignoreDeletion === 0) {
                     if ($plan->countingChannels->restore($message)) {
@@ -209,12 +211,13 @@ function initiate_discord_bot(): void
                     $plan->countingChannels->ignoreDeletion--;
                 }
                 $plan->objectiveChannels->trackDeletion($message);
-                $plan->tranferredMessages->trackDeletion($message);
             }
             $logger->logInfo($message?->guild_id, null, Event::MESSAGE_DELETE, $message);
         });
 
         $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $createdDiscordBot) {
+            $createdDiscordBot->tranferredMessages->trackModification($message);
+
             foreach ($createdDiscordBot->plans as $plan) {
                 if ($plan->countingChannels->ignoreDeletion === 0) {
                     if ($plan->countingChannels->moderate($message)) {
@@ -224,7 +227,6 @@ function initiate_discord_bot(): void
                     $plan->countingChannels->ignoreDeletion--;
                 }
                 $plan->objectiveChannels->trackModification($message);
-                $plan->tranferredMessages->trackModification($message);
             }
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_UPDATE, $message->getRawAttributes());
         });

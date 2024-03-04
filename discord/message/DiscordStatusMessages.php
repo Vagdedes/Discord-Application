@@ -4,7 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\User\Member;
 
-class DiscordStatusMessages
+class DiscordStatusMessages // todo add ai support
 {
     private DiscordPlan $plan;
 

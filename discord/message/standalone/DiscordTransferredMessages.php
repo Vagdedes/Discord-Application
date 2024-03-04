@@ -7,23 +7,22 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordTransferredMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $sources;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->sources = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_TRANSFERRER,
             null,
             array(
-                array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
+                array_merge(array("deletion_date", null),
+                    null,
+                    array("expiration_date", "IS", null, 0),
+                    array("expiration_date", ">", get_current_date()),
+                    null
+                ), $this->bot->utilities->getServersQuery())
         );
 
         if (!empty($this->sources)) {
@@ -45,7 +44,7 @@ class DiscordTransferredMessages
                 if (!empty($channel->channels)) {
                     foreach ($channel->channels as $childKey => $sentChannel) {
                         unset($channel->channels[$childKey]);
-                        $channel->channels[$this->plan->utilities->hash(
+                        $channel->channels[$this->bot->utilities->hash(
                             $sentChannel->server_id,
                             $sentChannel->channel_id,
                             $sentChannel->thread_id
@@ -61,14 +60,14 @@ class DiscordTransferredMessages
     public function trackCreation(Message $message): void
     {
         if (!empty($this->sources)) {
-            $original = $this->plan->utilities->getChannel($message->channel);
+            $original = $this->bot->utilities->getChannel($message->channel);
 
             foreach ($this->sources as $receiveChannel) {
                 if ($receiveChannel->server_id == $original->guild_id
                     && ($receiveChannel->channel_id === null || $receiveChannel->channel_id == $original->id)
                     && ($receiveChannel->thread_id === null || $receiveChannel->thread_id == $message->thread?->id)) {
                     foreach ($receiveChannel->channels as $sentChannel) {
-                        $channelObj = $this->plan->bot->discord->getChannel($sentChannel->channel_id);
+                        $channelObj = $this->bot->discord->getChannel($sentChannel->channel_id);
 
                         if ($channelObj !== null) {
                             if ($sentChannel->thread_id !== null) {
@@ -87,7 +86,7 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to find message-transferrer thread for creation with ID: " . $sentChannel->thread_id
                                     );
                                     continue;
@@ -95,7 +94,7 @@ class DiscordTransferredMessages
                             }
                             $channelObj->sendMessage($this->buildMessage($message))->done(function (Message $endMessage)
                             use ($message, $receiveChannel, $channelObj) {
-                                 $startChannel = $message->channel;
+                                $startChannel = $message->channel;
 
                                 if (!sql_insert(
                                     BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
@@ -117,7 +116,7 @@ class DiscordTransferredMessages
                                 )) {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
                                     );
                                 }
@@ -139,7 +138,7 @@ class DiscordTransferredMessages
                 $object = $this->sources[$sentMessage->message_transferrer_id] ?? null;
 
                 if ($object !== null) {
-                    $channel = $object->channels[$this->plan->utilities->hash(
+                    $channel = $object->channels[$this->bot->utilities->hash(
                         $sentMessage->end_server_id,
                         $sentMessage->end_channel_id,
                         $sentMessage->end_thread_id
@@ -147,7 +146,7 @@ class DiscordTransferredMessages
 
                     if ($channel !== null
                         && $channel->track_modification !== null) {
-                        $channel = $this->plan->bot->discord->getChannel($sentMessage->end_channel_id);
+                        $channel = $this->bot->discord->getChannel($sentMessage->end_channel_id);
 
                         if ($channel !== null
                             && $channel->allowText()
@@ -168,7 +167,7 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to find message-transferrer thread for modification with ID: " . $sentMessage->end_thread_id
                                     );
                                     continue;
@@ -192,7 +191,7 @@ class DiscordTransferredMessages
                                 } else {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to update message-transferrer message-modification with ID: " . $sentMessage->id
                                     );
                                 }
@@ -215,7 +214,7 @@ class DiscordTransferredMessages
                 $object = $this->sources[$sentMessage->message_transferrer_id] ?? null;
 
                 if ($object !== null) {
-                    $channel = $object->channels[$this->plan->utilities->hash(
+                    $channel = $object->channels[$this->bot->utilities->hash(
                         $sentMessage->end_server_id,
                         $sentMessage->end_channel_id,
                         $sentMessage->end_thread_id
@@ -223,7 +222,7 @@ class DiscordTransferredMessages
 
                     if ($channel !== null
                         && $channel->track_deletion !== null) {
-                        $channel = $this->plan->bot->discord->getChannel($sentMessage->end_channel_id);
+                        $channel = $this->bot->discord->getChannel($sentMessage->end_channel_id);
 
                         if ($channel !== null
                             && $channel->allowText()
@@ -244,7 +243,7 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to find message-transferrer thread for deletion with ID: " . $sentMessage->end_thread_id
                                     );
                                     continue;
@@ -267,7 +266,7 @@ class DiscordTransferredMessages
                                 } else {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
+                                        null,
                                         "Failed to update message-transferrer message-deletion with ID: " . $sentMessage->id
                                     );
                                 }
@@ -296,7 +295,7 @@ class DiscordTransferredMessages
     private function buildMessage(Message $message): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
-        $embed = new Embed($this->plan->bot->discord);
+        $embed = new Embed($this->bot->discord);
         $embed->setAuthor($message->author->username, $message->author->avatar);
         $embed->setDescription(
             DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK

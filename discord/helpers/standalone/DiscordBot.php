@@ -57,6 +57,7 @@ class DiscordBot
     public DiscordStatisticsChannels $statisticsChannels;
     public DiscordUserSuggestions $userSuggestions;
     public DiscordUserEvents $userEvents;
+    public DiscordTransferredMessages $tranferredMessages;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -80,6 +81,7 @@ class DiscordBot
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->userSuggestions = new DiscordUserSuggestions($this);
         $this->userEvents = new DiscordUserEvents($this);
+        $this->tranferredMessages = new DiscordTransferredMessages($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

@@ -227,7 +227,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                         || $this->plan->countingChannels->track($originalMessage)
                         || $this->plan->objectiveChannels->trackCreation($originalMessage)
                         || $this->plan->messageNotifications->executeMessage($originalMessage);
-                    $this->plan->tranferredMessages->trackCreation($originalMessage);
+                    $this->plan->bot->tranferredMessages->trackCreation($originalMessage);
 
                     if (!$stop
                         && $foundChannel
