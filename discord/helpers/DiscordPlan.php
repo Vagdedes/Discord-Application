@@ -23,7 +23,6 @@ class DiscordPlan
     public DiscordTemporaryChannels $temporaryChannels;
     public DiscordReminderMessages $reminderMessages;
     public DiscordUserQuestionnaire $userQuestionnaire;
-    public DiscordStatisticsChannels $statisticsChannels;
     public DiscordAIMessages $aiMessages;
     public DiscordStatusMessages $statusMessages;
     public DiscordChannels $channels;
@@ -78,7 +77,6 @@ class DiscordPlan
         $this->userTargets = new DiscordUserTargets($this);
         $this->userNotes = new DiscordUserNotes($this);
         $this->inviteTracker = new DiscordInviteTracker($this);
-        $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
         $this->objectiveChannels = new DiscordObjectiveChannels($this);

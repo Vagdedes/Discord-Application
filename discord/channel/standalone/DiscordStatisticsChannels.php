@@ -5,7 +5,7 @@ use Discord\Parts\Guild\Guild;
 
 class DiscordStatisticsChannels
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $channels;
     private string $futureDate;
 
@@ -29,9 +29,9 @@ class DiscordStatisticsChannels
         INVITE_LINKS = "invite_links",
         INVITED_USERS = "invited_users";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->futureDate = get_past_date("1 second");
         $this->refresh();
     }
@@ -43,14 +43,13 @@ class DiscordStatisticsChannels
             $this->channels = get_sql_query(
                 BotDatabaseTable::BOT_STATISTICS_CHANNELS,
                 null,
-                array(
+                array_merge(array(
                     array("deletion_date", null),
-                    array("plan_id", $this->plan->planID),
                     null,
                     array("expiration_date", "IS", null, 0),
                     array("expiration_date", ">", get_current_date()),
                     null
-                )
+                ), $this->bot->utilities->getServersQuery())
             );
 
             if (!empty($this->channels)) {
@@ -64,18 +63,18 @@ class DiscordStatisticsChannels
         $row = $this->channels[$position] ?? null;
 
         if ($row !== null) {
-            $guild = $this->plan->utilities->getGuild($row->server_id);
+            $guild = $this->bot->utilities->getGuild($row->server_id);
 
             if ($guild === null) {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
+                    null,
                     "Failed to find guild with ID '" . $row->server_id . "' for statistics channel with ID '" . $row->id
                 );
                 return;
             }
             if ($row->channel_id === null) {
-                $name = $this->plan->listener->callChannelStatisticsImplementation(
+                $name = $this->bot->listener->callChannelStatisticsImplementation(
                     $row->listener_class,
                     $row->listener_method,
                     $guild,
@@ -83,7 +82,7 @@ class DiscordStatisticsChannels
                     $this->getName($guild, $row),
                     $row
                 );
-                $this->plan->utilities->createChannel(
+                $this->bot->utilities->createChannel(
                     $guild,
                     Channel::TYPE_VOICE,
                     $row->category_id,
@@ -111,13 +110,13 @@ class DiscordStatisticsChannels
                     }
                 });
             } else {
-                $channel = $this->plan->bot->discord->getChannel($row->channel_id);
+                $channel = $this->bot->discord->getChannel($row->channel_id);
 
                 if ($channel !== null
                     && $channel->allowVoice()
                     && $channel->guild_id === $row->server_id
                     && $channel->parent_id === $row->category_id) {
-                    $channel->name = $this->plan->listener->callChannelStatisticsImplementation(
+                    $channel->name = $this->bot->listener->callChannelStatisticsImplementation(
                         $row->listener_class,
                         $row->listener_method,
                         $guild,
@@ -131,7 +130,7 @@ class DiscordStatisticsChannels
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
+                        null,
                         "Failed to find statistics channel with ID '{$row->channel_id}' in guild with ID:" . $row->server_id
                     );
                 }

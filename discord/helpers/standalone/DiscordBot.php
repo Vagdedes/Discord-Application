@@ -54,6 +54,7 @@ class DiscordBot
     public DiscordFAQ $faq;
     public DiscordListener $listener;
     public DiscordJoinRoles $joinRoles;
+    public DiscordStatisticsChannels $statisticsChannels;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -74,6 +75,7 @@ class DiscordBot
         $this->webAttachments = new DiscordWebAttachments($this);
         $this->faq = new DiscordFAQ($this);
         $this->joinRoles = new DiscordJoinRoles($this);
+        $this->statisticsChannels = new DiscordStatisticsChannels($this);
 
         $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);

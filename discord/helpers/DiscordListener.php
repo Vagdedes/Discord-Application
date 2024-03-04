@@ -229,7 +229,7 @@ class DiscordListener
             require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $this->plan->planID . "/" . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $guild, $channel, $name, $object)
+                array($guild, $channel, $name, $object)
             );
         }
         return $name;
