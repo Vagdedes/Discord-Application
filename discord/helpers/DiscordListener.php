@@ -2,6 +2,7 @@
 
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
+use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
@@ -13,7 +14,8 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordListener
 {
-    private DiscordPlan $plan;
+    private Discord $discord;
+    private ?DiscordPlan $plan;
     private const
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
@@ -49,9 +51,15 @@ class DiscordListener
         IMPLEMENTATION_USER_POLLS = "/root/discord_bot/listeners/custom/user_polls/",
         IMPLEMENTATION_MESSAGE_OBJECTIVE = "/root/discord_bot/listeners/custom/objective_message/";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(Discord|DiscordPlan $object)
     {
-        $this->plan = $plan;
+        if ($object instanceof DiscordPlan) {
+            $this->discord = $object->bot->discord;
+            $this->plan = $object;
+        } else {
+            $this->discord = $object;
+            $this->plan = null;
+        }
     }
 
     public function callMessageImplementation(Interaction    $interaction,
