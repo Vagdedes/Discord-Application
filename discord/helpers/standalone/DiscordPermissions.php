@@ -171,4 +171,13 @@ class DiscordPermissions
         return false;
     }
 
+    public function isStaff(Member $member): bool
+    {
+        return $member->permissions->kick_members
+            || $member->permissions->ban_members
+            || $member->permissions->administrator
+            || $member->permissions->manage_guild
+            || $member->permissions->manage_nicknames
+            || $member->permissions->moderate_members;
+    }
 }

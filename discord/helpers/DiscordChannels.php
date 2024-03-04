@@ -169,6 +169,8 @@ class DiscordChannels
             $object->deletion_reason = null;
             $object->local_instructions = null;
             $object->public_instructions = null;
+            $object->ignore_mention_when_others_mentioned = null;
+            $object->ignore_mention_when_no_staff = null;
 
             if ($properties !== null) {
                 foreach ($properties as $key => $value) {

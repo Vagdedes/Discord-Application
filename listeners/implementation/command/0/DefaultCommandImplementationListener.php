@@ -7,6 +7,18 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function toggle_ai(DiscordPlan $plan,
+                                     Interaction $interaction,
+                                     object      $command): void
+    {
+        // todo
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent("Not implemented"),
+            true
+        );
+    }
+
     public static function create_faq(DiscordPlan $plan,
                                       Interaction $interaction,
                                       object      $command): void

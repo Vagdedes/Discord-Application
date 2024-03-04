@@ -238,64 +238,99 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                             $chatAI = $model->chatAI;
 
                             if ($chatAI->exists) {
+                                if ($member->id == $this->plan->bot->botID) {
+                                    return false;
+                                }
                                 $cooldownKey = array(__METHOD__, $this->plan->planID, $member->id);
 
                                 if (get_key_value_pair($cooldownKey) === null) {
                                     set_key_value_pair($cooldownKey, true);
+                                    $requireMention = $channel->require_mention !== null
+                                        && ($channel->not_require_mention_time === null
+                                            || strtotime(get_past_date($channel->not_require_mention_time)) > $member->joined_at->second);
 
-                                    if ($member->id != $this->plan->bot->botID) {
-                                        if ($channel->require_mention !== null
-                                            && ($channel->not_require_mention_time === null
-                                                || strtotime(get_past_date($channel->not_require_mention_time)) > $member->joined_at->second)) {
-                                            $mention = false;
+                                    if ($requireMention) {
+                                        $mention = false;
 
-                                            if (!empty($originalMessage->mentions->first())) {
-                                                foreach ($originalMessage->mentions as $userObj) {
-                                                    if ($userObj->id == $this->plan->bot->botID) {
-                                                        $mention = true;
-                                                        break;
-                                                    }
+                                        if (!empty($originalMessage->mentions->first())) {
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                    $mention = true;
+                                                    break;
                                                 }
+                                            }
 
-                                                if (!$mention && !empty($model->mentions)) {
-                                                    foreach ($model->mentions as $alternativeMention) {
-                                                        foreach ($originalMessage->mentions as $userObj) {
-                                                            if ($userObj->id == $alternativeMention->user_id) {
-                                                                $mention = true;
-                                                                break 2;
-                                                            }
+                                            if (!$mention && !empty($model->mentions)) {
+                                                foreach ($model->mentions as $alternativeMention) {
+                                                    foreach ($originalMessage->mentions as $userObj) {
+                                                        if ($userObj->id == $alternativeMention->user_id) {
+                                                            $mention = true;
+                                                            break 2;
                                                         }
                                                     }
                                                 }
                                             }
-                                        } else if ($channel->ignore_mention !== null) {
-                                            $mention = true;
-
-                                            if (!empty($originalMessage->mentions->first())) {
-                                                foreach ($originalMessage->mentions as $userObj) {
-                                                    if ($userObj->id == $this->plan->bot->botID) {
-                                                        $mention = false;
-                                                        break;
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            $mention = true;
                                         }
+                                    } else if ($channel->ignore_mention !== null) {
+                                        $mention = true;
 
-                                        if (!$mention && !empty($model->keywords)) {
-                                            foreach ($model->keywords as $keyword) {
-                                                if ($keyword->keyword !== null) {
-                                                    if (str_contains($messageContent, $keyword->keyword)) {
-                                                        $mention = true;
-                                                        break;
-                                                    }
+                                        if (!empty($originalMessage->mentions->first())) {
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                    $mention = false;
+                                                    break;
                                                 }
                                             }
                                         }
                                     } else {
-                                        $mention = false;
+                                        $mention = true;
                                     }
+
+                                    // Separator
+
+                                    if (!$mention && !empty($model->keywords)) {
+                                        foreach ($model->keywords as $keyword) {
+                                            if ($keyword->keyword !== null) {
+                                                if (str_contains($messageContent, $keyword->keyword)) {
+                                                    $mention = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Separator
+
+                                    if (!$mention && $channel->ignore_mention_when_others_mentioned !== null) {
+                                        if (!empty($originalMessage->mentions->first())) {
+                                            $mention = true;
+
+                                            foreach ($originalMessage->mentions as $userObj) {
+                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                    $mention = false;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Separator
+
+                                    if (!$mention
+                                        && $channel->ignore_mention_when_no_staff !== null
+                                        && $originalMessage->channel instanceof Thread) {
+                                        $mention = true;
+
+                                        foreach ($originalMessage->channel->members as $memberObj) {
+                                            if ($memberObj->id !== $member->id
+                                                && $this->plan->bot->permissions->isStaff($memberObj)) {
+                                                $mention = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Separator
 
                                     if ($mention) {
                                         $limits = $this->isLimited($model, $originalMessage);
@@ -390,6 +425,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                             }
                                         }
                                     }
+
                                     if ($channel->message_cooldown !== null) {
                                         set_key_value_pair($cooldownKey, true, $channel->message_cooldown);
                                     } else {
@@ -414,12 +450,13 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return false;
     }
 
-    public function rawTextAssistance(int|string    $aiModelID,
-                                      Message|array $source,
-                                      ?Message      $self,
-                                      array         $systemInstructions,
-                                      int           $extraHash = null,
-                                      bool          $debug = false): ?string
+    public
+    function rawTextAssistance(int|string    $aiModelID,
+                               Message|array $source,
+                               ?Message      $self,
+                               array         $systemInstructions,
+                               int           $extraHash = null,
+                               bool          $debug = false): ?string
     {
         if (is_array($source)) {
             $debug = false;
@@ -572,9 +609,10 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
     // Separator
 
-    public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                int|string      $userID,
-                                int|string|null $limit = 0, bool $object = true): array
+    public
+    function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                         int|string      $userID,
+                         int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -605,9 +643,10 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return $array;
     }
 
-    public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                               int|string      $userID,
-                               int|string|null $limit = 0, bool $object = true): array
+    public
+    function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                        int|string      $userID,
+                        int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -638,9 +677,10 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return $array;
     }
 
-    public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                    int|string      $userID,
-                                    ?int            $limit = 0, bool $object = true): array
+    public
+    function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                             int|string      $userID,
+                             ?int            $limit = 0, bool $object = true): array
     {
         $final = array();
         $messages = $this->getMessages($serverID, $channelID, $threadID, $userID, $limit, $object);
@@ -676,8 +716,9 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
     // Separator
 
-    private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
-                             int|string      $pastLookup): float
+    private
+    function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+                     int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -711,8 +752,9 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
-                                     int|string|null $userID, int|string $pastLookup): float
+    private
+    function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+                             int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -742,7 +784,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    private function isLimited(object $model, Message $message): array
+    private
+    function isLimited(object $model, Message $message): array
     {
         $array = array();
         $serverID = $message->guild_id;
@@ -882,7 +925,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
     // Separator
 
-    public function sendFeedback(MessageReaction $reaction, ?int $value): void
+    public
+    function sendFeedback(MessageReaction $reaction, ?int $value): void
     {
         $hash = $this->plan->utilities->hash(
             $reaction->guild_id,
@@ -956,13 +1000,14 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    public function setLimit(Interaction           $interaction,
-                             bool                  $cost,
-                             int|float|string|null $limit, string $timePeriod,
-                             bool                  $perUser, ?bool $timeOut,
-                             ?string               $message,
-                             ?Role                 $role, ?Channel $channel,
-                             bool                  $set = true): ?string
+    public
+    function setLimit(Interaction           $interaction,
+                      bool                  $cost,
+                      int|float|string|null $limit, string $timePeriod,
+                      bool                  $perUser, ?bool $timeOut,
+                      ?string               $message,
+                      ?Role                 $role, ?Channel $channel,
+                      bool                  $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
         $objectChannel = $this->plan->channels->getIfHasAccess($channel ?? $interaction->channel, $interaction->member);
