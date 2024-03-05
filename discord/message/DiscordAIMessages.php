@@ -321,8 +321,10 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                     // Separator
 
                                     if (!$mention
+                                        && false // todo fix
                                         && $channel->ignore_mention_when_no_staff !== null
-                                        && $originalMessage->channel instanceof Thread) {
+                                        && $originalMessage->channel instanceof Thread
+                                        && strtotime(get_past_date("5 seconds")) > $originalMessage->channel->fetch()->create_timestamp->second) {
                                         $mention = true;
                                         $members = array();
 
@@ -334,7 +336,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                                 $members[] = $userObj->id;
                                             }
                                         }
-                                        var_dump($members);
                                         foreach ($members as $loopUser) {
                                             if ($loopUser != $member->id
                                                 && $loopUser != $this->plan->bot->botID
