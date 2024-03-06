@@ -176,6 +176,8 @@ function initiate_discord_bot(): void
             $userLevel = $ai && $message->guild_id !== null;
 
             if ($ai || $userLevel) {
+                $createdDiscordBot->tranferredMessages->trackCreation($message);
+
                 foreach ($createdDiscordBot->plans as $plan) {
                     if ($ai && $plan->aiMessages->textAssistance($message)) {
                         $ai = false;
