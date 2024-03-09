@@ -32,10 +32,10 @@ class DiscordLogs
             );
     }
 
-    public function logInfo(Guild|int|string|null          $guild,
-                            int|string|null $userID, ?string $action,
-                            mixed           $object, mixed $oldObject = null,
-                            bool            $refresh = true): bool
+    public function logInfo(Guild|int|string|null $guild,
+                            int|string|null       $userID, ?string $action,
+                            mixed                 $object, mixed $oldObject = null,
+                            bool                  $refresh = true): bool
     {
         if ($guild !== null && !($guild instanceof Guild)) {
             foreach ($this->bot?->discord->guilds as $guildFound) {
@@ -95,18 +95,21 @@ class DiscordLogs
                                 if ($row->thread_id === null) {
                                     if ($channel->allowText()) {
                                         $channel->sendMessage(
-                                            $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject)
+                                            $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject, MessageBuilder::new())
                                         );
                                     }
                                 } else if (!empty($channel->threads->first())) {
                                     foreach ($channel->threads as $thread) {
                                         if ($thread instanceof Thread
-                                            && $row->thread_id == $thread->id) {
+                                            && $row->thread_id == $thread->id
+                                            && ($row->ignore_bot === null
+                                                || $row->ignore_bot != $this->bot->botID)) {
                                             $thread->sendMessage(
                                                 $this->prepareLogMessage(
                                                     $row, $date,
                                                     $userID, $action,
-                                                    $object, $oldObject
+                                                    $object, $oldObject,
+                                                    MessageBuilder::new()
                                                 )
                                             );
                                             break;
@@ -131,77 +134,82 @@ class DiscordLogs
     private function prepareLogMessage(object          $row, string $date,
                                        int|string|null $userID, ?string $action,
                                        mixed           $object, mixed $oldObject,
-                                       MessageBuilder  $prepared = null): MessageBuilder
+                                       MessageBuilder  $message): MessageBuilder
     {
         $syntaxExtra = strlen(DiscordSyntax::HEAVY_CODE_BLOCK) * 2;
         $this->ignoreAction++;
         $counter = 0;
-        $message = $prepared !== null ? $prepared : MessageBuilder::new();
 
         foreach (array_chunk(
                      $object,
                      DiscordInheritedLimits::MAX_FIELDS_PER_EMBED,
                      true
                  ) as $chunk) {
-            $counter++;
-            $embed = new Embed($this->bot->discord);
+            unset($chunk["guild_id"]);
 
-            if ($userID !== null) {
-                $user = $this->bot->utilities->getUser($userID);
+            if (!empty($chunk)) {
+                $counter++;
+                $embed = new Embed($this->bot->discord);
 
-                if ($user !== null) {
-                    $embed->setAuthor($user->username, $user->avatar);
-                } else {
-                    $embed->setAuthor($userID);
-                }
-            }
-            if ($row->color !== null) {
-                $embed->setColor($row->color);
-            }
-            if ($row->description !== null) {
-                $embed->setFooter($row->description);
-            }
-            $embed->setTitle($this->beautifulText($action));
-            $embed->setTimestamp(strtotime($date));
+                if ($userID !== null) {
+                    $user = $this->bot->utilities->getUser($userID);
 
-            foreach ($chunk as $arrayKey => $arrayValue) {
-                if (!empty($arrayValue)) {
-                    if (is_object($arrayValue)) {
-                        $arrayValue = json_decode(json_encode($arrayValue), true);
+                    if ($user !== null) {
+                        $embed->setAuthor($user->username, $user->avatar);
+                    } else {
+                        $embed->setAuthor($userID);
                     }
-                    if (is_array($arrayValue)) {
-                        $arrayValue = implode("\n", array_map(
-                            function ($key, $value) {
-                                if (is_array($value) || is_object($value)) {
-                                    $show = json_encode($value);
-                                    return $this->beautifulText($key) . ": " . (strlen($show) > 100 ? "(REDACTED)" : $show);
-                                } else {
-                                    return $this->beautifulText($key) . ": "
-                                        . (is_bool($value)
-                                            ? ($value ? "true" : "false")
-                                            : ($value == null ? "null" : $value));
-                                }
-                            },
-                            array_keys($arrayValue),
-                            $arrayValue
-                        ));
-                    }
-                    $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
-                    $arrayValue = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayValue);
-                    $embed->addFieldValues(
-                        substr($this->beautifulText($arrayKey), 0,
-                            DiscordInheritedLimits::MAX_FIELD_KEY_LENGTH),
-                        DiscordSyntax::HEAVY_CODE_BLOCK
-                        . substr($arrayValue, 0,
-                            DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
-                        . DiscordSyntax::HEAVY_CODE_BLOCK
-                    );
                 }
-            }
-            $message->addEmbed($embed);
+                if ($row->color !== null) {
+                    $embed->setColor($row->color);
+                }
+                if ($row->description !== null) {
+                    $embed->setFooter($row->description);
+                }
+                $embed->setTitle($this->beautifulText($action));
+                $embed->setTimestamp(strtotime($date));
 
-            if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
-                return $message;
+                foreach ($chunk as $arrayKey => $arrayValue) {
+                    if (!empty($arrayValue)) {
+                        if (is_object($arrayValue)) {
+                            unset($arrayValue->guild_id);
+                            $arrayValue = json_decode(json_encode($arrayValue), true);
+                        }
+                        if (is_array($arrayValue)) {
+                            unset($arrayValue["guild_id"]);
+                            $arrayValue = implode("\n", array_map(
+                                function ($key, $value) {
+                                    if (is_array($value) || is_object($value)) {
+                                        $show = json_encode($value);
+                                        return $this->beautifulText($key) . ": " . (strlen($show) > 100 ? "(REDACTED)" : $show);
+                                    } else {
+                                        return $this->beautifulText($key) . ": "
+                                            . (is_bool($value)
+                                                ? ($value ? "true" : "false")
+                                                : ($value == null ? "null" : $value));
+                                    }
+                                },
+                                array_keys($arrayValue),
+                                $arrayValue
+                            ));
+                        }
+                        $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
+                        $arrayValue = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayValue);
+                        $embed->addFieldValues(
+                            substr($this->beautifulText($arrayKey), 0,
+                                DiscordInheritedLimits::MAX_FIELD_KEY_LENGTH),
+                            DiscordSyntax::HEAVY_CODE_BLOCK
+                            . substr($arrayValue, 0,
+                                DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
+                            . DiscordSyntax::HEAVY_CODE_BLOCK
+                        );
+                    }
+                }
+                $message->addEmbed($embed);
+
+                if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                    return $message;
+                }
             }
         }
         return $oldObject !== null
