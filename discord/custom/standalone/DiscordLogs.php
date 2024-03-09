@@ -1,9 +1,12 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
 
 class DiscordLogs
 {
@@ -73,52 +76,44 @@ class DiscordLogs
                 && $this->bot !== null
                 && ($hasObjectParameter || $hasOldObjectParameter)
                 && !empty($this->channels)) {
-                $hasArray = is_array($object);
-                $hasOldArray = is_array($oldObject);
-                $hasObject = is_object($object);
-                $hasOldObject = is_object($oldObject);
+                foreach ($this->channels as $row) {
+                    if (($row->action === null || $row->action == $action)
+                        && $row->server_id == $guild->id) {
+                        $channel = $this->bot->discord->getChannel($row->channel_id);
 
-                if ($hasArray || $hasObject
-                    || $hasOldArray || $hasOldObject) {
-                    $object = $hasArray ? $object
-                        : ($hasObject ? json_decode($encodedObject, true) : array());
-                    $oldObject = $hasOldArray ? $oldObject
-                        : ($hasOldObject ? json_decode($encodedOldObject, true) : array());
-
-                    foreach ($this->channels as $row) {
-                        if (($row->action === null || $row->action == $action)
-                            && $row->server_id == $guild->id) {
-                            $channel = $this->bot->discord->getChannel($row->channel_id);
-
-                            if ($channel !== null
-                                && $channel->guild_id == $row->server_id) {
-                                if ($row->thread_id === null) {
-                                    if ($channel->allowText()) {
-                                        $channel->sendMessage(
-                                            $this->prepareLogMessage($row, $date, $userID, $action, $object, $oldObject, MessageBuilder::new())
+                        if ($channel !== null
+                            && $channel->guild_id == $row->server_id) {
+                            if ($row->thread_id === null) {
+                                if ($channel->allowText()) {
+                                    $channel->sendMessage(
+                                        $this->prepareLogMessage(
+                                            $row, $date,
+                                            $userID, $action,
+                                            $object, $oldObject,
+                                            MessageBuilder::new()
+                                        )
+                                    );
+                                }
+                            } else if (!empty($channel->threads->first())) {
+                                foreach ($channel->threads as $thread) {
+                                    if ($thread instanceof Thread
+                                        && $row->thread_id == $thread->id
+                                        && ($row->ignore_bot === null
+                                            || $row->ignore_bot != $this->bot->botID)) {
+                                        $thread->sendMessage(
+                                            $this->prepareLogMessage(
+                                                $row, $date,
+                                                $userID, $action,
+                                                $object, $oldObject,
+                                                MessageBuilder::new()
+                                            )
                                         );
-                                    }
-                                } else if (!empty($channel->threads->first())) {
-                                    foreach ($channel->threads as $thread) {
-                                        if ($thread instanceof Thread
-                                            && $row->thread_id == $thread->id
-                                            && ($row->ignore_bot === null
-                                                || $row->ignore_bot != $this->bot->botID)) {
-                                            $thread->sendMessage(
-                                                $this->prepareLogMessage(
-                                                    $row, $date,
-                                                    $userID, $action,
-                                                    $object, $oldObject,
-                                                    MessageBuilder::new()
-                                                )
-                                            );
-                                            break;
-                                        }
+                                        break;
                                     }
                                 }
                             }
-                            break;
                         }
+                        break;
                     }
                 }
             }
@@ -139,9 +134,12 @@ class DiscordLogs
         $syntaxExtra = strlen(DiscordSyntax::HEAVY_CODE_BLOCK) * 2;
         $this->ignoreAction++;
         $counter = 0;
+        $loopObject = is_object($object)
+            ? (method_exists($object, "getRawAttributes") ? $object->getRawAttributes() : json_decode(json_encode($object), true))
+            : (is_array($object) ? $object : array());
 
         foreach (array_chunk(
-                     $object,
+                     $loopObject,
                      DiscordInheritedLimits::MAX_FIELDS_PER_EMBED,
                      true
                  ) as $chunk) {
@@ -167,12 +165,19 @@ class DiscordLogs
                     $embed->setFooter($row->description);
                 }
                 $embed->setTitle($this->beautifulText($action));
+
+                if ($object instanceof Message) {
+                    $embed->setDescription($object->link);
+                } else if ($object instanceof Member) {
+                    $embed->setDescription("<@" . $object->id . ">");
+                } else if ($object instanceof Channel) {
+                    $embed->setDescription("<#" . $object->id . ">");
+                }
                 $embed->setTimestamp(strtotime($date));
 
                 foreach ($chunk as $arrayKey => $arrayValue) {
                     if (!empty($arrayValue)) {
                         if (is_object($arrayValue)) {
-                            unset($arrayValue->guild_id);
                             $arrayValue = json_decode(json_encode($arrayValue), true);
                         }
                         if (is_array($arrayValue)) {
