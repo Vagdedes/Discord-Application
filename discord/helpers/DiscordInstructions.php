@@ -11,13 +11,13 @@ class DiscordInstructions
 {
 
     private DiscordPlan $plan;
-    private mixed $instructions;
+    public mixed $manager;
 
     public function __construct(DiscordPlan $plan)
     {
         $account = new Account($plan->applicationID);
         $this->plan = $plan;
-        $this->instructions = $account->getInstructions();
+        $this->manager = $account->getInstructions();
     }
 
     public function replace(array   $messages, ?object $object,
@@ -26,11 +26,11 @@ class DiscordInstructions
                             bool    $recursive = true): array
     {
         if ($object !== null) {
-            return $this->instructions->replace(
+            return $this->manager->replace(
                 $messages,
                 $object,
                 array(
-                    "publicInstructions" => array($this->instructions, "getPublic", array($specificPublic, $userInput)),
+                    "publicInstructions" => array($this->manager, "getPublic", array($specificPublic, $userInput)),
                     "botReplies" => array($this->plan->aiMessages, "getReplies", array(
                         $object->serverID,
                         $object->channelID,
@@ -70,7 +70,7 @@ class DiscordInstructions
                           ?array  $specificPublic = null,
                           ?string $userInput = null): array
     {
-        $local = $this->instructions->getLocal($specificLocal, $userInput);
+        $local = $this->manager->getLocal($specificLocal, $userInput);
 
         if (!empty($local)) {
             $information = "";
