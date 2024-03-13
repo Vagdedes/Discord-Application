@@ -150,7 +150,7 @@ class AccountModalImplementationListener
 
             $interaction->acknowledge()->done(function () use ($interaction, $account, $username) {
                 $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getActions()->changeName($username)->getMessage()
+                    $account->getActions()->changeName($username, true)->getMessage()
                 ), true);
             });
         } else {

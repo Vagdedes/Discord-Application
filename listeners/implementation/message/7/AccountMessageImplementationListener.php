@@ -183,7 +183,7 @@ class AccountMessageImplementationListener
                         $plan->utilities->acknowledgeMessage(
                             $interaction,
                             MessageBuilder::new()->setContent(
-                                $account->getAccounts()->add($selectedAccountID, $credential)->getMessage()
+                                $account->getAccounts()->add($selectedAccountID, $credential, 0, true)->getMessage()
                             ), true
                         );
                     },
