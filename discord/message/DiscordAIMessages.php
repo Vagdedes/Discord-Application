@@ -33,8 +33,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         );
 
         if (!empty($query)) {
-            $array = array();
-
             foreach ($query as $row) {
                 $apiKey = $row->api_key !== null ? array($row->api_key) :
                     get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
