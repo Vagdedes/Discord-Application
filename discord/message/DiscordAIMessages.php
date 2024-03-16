@@ -34,17 +34,14 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
         if (!empty($query)) {
             foreach ($query as $row) {
-                $apiKey = $row->api_key !== null ? array($row->api_key) :
-                    get_keys_from_file("/root/discord_bot/private/credentials/openai_api_key");
-
-                if ($apiKey === null) {
+                if ($row->api_key === null) {
                     global $logger;
                     $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
                 } else {
                     $object = new stdClass();
                     $object->chatAI = new ChatAI(
                         $row->model_family,
-                        $apiKey[0],
+                        $row->api_key,
                         DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
                         $row->temperature,
                         $row->frequency_penalty,
