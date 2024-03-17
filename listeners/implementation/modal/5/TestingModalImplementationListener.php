@@ -12,7 +12,7 @@ class TestingModalImplementationListener // Name can be changed
     {
         $plan->utilities->acknowledgeMessage(
             $interaction,
-            MessageBuilder::new()->setContent(json_encode($objects)),
+            MessageBuilder::new()->setContent(@json_encode($objects)),
             true
         );
     }

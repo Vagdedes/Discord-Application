@@ -57,8 +57,8 @@ class DiscordLogs
             $date = get_current_date();
             $hasObjectParameter = $object !== null;
             $hasOldObjectParameter = $oldObject !== null;
-            $encodedObject = $hasObjectParameter ? json_encode($object) : null;
-            $encodedOldObject = $hasOldObjectParameter ? json_encode($oldObject) : null;
+            $encodedObject = $hasObjectParameter ? @json_encode($object) : null;
+            $encodedOldObject = $hasOldObjectParameter ? @json_encode($oldObject) : null;
 
             if (sql_insert(
                     BotDatabaseTable::BOT_LOGS,
@@ -135,7 +135,7 @@ class DiscordLogs
         $this->ignoreAction++;
         $counter = 0;
         $loopObject = is_object($object)
-            ? (method_exists($object, "getRawAttributes") ? $object->getRawAttributes() : json_decode(json_encode($object), true))
+            ? (method_exists($object, "getRawAttributes") ? $object->getRawAttributes() : json_decode(@json_encode($object), true))
             : (is_array($object) ? $object : array());
 
         foreach (array_chunk(
@@ -178,14 +178,14 @@ class DiscordLogs
                 foreach ($chunk as $arrayKey => $arrayValue) {
                     if (!empty($arrayValue)) {
                         if (is_object($arrayValue)) {
-                            $arrayValue = json_decode(json_encode($arrayValue), true);
+                            $arrayValue = json_decode(@json_encode($arrayValue), true);
                         }
                         if (is_array($arrayValue)) {
                             unset($arrayValue["guild_id"]);
                             $arrayValue = implode("\n", array_map(
                                 function ($key, $value) {
                                     if (is_array($value) || is_object($value)) {
-                                        $show = json_encode($value);
+                                        $show = @json_encode($value);
                                         return $this->beautifulText($key) . ": " . (strlen($show) > 100 ? "(REDACTED)" : $show);
                                     } else {
                                         return $this->beautifulText($key) . ": "
@@ -234,7 +234,7 @@ class DiscordLogs
             array(
                 "bot_id" => $this->bot?->botID,
                 "plan_id" => $plan instanceof DiscordPlan ? $plan->planID : $plan,
-                "object" => $object !== null ? json_encode($object) : null,
+                "object" => $object !== null ? @json_encode($object) : null,
                 "creation_date" => get_current_date()
             )
         );

@@ -535,7 +535,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 if ($debug) {
                     foreach ($outcome as $part) {
                         if (@json_decode($part) === null) {
-                            $part = json_encode($part);
+                            $part = @json_encode($part);
                         }
                         foreach (str_split($part, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                             $this->plan->utilities->replyMessage(
@@ -595,8 +595,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $logger->logError(
                         $this->plan->planID,
                         "Failed to get length on text from chat-model for channel/thread with ID: " . $channel->id
-                        . "\n" . json_encode($model)
-                        . "\n" . json_encode($reply)
+                        . "\n" . @json_encode($model)
+                        . "\n" . @json_encode($reply)
                     );
                 }
             } else {
@@ -604,7 +604,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $logger->logError(
                     $this->plan->planID,
                     "Failed to get text from chat-model for channel/thread with ID: " . $channel->id
-                    . "\n" . json_encode($outcome)
+                    . "\n" . @json_encode($outcome)
                 );
             }
         } else {

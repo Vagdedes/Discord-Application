@@ -12,7 +12,7 @@ class TestingCommandImplementationListener // Name can be changed
     {
         $plan->utilities->acknowledgeMessage(
             $interaction,
-            MessageBuilder::new()->setContent(json_encode($command)),
+            MessageBuilder::new()->setContent(@json_encode($command)),
             true
         );
     }

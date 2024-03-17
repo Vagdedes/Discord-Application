@@ -1013,7 +1013,7 @@ class DiscordUserQuestionnaire
     private function getQuestion(array|object $questionnaireArray): object|bool|string
     {
         if (is_object($questionnaireArray)) {
-            $questionnaireArray = json_decode(json_encode($questionnaireArray), true);
+            $questionnaireArray = json_decode(@json_encode($questionnaireArray), true);
         }
         $questionnaire = $this->questionnaires[$questionnaireArray["questionnaire_id"]] ?? null;
 

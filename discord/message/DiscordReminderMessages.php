@@ -121,7 +121,7 @@ class DiscordReminderMessages
                                     "channel_id" => $message->channel_id,
                                     "thread_id" => $message->thread?->id,
                                     "message_id" => $message->id,
-                                    "message_object" => json_encode($message->getRawAttributes()),
+                                    "message_object" => @json_encode($message->getRawAttributes()),
                                     "creation_date" => get_current_date()
                                 ),
                             )) {
