@@ -257,237 +257,231 @@ class AccountMessageCreationListener
                                         object      $product): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
+        $isLoggedIn = $account->exists();
+        $productID = $product->id;
+        $isFree = $product->is_free;
+        $hasPurchased = $isFree
+            || $isLoggedIn && $account->getPurchases()->owns($productID)->isPositiveOutcome();
+        $productDivisions = $isFree
+            ? array_merge($product->divisions->post_purchase, $product->divisions->pre_purchase)
+            : ($hasPurchased
+                ? $product->divisions->post_purchase
+                : $product->divisions->pre_purchase);
+        $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->getOrCreateValidToken(
+            $productID,
+            30,
+            true,
+            false,
+            DiscordProperties::SYSTEM_REFRESH_TIME,
+            null
+        ) : null;
+        $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
+            ? $product->download_placeholder . "?token=" . $downloadToken->getObject()
+            : null;
 
-        try {
-            $isLoggedIn = $account->exists();
-            $productID = $product->id;
-            $isFree = $product->is_free;
-            $hasPurchased = $isFree
-                || $isLoggedIn && $account->getPurchases()->owns($productID)->isPositiveOutcome();
-            $productDivisions = $isFree
-                ? array_merge($product->divisions->post_purchase, $product->divisions->pre_purchase)
-                : ($hasPurchased
-                    ? $product->divisions->post_purchase
-                    : $product->divisions->pre_purchase);
-            $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->getOrCreateValidToken(
-                $productID,
-                30,
-                true,
-                false,
-                DiscordProperties::SYSTEM_REFRESH_TIME,
-                null
-            ) : null;
-            $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
-                ? $product->download_placeholder . "?token=" . $downloadToken->getObject()
-                : null;
+        // Separator
 
-            // Separator
+        $embed = new Embed($plan->bot->discord);
 
-            $embed = new Embed($plan->bot->discord);
+        if ($product->color !== null) {
+            $embed->setColor($product->color);
+        }
 
-            if ($product->color !== null) {
-                $embed->setColor($product->color);
-            }
+        if ($downloadURL !== null) {
+            $embed->setURL($downloadURL);
+            $embed->setTitle("Download"
+                . ($product->download_note !== null
+                    ? ":\n" . DiscordSyntax::htmlToDiscord($product->download_note)
+                    : ""));
+            $canDownload = true;
+        } else {
+            $canDownload = !empty($product->downloads);
+        }
 
-            if ($downloadURL !== null) {
-                $embed->setURL($downloadURL);
-                $embed->setTitle("Download"
-                    . ($product->download_note !== null
-                        ? ":\n" . DiscordSyntax::htmlToDiscord($product->download_note)
-                        : ""));
-                $canDownload = true;
-            } else {
-                $canDownload = !empty($product->downloads);
-            }
+        $embed->setAuthor(
+            strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
+            self::IDEALISTIC_LOGO,
+            $downloadURL
+        );
+        $embed->setImage($product->image);
+        //$release = $product->latest_version !== null ? $product->latest_version : null;
+        $hasTiers = sizeof($product->tiers->paid) > 1;
+        $tier = array_shift($product->tiers->paid);
+        $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
+        //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
+        $legalInformation = $product->legal_information !== null
+            ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
+            : null;
 
-            $embed->setAuthor(
-                strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
-                self::IDEALISTIC_LOGO,
-                $downloadURL
-            );
-            $embed->setImage($product->image);
-            //$release = $product->latest_version !== null ? $product->latest_version : null;
-            $hasTiers = sizeof($product->tiers->paid) > 1;
-            $tier = array_shift($product->tiers->paid);
-            $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
-            //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
-            $legalInformation = $product->legal_information !== null
-                ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
-                : null;
+        $embed->addFieldValues(DiscordSyntax::htmlToDiscord($product->description), $legalInformation);
+        $embed->setFooter($price);
+        $messageBuilder->addEmbed($embed);
 
-            $embed->addFieldValues(DiscordSyntax::htmlToDiscord($product->description), $legalInformation);
-            $embed->setFooter($price);
-            $messageBuilder->addEmbed($embed);
+        // Separator
 
-            // Separator
+        $productCompatibilities = $product->compatibilities;
 
-            $productCompatibilities = $product->compatibilities;
+        if (!empty($productCompatibilities)) {
+            $validProducts = $account->getProduct()->find(null, true, false);
+            $validProducts = $validProducts->getObject();
 
-            if (!empty($productCompatibilities)) {
-                $validProducts = $account->getProduct()->find(null, true, false);
-                $validProducts = $validProducts->getObject();
+            if (sizeof($validProducts) > 1) { // One because we already are quering one
+                foreach ($productCompatibilities as $compatibility) {
+                    $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
 
-                if (sizeof($validProducts) > 1) { // One because we already are quering one
-                    foreach ($productCompatibilities as $compatibility) {
-                        $compatibleProduct = find_object_from_key_match($validProducts, "id", $compatibility);
+                    if (is_object($compatibleProduct)) {
+                        $compatibleProductImage = $compatibleProduct->image;
 
-                        if (is_object($compatibleProduct)) {
-                            $compatibleProductImage = $compatibleProduct->image;
+                        if ($compatibleProductImage != null
+                            && (!$isLoggedIn || !$account->getPurchases()->owns($compatibleProduct->id)->isPositiveOutcome())) {
+                            $embed = new Embed($plan->bot->discord);
+                            $embed->setTitle(strip_tags($compatibleProduct->name));
 
-                            if ($compatibleProductImage != null
-                                && (!$isLoggedIn || !$account->getPurchases()->owns($compatibleProduct->id)->isPositiveOutcome())) {
-                                $embed = new Embed($plan->bot->discord);
-                                $embed->setTitle(strip_tags($compatibleProduct->name));
-
-                                if ($compatibleProduct->color !== null) {
-                                    $embed->setColor($compatibleProduct->color);
-                                }
-                                $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
-                                $embed->setAuthor(
-                                    $product->compatibility_description,
-                                    $compatibleProduct->image,
-                                );
-                                $messageBuilder->addEmbed($embed);
+                            if ($compatibleProduct->color !== null) {
+                                $embed->setColor($compatibleProduct->color);
                             }
-                        }
-                    }
-                }
-            }
-
-            // Separator
-
-            if (!empty($productDivisions)) {
-                if (sizeof($productDivisions) === 1) {
-                    foreach ($productDivisions as $family => $divisions) {
-                        $embed = new Embed($plan->bot->discord);
-
-                        if ($family !== null) {
-                            $embed->setTitle($family);
-                        }
-                        foreach ($divisions as $division) {
-                            $embed->addFieldValues(
-                                "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
-                                DiscordSyntax::htmlToDiscord($division->description),
+                            $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
+                            $embed->setAuthor(
+                                $product->compatibility_description,
+                                $compatibleProduct->image,
                             );
-                        }
-                        $messageBuilder->addEmbed($embed);
-                    }
-                } else {
-                    $select = SelectMenu::new();
-                    $select->setMinValues(1);
-                    $select->setMaxValues(1);
-                    $select->setPlaceholder("Select to Learn More");
-
-                    foreach ($productDivisions as $family => $divisions) {
-                        $divisionObject = new stdClass();
-                        $divisionObject->has_title = !empty($family);
-                        $divisionObject->title = !$divisionObject->has_title
-                            ? substr(DiscordSyntax::htmlToDiscord($divisions[0]->name), 0, 100)
-                            : substr(DiscordSyntax::htmlToDiscord($family), 0, 100);
-                        $divisionObject->contents = $divisions;
-
-                        unset($productDivisions[$family]);
-                        $arrayKey = string_to_integer($divisionObject->title);
-                        $productDivisions[$arrayKey] = $divisionObject;
-                        $option = Option::new($divisionObject->title, $arrayKey);
-                        $select->addOption($option);
-                    }
-                    $messageBuilder->addComponent($select);
-                    $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($plan, $productDivisions) {
-                        $reply = MessageBuilder::new();
-                        $embed = new Embed($plan->bot->discord);
-                        $division = $productDivisions[$options[0]->getValue()];
-
-                        if ($division->has_title) {
-                            $embed->setTitle($division->title);
-                        }
-
-                        foreach ($division->contents as $division) {
-                            $embed->addFieldValues(
-                                "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
-                                DiscordSyntax::htmlToDiscord($division->description),
-                            );
-                        }
-                        $reply->addEmbed($embed);
-                        $plan->utilities->acknowledgeMessage($interaction, $reply, true);
-                    }, $plan->bot->discord);
-                }
-            }
-
-            // Separator
-
-            $productButtons = $hasPurchased ? $product->buttons->post_purchase : $product->buttons->pre_purchase;
-
-            if (!empty($productButtons)) {
-                $actionRow = ActionRow::new();
-
-                foreach ($productButtons as $buttonObj) {
-                    if ($isLoggedIn
-                        || $buttonObj->requires_account === null) {
-                        switch ($buttonObj->color) {
-                            case "red":
-                                $button = Button::new(Button::STYLE_DANGER)->setLabel(
-                                    $buttonObj->name
-                                );
-                                break;
-                            case "green":
-                                $button = Button::new(Button::STYLE_SUCCESS)
-                                    ->setLabel(
-                                        $buttonObj->name
-                                    );
-                                break;
-                            case "blue":
-                                $button = Button::new(Button::STYLE_PRIMARY)
-                                    ->setLabel(
-                                        $buttonObj->name
-                                    );
-                                break;
-                            case "gray":
-                                $button = Button::new(Button::STYLE_SECONDARY)
-                                    ->setLabel(
-                                        $buttonObj->name
-                                    );
-                                break;
-                            default:
-                                $button = null;
-                                break;
-                        }
-
-                        if ($button !== null) {
-                            $button->setListener(function (Interaction $interaction)
-                            use ($plan, $actionRow, $buttonObj) {
-                                $plan->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent($buttonObj->url),
-                                    true
-                                );
-                            }, $plan->bot->discord);
-                            $actionRow->addComponent($button);
+                            $messageBuilder->addEmbed($embed);
                         }
                     }
                 }
-                $messageBuilder->addComponent($actionRow);
             }
+        }
 
-            // Separator
+        // Separator
 
-            $productCards = $hasPurchased ? $product->cards->post_purchase : $product->cards->pre_purchase;
-
-            if (!empty($productCards)) {
-                foreach ($productCards as $card) {
+        if (!empty($productDivisions)) {
+            if (sizeof($productDivisions) === 1) {
+                foreach ($productDivisions as $family => $divisions) {
                     $embed = new Embed($plan->bot->discord);
-                    $embed->setAuthor(
-                        strip_tags($card->name),
-                        $card->image,
-                        $card->url
-                    );
+
+                    if ($family !== null) {
+                        $embed->setTitle($family);
+                    }
+                    foreach ($divisions as $division) {
+                        $embed->addFieldValues(
+                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                            DiscordSyntax::htmlToDiscord($division->description),
+                        );
+                    }
                     $messageBuilder->addEmbed($embed);
                 }
+            } else {
+                $select = SelectMenu::new();
+                $select->setMinValues(1);
+                $select->setMaxValues(1);
+                $select->setPlaceholder("Select to Learn More");
+
+                foreach ($productDivisions as $family => $divisions) {
+                    $divisionObject = new stdClass();
+                    $divisionObject->has_title = !empty($family);
+                    $divisionObject->title = !$divisionObject->has_title
+                        ? substr(DiscordSyntax::htmlToDiscord($divisions[0]->name), 0, 100)
+                        : substr(DiscordSyntax::htmlToDiscord($family), 0, 100);
+                    $divisionObject->contents = $divisions;
+
+                    unset($productDivisions[$family]);
+                    $arrayKey = string_to_integer($divisionObject->title);
+                    $productDivisions[$arrayKey] = $divisionObject;
+                    $option = Option::new($divisionObject->title, $arrayKey);
+                    $select->addOption($option);
+                }
+                $messageBuilder->addComponent($select);
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($plan, $productDivisions) {
+                    $reply = MessageBuilder::new();
+                    $embed = new Embed($plan->bot->discord);
+                    $division = $productDivisions[$options[0]->getValue()];
+
+                    if ($division->has_title) {
+                        $embed->setTitle($division->title);
+                    }
+
+                    foreach ($division->contents as $division) {
+                        $embed->addFieldValues(
+                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                            DiscordSyntax::htmlToDiscord($division->description),
+                        );
+                    }
+                    $reply->addEmbed($embed);
+                    $plan->utilities->acknowledgeMessage($interaction, $reply, true);
+                }, $plan->bot->discord);
             }
-        } catch (Throwable $e) {
-            var_dump($e->getLine());
-            var_dump($e->getMessage());
+        }
+
+        // Separator
+
+        $productButtons = $hasPurchased ? $product->buttons->post_purchase : $product->buttons->pre_purchase;
+
+        if (!empty($productButtons)) {
+            $actionRow = ActionRow::new();
+
+            foreach ($productButtons as $buttonObj) {
+                if ($isLoggedIn
+                    || $buttonObj->requires_account === null) {
+                    switch ($buttonObj->color) {
+                        case "red":
+                            $button = Button::new(Button::STYLE_DANGER)->setLabel(
+                                $buttonObj->name
+                            );
+                            break;
+                        case "green":
+                            $button = Button::new(Button::STYLE_SUCCESS)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        case "blue":
+                            $button = Button::new(Button::STYLE_PRIMARY)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        case "gray":
+                            $button = Button::new(Button::STYLE_SECONDARY)
+                                ->setLabel(
+                                    $buttonObj->name
+                                );
+                            break;
+                        default:
+                            $button = null;
+                            break;
+                    }
+
+                    if ($button !== null) {
+                        $button->setListener(function (Interaction $interaction)
+                        use ($plan, $actionRow, $buttonObj) {
+                            $plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($buttonObj->url),
+                                true
+                            );
+                        }, $plan->bot->discord);
+                        $actionRow->addComponent($button);
+                    }
+                }
+            }
+            $messageBuilder->addComponent($actionRow);
+        }
+
+        // Separator
+
+        $productCards = $hasPurchased ? $product->cards->post_purchase : $product->cards->pre_purchase;
+
+        if (!empty($productCards)) {
+            foreach ($productCards as $card) {
+                $embed = new Embed($plan->bot->discord);
+                $embed->setAuthor(
+                    strip_tags($card->name),
+                    $card->image,
+                    $card->url
+                );
+                $messageBuilder->addEmbed($embed);
+            }
         }
         return $messageBuilder;
     }
