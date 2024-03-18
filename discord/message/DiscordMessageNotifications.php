@@ -232,8 +232,12 @@ class DiscordMessageNotifications
                             $original->locked = true;
                             $channel->threads->save($original);
                         }
-                    } else if ($deleteMessage) {
+                    }
+                    if ($deleteMessage) {
                         $originalMessage->delete();
+                    }
+                    if ($notification->feedback !== null) {
+                        $this->plan->component->addReactions($message, DiscordAIMessages::REACTION_COMPONENT_NAME);
                     }
                     if (!sql_insert(
                         BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,

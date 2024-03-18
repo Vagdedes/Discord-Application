@@ -14,7 +14,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
-    private const REACTION_COMPONENT_NAME = "general-feedback";
+    const REACTION_COMPONENT_NAME = "general-feedback";
 
     public function __construct(DiscordPlan $plan)
     {

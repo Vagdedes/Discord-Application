@@ -529,7 +529,7 @@ function is_base64_image(?string $string): bool
 function get_urls_from_string(string $string): array
 {
     preg_match_all('#\bhttps?://[^,\s()<>]+(?:\([\w\d]+\)|([^,[:punct:]\s]|/))#', $string, $match);
-    return $match[0];
+    return array_unique($match[0]);
 }
 
 function find_character_occurrences(string $string, string $character): array
