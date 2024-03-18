@@ -6,6 +6,7 @@ use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
@@ -79,8 +80,8 @@ class AccountMessageCreationListener
         return $account;
     }
 
-    public static function findAccountFromSession(?Interaction $interaction,
-                                                  DiscordPlan  $plan): ?object
+    public static function findAccountFromSession(Interaction|Message|null $interaction,
+                                                  DiscordPlan              $plan): ?object
     {
         $account = self::getAccountObject($interaction, $plan);
         $method = $account->getSession()->find();

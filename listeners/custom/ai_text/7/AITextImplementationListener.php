@@ -11,6 +11,11 @@ class AITextImplementationListener // Name can be changed
                                        ?array      $localInstructions,
                                        ?array      $publicInstructions): array // Name can be changed
     {
+        $account = AccountMessageCreationListener::findAccountFromSession($originalMessage, $plan);
+
+        if ($account !== null) {
+            $plan->instructions->manager->addExtra("owned-products", $account->getPurchases()->getCurrent(), true);
+        }
         return array($localInstructions, $publicInstructions);
     }
 }

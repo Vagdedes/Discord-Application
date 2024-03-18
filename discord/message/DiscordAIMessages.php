@@ -39,6 +39,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
                 } else {
                     $object = new stdClass();
+                    $object->implement_class = $row->implement_class;
+                    $object->implement_method = $row->implement_method;
                     $object->chatAI = new ChatAI(
                         $row->model_family,
                         $row->api_key,
