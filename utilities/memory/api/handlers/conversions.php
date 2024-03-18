@@ -2,7 +2,7 @@
 
 function manipulate_memory_key(mixed $key): bool|string
 {
-    return $key === null ? false : json_encode(is_object($key) ? get_object_vars($key) : $key);
+    return $key === null ? false : serialize(is_object($key) ? get_object_vars($key) : $key);
 }
 
 function manipulate_memory_date(mixed $cooldown, int $maxTime = 86400)
