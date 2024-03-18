@@ -392,14 +392,22 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                                     $promptMessage
                                                 ))->done(function (Message $message)
                                                 use ($object, $model, $cacheKey, $channel, $originalMessage) {
+                                                    $array = $this->plan->listener->callAiTextImplementation(
+                                                        $model->implement_class,
+                                                        $model->implement_method,
+                                                        $originalMessage,
+                                                        $channel,
+                                                        $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
+                                                        $channel->public_instructions ?? (empty($model->publicInstructions) ? null : $model->publicInstructions)
+                                                    );
                                                     $reply = $this->rawTextAssistance(
                                                         $channel->ai_model_id,
                                                         $originalMessage,
                                                         $message,
                                                         array(
                                                             $object,
-                                                            $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
-                                                            $channel->public_instructions ?? (empty($model->publicInstructions) ? null : $model->publicInstructions)
+                                                            $array[0],
+                                                            $array[1]
                                                         ),
                                                         null,
                                                         $channel->debug !== null

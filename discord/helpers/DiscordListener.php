@@ -296,4 +296,21 @@ class DiscordListener
             );
         }
     }
+
+    public function callAiTextImplementation(?string $class, ?string $method,
+                                             Message $originalMessage,
+                                             object  $channel,
+                                             ?array  $localInstructions,
+                                             ?array  $publicInstructions): array
+    {
+        if ($class !== null && $method !== null) {
+            require_once(self::IMPLEMENTATION_AI_TEXT . $this->plan->planID . "/" . $class . '.php');
+            return call_user_func_array(
+                array($class, $method),
+                array($this->plan, $originalMessage, $channel, $localInstructions, $publicInstructions)
+            );
+        } else {
+            return array($localInstructions, $publicInstructions);
+        }
+    }
 }
