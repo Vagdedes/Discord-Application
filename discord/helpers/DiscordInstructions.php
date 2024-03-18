@@ -89,9 +89,9 @@ class DiscordInstructions
                 $information .= $replacements[0];
                 $disclaimer .= $replacements[1];
             }
-            return array($information, $disclaimer);
+            return array($information . $this->manager->getExtra(), $disclaimer);
         } else {
-            return array("", "");
+            return array($this->manager->getExtra(), "");
         }
     }
 

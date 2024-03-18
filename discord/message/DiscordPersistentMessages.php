@@ -172,7 +172,12 @@ class DiscordPersistentMessages
             $messageRow->listener_class,
             $messageRow->listener_method
         );
-        return $this->plan->interactionRoles->process($messageBuilder, $messageRow->id);
+        $messageBuilder = $this->plan->interactionRoles->process($messageBuilder, $messageRow->id);
+        $this->plan->instructions->manager->addExtra(
+            "interactive-message-builder-" . $messageRow->id,
+            $messageBuilder->jsonSerialize()
+        );
+        return $messageBuilder;
     }
 
     private function process(array $array, int $position): void
@@ -257,6 +262,10 @@ class DiscordPersistentMessages
                     null,
                     1
                 );
+                $this->plan->instructions->manager->addExtra(
+                    "interactive-message-" . $message->id,
+                    $message->getRawAttributes()
+                );
                 $this->process($array, $position + 1);
             }
         );
@@ -280,6 +289,10 @@ class DiscordPersistentMessages
                         $message->delete();
                         $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
                     }
+                    $this->plan->instructions->manager->addExtra(
+                        "interactive-message-" . $message->id,
+                        $message->getRawAttributes()
+                    );
                     $this->process($array, $position + 1);
                 }
             );
