@@ -22,6 +22,7 @@ class AccountMessageCreationListener
         IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184;
     private const PATREON_ID = 1195532382363725945;
     private static bool $dealtGiveaway = false;
+    private static array $roleLastCheck = array();
 
     public static function getAttemptedAccountSession(Interaction $interaction,
                                                       DiscordPlan $plan): mixed
@@ -69,8 +70,8 @@ class AccountMessageCreationListener
         );
     }
 
-    public static function getAccountObject(?Interaction $interaction,
-                                            DiscordPlan  $plan): object
+    public static function getAccountObject(Interaction|Message|null $interaction,
+                                            DiscordPlan              $plan): object
     {
         $account = new Account($plan->applicationID);
 
@@ -88,11 +89,17 @@ class AccountMessageCreationListener
 
         if ($method->isPositiveOutcome()) {
             $account = $method->getObject();
+            $accountID = $account->getDetail("id");
 
-            if ($account->getPermissions()->hasPermission("patreon.subscriber.subscriber")) {
-                $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
-            } else {
-                $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
+            if (!array_key_exists($accountID, self::$roleLastCheck)
+                || self::$roleLastCheck[$accountID] < time()) {
+                self::$roleLastCheck[$accountID] = time() + 60;
+
+                if ($account->getPermissions()->hasPermission("patreon.subscriber.subscriber")) {
+                    $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
+                } else {
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
+                }
             }
             return $account;
         } else {
