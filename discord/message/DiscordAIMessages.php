@@ -621,6 +621,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $this->plan->planID,
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
+            $this->plan->instructions->manager->removeAllExtra();
         }
         return null;
     }
