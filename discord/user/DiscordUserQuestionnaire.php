@@ -17,8 +17,6 @@ class DiscordUserQuestionnaire
         REFRESH_TIME = "15 seconds",
         AI_HASH = 689043243;
 
-    // todo expand feature with button & list questions
-
     public function __construct(DiscordPlan $plan)
     {
         global $logger;

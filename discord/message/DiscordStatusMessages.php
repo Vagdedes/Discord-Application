@@ -4,7 +4,7 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\User\Member;
 
-class DiscordStatusMessages // todo add ai support
+class DiscordStatusMessages
 {
     private DiscordPlan $plan;
 
@@ -61,7 +61,7 @@ class DiscordStatusMessages // todo add ai support
 
     private function process(Channel $channelFound, Member $member,
                              object  $channel,
-                             string  $messageColumn,
+                             ?string $message,
                              int     $case): void
     {
         has_memory_cooldown(
@@ -70,6 +70,9 @@ class DiscordStatusMessages // todo add ai support
             true,
             true
         );
+        if ($message === null) {
+            // todo ai
+        }
         $channelFound->sendMessage(
             $this->plan->listener->callStatusMessageImplementation(
                 $channel->listener_class,
@@ -77,7 +80,7 @@ class DiscordStatusMessages // todo add ai support
                 $channelFound,
                 $member,
                 MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($messageColumn),
+                    $this->plan->instructions->replace(array($message),
                         $this->plan->instructions->getObject(
                             $member->guild,
                             $channelFound,
