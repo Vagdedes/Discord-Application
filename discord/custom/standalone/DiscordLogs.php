@@ -5,6 +5,7 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
+use Discord\Parts\Part;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 
@@ -35,6 +36,9 @@ class DiscordLogs
             );
     }
 
+    /**
+     * @throws Exception
+     */
     public function logInfo(Guild|int|string|null $guild,
                             int|string|null       $userID, ?string $action,
                             mixed                 $object, mixed $oldObject = null,
@@ -57,8 +61,12 @@ class DiscordLogs
             $date = get_current_date();
             $hasObjectParameter = $object !== null;
             $hasOldObjectParameter = $oldObject !== null;
-            $encodedObject = $hasObjectParameter ? @json_encode($object) : null;
-            $encodedOldObject = $hasOldObjectParameter ? @json_encode($oldObject) : null;
+            $encodedObject = $hasObjectParameter
+                ? ($object instanceof Part ? @json_encode($object->jsonSerialize()) : @json_encode($object))
+                : null;
+            $encodedOldObject = $hasOldObjectParameter
+                ? ($oldObject instanceof Part ? @json_encode($oldObject->jsonSerialize()) : @json_encode($oldObject))
+                : null;
 
             if (sql_insert(
                     BotDatabaseTable::BOT_LOGS,
