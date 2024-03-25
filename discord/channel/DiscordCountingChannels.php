@@ -151,10 +151,12 @@ class DiscordCountingChannels
 
     public function restore(object $message): bool
     {
-        if ($this->getCountingChannelObject($message) !== null) {
+        $rowArray = $this->getCountingChannelObject($message);
+
+        if ($rowArray !== null) {
             $message->channel?->sendMessage(
                 (isset($message->author) ? "<@{$message->author->id}> " : "<" . $message->id . "> ")
-                . trim(strip_tags($message->content))
+                . $rowArray[1]->current_number
             );
             return true;
         }
