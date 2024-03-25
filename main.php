@@ -134,6 +134,7 @@ function initiate_discord_bot(): void
         'disabledEvents' => [],
         'dnsConfig' => '1.1.1.1',
     ]);
+    $token = null;
 
     $discord->on('ready', function (Discord $discord) {
         global $logger, $createdDiscordBot;
@@ -150,16 +151,31 @@ function initiate_discord_bot(): void
                             $guild->leave();
                             $logger->logError(null, "Bot left guild " . $guild->id . " because it has no roles and therefore no permissions.");
                         } else {
-                            $admin = false;
+                            $valid = false;
 
                             foreach ($member->roles as $role) {
-                                if ($role->permissions->administrator) {
-                                    $admin = true;
+                                if ($role->permissions->administrator
+                                    || $role->permissions->manage_channels
+                                    && $role->permissions->create_instant_invite
+                                    && $role->permissions->view_channel
+
+                                    && $role->permissions->send_messages
+                                    && $role->permissions->create_public_threads
+                                    && $role->permissions->create_private_threads
+                                    && $role->permissions->send_messages_in_threads
+                                    && $role->permissions->manage_messages
+                                    && $role->permissions->manage_threads
+                                    && $role->permissions->read_message_history
+                                    && $role->permissions->add_reactions
+
+                                    && $role->permissions->mute_members
+                                    && $role->permissions->move_members) {
+                                    $valid = true;
                                     break;
                                 }
                             }
 
-                            if (!$admin) {
+                            if (!$valid) {
                                 $guild->leave();
                                 $logger->logError(null, "Bot left guild " . $guild->id . " because it has no administrator permissions.");
                             }
