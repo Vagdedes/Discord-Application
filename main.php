@@ -134,7 +134,6 @@ function initiate_discord_bot(): void
         'disabledEvents' => [],
         'dnsConfig' => '1.1.1.1',
     ]);
-    $token = null;
 
     $discord->on('ready', function (Discord $discord) {
         global $logger, $createdDiscordBot;
