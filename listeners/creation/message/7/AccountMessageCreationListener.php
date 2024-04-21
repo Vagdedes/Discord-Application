@@ -152,7 +152,7 @@ class AccountMessageCreationListener
                     && $currentGiveawayOutcome->isPositiveOutcome()) {
                     self::$dealtGiveaway = true;
                     $announcement = MessageBuilder::new();
-                    $announcement->setContent("||@everyone||");
+                    //$announcement->setContent("||@everyone||");
                     $announcementEmbed = new Embed($plan->bot->discord);
                     $announcementEmbed->setAuthor(
                         "GIVEAWAY WINNER",
