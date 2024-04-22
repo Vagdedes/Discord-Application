@@ -19,8 +19,10 @@ class AccountMessageCreationListener
         IDEALISTIC_URL = "https://www.idealistic.ai",
         IDEALISTIC_PATREON_URL = self::IDEALISTIC_URL . "/patreon",
         IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
-        IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184;
-    private const PATREON_ID = 1195532382363725945;
+        IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184,
+        SPARTAN_4_0_ROLE_ID = 1231771566476496937,
+        SPARTAN_3_0_ROLE_ID = 1231771570955882507,
+        SPARTAN_2_0_ROLE_ID = 1195532382363725945;
     private static bool $dealtGiveaway = false;
     private static array $roleLastCheck = array();
 
@@ -95,10 +97,22 @@ class AccountMessageCreationListener
                 || self::$roleLastCheck[$accountID] < time()) {
                 self::$roleLastCheck[$accountID] = time() + 60;
 
-                if ($account->getPermissions()->hasPermission("patreon.subscriber.subscriber")) {
-                    $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ID);
+                if ($account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_4_0_PERMISSION)) {
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_3_0_ROLE_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_2_0_ROLE_ID);
+                    $plan->bot->permissions->addDiscordRole($interaction->member, self::SPARTAN_4_0_ROLE_ID);
+                } else if ($account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_3_0_PERMISSION)) {
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_4_0_ROLE_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_2_0_ROLE_ID);
+                    $plan->bot->permissions->addDiscordRole($interaction->member, self::SPARTAN_3_0_ROLE_ID);
+                } else if ($account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_2_0_PERMISSION)) {
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_4_0_ROLE_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_3_0_ROLE_ID);
+                    $plan->bot->permissions->addDiscordRole($interaction->member, self::SPARTAN_2_0_ROLE_ID);
                 } else {
-                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_4_0_ROLE_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_3_0_ROLE_ID);
+                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::SPARTAN_2_0_ROLE_ID);
                 }
             }
             return $account;
