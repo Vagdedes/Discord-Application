@@ -217,7 +217,7 @@ class AccountMessageCreationListener
             $select->setPlaceholder("Select a product to view/download.");
 
             foreach ($products->getObject() as $product) {
-                if ($product->independent !== null) {
+                if ($product->show_in_list !== null) {
                     $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
                     $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
                     $select->addOption($option);
