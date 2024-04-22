@@ -736,7 +736,7 @@ class AccountMessageCreationListener
         $embed->setTitle("Introducing Spartan 2.0 -> 3.0 -> 4.0");
         $embed->setURL(self::IDEALISTIC_PATREON_URL);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
-        $embed->setDescription("Get access to more Detection Slots");
+        $embed->setDescription("Get access to more Detection Slots!");
         $messageBuilder->addEmbed($embed);
 
         $row = ActionRow::new();
