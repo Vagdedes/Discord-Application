@@ -8,7 +8,7 @@ use Discord\Parts\User\User;
 class DiscordChannels
 {
     private DiscordPlan $plan;
-    private array $list, $whitelist, $temporary;
+    private array $list, $whitelist, $blacklist, $temporary;
 
     public function __construct(DiscordPlan $plan)
     {
@@ -32,6 +32,21 @@ class DiscordChannels
         );
         $this->whitelist = get_sql_query(
             BotDatabaseTable::BOT_CHANNEL_WHITELIST,
+            null,
+            array(
+                array("deletion_date", null),
+                null,
+                array("plan_id", "IS", null, 0),
+                array("plan_id", $this->plan->planID),
+                null,
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+        $this->blacklist = get_sql_query(
+            BotDatabaseTable::BOT_CHANNEL_BLACKLIST,
             null,
             array(
                 array("deletion_date", null),

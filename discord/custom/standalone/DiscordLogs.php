@@ -92,7 +92,9 @@ class DiscordLogs
                         if ($channel !== null
                             && $channel->guild_id == $row->server_id) {
                             if ($row->thread_id === null) {
-                                if ($channel->allowText()) {
+                                if ($channel->allowText()
+                                    && ($row->ignore_bot === null
+                                        || $row->ignore_bot != $this->bot->botID)) {
                                     $channel->sendMessage(
                                         $this->prepareLogMessage(
                                             $row, $date,
