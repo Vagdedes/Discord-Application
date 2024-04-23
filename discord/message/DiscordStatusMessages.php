@@ -22,35 +22,42 @@ class DiscordStatusMessages
         $serverID = $member->guild_id;
         $userID = $member->id;
 
-        if (!$this->hasCooldown($member, $type)
-            && !empty($this->plan->channels->getList())) {
-            $messageColumn = $type === self::WELCOME ? "welcome_message" : "goodbye_message";
+        if (!$this->hasCooldown($member, $type)) {
+            $list = $this->plan->bot->channels->getList($this->plan);
 
-            foreach ($this->plan->channels->getList() as $channel) {
-                if ($channel->server_id == $serverID
-                    && $channel->{$messageColumn} !== null) {
-                    if ($channel->whitelist === null) {
-                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+            if (!empty($list)) {
+                $messageColumn = $type === self::WELCOME ? "welcome_message" : "goodbye_message";
 
-                        if ($channelFound !== null
-                            && $channelFound->allowText()
-                            && $channelFound->guild_id == $serverID) {
-                            $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
-                        }
-                    } else if (!empty($this->plan->channels->getWhitelist())) {
-                        foreach ($this->plan->channels->getWhitelist() as $whitelist) {
-                            if ($whitelist->user_id == $userID
-                                && ($whitelist->server_id === null
-                                    || $whitelist->server_id == $serverID
-                                    && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id))) {
-                                $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+                foreach ($list as $channel) {
+                    if ($channel->server_id == $serverID
+                        && $channel->{$messageColumn} !== null) {
+                        if ($channel->whitelist === null) {
+                            $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
-                                if ($channelFound !== null
-                                    && $channelFound->allowText()
-                                    && $channelFound->guild_id == $serverID) {
-                                    $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
+                            if ($channelFound !== null
+                                && $channelFound->allowText()
+                                && $channelFound->guild_id == $serverID) {
+                                $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
+                            }
+                        } else {
+                            $whitelist = $this->plan->bot->channels->getWhitelist($this->plan);
+
+                            if (!empty($whitelist)) {
+                                foreach ($whitelist as $whitelist) {
+                                    if ($whitelist->user_id == $userID
+                                        && ($whitelist->server_id === null
+                                            || $whitelist->server_id == $serverID
+                                            && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id))) {
+                                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+
+                                        if ($channelFound !== null
+                                            && $channelFound->allowText()
+                                            && $channelFound->guild_id == $serverID) {
+                                            $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
+                                        }
+                                        break;
+                                    }
                                 }
-                                break;
                             }
                         }
                     }

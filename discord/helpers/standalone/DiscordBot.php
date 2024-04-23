@@ -58,6 +58,7 @@ class DiscordBot
     public DiscordUserSuggestions $userSuggestions;
     public DiscordUserEvents $userEvents;
     public DiscordTransferredMessages $tranferredMessages;
+    public DiscordChannels $channels;
     private int $counter;
 
     private const PERMISSION = "patreon.subscriber.discord.bot";
@@ -71,6 +72,7 @@ class DiscordBot
 
         $this->utilities = new DiscordUtilities($this->discord);
         $this->listener = new DiscordListener($this->discord);
+        $this->channels = new DiscordChannels($this->discord);
 
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);

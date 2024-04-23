@@ -95,14 +95,16 @@ class DiscordLogs
                                 if ($channel->allowText()
                                     && ($row->ignore_bot === null
                                         || $row->ignore_bot != $this->bot->botID)) {
-                                    $channel->sendMessage(
-                                        $this->prepareLogMessage(
-                                            $row, $date,
-                                            $userID, $action,
-                                            $object, $oldObject,
-                                            MessageBuilder::new()
-                                        )
+                                    $messageBuilder = $this->prepareLogMessage(
+                                        $row, $date,
+                                        $userID, $action,
+                                        $object, $oldObject,
+                                        MessageBuilder::new()
                                     );
+
+                                    if ($messageBuilder !== null) {
+                                        $channel->sendMessage($messageBuilder);
+                                    }
                                 }
                             } else if (!empty($channel->threads->first())) {
                                 foreach ($channel->threads as $thread) {
@@ -110,14 +112,16 @@ class DiscordLogs
                                         && $row->thread_id == $thread->id
                                         && ($row->ignore_bot === null
                                             || $row->ignore_bot != $this->bot->botID)) {
-                                        $thread->sendMessage(
-                                            $this->prepareLogMessage(
-                                                $row, $date,
-                                                $userID, $action,
-                                                $object, $oldObject,
-                                                MessageBuilder::new()
-                                            )
+                                        $messageBuilder = $this->prepareLogMessage(
+                                            $row, $date,
+                                            $userID, $action,
+                                            $object, $oldObject,
+                                            MessageBuilder::new()
                                         );
+
+                                        if ($messageBuilder !== null) {
+                                            $thread->sendMessage($messageBuilder);
+                                        }
                                         break;
                                     }
                                 }
@@ -139,7 +143,7 @@ class DiscordLogs
     private function prepareLogMessage(object          $row, string $date,
                                        int|string|null $userID, ?string $action,
                                        mixed           $object, mixed $oldObject,
-                                       MessageBuilder  $message): MessageBuilder
+                                       MessageBuilder  $message): ?MessageBuilder
     {
         $syntaxExtra = strlen(DiscordSyntax::HEAVY_CODE_BLOCK) * 2;
         $this->ignoreAction++;
@@ -181,6 +185,14 @@ class DiscordLogs
                 } else if ($object instanceof Member) {
                     $embed->setDescription("<@" . $object->id . ">");
                 } else if ($object instanceof Channel) {
+                    if ($this->bot->channels->isBlacklisted($object)) {
+                        return null;
+                    }
+                    $embed->setDescription("<#" . $object->id . ">");
+                } else if ($object instanceof Thread) {
+                    if ($this->bot->channels->isBlacklisted($object)) {
+                        return null;
+                    }
                     $embed->setDescription("<#" . $object->id . ">");
                 }
                 $embed->setTimestamp(strtotime($date));

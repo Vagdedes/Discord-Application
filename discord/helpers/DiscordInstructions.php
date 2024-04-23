@@ -131,7 +131,7 @@ class DiscordInstructions
         $object->minute = date("i");
         $object->second = date("s");
         $object->channel = $channel === null || $user === null ? null
-            : $this->plan->channels->getIfHasAccess($channel, $user);
+            : $this->plan->bot->channels->getIfHasAccess($this->plan, $channel, $user);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;

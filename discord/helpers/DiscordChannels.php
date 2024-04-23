@@ -1,5 +1,6 @@
 <?php
 
+use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
@@ -7,19 +8,22 @@ use Discord\Parts\User\User;
 
 class DiscordChannels
 {
-    private DiscordPlan $plan;
+
+    private Discord $discord;
     private array $list, $whitelist, $blacklist, $temporary;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(Discord $object)
     {
-        $this->plan = $plan;
+        $this->discord = $object;
         $this->temporary = array();
-        $this->list = get_sql_query(
+        $this->list = array();
+        $this->whitelist = array();
+        $this->blacklist = array();
+        $query = get_sql_query(
             BotDatabaseTable::BOT_CHANNELS,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -30,55 +34,108 @@ class DiscordChannels
                 "thread_id"
             )
         );
-        $this->whitelist = get_sql_query(
+
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $planID = $row->plan_id ?? 0;
+
+                if (array_key_exists($planID, $this->list)) {
+                    $this->list[$planID][] = $row;
+                } else {
+                    $this->list[$planID] = array($row);
+                }
+            }
+        }
+
+        // Separator
+
+        $query = get_sql_query(
             BotDatabaseTable::BOT_CHANNEL_WHITELIST,
             null,
             array(
                 array("deletion_date", null),
                 null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
-                null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
             )
         );
-        $this->blacklist = get_sql_query(
+
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $planID = $row->plan_id ?? 0;
+
+                if (array_key_exists($planID, $this->whitelist)) {
+                    $this->whitelist[$planID][] = $row;
+                } else {
+                    $this->whitelist[$planID] = array($row);
+                }
+            }
+        }
+
+        // Separator
+
+        $query = get_sql_query(
             BotDatabaseTable::BOT_CHANNEL_BLACKLIST,
             null,
             array(
                 array("deletion_date", null),
                 null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
-                null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
                 null
             )
         );
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $planID = $row->plan_id ?? 0;
+
+                if (array_key_exists($planID, $this->blacklist)) {
+                    $this->blacklist[$planID][] = $row;
+                } else {
+                    $this->blacklist[$planID] = array($row);
+                }
+            }
+        }
     }
 
     // Separator
 
-    public function getList(): array
+    public function getList(?DiscordPlan $plan = null): array
     {
-        return array_merge($this->list, $this->temporary);
+        return array_merge($this->list[$plan->planID ?? 0] ?? array(), $this->temporary);
     }
 
-    public function getWhitelist(): array
+    public function getWhitelist(DiscordPlan $plan = null): array
     {
-        return $this->whitelist;
+        return $this->whitelist[$plan->planID ?? 0] ?? array();
     }
 
-    public function getIfHasAccess(Channel|Thread $channel, Member|User $member): ?object
+    public function isBlacklisted(?DiscordPlan $plan, Channel|Thread $channel): bool
+    {
+        if ($plan === null) {
+            // todo
+        } else if (array_key_exists($plan->planID, $this->blacklist)) {
+            foreach ($this->blacklist[$plan->planID] as $row) {
+                if ($row->server_id == $channel->guild_id
+                    && ($row->category_id === null
+                        || $row->category_id == $channel->parent_id)
+                    && ($row->channel_id === null
+                        || $row->channel_id == $channel->id)
+                    && ($row->thread_id === null
+                        || $row->thread_id == $channel->id)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function getIfHasAccess(DiscordPlan $plan, Channel|Thread $channel, Member|User $member): ?object
     {
         $cacheKey = array(
             __METHOD__,
-            $this->plan->planID,
+            $plan->planID,
             $channel->guild_id,
             $channel->id,
             $member->id,
@@ -89,7 +146,7 @@ class DiscordChannels
             return $cache === false ? null : $cache;
         } else {
             $result = false;
-            $list = $this->getList();
+            $list = $this->getList($plan);
 
             if (!empty($list)) {
                 $parent = $channel instanceof Thread ? $channel->parent_id : $channel->id;
@@ -131,7 +188,7 @@ class DiscordChannels
         }
     }
 
-    public function addTemporary(Channel $channel, ?array $properties = null): bool
+    public function addTemporary(?DiscordPlan $plan, Channel $channel, ?array $properties = null): bool
     {
         if (!array_key_exists($channel->id, $this->temporary)) {
             foreach ($this->list as $rowChannel) {
@@ -153,7 +210,7 @@ class DiscordChannels
                 $object->id = $id;
                 break;
             }
-            $object->plan_id = $this->plan->planID;
+            $object->plan_id = $plan?->planID;
             $object->server_id = $channel->guild_id;
             $object->category_id = $channel->parent_id;
             $object->channel_id = $channel->id;

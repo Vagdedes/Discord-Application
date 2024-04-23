@@ -208,7 +208,10 @@ class DiscordUserTargets
                             $insert["channel_id"] = $channel->id;
 
                             if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                                $this->plan->channels->addTemporary($channel, array(
+                                $this->plan->bot->channels->addTemporary(
+                                    $this->plan,
+                                    $channel,
+                                    array(
                                     "message_retention" => "1 minute",
                                     "message_cooldown" => 1,
                                     "assistance" => 1,

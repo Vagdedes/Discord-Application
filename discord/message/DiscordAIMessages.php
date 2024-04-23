@@ -1031,7 +1031,11 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                       bool                  $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
-        $objectChannel = $this->plan->channels->getIfHasAccess($channel ?? $interaction->channel, $interaction->member);
+        $objectChannel = $this->plan->bot->channels->getIfHasAccess(
+            $this->plan,
+            $channel ?? $interaction->channel,
+            $interaction->member
+        );
         $timePeriod = trim($timePeriod);
 
         if ($objectChannel === null || $objectChannel->ai_model_id === null) {
