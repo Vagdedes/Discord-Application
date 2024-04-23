@@ -185,12 +185,12 @@ class DiscordLogs
                 } else if ($object instanceof Member) {
                     $embed->setDescription("<@" . $object->id . ">");
                 } else if ($object instanceof Channel) {
-                    if ($this->bot->channels->isBlacklisted($object)) {
+                    if ($this->bot->channels->isBlacklisted(null, $object)) {
                         return null;
                     }
                     $embed->setDescription("<#" . $object->id . ">");
                 } else if ($object instanceof Thread) {
-                    if ($this->bot->channels->isBlacklisted($object)) {
+                    if ($this->bot->channels->isBlacklisted(null, $object)) {
                         return null;
                     }
                     $embed->setDescription("<#" . $object->id . ">");

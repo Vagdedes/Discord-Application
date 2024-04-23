@@ -114,7 +114,19 @@ class DiscordChannels
     public function isBlacklisted(?DiscordPlan $plan, Channel|Thread $channel): bool
     {
         if ($plan === null) {
-            // todo
+            foreach ($this->blacklist as $row) {
+                foreach ($row as $rowChannel) {
+                    if ($rowChannel->server_id == $channel->guild_id
+                        && ($rowChannel->category_id === null
+                            || $rowChannel->category_id == $channel->parent_id)
+                        && ($rowChannel->channel_id === null
+                            || $rowChannel->channel_id == $channel->id)
+                        && ($rowChannel->thread_id === null
+                            || $rowChannel->thread_id == $channel->id)) {
+                        return true;
+                    }
+                }
+            }
         } else if (array_key_exists($plan->planID, $this->blacklist)) {
             foreach ($this->blacklist[$plan->planID] as $row) {
                 if ($row->server_id == $channel->guild_id
@@ -131,11 +143,11 @@ class DiscordChannels
         return false;
     }
 
-    public function getIfHasAccess(DiscordPlan $plan, Channel|Thread $channel, Member|User $member): ?object
+    public function getIfHasAccess(?DiscordPlan $plan, Channel|Thread $channel, Member|User $member): ?object
     {
         $cacheKey = array(
             __METHOD__,
-            $plan->planID,
+            $plan->planID ?? 0,
             $channel->guild_id,
             $channel->id,
             $member->id,
