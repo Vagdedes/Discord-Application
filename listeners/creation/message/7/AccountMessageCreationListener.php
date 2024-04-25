@@ -743,7 +743,7 @@ class AccountMessageCreationListener
             self::IDEALISTIC_LOGO,
             self::IDEALISTIC_URL
         );
-        $embed->setTitle("Introducing Spartan 2.0 -> 3.0 -> 4.0");
+        $embed->setTitle("Introducing Spartan \"2.0 -> 3.0 -> 4.0 -> 5.0\"");
         $embed->setURL(self::IDEALISTIC_PATREON_URL);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
         $embed->setDescription("Get access to more Detection Slots!");
