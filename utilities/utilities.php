@@ -724,6 +724,23 @@ function string_to_integer(?string $string, bool $long = false): int
     return $result;
 }
 
+function array_to_integer(?array $array, bool $long = false): int
+{
+    if (empty($array)) {
+        return 0;
+    }
+    $result = 1;
+
+    foreach ($array as $value) {
+        if (is_integer($value)) {
+            $result = ($result * 31) + $value;
+        } else {
+            $result = ($result * 31) + string_to_integer(serialize($value), $long);
+        }
+    }
+    return $result;
+}
+
 function random_number(int $length = 9): int|string
 {
     $characters = '0123456789';

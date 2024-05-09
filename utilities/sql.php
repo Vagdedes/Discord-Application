@@ -1,8 +1,6 @@
 <?php
 // Connection
 
-$sql_max_cache_time = "30 minutes";
-
 $sql_connections = array();
 $sql_credentials = array();
 
@@ -260,8 +258,8 @@ function get_sql_cache_key(mixed $key, mixed $value = null): string
 
 function set_sql_cache($time = null, mixed $tag = null): void
 {
-    global $sql_cache_time, $sql_cache_tag, $sql_max_cache_time;
-    $sql_cache_time = $time === null ? $sql_max_cache_time : (is_array($time) ? implode(" ", $time) : $time);
+    global $sql_cache_time, $sql_cache_tag;
+    $sql_cache_time = $time === null ? null : (is_array($time) ? implode(" ", $time) : $time);
     $sql_cache_tag = $tag;
 }
 
