@@ -627,7 +627,6 @@ class AccountMessageCreationListener
                 $embed->addFieldValues(
                     "__**Objectives**__",
                     "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete."
-                    . " If you do not have any of the accounts, you can skip adding them without problem."
                 );
                 foreach ($objectives as $count => $objective) {
                     $hasURL = !$objective->optional_url && $objective->url !== null;
