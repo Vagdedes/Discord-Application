@@ -10,7 +10,6 @@ class DiscordCommands
 {
     private DiscordPlan $plan;
     public array $staticCommands, $dynamicCommands, $nativeCommands;
-    private static array $loaded = array();
 
     public function __construct(DiscordPlan $plan)
     {
@@ -67,10 +66,8 @@ class DiscordCommands
 
         if (!empty($this->nativeCommands)) {
             foreach ($this->nativeCommands as $command) {
-                if (in_array($command->id, self::$loaded)) {
+                if (has_memory_cooldown("command-" . $command->id)) {
                     continue;
-                } else {
-                    self::$loaded[] = $command->id;
                 }
                 $command->arguments = get_sql_query(
                     BotDatabaseTable::BOT_COMMAND_ARGUMENTS,
