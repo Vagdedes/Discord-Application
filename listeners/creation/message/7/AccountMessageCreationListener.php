@@ -224,7 +224,7 @@ class AccountMessageCreationListener
             $select = SelectMenu::new();
             $select->setMinValues(1);
             $select->setMaxValues(1);
-            $select->setPlaceholder("Select a product to view/download.");
+            $select->setPlaceholder("Select a product to download.");
 
             foreach ($products->getObject() as $product) {
                 if ($product->show_in_list !== null) {
@@ -742,10 +742,11 @@ class AccountMessageCreationListener
             self::IDEALISTIC_LOGO,
             self::IDEALISTIC_URL
         );
-        $embed->setTitle("Spartan AntiCheat: Detection Slots");
+        $embed->setTitle("Spartan AntiCheat: Get Detection Slots!");
         $embed->setURL(self::IDEALISTIC_PATREON_URL);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
-        $embed->setDescription("Get access to more Detection Slots!");
+        $embed->setDescription("When your server/network has more Online Players than your Detection Slots,"
+            . " your players will be checked in groups over time instead of all together every time the server refreshes.");
         $messageBuilder->addEmbed($embed);
 
         $row = ActionRow::new();
