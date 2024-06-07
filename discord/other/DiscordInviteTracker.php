@@ -9,9 +9,8 @@ class DiscordInviteTracker
     private DiscordPlan $plan;
     private array $goals;
 
-    private static array $cached_invites  =array();
+    private static array $cached_invites = array();
     private static int $invite_links = 0, $invited_users = 0;
-    private static bool $isInitialized = false;
 
     private const REFRESH_TIME = "15 seconds";
 
@@ -31,8 +30,10 @@ class DiscordInviteTracker
             )
         );
 
-        if (!self::$isInitialized) {
-            self::$isInitialized = true;
+        if (!has_memory_cooldown(self::class . "-initialized")) {
+            self::$cached_invites = array();
+            self::$invite_links = 0;
+            self::$invited_users = 0;
 
             foreach ($this->plan->bot->discord->guilds as $guild) {
                 $this->track($guild);
@@ -148,9 +149,14 @@ class DiscordInviteTracker
         return self::$cached_invites[$guild->id][0] ?? null;
     }
 
-    public function track(Guild $guild): void
+    public static function getCachedInvites(Guild $guild): array
     {
-        $guild->getInvites()->done(function (mixed $invites) use ($guild) {
+        return self::$cached_invites[$guild->id] ?? array();
+    }
+
+    public function track(Guild $guild, ?callable $callable = null): void
+    {
+        $guild->getInvites()->done(function (mixed $invites) use ($guild, $callable) {
             $cached = array();
 
             foreach ($invites as $invite) {
@@ -234,6 +240,10 @@ class DiscordInviteTracker
                 }
             }
             self::$cached_invites[$guild->id] = $cached;
+
+            if ($callable !== null) {
+                $callable();
+            }
         });
     }
 

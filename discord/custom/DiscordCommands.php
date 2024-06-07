@@ -66,7 +66,7 @@ class DiscordCommands
 
         if (!empty($this->nativeCommands)) {
             foreach ($this->nativeCommands as $command) {
-                if (has_memory_cooldown("command-" . $command->id)) {
+                if (has_memory_cooldown(self::class . "-" . $command->id)) {
                     continue;
                 }
                 $command->arguments = get_sql_query(
