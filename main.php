@@ -428,9 +428,9 @@ function initiate_discord_bot(): void
                 foreach ($createdDiscordBot->plans as $plan) {
                     $plan->statusMessages->run($member, DiscordStatusMessages::GOODBYE);
                 }
-                $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member);
+                $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_REMOVE, $member);
             } else {
-                $logger->logInfo($member?->guild, null, Event::GUILD_MEMBER_ADD, $member);
+                $logger->logInfo($member?->guild, null, Event::GUILD_MEMBER_REMOVE, $member);
             }
         });
 
@@ -442,6 +442,7 @@ function initiate_discord_bot(): void
                 $plan->statusMessages->run($member, DiscordStatusMessages::WELCOME);
             }
             $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member);
+            $logger->logInfo($member->guild, $member->id, DiscordLogs::GUILD_MEMBER_ADD_VIA_INVITE, $member);
         });
 
         // Separator
@@ -517,23 +518,16 @@ function initiate_discord_bot(): void
 
         $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
-
-            foreach ($createdDiscordBot->plans as $plan) {
-                $plan->inviteTracker->track($invite->guild);
-                break; // Break because the data is global
-            }
+            DiscordInviteTracker::track($invite->guild);
             $logger->logInfo($invite->guild, $invite->inviter->id, Event::INVITE_CREATE, $invite);
         });
 
         $discord->on(Event::INVITE_DELETE, function (object $invite, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
+            DiscordInviteTracker::track($invite->guild);
 
             if ($invite instanceof Invite) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    $plan->inviteTracker->track($invite->guild);
-                    break; // Break because the data is global
-                }
-                $logger->logInfo($invite->guild, $invite->inviter->id, Event::INVITE_DELETE, $invite);
+                $logger->logInfo($invite->guild, $invite->inviter?->id, Event::INVITE_DELETE, $invite);
             } else {
                 $logger->logInfo(null, null, Event::INVITE_DELETE, $invite);
             }

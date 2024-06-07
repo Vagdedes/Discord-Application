@@ -2,12 +2,14 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
+use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Part;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
+use Discord\WebSockets\Event;
 
 class DiscordLogs
 {
@@ -15,6 +17,8 @@ class DiscordLogs
     private ?DiscordBot $bot;
     private array $channels;
     private int $ignoreAction;
+
+    public const GUILD_MEMBER_ADD_VIA_INVITE = 'GUILD_MEMBER_ADD_VIA_INVITE';
 
     public function __construct(?DiscordBot $bot)
     {
@@ -54,7 +58,7 @@ class DiscordLogs
         }
         $hasGuild = $guild !== null;
 
-        if ($this->ignoreAction > 0) {
+        if ($this->ignoreAction > 0 && $action === Event::MESSAGE_CREATE) {
             $this->ignoreAction--;
         } else {
             check_clear_memory();
@@ -91,25 +95,9 @@ class DiscordLogs
 
                         if ($channel !== null
                             && $channel->guild_id == $row->server_id) {
-                            if ($row->thread_id === null) {
-                                if ($channel->allowText()
-                                    && ($row->ignore_bot === null
-                                        || $row->ignore_bot != $this->bot->botID)) {
-                                    $messageBuilder = $this->prepareLogMessage(
-                                        $row, $date,
-                                        $userID, $action,
-                                        $object, $oldObject,
-                                        MessageBuilder::new()
-                                    );
-
-                                    if ($messageBuilder !== null) {
-                                        $channel->sendMessage($messageBuilder);
-                                    }
-                                }
-                            } else if (!empty($channel->threads->first())) {
-                                foreach ($channel->threads as $thread) {
-                                    if ($thread instanceof Thread
-                                        && $row->thread_id == $thread->id
+                            $messagesToSendCallable = function ($oldObject) use ($row, $date, $userID, $action, $object, $channel) {
+                                if ($row->thread_id === null) {
+                                    if ($channel->allowText()
                                         && ($row->ignore_bot === null
                                             || $row->ignore_bot != $this->bot->botID)) {
                                         $messageBuilder = $this->prepareLogMessage(
@@ -120,11 +108,61 @@ class DiscordLogs
                                         );
 
                                         if ($messageBuilder !== null) {
-                                            $thread->sendMessage($messageBuilder);
+                                            $channel->sendMessage($messageBuilder);
                                         }
-                                        break;
+                                    }
+                                } else if (!empty($channel->threads->first())) {
+                                    foreach ($channel->threads as $thread) {
+                                        if ($thread instanceof Thread
+                                            && $row->thread_id == $thread->id
+                                            && ($row->ignore_bot === null
+                                                || $row->ignore_bot != $this->bot->botID)) {
+                                            $messageBuilder = $this->prepareLogMessage(
+                                                $row, $date,
+                                                $userID, $action,
+                                                $object, $oldObject,
+                                                MessageBuilder::new()
+                                            );
+
+                                            if ($messageBuilder !== null) {
+                                                $thread->sendMessage($messageBuilder);
+                                            }
+                                            break;
+                                        }
                                     }
                                 }
+                            };
+
+                            if ($action === self::GUILD_MEMBER_ADD_VIA_INVITE) {
+                                $oldInvites = DiscordInviteTracker::getInvites($guild);
+                                $callable = function () use ($oldInvites, $guild, $messagesToSendCallable, $oldObject) {
+                                    $newInvites = DiscordInviteTracker::getInvites($guild);
+
+                                    if (empty($oldInvites)) {
+                                        if (!empty($newInvites)) {
+                                            foreach ($newInvites as $invite) {
+                                                $oldObject = $invite;
+                                                break;
+                                            }
+                                        }
+                                    } else if (!empty($newInvites)) {
+                                        foreach ($newInvites as $invite) {
+                                            $comparisonInvite = $oldInvites[$invite->code] ?? null;
+
+                                            if ($comparisonInvite === null) {
+                                                $oldObject = $invite;
+                                                break;
+                                            } else if ($comparisonInvite->uses < $invite->uses) {
+                                                $oldObject = $invite;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    $messagesToSendCallable($oldObject);
+                                };
+                                DiscordInviteTracker::track($guild, null, $callable);
+                            } else {
+                                $messagesToSendCallable($oldObject);
                             }
                         }
                         break;
@@ -158,6 +196,7 @@ class DiscordLogs
                      true
                  ) as $chunk) {
             unset($chunk["guild_id"]);
+            unset($chunk["guild"]);
 
             if (!empty($chunk)) {
                 $counter++;
@@ -194,6 +233,10 @@ class DiscordLogs
                         return null;
                     }
                     $embed->setDescription("<#" . $object->id . ">");
+                } else if ($object instanceof Invite) {
+                    $embed->setDescription($object->invite_url
+                        . "\nIn: <#" . $object->channel_id . ">"
+                        . "\nBy: <@" . $object->inviter->id . ">");
                 }
                 $embed->setTimestamp(strtotime($date));
 
@@ -204,6 +247,13 @@ class DiscordLogs
                         }
                         if (is_array($arrayValue)) {
                             unset($arrayValue["guild_id"]);
+                            unset($arrayValue["guild"]);
+
+                            foreach ($arrayValue as $key => $value) {
+                                if ($value === null) {
+                                    unset($arrayValue[$key]);
+                                }
+                            }
                             $arrayValue = implode("\n", array_map(
                                 function ($key, $value) {
                                     if (is_array($value) || is_object($value)) {
@@ -213,23 +263,25 @@ class DiscordLogs
                                         return $this->beautifulText($key) . ": "
                                             . (is_bool($value)
                                                 ? ($value ? "true" : "false")
-                                                : ($value == null ? "null" : $value));
+                                                : $value);
                                     }
                                 },
                                 array_keys($arrayValue),
                                 $arrayValue
                             ));
                         }
-                        $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
-                        $arrayValue = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayValue);
-                        $embed->addFieldValues(
-                            substr($this->beautifulText($arrayKey), 0,
-                                DiscordInheritedLimits::MAX_FIELD_KEY_LENGTH),
-                            DiscordSyntax::HEAVY_CODE_BLOCK
-                            . substr($arrayValue, 0,
-                                DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
-                            . DiscordSyntax::HEAVY_CODE_BLOCK
-                        );
+                        if ($arrayValue !== null) {
+                            $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
+                            $arrayValue = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayValue);
+                            $embed->addFieldValues(
+                                substr($this->beautifulText($arrayKey), 0,
+                                    DiscordInheritedLimits::MAX_FIELD_KEY_LENGTH),
+                                DiscordSyntax::HEAVY_CODE_BLOCK
+                                . substr($arrayValue, 0,
+                                    DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
+                                . DiscordSyntax::HEAVY_CODE_BLOCK
+                            );
+                        }
                     }
                 }
                 $message->addEmbed($embed);
