@@ -99,7 +99,7 @@ class DiscordLogs
                                 if ($row->thread_id === null) {
                                     if ($channel->allowText()
                                         && ($row->ignore_bot === null
-                                            || $row->ignore_bot != $this->bot->botID)) {
+                                            || $userID != $this->bot->botID)) {
                                         $messageBuilder = $this->prepareLogMessage(
                                             $row, $date,
                                             $userID, $action,
@@ -116,7 +116,7 @@ class DiscordLogs
                                         if ($thread instanceof Thread
                                             && $row->thread_id == $thread->id
                                             && ($row->ignore_bot === null
-                                                || $row->ignore_bot != $this->bot->botID)) {
+                                                || $userID != $this->bot->botID)) {
                                             $messageBuilder = $this->prepareLogMessage(
                                                 $row, $date,
                                                 $userID, $action,
