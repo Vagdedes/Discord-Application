@@ -99,7 +99,7 @@ class AccountMessageCreationListener
                     || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_4_0_PERMISSION)
                     || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_3_0_PERMISSION)
                     || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_2_0_PERMISSION)) {
-                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
+                    $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
                 } else {
                     $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
                 }
