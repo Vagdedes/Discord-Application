@@ -56,9 +56,11 @@ class DiscordPlan
         $this->utilities = new DiscordUtilities($this);
 
         $this->listener = new DiscordListener($this);
-        $this->instructions = new DiscordInstructions($this);
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
+
+        $this->aiMessages = new DiscordAIMessages($this);
+        $this->instructions = new DiscordInstructions($this); // Dependent on above
 
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
@@ -68,7 +70,6 @@ class DiscordPlan
         $this->temporaryChannels = new DiscordTemporaryChannels($this);
         $this->reminderMessages = new DiscordReminderMessages($this);
         $this->userQuestionnaire = new DiscordUserQuestionnaire($this);
-        $this->aiMessages = new DiscordAIMessages($this);
         $this->statusMessages = new DiscordStatusMessages($this);
         $this->userTargets = new DiscordUserTargets($this);
         $this->userNotes = new DiscordUserNotes($this);

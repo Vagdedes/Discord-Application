@@ -18,6 +18,7 @@ class DiscordInstructions
         $account = new Account($plan->applicationID);
         $this->plan = $plan;
         $this->manager = $account->getInstructions();
+        $this->manager->setAI($plan->aiMessages->getManagerAI());
     }
 
     public function replace(array   $messages, ?object $object,

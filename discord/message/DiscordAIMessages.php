@@ -41,7 +41,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $object = new stdClass();
                     $object->implement_class = $row->implement_class;
                     $object->implement_method = $row->implement_method;
-                    $object->chatAI = new ChatAI(
+                    $object->managerAI = new ManagerAI(
                         $row->model_family,
                         $row->api_key,
                         DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
@@ -159,10 +159,16 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    public function getChatAI(int|string $aiModelID): mixed
+    public function getManagerAI(int|string|null $aiModelID = null): mixed
     {
-        $model = $this->model[$aiModelID] ?? null;
-        return $model?->chatAI;
+        if ($aiModelID === null) {
+            $array = $this->model;
+            $model = array_shift($array);
+            return $model?->managerAI;
+        } else {
+            $model = $this->model[$aiModelID] ?? null;
+            return $model?->managerAI;
+        }
     }
 
     public function textAssistance(Message $originalMessage): bool
@@ -231,9 +237,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                         $model = $this->model[$channel->ai_model_id] ?? null;
 
                         if ($model !== null) {
-                            $chatAI = $model->chatAI;
-
-                            if ($chatAI->exists) {
+                            if ($model->managerAI->exists) {
                                 if ($member->id == $this->plan->bot->botID) {
                                     return false;
                                 }
@@ -470,13 +474,12 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return false;
     }
 
-    public
-    function rawTextAssistance(int|string    $aiModelID,
-                               Message|array $source,
-                               ?Message      $self,
-                               array         $systemInstructions,
-                               int           $extraHash = null,
-                               bool          $debug = false): ?string
+    public function rawTextAssistance(int|string    $aiModelID,
+                                      Message|array $source,
+                                      ?Message      $self,
+                                      array         $systemInstructions,
+                                      int           $extraHash = null,
+                                      bool          $debug = false): ?string
     {
         if (is_array($source)) {
             $debug = false;
@@ -499,9 +502,9 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
             }
         }
         $parent = $this->plan->utilities->getChannel($channel);
-        $chatAI = $this->getChatAI($aiModelID);
+        $managerAI = $this->getManagerAI($aiModelID);
 
-        if ($chatAI !== null) {
+        if ($managerAI !== null) {
             $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)$user->id);
 
             if ($extraHash !== null) {
@@ -513,7 +516,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $systemInstructions[2],
                 $content
             );
-            $outcome = $chatAI->getResult(
+            $outcome = $managerAI->getResult(
                 $hash,
                 array(
                     "messages" => array(
@@ -557,13 +560,13 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 }
                 $model = array_shift($outcome);
                 $reply = array_shift($outcome);
-                $content = $chatAI->getText($model, $reply);
+                $content = $managerAI->getText($model, $reply);
 
                 if (!empty($content)) {
                     if (!empty($systemInstructions[1])) {
                         $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
                     }
-                    $cost = $chatAI->getCost($model, $reply);
+                    $cost = $managerAI->getCost($model, $reply);
                     $thread = $channel instanceof Thread ? $channel->id : null;
                     $date = get_current_date();
 
