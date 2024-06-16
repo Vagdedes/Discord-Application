@@ -311,11 +311,7 @@ class AccountModalImplementationListener
                 if ($thread->id === "TO-DO") {
                     $message = MessageBuilder::new();
                     $embed = new Embed($plan->bot->discord);
-                    $embed->setAuthor(
-                        AccountMessageCreationListener::IDEALISTIC_NAME,
-                        AccountMessageCreationListener::IDEALISTIC_LOGO,
-                        $website_domain
-                    );
+
                     if ($name !== null) {
                         $embed->addFieldValues(
                             "Name",

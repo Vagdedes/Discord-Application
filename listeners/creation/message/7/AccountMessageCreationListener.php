@@ -14,12 +14,9 @@ class AccountMessageCreationListener
 {
 
     public const
-        IDEALISTIC_NAME = "www.idealistic.ai (Secure Connection)",
-        IDEALISTIC_LOGO = "https://vagdedes.com/.images/idealistic/logo.png",
-        IDEALISTIC_URL = "https://www.idealistic.ai",
-        IDEALISTIC_PATREON_URL = self::IDEALISTIC_URL . "/patreon",
-        IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
-        IDEALISTIC_DISCORD_NEWS_CHANNEL = 289385175983325184,
+        PATREON_URL = "https://www.vagdedes.com/patreon",
+        ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
+        NEWS_CHANNEL = 289385175983325184,
         PATREON_ROLE_ID = 1195532382363725945;
     private static bool $dealtGiveaway = false;
     private static array $roleLastCheck = array();
@@ -95,10 +92,8 @@ class AccountMessageCreationListener
                 || self::$roleLastCheck[$accountID] < time()) {
                 self::$roleLastCheck[$accountID] = time() + 60;
 
-                if ($account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_5_0_PERMISSION)
-                    || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_4_0_PERMISSION)
-                    || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_3_0_PERMISSION)
-                    || $account->getPermissions()->hasPermission(AccountPatreon::SPARTAN_2_0_PERMISSION)) {
+                if ($account->getPermissions()->hasPermission(AccountPatreon::PERMISSIONS)
+                    || $account->getPurchases()->ownsMultiple(AccountPatreon::PRODUCTS)) {
                     $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
                 } else {
                     $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
@@ -158,12 +153,10 @@ class AccountMessageCreationListener
                     //$announcement->setContent("||@everyone||");
                     $announcementEmbed = new Embed($plan->bot->discord);
                     $announcementEmbed->setAuthor(
-                        "GIVEAWAY WINNER",
-                        self::IDEALISTIC_LOGO,
-                        self::IDEALISTIC_URL
+                        "GIVEAWAY WINNER"
                     );
                     $announcementEmbed->setTitle("Click to Participate!");
-                    $announcementEmbed->setURL(self::IDEALISTIC_DISCORD_ACCOUNT_CHANNEL_URL);
+                    $announcementEmbed->setURL(self::ACCOUNT_CHANNEL_URL);
                     $announcementEmbed->setDescription(
                         "Congratulations to **" . $lastGiveawayWinners
                         . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
@@ -171,7 +164,7 @@ class AccountMessageCreationListener
                     $announcementEmbed->setImage($lastGiveawayProduct->image);
                     $announcementEmbed->setTimestamp(time());
                     $announcement->addEmbed($announcementEmbed);
-                    $channel = $plan->bot->discord->getChannel(self::IDEALISTIC_DISCORD_NEWS_CHANNEL);
+                    $channel = $plan->bot->discord->getChannel(self::NEWS_CHANNEL);
 
                     if ($channel !== null
                         && $channel->allowText()) {
@@ -303,7 +296,7 @@ class AccountMessageCreationListener
 
         $embed->setAuthor(
             strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
-            self::IDEALISTIC_LOGO,
+            null,
             $downloadURL
         );
         $embed->setImage($product->image);
@@ -589,11 +582,6 @@ class AccountMessageCreationListener
 
         if ($account !== null) {
             $embed = new Embed($plan->bot->discord);
-            $embed->setAuthor(
-                self::IDEALISTIC_NAME,
-                self::IDEALISTIC_LOGO,
-                self::IDEALISTIC_URL
-            );
             $embed->setFooter("Support Code: " . $account->getIdentification()->get());
             $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
 
@@ -696,11 +684,6 @@ class AccountMessageCreationListener
         $account = self::getAccountObject($interaction, $plan);
         $accounts = $account->getRegistry()->getAccountAmount();
         $embed = new Embed($plan->bot->discord);
-        $embed->setAuthor(
-            self::IDEALISTIC_NAME,
-            self::IDEALISTIC_LOGO,
-            self::IDEALISTIC_URL
-        );
 
         if ($accounts > 0) {
             $embed->setDescription("Join **" . $accounts . "** other **" . ($accounts === 1 ? "user" : "users") . "**!");
@@ -716,13 +699,8 @@ class AccountMessageCreationListener
                                                  MessageBuilder $messageBuilder): MessageBuilder
     {
         $embed = new Embed($plan->bot->discord);
-        $embed->setAuthor(
-            self::IDEALISTIC_NAME,
-            self::IDEALISTIC_LOGO,
-            self::IDEALISTIC_URL
-        );
         $embed->setTitle("Spartan AntiCheat: Get Detection Slots!");
-        $embed->setURL(self::IDEALISTIC_PATREON_URL);
+        $embed->setURL(self::PATREON_URL);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
         $embed->setDescription("When your server/network has more Online Players than your Detection Slots,"
             . " your players will be checked in groups over time instead of all together every time the server refreshes.");
@@ -731,7 +709,7 @@ class AccountMessageCreationListener
         $row = ActionRow::new();
         $button = Button::new(Button::STYLE_LINK)
             ->setLabel("Start your FREE Trial today!")
-            ->setURL(self::IDEALISTIC_PATREON_URL);
+            ->setURL(self::PATREON_URL);
         $row->addComponent($button);
         $messageBuilder->addComponent($row);
         return $messageBuilder;

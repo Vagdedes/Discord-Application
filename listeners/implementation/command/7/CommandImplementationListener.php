@@ -22,8 +22,7 @@ class CommandImplementationListener
 
                 if ($account->exists()) {
                     $message->setContent(
-                        AccountMessageCreationListener::IDEALISTIC_URL
-                        . "/contents/?path=account/panel&platform=1&id="
+                        "https://www.idealistic.ai/contents/?path=account/panel&platform=1&id="
                         . $account->getDetail("email_address")
                     );
                 } else {

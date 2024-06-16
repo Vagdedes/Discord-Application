@@ -107,6 +107,7 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/gameCloud",
         "/var/www/.structure/library/ai",
         "/var/www/.structure/library/base/placeholder.php",
+        "/var/www/.structure/library/base/objects"
     )
 );
 
