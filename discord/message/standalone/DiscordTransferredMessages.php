@@ -18,17 +18,17 @@ class DiscordTransferredMessages
             null,
             array_merge(array(
                 array("deletion_date", null),
-                    null,
-                    array("expiration_date", "IS", null, 0),
-                    array("expiration_date", ">", get_current_date()),
-                    null
-                ), $this->bot->utilities->getServersQuery())
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            ), $this->bot->utilities->getServersQuery())
         );
 
         if (!empty($this->sources)) {
             $channels = array();
 
-            foreach ($this->sources as $arrayKey => $channel) {
+            foreach ($this->sources as $channel) {
                 $channel->channels = get_sql_query(
                     BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_CHANNELS,
                     null,
@@ -92,35 +92,39 @@ class DiscordTransferredMessages
                                     continue;
                                 }
                             }
-                            $channelObj->sendMessage($this->buildMessage($message))->done(function (Message $endMessage)
-                            use ($message, $receiveChannel, $channelObj) {
-                                $startChannel = $message->channel;
+                            $builtMessage = $this->buildMessage($message, true);
 
-                                if (!sql_insert(
-                                    BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
-                                    array(
-                                        "message_transferrer_id" => $receiveChannel->id,
-                                        "message_content" => $message->content,
-                                        "start_server_id" => $message->guild_id,
-                                        "start_channel_id" => $startChannel instanceof Thread ? $startChannel->parent_id : $startChannel->id,
-                                        "start_thread_id" => $startChannel instanceof Thread ? $startChannel->id : null,
-                                        "start_message_id" => $message->id,
-                                        "start_user_id" => $message->author->id,
-                                        "end_server_id" => $channelObj->guild_id,
-                                        "end_channel_id" => $channelObj instanceof Thread ? $channelObj->parent_id : $channelObj->id,
-                                        "end_thread_id" => $channelObj instanceof Thread ? $channelObj->id : null,
-                                        "end_message_id" => $endMessage->id,
-                                        "end_user_id" => $endMessage->author->id,
-                                        "creation_date" => $message->timestamp
-                                    )
-                                )) {
-                                    global $logger;
-                                    $logger->logError(
-                                        null,
-                                        "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
-                                    );
-                                }
-                            });
+                            if ($builtMessage !== null) {
+                                $channelObj->sendMessage($builtMessage)->done(function (Message $endMessage)
+                                use ($message, $receiveChannel, $channelObj) {
+                                    $startChannel = $message->channel;
+
+                                    if (!sql_insert(
+                                        BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
+                                        array(
+                                            "message_transferrer_id" => $receiveChannel->id,
+                                            "message_content" => $message->content,
+                                            "start_server_id" => $message->guild_id,
+                                            "start_channel_id" => $startChannel instanceof Thread ? $startChannel->parent_id : $startChannel->id,
+                                            "start_thread_id" => $startChannel instanceof Thread ? $startChannel->id : null,
+                                            "start_message_id" => $message->id,
+                                            "start_user_id" => $message->author->id,
+                                            "end_server_id" => $channelObj->guild_id,
+                                            "end_channel_id" => $channelObj instanceof Thread ? $channelObj->parent_id : $channelObj->id,
+                                            "end_thread_id" => $channelObj instanceof Thread ? $channelObj->id : null,
+                                            "end_message_id" => $endMessage->id,
+                                            "end_user_id" => $endMessage->author->id,
+                                            "creation_date" => $message->timestamp
+                                        )
+                                    )) {
+                                        global $logger;
+                                        $logger->logError(
+                                            null,
+                                            "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
+                                        );
+                                    }
+                                });
+                            }
                         }
                     }
                     break;
@@ -149,7 +153,6 @@ class DiscordTransferredMessages
                         $channel = $this->bot->discord->getChannel($sentMessage->end_channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
                             && $channel->guild_id == $sentMessage->end_server_id) {
                             if ($sentMessage->end_thread_id !== null) {
                                 $found = false;
@@ -175,7 +178,9 @@ class DiscordTransferredMessages
                             }
                             $channel->messages->fetch($sentMessage->end_message_id)->done(function (Message $message)
                             use ($sentMessage, $editedMessage) {
-                                if (set_sql_query(
+                                $message->edit($this->buildMessage($editedMessage, false));
+
+                                if (!set_sql_query(
                                     BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
                                     array(
                                         "message_content" => $editedMessage->content,
@@ -187,8 +192,6 @@ class DiscordTransferredMessages
                                     null,
                                     1
                                 )) {
-                                    $message->edit($this->buildMessage($editedMessage));
-                                } else {
                                     global $logger;
                                     $logger->logError(
                                         null,
@@ -225,7 +228,6 @@ class DiscordTransferredMessages
                         $channel = $this->bot->discord->getChannel($sentMessage->end_channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
                             && $channel->guild_id == $sentMessage->end_server_id) {
                             if ($sentMessage->end_thread_id !== null) {
                                 $found = false;
@@ -280,33 +282,54 @@ class DiscordTransferredMessages
 
     private function getMessages(object $message): array
     {
+        if ($message instanceof Message) {
+            $channel = $message->channel instanceof Thread ? $message->channel->parent_id : $message->channel->id;
+            $thread = $message->channel instanceof Thread ? $message->channel->id : null;
+        } else {
+            $channel = $message->channel_id;
+
+            if ($this->bot->discord->getChannel($channel) !== null) {
+                $thread = null;
+            } else {
+                $channel = false;
+                $thread = $message->thread_id;
+            }
+        }
         return get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
             null,
             array(
                 array("deletion_date", null),
                 array("start_server_id", $message->guild_id),
-                array("start_channel_id", $message->channel_id),
+                $channel === false ? "" : array("start_channel_id", $channel),
+                array("start_thread_id", $thread),
                 array("start_message_id", $message->id)
             )
         );
     }
 
-    private function buildMessage(Message $message): MessageBuilder
+    private function buildMessage(Message $message, bool $new): ?MessageBuilder
     {
-        $messageBuilder = MessageBuilder::new();
-        $embed = new Embed($this->bot->discord);
-        $embed->setAuthor($message->author->username, $message->author->avatar);
-        $embed->setDescription(
-            DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
-        );
-        $embed->setTitle($message->channel->name);
-        $inviteURL = DiscordInviteTracker::getInvite($message->guild)?->invite_url;
+        if ($new
+            && (strlen($message->content) == 0
+                || $message->components->count() > 0)) {
+            return null;
+        } else {
+            $messageBuilder = MessageBuilder::new();
+            $embed = new Embed($this->bot->discord);
+            $embed->setAuthor($message->author->username, $message->author->avatar);
+            $embed->setDescription(
+                DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
+            );
+            $embed->setTitle($message->channel->name);
+            $inviteURL = DiscordInviteTracker::getInvite($message->guild)?->invite_url;
 
-        if ($inviteURL !== null) {
-            $embed->setURL($inviteURL);
+            if ($inviteURL !== null) {
+                $embed->setURL($inviteURL);
+            }
+            $messageBuilder->addEmbed($embed);
+            return $messageBuilder;
         }
-        $messageBuilder->addEmbed($embed);
-        return $messageBuilder;
     }
+
 }
