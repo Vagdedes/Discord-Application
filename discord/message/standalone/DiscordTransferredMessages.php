@@ -310,9 +310,7 @@ class DiscordTransferredMessages
 
     private function buildMessage(Message $message, bool $new): ?MessageBuilder
     {
-        if ($new
-            && (strlen($message->content) == 0
-                || $message->components->count() > 0)) {
+        if ($new && strlen($message->content) == 0) {
             return null;
         } else {
             $messageBuilder = MessageBuilder::new();
