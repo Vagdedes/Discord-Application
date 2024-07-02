@@ -111,7 +111,7 @@ class AccountMessageCreationListener
     {
         $account = self::getAccountObject($interaction, $plan);
         $productGiveaway = $account->getProductGiveaway();
-        $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days");
+        $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days", array(3, 5));
         $currentGiveaway = $currentGiveawayOutcome->getObject();
 
         if ($currentGiveaway !== null) { // Check if current giveaway exists
