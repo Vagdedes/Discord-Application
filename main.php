@@ -149,8 +149,8 @@ function initiate_discord_bot(): void
 
                     if ($member instanceof Member) {
                         if (empty($member->roles->toArray())) {
-                            $guild->leave();
-                            $logger->logError(null, "Bot left guild " . $guild->id . " because it has no roles and therefore no permissions.");
+                            //$guild->leave();
+                            $logger->logError(null, "Bot ignored guild " . $guild->id . " because it has no roles and therefore no permissions.");
                         } else {
                             $valid = false;
 
@@ -177,8 +177,8 @@ function initiate_discord_bot(): void
                             }
 
                             if (!$valid) {
-                                $guild->leave();
-                                $logger->logError(null, "Bot left guild " . $guild->id . " because it has no administrator permissions.");
+                                //$guild->leave();
+                                $logger->logError(null, "Bot ignored guild " . $guild->id . " because it has no administrator permissions.");
                             }
                         }
                     }
