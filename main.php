@@ -14,7 +14,6 @@ require '/root/vendor/autoload.php';
 
 require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
-require '/root/discord_bot/utilities/runnable.php';
 require '/root/discord_bot/utilities/sql_connection.php';
 require '/root/discord_bot/utilities/communication.php';
 

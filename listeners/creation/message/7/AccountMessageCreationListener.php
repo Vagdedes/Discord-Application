@@ -93,7 +93,7 @@ class AccountMessageCreationListener
                 self::$roleLastCheck[$accountID] = time() + 60;
 
                 if ($account->getPermissions()->hasPermission(AccountPatreon::PERMISSIONS)
-                    || $account->getPurchases()->ownsMultiple(AccountPatreon::PRODUCTS)) {
+                    || $account->getPurchases()->owns(AccountPatreon::PRODUCTS)) {
                     $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
                 } else {
                     $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
