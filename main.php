@@ -17,7 +17,6 @@ require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/runnable.php';
 require '/root/discord_bot/utilities/sql_connection.php';
 require '/root/discord_bot/utilities/communication.php';
-require '/root/discord_bot/utilities/encrypt.php';
 
 require '/root/discord_bot/web/LoadBalancer.php';
 
@@ -108,6 +107,7 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/ai",
         "/var/www/.structure/library/base/placeholder.php",
         "/var/www/.structure/library/base/minecraft.php",
+        "/var/www/.structure/library/base/encrypt.php",
         "/var/www/.structure/library/base/objects"
     )
 );
