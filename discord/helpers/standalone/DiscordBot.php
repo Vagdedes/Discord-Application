@@ -143,11 +143,9 @@ class DiscordBot
             create_sql_connection();
 
             if ($this->counter === 10) {
-                if (LoadBalancer::isOnline()) {
-                    $this->counter = 0;
-                    $this->discord->close(true);
-                    initiate_discord_bot();
-                }
+                $this->counter = 0;
+                $this->discord->close(true);
+                initiate_discord_bot(LoadBalancer::isOnline());
             } else {
                 $this->plans = array();
                 load_sql_database();
