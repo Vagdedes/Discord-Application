@@ -7,6 +7,14 @@ class LoadBalancer
         website_path = "/contents/",
         timeout_seconds = 3;
 
+    public static function isOnline(): bool
+    {
+        return timed_file_get_contents(
+                self::local_ip_address . "/status",
+                self::timeout_seconds
+            ) == "OK";
+    }
+
     public static function getFiles(array $directories): array
     {
         $array = array();

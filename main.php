@@ -91,41 +91,42 @@ use Discord\WebSockets\Intents;
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);
-$files = LoadBalancer::getFiles(
-    array(
-        "/var/www/.structure/library/account",
-        "/var/www/.structure/library/polymart",
-        "/var/www/.structure/library/patreon",
-        "/var/www/.structure/library/paypal",
-        "/var/www/.structure/library/discord",
-        "/var/www/.structure/library/stripe",
-        "/var/www/.structure/library/builtbybit",
-        "/var/www/.structure/library/phone",
-        "/var/www/.structure/library/email",
-        "/var/www/.structure/library/gameCloud",
-        "/var/www/.structure/library/ai",
-        "/var/www/.structure/library/base/placeholder.php",
-        "/var/www/.structure/library/base/minecraft.php",
-        "/var/www/.structure/library/base/encrypt.php",
-        "/var/www/.structure/library/base/objects"
-    )
-);
-
-if (!empty($files)) {
-    foreach ($files as $fileName => $file) {
-        try {
-            eval($file);
-        } catch (Throwable $error) {
-            $logger->logError(null, $file . ": " . $error->getMessage());
-        }
-    }
-    $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
-    $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
-}
+$files = array();
+$email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
+$patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
 
 function initiate_discord_bot(): void
 {
-    global $token;
+    global $token, $files, $logger;
+    $files = LoadBalancer::getFiles(
+        array(
+            "/var/www/.structure/library/account",
+            "/var/www/.structure/library/polymart",
+            "/var/www/.structure/library/patreon",
+            "/var/www/.structure/library/paypal",
+            "/var/www/.structure/library/discord",
+            "/var/www/.structure/library/stripe",
+            "/var/www/.structure/library/builtbybit",
+            "/var/www/.structure/library/phone",
+            "/var/www/.structure/library/email",
+            "/var/www/.structure/library/gameCloud",
+            "/var/www/.structure/library/ai",
+            "/var/www/.structure/library/base/placeholder.php",
+            "/var/www/.structure/library/base/minecraft.php",
+            "/var/www/.structure/library/base/encrypt.php",
+            "/var/www/.structure/library/base/objects"
+        )
+    );
+
+    if (!empty($files)) {
+        foreach ($files as $file) {
+            try {
+                eval($file);
+            } catch (Throwable $error) {
+                $logger->logError(null, $file . ": " . $error->getMessage());
+            }
+        }
+    }
     $discord = new Discord([
         'token' => $token[0],
         'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::GUILD_PRESENCES | Intents::MESSAGE_CONTENT,
@@ -136,8 +137,8 @@ function initiate_discord_bot(): void
         'dnsConfig' => '1.1.1.1',
     ]);
 
-    $discord->on('ready', function (Discord $discord) {
-        global $logger, $createdDiscordBot;
+    $discord->on('ready', function (Discord $discord) use ($logger) {
+        global $createdDiscordBot;
         load_sql_database();
         $botID = $discord->id;
 
