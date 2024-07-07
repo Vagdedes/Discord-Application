@@ -658,4 +658,4 @@ function initiate_discord_bot($full): void
     $discord->run();
 }
 
-initiate_discord_bot();
+initiate_discord_bot(true);
