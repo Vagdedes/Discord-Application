@@ -212,27 +212,23 @@ class AccountMessageCreationListener
 
             $select->setListener(function (Interaction $interaction, Collection $options)
             use ($productObject, $plan, $select, $account) {
-                $interaction->acknowledge()->done(function () use (
-                    $plan, $interaction, $productObject, $options, $account
-                ) {
-                    $product = $productObject->find($options[0]->getValue(), true, false);
+                $plan->utilities->acknowledgeMessage(
+                    $interaction,
+                    function () use ($plan, $interaction, $productObject, $options, $account) {
+                        $product = $productObject->find($options[0]->getValue(), true, false);
 
-                    if ($product->isPositiveOutcome()) {
-                        $interaction->sendFollowUpMessage(
-                            self::loadProduct(
+                        if ($product->isPositiveOutcome()) {
+                            return self::loadProduct(
                                 $plan,
                                 $account,
                                 $product->getObject()[0]
-                            ),
-                            true
-                        );
-                    } else {
-                        $interaction->sendFollowUpMessage(
-                            MessageBuilder::new()->setContent($product->getMessage()),
-                            true
-                        );
-                    }
-                });
+                            );
+                        } else {
+                            return MessageBuilder::new()->setContent($product->getMessage());
+                        }
+                    },
+                    true
+                );
             }, $plan->bot->discord);
             $messageBuilder->addComponent($select);
 

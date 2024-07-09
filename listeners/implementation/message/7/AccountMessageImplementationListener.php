@@ -15,13 +15,19 @@ class AccountMessageImplementationListener
                                       MessageBuilder $messageBuilder,
                                       mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-        }
+                if ($account !== null) {
+                    return $plan->persistentMessages->get($interaction, "0-logged_in");
+                } else {
+                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                }
+            },
+            true
+        );
     }
 
     public static function register(DiscordPlan    $plan,

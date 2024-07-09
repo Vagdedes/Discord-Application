@@ -11,18 +11,18 @@ class AccountModalImplementationListener
                                     Interaction $interaction,
                                     mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-            $objects = $objects->toArray();
-            $email = array_shift($objects)["value"];
-            $username = array_shift($objects)["value"];
-
-            $interaction->acknowledge()
-                ->done(function () use ($interaction, $plan, $account, $email, $username) {
+                if ($account !== null) {
+                    return $plan->persistentMessages->get($interaction, "0-logged_in");
+                } else {
+                    $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+                    $objects = $objects->toArray();
+                    $email = array_shift($objects)["value"];
+                    $username = array_shift($objects)["value"];
                     $accountRegistry = $account->getRegistry()->create(
                         $email,
                         null,
@@ -33,185 +33,246 @@ class AccountModalImplementationListener
                     );
 
                     if ($accountRegistry->isPositiveOutcome()) {
-                        $interaction->sendFollowUpMessage(
-                            $plan->persistentMessages->get($interaction, "0-logged_in"),
-                            true
-                        );
+                        return $plan->persistentMessages->get($interaction, "0-logged_in");
                     } else {
-                        $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                        return MessageBuilder::new()->setContent(
                             $accountRegistry->getMessage()
-                        ), true);
+                        );
                     }
-                });
-        }
+                }
+            },
+            true
+        );
     }
 
     public static function log_in(DiscordPlan $plan,
                                   Interaction $interaction,
                                   mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-            $objects = $objects->toArray();
-            $email = array_shift($objects)["value"];
+                if ($account !== null) {
+                    return $plan->persistentMessages->get($interaction, "0-logged_in");
+                } else {
+                    $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+                    $objects = $objects->toArray();
+                    $email = array_shift($objects)["value"];
+                    $account = $account->getNew(null, $email);
 
-            $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $email, $account) {
-                $account = $account->getNew(null, $email);
+                    if ($account->exists()) {
+                        $result = $account->getActions()->logIn(null, "");
 
-                if ($account->exists()) {
-                    $result = $account->getActions()->logIn(null, "");
-
-                    if ($result->isPositiveOutcome()) {
-                        $response = null;
+                        if ($result->isPositiveOutcome()) {
+                            $response = null;
+                        } else {
+                            $response = $result->getMessage();
+                            AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
+                        }
                     } else {
-                        $response = $result->getMessage();
-                        AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
+                        $response = "Account with this email does not exist.";
                     }
-                } else {
-                    $response = "Account with this email does not exist.";
-                }
 
-                // Separator
+                    // Separator
 
-                if ($response === null) {
-                    $interaction->sendFollowUpMessage(
-                        $plan->persistentMessages->get($interaction, "0-logged_in"),
-                        true
-                    );
-                } else {
-                    $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                        $response
-                    ), true);
+                    if ($response === null) {
+                        return $plan->persistentMessages->get($interaction, "0-logged_in");
+                    } else {
+                        return MessageBuilder::new()->setContent(
+                            $response
+                        );
+                    }
                 }
-            });
-        }
+            },
+            true
+        );
     }
 
     public static function log_in_verification(DiscordPlan $plan,
                                                Interaction $interaction,
                                                mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-logged_in", true);
-        } else {
-            $objects = $objects->toArray();
-            $code = array_shift($objects)["value"];
+                if ($account !== null) {
+                    return $plan->persistentMessages->get($interaction, "0-logged_in");
+                } else {
+                    $objects = $objects->toArray();
+                    $code = array_shift($objects)["value"];
+                    $account = AccountMessageCreationListener::getAttemptedAccountSession($interaction, $plan);
 
-            $interaction->acknowledge()->done(function ()
-            use ($interaction, $plan, $code, $account) {
-                $account = AccountMessageCreationListener::getAttemptedAccountSession($interaction, $plan);
+                    if ($account->exists()) {
+                        $result = $account->getActions()->logIn(null, $code);
 
-                if ($account->exists()) {
-                    $result = $account->getActions()->logIn(null, $code);
-
-                    if ($result->isPositiveOutcome()) {
-                        $response = null;
+                        if ($result->isPositiveOutcome()) {
+                            $response = null;
+                        } else {
+                            $response = $result->getMessage();
+                            AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
+                        }
                     } else {
-                        $response = $result->getMessage();
-                        AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
+                        $response = "Account with this email does not exist.";
                     }
-                } else {
-                    $response = "Account with this email does not exist.";
-                }
 
-                // Separator
+                    // Separator
 
-                if ($response === null) {
-                    $interaction->sendFollowUpMessage(
-                        $plan->persistentMessages->get($interaction, "0-logged_in"),
-                        true
-                    );
-                } else {
-                    $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                        $response
-                    ), true);
+                    if ($response === null) {
+                        return $plan->persistentMessages->get($interaction, "0-logged_in");
+                    } else {
+                        return MessageBuilder::new()->setContent(
+                            $response
+                        );
+                    }
                 }
-            });
-        }
+            },
+            true
+        );
     }
 
     public static function change_username(DiscordPlan $plan,
                                            Interaction $interaction,
                                            mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $username = array_shift($objects->toArray())["value"];
-
-            // Separator
-
-            $interaction->acknowledge()->done(function () use ($interaction, $account, $username) {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getActions()->changeName($username, true)->getMessage()
-                ), true);
-            });
-        } else {
-            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-        }
+                if ($account !== null) {
+                    $username = array_shift($objects->toArray())["value"];
+                    return MessageBuilder::new()->setContent(
+                        $account->getActions()->changeName($username, true)->getMessage()
+                    );
+                } else {
+                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                }
+            },
+            true
+        );
     }
 
     public static function new_email(DiscordPlan $plan,
                                      Interaction $interaction,
                                      mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $email = array_shift($objects->toArray())["value"];
-
-            $interaction->acknowledge()->done(function () use ($interaction, $account, $email) {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getEmail()->requestVerification($email, true)->getMessage()
-                ), true);
-            });
-        } else {
-            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-        }
+                if ($account !== null) {
+                    $email = array_shift($objects->toArray())["value"];
+                    return MessageBuilder::new()->setContent(
+                        $account->getEmail()->requestVerification($email, true)->getMessage()
+                    );
+                } else {
+                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                }
+            },
+            true
+        );
     }
 
     public static function verify_email(DiscordPlan $plan,
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $code = array_shift($objects->toArray())["value"];
-
-            $interaction->acknowledge()->done(function () use ($interaction, $account, $code) {
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                    $account->getEmail()->completeVerification($code, true)->getMessage()
-                ), true);
-            });
-        } else {
-            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-        }
+                if ($account !== null) {
+                    $code = array_shift($objects->toArray())["value"];
+                    return MessageBuilder::new()->setContent(
+                        $account->getEmail()->completeVerification($code, true)->getMessage()
+                    );
+                } else {
+                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                }
+            },
+            true
+        );
     }
 
     public static function contact_form(DiscordPlan $plan,
                                         Interaction $interaction,
                                         mixed       $objects): void
     {
-        $interaction->acknowledge()->done(function () use ($interaction, $objects, $plan) {
-            $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-            if ($account !== null) {
+                if ($account !== null) {
+                    $cacheKey = array(
+                        $interaction->user->id,
+                        "contact-form"
+                    );
+                    if (has_memory_cooldown($cacheKey, null, false)) {
+                        $response = "Please wait a few minutes before contacting us again.";
+                    } else {
+                        $objects = $objects->toArray();
+                        $subject = strip_tags(array_shift($objects)["value"]);
+                        $roles = array();
+
+                        foreach ($interaction->member->roles as $role) {
+                            $roles[] = "'" . $role->name . "'";
+                        }
+                        $content = $account->getEmail()->createTicket(
+                            $subject, // Subject
+                            strip_tags(array_shift($objects)["value"]), // Info
+                            null,
+                            array(
+                                "Discord-ID" => $interaction->user->id,
+                                "Discord-Username" => $interaction->user->username,
+                                "Discord-Roles" => implode(", ", $roles)
+                            )
+                        );
+
+                        if (services_self_email($content[0], $content[1], $content[2]) === true) {
+                            has_memory_cooldown($cacheKey, "5 minutes");
+                            $response = "Thanks for taking the time to contact us.";
+                            //self::sendEmailTicketEmbed($plan, $account->getDetail("name"), null, $subject);
+                        } else {
+                            global $email_default_email_name;
+                            $response = "An error occurred, please contact us at: " . $email_default_email_name;
+                        }
+                    }
+                    return MessageBuilder::new()->setContent(
+                        $response
+                    );
+                } else {
+                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                }
+            },
+            true
+        );
+    }
+
+    public static function contact_form_offline(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                mixed       $objects): void
+    {
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($plan, $interaction, $objects) {
                 $cacheKey = array(
                     $interaction->user->id,
                     "contact-form"
                 );
+
                 if (has_memory_cooldown($cacheKey, null, false)) {
                     $response = "Please wait a few minutes before contacting us again.";
                 } else {
+                    $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                     $objects = $objects->toArray();
+                    $email = strip_tags(array_shift($objects)["value"]);
                     $subject = strip_tags(array_shift($objects)["value"]);
                     $roles = array();
 
@@ -221,7 +282,7 @@ class AccountModalImplementationListener
                     $content = $account->getEmail()->createTicket(
                         $subject, // Subject
                         strip_tags(array_shift($objects)["value"]), // Info
-                        null,
+                        $email,
                         array(
                             "Discord-ID" => $interaction->user->id,
                             "Discord-Username" => $interaction->user->username,
@@ -232,69 +293,18 @@ class AccountModalImplementationListener
                     if (services_self_email($content[0], $content[1], $content[2]) === true) {
                         has_memory_cooldown($cacheKey, "5 minutes");
                         $response = "Thanks for taking the time to contact us.";
-                        //self::sendEmailTicketEmbed($plan, $account->getDetail("name"), null, $subject);
+                        //self::sendEmailTicketEmbed($plan, null, $email, $subject);
                     } else {
                         global $email_default_email_name;
                         $response = "An error occurred, please contact us at: " . $email_default_email_name;
                     }
                 }
-                $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
+                return MessageBuilder::new()->setContent(
                     $response
-                ), true);
-            } else {
-                $interaction->sendFollowUpMessage(
-                    $plan->persistentMessages->get($interaction, "0-register_or_log_in")
                 );
-            }
-        });
-    }
-
-    public static function contact_form_offline(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                mixed       $objects): void
-    {
-        $interaction->acknowledge()->done(function () use ($interaction, $objects, $plan) {
-            $cacheKey = array(
-                $interaction->user->id,
-                "contact-form"
-            );
-
-            if (has_memory_cooldown($cacheKey, null, false)) {
-                $response = "Please wait a few minutes before contacting us again.";
-            } else {
-                $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-                $objects = $objects->toArray();
-                $email = strip_tags(array_shift($objects)["value"]);
-                $subject = strip_tags(array_shift($objects)["value"]);
-                $roles = array();
-
-                foreach ($interaction->member->roles as $role) {
-                    $roles[] = "'" . $role->name . "'";
-                }
-                $content = $account->getEmail()->createTicket(
-                    $subject, // Subject
-                    strip_tags(array_shift($objects)["value"]), // Info
-                    $email,
-                    array(
-                        "Discord-ID" => $interaction->user->id,
-                        "Discord-Username" => $interaction->user->username,
-                        "Discord-Roles" => implode(", ", $roles)
-                    )
-                );
-
-                if (services_self_email($content[0], $content[1], $content[2]) === true) {
-                    has_memory_cooldown($cacheKey, "5 minutes");
-                    $response = "Thanks for taking the time to contact us.";
-                    //self::sendEmailTicketEmbed($plan, null, $email, $subject);
-                } else {
-                    global $email_default_email_name;
-                    $response = "An error occurred, please contact us at: " . $email_default_email_name;
-                }
-            }
-            $interaction->sendFollowUpMessage(MessageBuilder::new()->setContent(
-                $response
-            ), true);
-        });
+            },
+            true
+        );
     }
 
     private static function sendEmailTicketEmbed(DiscordPlan $plan,
@@ -337,4 +347,5 @@ class AccountModalImplementationListener
             }
         }
     }
+
 }
