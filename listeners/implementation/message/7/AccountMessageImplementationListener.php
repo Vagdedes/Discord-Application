@@ -64,33 +64,41 @@ class AccountMessageImplementationListener
                                    MessageBuilder $messageBuilder,
                                    mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
-
-        if ($account === null) {
-            $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
-        }
         $plan->utilities->acknowledgeMessage(
             $interaction,
-            MessageBuilder::new()->setContent(
-                $account->getActions()->logOut()->getMessage()
-            ),
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+
+                if ($account === null) {
+                    $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
+                }
+                return MessageBuilder::new()->setContent(
+                    $account->getActions()->logOut()->getMessage()
+                );
+            },
             true
         );
         AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
     }
 
-    public static function change_email(DiscordPlan    $plan,
+    public static function manage_email(DiscordPlan    $plan,
                                         Interaction    $interaction,
                                         MessageBuilder $messageBuilder,
                                         mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->persistentMessages->send($interaction, "0-change_email", true);
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+                if ($account !== null) {
+                    return $plan->persistentMessages->get($interaction, "0-change_email", true);
+                } else {
+                    return MessageBuilder::new()->setContent("You are not logged in.");
+                }
+            },
+            true
+        );
     }
 
     public static function new_email(DiscordPlan    $plan,
@@ -140,18 +148,21 @@ class AccountMessageImplementationListener
                                            MessageBuilder $messageBuilder,
                                            mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->utilities->acknowledgeMessage(
-                $interaction,
-                MessageBuilder::new()->setContent(
-                    $account->getSettings()->toggle($objects[0]->getValue())->getMessage()
-                ), true
-            );
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+                if ($account !== null) {
+                    return MessageBuilder::new()->setContent(
+                        $account->getSettings()->toggle($objects[0]->getValue())->getMessage()
+                    );
+                } else {
+                    return MessageBuilder::new()->setContent("You are not logged in.");
+                }
+            }, true
+
+        );
     }
 
     public static function connect_account(DiscordPlan    $plan,
@@ -205,75 +216,67 @@ class AccountMessageImplementationListener
                                               MessageBuilder $messageBuilder,
                                               mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan, $objects) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $selectedAccountID = $objects[0]->getValue();
+                if ($account !== null) {
+                    $selectedAccountID = $objects[0]->getValue();
 
-            if (!is_numeric($selectedAccountID)) {
-                $plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    MessageBuilder::new()->setContent($objects[0]->getLabel()),
-                    true
-                );
-            } else {
-                $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
-
-                if (!empty($selectedAccountName)) {
-                    $accounts = $account->getAccounts()->getAdded(
-                        $selectedAccountID,
-                        DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
-                        true
-                    );
-
-                    if (!empty($accounts)) {
-                        if (sizeof($accounts) === 1) {
-                            $plan->utilities->acknowledgeMessage(
-                                $interaction,
-                                MessageBuilder::new()->setContent(
-                                    $account->getAccounts()->remove($selectedAccountID, $accounts[0]->id, 1)->getMessage()
-                                ), true
-                            );
-                        } else {
-                            $selectedAccountName = $selectedAccountName[0]->name;
-                            $messageBuilder = MessageBuilder::new();
-                            $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
-                            $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
-
-                            foreach ($accounts as $row) {
-                                $option = Option::new(substr($row->credential, 0, 100), $row->id);
-                                $select->addOption($option);
-                            }
-                            $select->setListener(function (Interaction $interaction, Collection $options)
-                            use ($plan, $account, $selectedAccountID) {
-                                $plan->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent(
-                                        $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
-                                    ), true
-                                );
-                            }, $plan->bot->discord);
-                            $messageBuilder->addComponent($select);
-                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                        }
+                    if (!is_numeric($selectedAccountID)) {
+                        return MessageBuilder::new()->setContent($objects[0]->getLabel());
                     } else {
-                        $plan->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent("No accounts found."),
-                            true
-                        );
+                        $selectedAccountName = $account->getAccounts()->getAvailable(array("name"), $selectedAccountID);
+
+                        if (!empty($selectedAccountName)) {
+                            $accounts = $account->getAccounts()->getAdded(
+                                $selectedAccountID,
+                                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION,
+                                true
+                            );
+
+                            if (!empty($accounts)) {
+                                if (sizeof($accounts) === 1) {
+                                    return $account->getAccounts()->remove($selectedAccountID, $accounts[0]->id, 1)->getMessage();
+                                } else {
+                                    $selectedAccountName = $selectedAccountName[0]->name;
+                                    $messageBuilder = MessageBuilder::new();
+                                    $messageBuilder->setContent("Available **" . $selectedAccountName . "** Accounts");
+                                    $select = SelectMenu::new()->setMinValues(1)->setMinValues(1);
+
+                                    foreach ($accounts as $row) {
+                                        $option = Option::new(substr($row->credential, 0, 100), $row->id);
+                                        $select->addOption($option);
+                                    }
+                                    $select->setListener(function (Interaction $interaction, Collection $options)
+                                    use ($plan, $account, $selectedAccountID) {
+                                        $plan->utilities->acknowledgeMessage(
+                                            $interaction,
+                                            function () use ($account, $selectedAccountID, $options) {
+                                                return MessageBuilder::new()->setContent(
+                                                    $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                                                );
+                                            },
+                                            true
+                                        );
+                                    }, $plan->bot->discord);
+                                    $messageBuilder->addComponent($select);
+                                    return $messageBuilder;
+                                }
+                            } else {
+                                return MessageBuilder::new()->setContent("No accounts found.");
+                            }
+                        } else {
+                            return MessageBuilder::new()->setContent("Account not found.");
+                        }
                     }
                 } else {
-                    $plan->utilities->acknowledgeMessage(
-                        $interaction,
-                        MessageBuilder::new()->setContent("Account not found."),
-                        true
-                    );
+                    return MessageBuilder::new()->setContent("You are not logged in.");
                 }
-            }
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+            },
+            true
+        );
     }
 
     public static function toggle_settings_click(DiscordPlan    $plan,
@@ -281,19 +284,24 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $messageBuilder = $plan->component->addSelection($interaction, MessageBuilder::new(), "0-toggle_settings");
-            $messageBuilder = $plan->component->addButtons($interaction, $messageBuilder, "0-change_username");
-            $plan->utilities->acknowledgeMessage(
-                $interaction,
-                $messageBuilder,
-                true
-            );
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+                if ($account !== null) {
+                    $messageBuilder = $plan->component->addSelection(
+                        $interaction,
+                        MessageBuilder::new(),
+                        "0-toggle_settings"
+                    );
+                    return $plan->component->addButtons($interaction, $messageBuilder, "0-change_username");
+                } else {
+                    return MessageBuilder::new()->setContent("You are not logged in.");
+                }
+            },
+            true
+        );
     }
 
     public static function connect_account_click(DiscordPlan    $plan,
@@ -301,17 +309,19 @@ class AccountMessageImplementationListener
                                                  MessageBuilder $messageBuilder,
                                                  mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->utilities->acknowledgeMessage(
-                $interaction,
-                $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts"),
-                true
-            );
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+                if ($account !== null) {
+                    return $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts");
+                } else {
+                    return MessageBuilder::new()->setContent("You are not logged in.");
+                }
+            },
+            true
+        );
     }
 
     public static function disconnect_account_click(DiscordPlan    $plan,
@@ -319,23 +329,25 @@ class AccountMessageImplementationListener
                                                     MessageBuilder $messageBuilder,
                                                     mixed          $objects): void
     {
-        $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $plan->utilities->acknowledgeMessage(
+            $interaction,
+            function () use ($interaction, $plan) {
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
-        if ($account !== null) {
-            $plan->utilities->acknowledgeMessage(
-                $interaction,
-                $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts"),
-                true
-            );
-        } else {
-            $plan->component->showModal($interaction, "0-log_in");
-        }
+                if ($account !== null) {
+                    return $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts");
+                } else {
+                    return MessageBuilder::new()->setContent("You are not logged in.");
+                }
+            },
+            true
+        );
     }
 
     public static function contact_form(DiscordPlan    $plan,
-                                                Interaction    $interaction,
-                                                MessageBuilder $messageBuilder,
-                                                mixed          $objects): void
+                                        Interaction    $interaction,
+                                        MessageBuilder $messageBuilder,
+                                        mixed          $objects): void
     {
         $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 

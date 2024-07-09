@@ -16,8 +16,7 @@ require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/sql_connection.php';
 require '/root/discord_bot/utilities/communication.php';
-
-require '/root/discord_bot/web/LoadBalancer.php';
+require '/root/discord_bot/utilities/LoadBalancer.php';
 
 require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
 require '/root/discord_bot/discord/custom/standalone/DiscordMute.php';
@@ -110,10 +109,8 @@ $files = LoadBalancer::getFiles(
         "/var/www/.structure/library/base/objects"
     )
 );
-if (!empty($files)) {
-    $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
-    $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
 
+if (!empty($files)) {
     foreach ($files as $file) {
         try {
             eval($file);
@@ -121,11 +118,13 @@ if (!empty($files)) {
             $logger->logError(null, $file . ": " . $error->getMessage());
         }
     }
+    $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
+    $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
 }
 
 function initiate_discord_bot(): void
 {
-    global $token, $logger;
+    global $token;
     $discord = new Discord([
         'token' => $token[0],
         'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::GUILD_PRESENCES | Intents::MESSAGE_CONTENT,
@@ -136,8 +135,8 @@ function initiate_discord_bot(): void
         'dnsConfig' => '1.1.1.1',
     ]);
 
-    $discord->on('ready', function (Discord $discord) use ($logger) {
-        global $createdDiscordBot;
+    $discord->on('ready', function (Discord $discord) {
+        global $createdDiscordBot, $logger;
         load_sql_database();
         $botID = $discord->id;
 

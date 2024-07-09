@@ -79,24 +79,28 @@ class AccountMessageCreationListener
     }
 
     public static function findAccountFromSession(Interaction|Message|null $interaction,
-                                                  DiscordPlan              $plan): ?object
+                                                  DiscordPlan              $plan,
+                                                  bool                     $refresh = false): ?object
     {
         $account = self::getAccountObject($interaction, $plan);
         $method = $account->getSession()->find();
 
         if ($method->isPositiveOutcome()) {
             $account = $method->getObject();
-            $accountID = $account->getDetail("id");
 
-            if (!array_key_exists($accountID, self::$roleLastCheck)
-                || self::$roleLastCheck[$accountID] < time()) {
-                self::$roleLastCheck[$accountID] = time() + 60;
+            if ($refresh) {
+                $accountID = $account->getDetail("id");
 
-                if ($account->getPermissions()->hasPermission(AccountPatreon::PERMISSIONS)
-                    || $account->getPurchases()->owns(AccountPatreon::PRODUCTS)) {
-                    $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
-                } else {
-                    $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
+                if (!array_key_exists($accountID, self::$roleLastCheck)
+                    || self::$roleLastCheck[$accountID] < time()) {
+                    self::$roleLastCheck[$accountID] = time() + 60;
+
+                    if ($account->getPermissions()->hasPermission(AccountPatreon::PERMISSIONS)
+                        || $account->getPurchases()->owns(AccountPatreon::PRODUCTS)) {
+                        $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
+                    } else {
+                        $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
+                    }
                 }
             }
             return $account;
@@ -388,22 +392,28 @@ class AccountMessageCreationListener
                 $messageBuilder->addComponent($select);
                 $select->setListener(function (Interaction $interaction, Collection $options)
                 use ($plan, $productDivisions) {
-                    $reply = MessageBuilder::new();
-                    $embed = new Embed($plan->bot->discord);
-                    $division = $productDivisions[$options[0]->getValue()];
+                    $plan->utilities->acknowledgeMessage(
+                        $interaction,
+                        function () use ($plan, $productDivisions, $options) {
+                            $reply = MessageBuilder::new();
+                            $embed = new Embed($plan->bot->discord);
+                            $division = $productDivisions[$options[0]->getValue()];
 
-                    if ($division->has_title) {
-                        $embed->setTitle($division->title);
-                    }
+                            if ($division->has_title) {
+                                $embed->setTitle($division->title);
+                            }
 
-                    foreach ($division->contents as $division) {
-                        $embed->addFieldValues(
-                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
-                            DiscordSyntax::htmlToDiscord($division->description),
-                        );
-                    }
-                    $reply->addEmbed($embed);
-                    $plan->utilities->acknowledgeMessage($interaction, $reply, true);
+                            foreach ($division->contents as $division) {
+                                $embed->addFieldValues(
+                                    "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                                    DiscordSyntax::htmlToDiscord($division->description),
+                                );
+                            }
+                            $reply->addEmbed($embed);
+                            return $reply;
+                        },
+                        true
+                    );
                 }, $plan->bot->discord);
             }
         }
@@ -452,7 +462,9 @@ class AccountMessageCreationListener
                         use ($plan, $actionRow, $buttonObj) {
                             $plan->utilities->acknowledgeMessage(
                                 $interaction,
-                                MessageBuilder::new()->setContent($buttonObj->url),
+                                function () use ($buttonObj) {
+                                    return MessageBuilder::new()->setContent($buttonObj->url);
+                                },
                                 true
                             );
                         }, $plan->bot->discord);
@@ -636,38 +648,43 @@ class AccountMessageCreationListener
                     }
                     $select->setListener(function (Interaction $interaction, Collection $options)
                     use ($size, $plan, $select, $history, $limit) {
-                        $account = self::findAccountFromSession($interaction, $plan);
+                        $plan->utilities->acknowledgeMessage(
+                            $interaction,
+                            function () use ($size, $plan, $interaction, $options, $history, $limit) {
+                                $account = self::findAccountFromSession($interaction, $plan, true);
 
-                        if ($account !== null) {
-                            $count = $options[0]->getValue();
-                            $messageBuilder = MessageBuilder::new();
+                                if ($account !== null) {
+                                    $count = $options[0]->getValue();
+                                    $messageBuilder = MessageBuilder::new();
 
-                            $counter = $count * $limit;
-                            $max = min($counter + $limit, $size);
-                            $divisor = 0;
-                            $embed = new Embed($plan->bot->discord);
-                            $embed->setTitle("Account History");
-                            $embed->setDescription(
-                                get_full_date($history[$counter]->creation_date)
-                                . " - "
-                                . get_full_date($history[$max - 1]->creation_date)
-                            );
+                                    $counter = $count * $limit;
+                                    $max = min($counter + $limit, $size);
+                                    $divisor = 0;
+                                    $embed = new Embed($plan->bot->discord);
+                                    $embed->setTitle("Account History");
+                                    $embed->setDescription(
+                                        get_full_date($history[$counter]->creation_date)
+                                        . " - "
+                                        . get_full_date($history[$max - 1]->creation_date)
+                                    );
 
-                            for ($x = $counter; $x < $max; $x++) {
-                                $row = $history[$x];
-                                $embed->addFieldValues(
-                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                    "```" . get_full_date($row->creation_date) . "```",
-                                    $divisor % 3 !== 0
-                                );
-                                $divisor++;
-                            }
-                            $messageBuilder->addEmbed($embed);
-                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                        } else {
-                            $messageBuilder = $plan->persistentMessages->get($interaction, "0-register_or_log_in");
-                            $plan->utilities->acknowledgeMessage($interaction, $messageBuilder, true);
-                        }
+                                    for ($x = $counter; $x < $max; $x++) {
+                                        $row = $history[$x];
+                                        $embed->addFieldValues(
+                                            "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                            "```" . get_full_date($row->creation_date) . "```",
+                                            $divisor % 3 !== 0
+                                        );
+                                        $divisor++;
+                                    }
+                                    $messageBuilder->addEmbed($embed);
+                                    return $messageBuilder;
+                                } else {
+                                    return $plan->persistentMessages->get($interaction, "0-register_or_log_in");
+                                }
+                            },
+                            true
+                        );
                     }, $plan->bot->discord);
                     $messageBuilder->addComponent($select);
                 }

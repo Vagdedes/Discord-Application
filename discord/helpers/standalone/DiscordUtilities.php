@@ -145,11 +145,15 @@ class DiscordUtilities
     // Separator
 
     public function acknowledgeMessage(Interaction    $interaction,
-                                       MessageBuilder $messageBuilder,
+                                       MessageBuilder|callable $messageBuilder,
                                        bool           $ephemeral): void
     {
         $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
-            $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
+            if ($messageBuilder instanceof MessageBuilder) {
+                $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
+            } else {
+                $interaction->sendFollowUpMessage($messageBuilder(), $ephemeral);
+            }
         });
     }
 
