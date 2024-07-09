@@ -61,8 +61,6 @@ class DiscordBot
     public DiscordChannels $channels;
     private int $counter;
 
-    private const PERMISSION = "patreon.subscriber.discord.bot";
-
     public function __construct(Discord $discord, int|string $botID)
     {
         $this->counter = 0;
@@ -109,17 +107,7 @@ class DiscordBot
             $logger->logError(null, "(1) Found no plans for bot with ID: " . $this->botID);
             // In case connection or database fails, log but do not exit
         } else {
-            $account = new Account();
-
-            foreach ($query as $arrayKey => $plan) {
-                if ($plan->account_id !== null) {
-                    $account = $account->getNew($plan->account_id);
-
-                    if (!$account->exists() || !$account->getPermissions()->hasPermission(self::PERMISSION)) {
-                        unset($query[$arrayKey]);
-                        continue;
-                    }
-                }
+            foreach ($query as $plan) {
                 $this->plans[] = new DiscordPlan(
                     $this,
                     $plan->id

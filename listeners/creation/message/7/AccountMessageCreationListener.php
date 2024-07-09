@@ -273,6 +273,9 @@ class AccountMessageCreationListener
         $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
             ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
             : null;
+        $hasTiers = sizeof($product->tiers->paid) > 1;
+        $tier = array_shift($product->tiers->paid);
+        $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
 
         // Separator
 
@@ -283,13 +286,24 @@ class AccountMessageCreationListener
         }
 
         if ($downloadURL !== null) {
-            $embed->setURL($downloadURL);
-            $embed->setTitle("Download"
-                . ($product->download_note !== null
-                    ? ":\n" . DiscordSyntax::htmlToDiscord($product->download_note)
-                    : ""));
+            $actionRow = ActionRow::new();
+            $button = Button::new(Button::STYLE_LINK)
+                ->setLabel(
+                    "Download"
+                )->setUrl(
+                    $downloadURL
+                );
+            $actionRow->addComponent($button);
+            $messageBuilder->addComponent($actionRow);
+
+            if ($product->download_note !== null) {
+                $embed->setFooter($price . " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")");
+            } else {
+                $embed->setFooter($price);
+            }
             $canDownload = true;
         } else {
+            $embed->setFooter($price);
             $canDownload = !empty($product->downloads);
         }
 
@@ -300,16 +314,12 @@ class AccountMessageCreationListener
         );
         $embed->setImage($product->image);
         //$release = $product->latest_version !== null ? $product->latest_version : null;
-        $hasTiers = sizeof($product->tiers->paid) > 1;
-        $tier = array_shift($product->tiers->paid);
-        $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
         //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
             ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
             : null;
 
         $embed->addFieldValues(DiscordSyntax::htmlToDiscord($product->description), $legalInformation);
-        $embed->setFooter($price);
         $messageBuilder->addEmbed($embed);
 
         // Separator
