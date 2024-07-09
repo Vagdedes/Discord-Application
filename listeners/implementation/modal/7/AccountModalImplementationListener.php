@@ -99,7 +99,9 @@ class AccountModalImplementationListener
             function () use ($plan, $interaction, $objects) {
                 $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
 
+
                 if ($account !== null) {
+                    AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
                     return $plan->persistentMessages->get($interaction, "0-logged_in");
                 } else {
                     $objects = $objects->toArray();
@@ -111,12 +113,14 @@ class AccountModalImplementationListener
 
                         if ($result->isPositiveOutcome()) {
                             $response = null;
+                            AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
                         } else {
                             $response = $result->getMessage();
                             AccountMessageCreationListener::setAttemptedAccountSession($interaction, $plan, $account);
                         }
                     } else {
                         $response = "Account with this email does not exist.";
+                        AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
                     }
 
                     // Separator
