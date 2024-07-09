@@ -78,13 +78,13 @@ class AccountMessageImplementationListener
                 if ($account === null) {
                     $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                 }
+                AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
                 return MessageBuilder::new()->setContent(
                     $account->getActions()->logOut()->getMessage()
                 );
             },
             true
         );
-        AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
     }
 
     public static function manage_email(DiscordPlan    $plan,
