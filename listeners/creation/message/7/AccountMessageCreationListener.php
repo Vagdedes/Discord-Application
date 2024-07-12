@@ -14,12 +14,9 @@ class AccountMessageCreationListener
 {
 
     public const
-        PATREON_URL = "https://www.vagdedes.com/patreon",
         ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
-        NEWS_CHANNEL = 289385175983325184,
-        PATREON_ROLE_ID = 1195532382363725945;
+        NEWS_CHANNEL = 289385175983325184;
     private static bool $dealtGiveaway = false;
-    private static array $roleLastCheck = array();
 
     public static function getAttemptedAccountSession(Interaction $interaction,
                                                       DiscordPlan $plan): mixed
@@ -79,31 +76,13 @@ class AccountMessageCreationListener
     }
 
     public static function findAccountFromSession(Interaction|Message|null $interaction,
-                                                  DiscordPlan              $plan,
-                                                  bool                     $refresh = false): ?object
+                                                  DiscordPlan              $plan): ?object
     {
         $account = self::getAccountObject($interaction, $plan);
         $method = $account->getSession()->find();
 
         if ($method->isPositiveOutcome()) {
-            $account = $method->getObject();
-
-            if ($refresh) {
-                $accountID = $account->getDetail("id");
-
-                if (!array_key_exists($accountID, self::$roleLastCheck)
-                    || self::$roleLastCheck[$accountID] < time()) {
-                    self::$roleLastCheck[$accountID] = time() + 60;
-
-                    if ($account->getPermissions()->hasPermission(AccountPatreon::PERMISSIONS)
-                        || $account->getPurchases()->owns(AccountPatreon::PRODUCTS)) {
-                        $plan->bot->permissions->addDiscordRole($interaction->member, self::PATREON_ROLE_ID);
-                    } else {
-                        $plan->bot->permissions->removeDiscordRole($interaction->member, self::PATREON_ROLE_ID);
-                    }
-                }
-            }
-            return $account;
+            return $method->getObject();
         } else {
             return null;
         }
@@ -663,7 +642,7 @@ class AccountMessageCreationListener
                         $plan->utilities->acknowledgeMessage(
                             $interaction,
                             function () use ($size, $plan, $interaction, $options, $history, $limit) {
-                                $account = self::findAccountFromSession($interaction, $plan, true);
+                                $account = self::findAccountFromSession($interaction, $plan);
 
                                 if ($account !== null) {
                                     $count = $options[0]->getValue();
@@ -722,13 +701,14 @@ class AccountMessageCreationListener
         return $messageBuilder;
     }
 
-    public static function patreon_advertisement(DiscordPlan    $plan,
+    public static function product_advertisement(DiscordPlan    $plan,
                                                  ?Interaction   $interaction,
                                                  MessageBuilder $messageBuilder): MessageBuilder
     {
+        $url = "https://discord.com/channels/289384242075533313/728076672217120808";
         $embed = new Embed($plan->bot->discord);
         $embed->setTitle("Spartan AntiCheat: Get Detection Slots!");
-        $embed->setURL(self::PATREON_URL);
+        $embed->setURL($url);
         $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
         $embed->setDescription("When your server/network has more Online Players than your Detection Slots,"
             . " your players will be checked in groups over time instead of all together every time the server refreshes.");
@@ -737,7 +717,7 @@ class AccountMessageCreationListener
         $row = ActionRow::new();
         $button = Button::new(Button::STYLE_LINK)
             ->setLabel("Start your FREE Trial today!")
-            ->setURL(self::PATREON_URL);
+            ->setURL($url);
         $row->addComponent($button);
         $messageBuilder->addComponent($row);
         return $messageBuilder;

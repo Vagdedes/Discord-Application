@@ -18,7 +18,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->persistentMessages->get($interaction, "0-logged_in");
@@ -73,7 +73,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account === null) {
                     $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
@@ -95,7 +95,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->persistentMessages->get($interaction, "0-change_email", true);
@@ -157,7 +157,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return MessageBuilder::new()->setContent(
@@ -225,7 +225,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $selectedAccountID = $objects[0]->getValue();
@@ -293,7 +293,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $messageBuilder = $plan->component->addSelection(
@@ -318,7 +318,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->component->addSelection($interaction, MessageBuilder::new(), "0-connect_accounts");
@@ -338,7 +338,7 @@ class AccountMessageImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($interaction, $plan) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->component->addSelection($interaction, MessageBuilder::new(), "0-disconnect_accounts");

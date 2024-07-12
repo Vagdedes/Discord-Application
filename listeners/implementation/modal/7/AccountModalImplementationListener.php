@@ -14,7 +14,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->persistentMessages->get($interaction, "0-logged_in");
@@ -52,7 +52,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     return $plan->persistentMessages->get($interaction, "0-logged_in");
@@ -97,7 +97,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
 
                 if ($account !== null) {
@@ -145,7 +145,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $username = array_shift($objects->toArray())["value"];
@@ -167,7 +167,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $email = array_shift($objects->toArray())["value"];
@@ -189,7 +189,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $code = array_shift($objects->toArray())["value"];
@@ -211,7 +211,7 @@ class AccountModalImplementationListener
         $plan->utilities->acknowledgeMessage(
             $interaction,
             function () use ($plan, $interaction, $objects) {
-                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan, true);
+                $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
                     $cacheKey = array(
