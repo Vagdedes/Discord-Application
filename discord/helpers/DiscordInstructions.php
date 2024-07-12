@@ -19,6 +19,14 @@ class DiscordInstructions
         $this->plan = $plan;
         $this->manager = $account->getInstructions();
         $this->manager->setAI($plan->aiMessages->getManagerAI());
+        $validProducts = $account->getProduct()->find(null, true, false);
+
+        if ($validProducts->isPositiveOutcome()) {
+            $this->manager->addExtra(
+                "available-products",
+                $validProducts->getObject()
+            );
+        }
     }
 
     public function replace(array   $messages, ?object $object,
