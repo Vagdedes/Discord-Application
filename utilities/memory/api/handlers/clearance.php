@@ -19,7 +19,6 @@ function check_clear_memory(): void
 
     if (!empty($memory_trackers_query)) {
         global $memory_clearance_tracking_table;
-        $segments = null;
         $memory_client_identifier = get_server_identifier(true);
 
         foreach ($memory_trackers_query as $row) {
