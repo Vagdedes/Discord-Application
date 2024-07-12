@@ -6,6 +6,13 @@ use Discord\Parts\Interactions\Interaction;
 class CommandImplementationListener
 {
 
+    private static function printResult(mixed $reply): string
+    {
+        return ($reply->isPositiveOutcome() ? "true" : "false")
+            . " | " . $reply->getMessage()
+            . " | " . json_encode($reply->getObject());
+    }
+
     public static function user_info(DiscordPlan $plan,
                                      Interaction $interaction,
                                      object      $command): void
@@ -53,9 +60,38 @@ class CommandImplementationListener
                 $reply = $account->getPurchases()->add(
                     $arguments["product-id"]["value"]
                 );
-                $message->setContent(
-                    ($reply->isPositiveOutcome() ? "true" : "false") . " | " . $reply->getMessage()
+                $message->setContent(self::printResult($reply));
+            } else {
+                $message->setContent("Account not found.");
+            }
+        } else {
+            $message->setContent("Object not found.");
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message,
+            true
+        );
+    }
+
+    public static function delete_account(DiscordPlan $plan,
+                                          Interaction $interaction,
+                                          object      $command): void
+    {
+        $message = new MessageBuilder();
+        $account = new Account($plan->applicationID);
+        $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
+        $object = $account->getSession()->getLastKnown();
+
+        if ($object !== null) {
+            $account = $account->getNew($object->account_id);
+
+            if ($account->exists()) {
+                $arguments = $interaction->data->options->toArray();
+                $reply = $account->getActions()->deleteAccount(
+                    $arguments["permanent"]["value"]
                 );
+                $message->setContent(self::printResult($reply));
             } else {
                 $message->setContent("Account not found.");
             }

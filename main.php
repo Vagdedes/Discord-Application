@@ -93,6 +93,7 @@ $logger = new DiscordLogs(null);
 $files = LoadBalancer::getFiles(
     array(
         "/var/www/.structure/library/account",
+        "/var/www/.structure/library/account/api/tasks/panel.php",
         "/var/www/.structure/library/polymart",
         "/var/www/.structure/library/patreon",
         "/var/www/.structure/library/paypal",
