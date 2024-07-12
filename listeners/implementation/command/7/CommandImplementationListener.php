@@ -74,6 +74,37 @@ class CommandImplementationListener
         );
     }
 
+    public static function remove_product(DiscordPlan $plan,
+                                        Interaction $interaction,
+                                        object      $command): void
+    {
+        $message = new MessageBuilder();
+        $account = new Account($plan->applicationID);
+        $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
+        $object = $account->getSession()->getLastKnown();
+
+        if ($object !== null) {
+            $account = $account->getNew($object->account_id);
+
+            if ($account->exists()) {
+                $arguments = $interaction->data->options->toArray();
+                $reply = $account->getPurchases()->remove(
+                    $arguments["product-id"]["value"]
+                );
+                $message->setContent(self::printResult($reply));
+            } else {
+                $message->setContent("Account not found.");
+            }
+        } else {
+            $message->setContent("Object not found.");
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message,
+            true
+        );
+    }
+
     public static function exchange_product(DiscordPlan $plan,
                                             Interaction $interaction,
                                             object      $command): void
