@@ -275,7 +275,9 @@ class AccountMessageCreationListener
             : null;
         $hasTiers = sizeof($product->tiers->paid) > 1;
         $tier = array_shift($product->tiers->paid);
-        $price = $isFree ? null : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
+        $price = $isFree
+            ? null
+            : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
 
         // Separator
 
@@ -297,7 +299,11 @@ class AccountMessageCreationListener
             $messageBuilder->addComponent($actionRow);
 
             if ($product->download_note !== null) {
-                $embed->setFooter($price . " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")");
+                if ($price !== null) {
+                    $embed->setFooter($price . " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")");
+                } else {
+                    $embed->setFooter(DiscordSyntax::htmlToDiscord($product->download_note));
+                }
             } else {
                 $embed->setFooter($price);
             }
