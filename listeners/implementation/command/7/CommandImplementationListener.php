@@ -325,4 +325,85 @@ class CommandImplementationListener
         }
     }
 
+    public static function account_moderation(DiscordPlan $plan,
+                                                 Interaction $interaction,
+                                                 object      $command): void
+    {
+        $staffAccount = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
+        $message = new MessageBuilder();
+
+        if ($staffAccount === null) {
+            $message->setContent(self::LOGGED_IN);
+        } else {
+            $account = new Account($plan->applicationID);
+            $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
+            $object = $account->getSession()->getLastKnown();
+
+            if ($object !== null) {
+                $account = $account->transform($object->account_id);
+
+                if ($account->exists()) {
+                    $moderations = $account->getModerations()->getAvailable(
+                        DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION
+                    );
+
+                    if (empty($moderations)) {
+                        $message->setContent("No moderations available.");
+                    } else {
+                        $arguments = $interaction->data->options->toArray();
+                        $punish = $arguments["punish"]["value"];
+                        $reason = $arguments["reason"]["value"];
+                        $duration = $arguments["duration"]["value"];
+                        $select = SelectMenu::new();
+                        $select->setMinValues(1);
+                        $select->setMaxValues(1);
+                        $select->setPlaceholder("Select a functionality.");
+
+                        foreach ($moderations as $id => $moderation) {
+                            $option = Option::new(substr($moderation, 0, 100), $id);
+                            $select->addOption($option);
+                        }
+
+                        $select->setListener(function (Interaction $interaction, Collection $options)
+                        use ($punish, $reason, $duration, $plan, $account, $staffAccount) {
+                            $plan->utilities->acknowledgeMessage(
+                                $interaction,
+                                function () use ($punish, $reason, $duration, $account, $staffAccount, $options) {
+                                    $functionality = $options[0]->getValue();
+
+                                    if ($punish) {
+                                        $reply = $staffAccount->getModerations()->executeAction(
+                                            $account->getDetail("id"),
+                                            $functionality,
+                                            $reason,
+                                            !empty($duration) ? $duration : null,
+                                        );
+                                    } else {
+                                        $reply = $staffAccount->getModerations()->cancelAction(
+                                            $account->getDetail("id"),
+                                            $functionality,
+                                            $reason
+                                        );
+                                    }
+                                    return MessageBuilder::new()->setContent(self::printResult($reply));
+                                },
+                                true
+                            );
+                        }, $plan->bot->discord, true);
+                        $message->addComponent($select);
+                    }
+                } else {
+                    $message->setContent(self::ACCOUNT_NOT_FOUND);
+                }
+            } else {
+                $message->setContent(self::OBJECT_NOT_FOUND);
+            }
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $message,
+                true
+            );
+        }
+    }
+
 }
