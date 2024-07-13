@@ -406,4 +406,18 @@ class CommandImplementationListener
         }
     }
 
+    public static function configuration_changes(DiscordPlan $plan,
+                                              Interaction $interaction,
+                                              object      $command): void
+    {
+
+    }
+
+    public static function disabled_detections(DiscordPlan $plan,
+                                              Interaction $interaction,
+                                              object      $command): void
+    {
+
+    }
+
 }
