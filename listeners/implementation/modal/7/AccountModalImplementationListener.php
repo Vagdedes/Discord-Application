@@ -60,7 +60,7 @@ class AccountModalImplementationListener
                     $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                     $objects = $objects->toArray();
                     $email = array_shift($objects)["value"];
-                    $account = $account->getNew(null, $email);
+                    $account = $account->transform(null, $email);
 
                     if ($account->exists()) {
                         $result = $account->getActions()->logIn(null, "");

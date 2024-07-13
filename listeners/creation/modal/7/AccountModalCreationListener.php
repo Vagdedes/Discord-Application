@@ -26,7 +26,7 @@ class AccountModalCreationListener
         $object = $account->getSession()->getLastKnown();
 
         if ($object !== null) {
-            $account = $account->getNew($object->account_id);
+            $account = $account->transform($object->account_id);
 
             if ($account->exists()) {
                 $input->setValue($account->getDetail("email_address"));
