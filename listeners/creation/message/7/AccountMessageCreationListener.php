@@ -584,8 +584,7 @@ class AccountMessageCreationListener
 
         if ($account !== null) {
             $embed = new Embed($plan->bot->discord);
-            $embed->setFooter("Support Code: " . $account->getIdentification()->get());
-            $embed->setDescription("Welcome back, **" . $account->getDetail("name") . "**");
+            $embed->setDescription("Welcome back **" . $account->getDetail("name") . "**");
 
             // Separator
 
@@ -613,7 +612,7 @@ class AccountMessageCreationListener
 
             $history = $account->getHistory()->get(
                 array("action_id", "creation_date"),
-                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
+                DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION * min(10, DiscordInheritedLimits::MAX_FIELDS_PER_EMBED)
             );
 
             if ($history->isPositiveOutcome()) {
