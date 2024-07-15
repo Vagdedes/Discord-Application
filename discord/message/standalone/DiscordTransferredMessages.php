@@ -290,9 +290,11 @@ class DiscordTransferredMessages
 
             if ($this->bot->discord->getChannel($channel) !== null) {
                 $thread = null;
-            } else {
+            } else if (isset($message->thread_id)) {
                 $channel = false;
                 $thread = $message->thread_id;
+            } else {
+                return array();
             }
         }
         return get_sql_query(
