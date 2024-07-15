@@ -647,8 +647,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $serverID !== null ? array("server_id", $serverID) : "",
                 $channelID !== null ? array("channel_id", $channelID) : "",
                 $threadID !== null ? array("thread_id", $threadID) : "",
-                array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
+                array("deletion_date", null)
             ),
             array(
                 "DESC",
@@ -680,8 +679,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $serverID !== null ? array("server_id", $serverID) : "",
                 $channelID !== null ? array("channel_id", $channelID) : "",
                 $threadID !== null ? array("thread_id", $threadID) : "",
-                array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
+                array("deletion_date", null)
             ),
             array(
                 "DESC",
@@ -701,8 +699,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
     }
 
     public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                             int|string      $userID,
-                             ?int            $limit = 0, bool $object = true): array
+                                    int|string      $userID,
+                                    ?int            $limit = 0, bool $object = true): array
     {
         $final = array();
         $messages = $this->getMessages($serverID, $channelID, $threadID, $userID, $limit, $object);
@@ -738,9 +736,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
     // Separator
 
-    private
-    function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
-                     int|string      $pastLookup): float
+    private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+                             int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -757,8 +754,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $channelID !== null ? array("channel_id", $channelID) : "",
                     $userID !== null ? array("user_id", $userID) : "",
                     array("deletion_date", null),
-                    array("creation_date", ">", get_past_date($pastLookup)),
-                    array("plan_id", $this->plan->planID),
+                    array("creation_date", ">", get_past_date($pastLookup))
                 ),
                 array(
                     "DESC",
@@ -774,9 +770,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    private
-    function getMessageCount(int|string|null $serverID, int|string|null $channelID,
-                             int|string|null $userID, int|string $pastLookup): float
+    private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+                                     int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -792,8 +787,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $channelID !== null ? array("channel_id", $channelID) : "",
                     $userID !== null ? array("user_id", $userID) : "",
                     array("deletion_date", null),
-                    array("creation_date", ">", get_past_date($pastLookup)),
-                    array("plan_id", $this->plan->planID),
+                    array("creation_date", ">", get_past_date($pastLookup))
                 ),
                 array(
                     "DESC",
@@ -806,8 +800,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         }
     }
 
-    private
-    function isLimited(object $model, Message $message): array
+    private function isLimited(object $model, Message $message): array
     {
         $array = array();
         $serverID = $message->guild_id;
@@ -989,7 +982,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     sql_insert(
                         BotDatabaseTable::BOT_AI_FEEDBACK,
                         array(
-                            "plan_id" => $this->plan->planID,
                             "server_id" => $message->guild_id,
                             "channel_id" => $channel->id,
                             "thread_id" => $message->thread?->id,
@@ -1008,7 +1000,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 sql_insert(
                     BotDatabaseTable::BOT_AI_FEEDBACK,
                     array(
-                        "plan_id" => $this->plan->planID,
                         "server_id" => $message->guild_id,
                         "channel_id" => $channel->id,
                         "thread_id" => $message->thread?->id,
