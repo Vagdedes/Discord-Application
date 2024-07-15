@@ -253,7 +253,8 @@ class AccountMessageCreationListener
             ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
             : null;
         $hasTiers = sizeof($product->tiers->paid) > 1;
-        $tier = array_shift($product->tiers->paid);
+        $paidTiers = $product->tiers->paid;
+        $tier = array_shift($paidTiers);
         $price = $isFree
             ? null
             : ($hasTiers ? "Starting from " : "") . $tier->price . " " . $tier->currency;
