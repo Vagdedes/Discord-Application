@@ -29,45 +29,56 @@ class DiscordInstructions
         }
     }
 
-    public function replace(array   $messages, ?object $object,
+    public function replace(array   $messages,
+                            ?object $object,
                             ?array  $specificPublic = null,
                             ?string $userInput = null,
-                            bool    $recursive = true): array
+                            bool    $callables = false): array
     {
         if ($object !== null) {
             return $this->manager->replace(
                 $messages,
                 $object,
-                array(
-                    "publicInstructions" => array($this->manager, "getPublic", array($specificPublic, $userInput)),
-                    "botReplies" => array($this->plan->aiMessages, "getReplies", array(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        new stdClass(),
-                        false
-                    )),
-                    "botMessages" => array($this->plan->aiMessages, "getMessages", array(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        new stdClass(),
-                        false
-                    )),
-                    "allMessages" => array($this->plan->aiMessages, "getConversation", array(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        new stdClass(),
-                        false
-                    ))
-                ),
-                $recursive,
-                false,
-                true
+                !$callables
+                    ? array()
+                    : array(
+                    "publicInstructions" => function () use ($specificPublic, $userInput) {
+                        return $this->manager->getPublic(
+                            $specificPublic,
+                            $userInput
+                        );
+                    },
+                    "botReplies" => function () use ($object) {
+                        return $this->plan->aiMessages->getReplies(
+                            $object->serverID,
+                            $object->channelID,
+                            $object->threadID,
+                            $object->userID,
+                            DiscordAIMessages::PAST_MESSAGES,
+                            false
+                        );
+                    },
+                    "botMessages" => function () use ($object) {
+                        return $this->plan->aiMessages->getMessages(
+                            $object->serverID,
+                            $object->channelID,
+                            $object->threadID,
+                            $object->userID,
+                            DiscordAIMessages::PAST_MESSAGES,
+                            false
+                        );
+                    },
+                    "allMessages" => function () use ($object) {
+                        return $this->plan->aiMessages->getConversation(
+                            $object->serverID,
+                            $object->channelID,
+                            $object->threadID,
+                            $object->userID,
+                            DiscordAIMessages::PAST_MESSAGES,
+                            false
+                        );
+                    }
+                )
             );
         } else {
             return $messages;
@@ -77,30 +88,25 @@ class DiscordInstructions
     public function build(object  $object,
                           ?array  $specificLocal = null,
                           ?array  $specificPublic = null,
-                          ?string $userInput = null): array
+                          ?string $userInput = null): string
     {
         $local = $this->manager->getLocal($specificLocal, $userInput);
 
         if (!empty($local)) {
             $information = "";
-            $disclaimer = "";
 
             foreach ($local as $instruction) {
-                $replacements = $this->replace(
-                    array(
-                        $instruction->information,
-                        $instruction->disclaimer
-                    ),
+                $information .= $this->replace(
+                    array($instruction),
                     $object,
                     $specificPublic,
-                    $userInput
-                );
-                $information .= $replacements[0];
-                $disclaimer .= $replacements[1];
+                    $userInput,
+                    true
+                )[0];
             }
-            return array($information . $this->manager->getExtra(), $disclaimer);
+            return $information;
         } else {
-            return array($this->manager->getExtra(), "");
+            return "";
         }
     }
 

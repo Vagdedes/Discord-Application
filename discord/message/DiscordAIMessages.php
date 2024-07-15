@@ -14,6 +14,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
+    public const PAST_MESSAGES = 50;
+
     const REACTION_COMPONENT_NAME = "general-feedback";
 
     public function __construct(DiscordPlan $plan)
@@ -510,19 +512,18 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
             if ($extraHash !== null) {
                 $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
             }
-            $systemInstructions = $this->plan->instructions->build(
-                $systemInstructions[0],
-                $systemInstructions[1],
-                $systemInstructions[2],
-                $content
-            );
             $outcome = $managerAI->getResult(
                 $hash,
                 array(
                     "messages" => array(
                         array(
                             "role" => "system",
-                            "content" => $systemInstructions[0]
+                            "content" => $this->plan->instructions->build(
+                                $systemInstructions[0],
+                                $systemInstructions[1],
+                                $systemInstructions[2],
+                                $content
+                            )
                         ),
                         array(
                             "role" => "user",
@@ -563,8 +564,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $content = $managerAI->getText($model, $reply);
 
                 if (!empty($content)) {
-                    if (!empty($systemInstructions[1])) {
-                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . $systemInstructions[1] . DiscordSyntax::SPOILER;
+                    if (false) { // todo
+                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . "" . DiscordSyntax::SPOILER;
                     }
                     $cost = $managerAI->getCost($model, $reply);
                     $thread = $channel instanceof Thread ? $channel->id : null;
