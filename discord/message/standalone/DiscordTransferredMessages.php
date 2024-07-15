@@ -319,7 +319,13 @@ class DiscordTransferredMessages
             $embed = new Embed($this->bot->discord);
             $embed->setAuthor($message->author->username, $message->author->avatar);
             $embed->setDescription(
-                DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
+                DiscordSyntax::HEAVY_CODE_BLOCK
+                . str_replace(
+                    DiscordSyntax::HEAVY_CODE_BLOCK,
+                    "",
+                    $message->content
+                )
+                . DiscordSyntax::HEAVY_CODE_BLOCK
             );
             $embed->setTitle($message->channel->name);
             $inviteURL = DiscordInviteTracker::getInvite($message->guild)?->invite_url;
