@@ -14,7 +14,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
-    public const PAST_MESSAGES = 50;
+    public const PAST_MESSAGES = 20;
 
     const REACTION_COMPONENT_NAME = "general-feedback";
 
@@ -560,14 +560,14 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     }
                 }
                 $model = array_shift($outcome);
-                $reply = array_shift($outcome);
-                $content = $managerAI->getText($model, $reply);
+                $replyObject = array_shift($outcome);
+                $reply = $managerAI->getText($model, $replyObject);
 
-                if (!empty($content)) {
+                if (!empty($reply)) {
                     if (false) { // todo
-                        $content .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . "" . DiscordSyntax::SPOILER;
+                        $reply .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . "" . DiscordSyntax::SPOILER;
                     }
-                    $cost = $managerAI->getCost($model, $reply);
+                    $cost = $managerAI->getCost($model, $replyObject);
                     $thread = $channel instanceof Thread ? $channel->id : null;
                     $date = get_current_date();
 
@@ -597,20 +597,20 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                             "thread_id" => $thread,
                             "user_id" => $user->id,
                             "message_id" => $self?->id,
-                            "message_content" => $content,
+                            "message_content" => $reply,
                             "cost" => $cost,
                             "currency_id" => $model->currency->id,
                             "creation_date" => $date,
                         )
                     );
-                    return $content;
+                    return $reply;
                 } else {
                     global $logger;
                     $logger->logError(
                         $this->plan->planID,
                         "Failed to get length on text from chat-model for channel/thread with ID: " . $channel->id
                         . "\n" . @json_encode($model)
-                        . "\n" . @json_encode($reply)
+                        . "\n" . @json_encode($replyObject)
                     );
                 }
             } else {
@@ -634,10 +634,9 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
 
     // Separator
 
-    public
-    function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                         int|string      $userID,
-                         int|string|null $limit = 0, bool $object = true): array
+    public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                                int|string      $userID,
+                                int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -668,10 +667,9 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return $array;
     }
 
-    public
-    function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                        int|string      $userID,
-                        int|string|null $limit = 0, bool $object = true): array
+    public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                               int|string      $userID,
+                               int|string|null $limit = 0, bool $object = true): array
     {
         set_sql_cache("1 second");
         $array = get_sql_query(
@@ -702,8 +700,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
         return $array;
     }
 
-    public
-    function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+    public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
                              int|string      $userID,
                              ?int            $limit = 0, bool $object = true): array
     {
