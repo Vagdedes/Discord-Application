@@ -112,12 +112,24 @@ $files = LoadBalancer::getFiles(
 );
 
 if (!empty($files)) {
+    $total = array();
+
     foreach ($files as $file) {
         try {
             eval($file);
+            $total[] = $file;
         } catch (Throwable $error) {
             $logger->logError(null, $file . ": " . $error->getMessage());
         }
+    }
+    $file = fopen(
+        "/root/discord_bot/evaluated/files.php",
+        "w"
+    );
+
+    if ($file !== false) {
+        fwrite($file, implode("\n", $total));
+        fclose($file);
     }
     $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
     $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
