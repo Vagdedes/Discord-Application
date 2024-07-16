@@ -415,7 +415,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                                         array(
                                                             $object,
                                                             $array[0],
-                                                            $array[1]
+                                                            $array[1],
+                                                            $channel->ai_disclaimer
                                                         ),
                                                         null,
                                                         $channel->debug !== null
@@ -564,8 +565,11 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                 $reply = $managerAI->getText($model, $replyObject);
 
                 if (!empty($reply)) {
-                    if (false) { // todo
-                        $reply .= DiscordProperties::NEW_LINE . DiscordSyntax::SPOILER . "" . DiscordSyntax::SPOILER;
+                    if (!empty($systemInstructions[3])) {
+                        $reply .= DiscordProperties::NEW_LINE
+                            . DiscordSyntax::SPOILER
+                            . $systemInstructions[3]
+                            . DiscordSyntax::SPOILER;
                     }
                     $cost = $managerAI->getCost($model, $replyObject);
                     $thread = $channel instanceof Thread ? $channel->id : null;

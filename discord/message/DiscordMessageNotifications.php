@@ -190,7 +190,8 @@ class DiscordMessageNotifications
                     array(
                         $object,
                         empty($notification->localInstructions) ? null : $notification->localInstructions,
-                        empty($notification->publicInstructions) ? null : $notification->publicInstructions
+                        empty($notification->publicInstructions) ? null : $notification->publicInstructions,
+                        null
                     ),
                     self::AI_HASH
                 );

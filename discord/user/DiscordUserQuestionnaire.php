@@ -566,7 +566,8 @@ class DiscordUserQuestionnaire
                         array(
                             $object,
                             empty($questionnaire->localInstructions) ? null : $questionnaire->localInstructions,
-                            empty($questionnaire->publicInstructions) ? null : $questionnaire->publicInstructions
+                            empty($questionnaire->publicInstructions) ? null : $questionnaire->publicInstructions,
+                            null
                         ),
                         self::AI_HASH
                     );
