@@ -326,8 +326,8 @@ class CommandImplementationListener
     }
 
     public static function account_moderation(DiscordPlan $plan,
-                                                 Interaction $interaction,
-                                                 object      $command): void
+                                              Interaction $interaction,
+                                              object      $command): void
     {
         $staffAccount = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
         $message = new MessageBuilder();
@@ -407,17 +407,70 @@ class CommandImplementationListener
     }
 
     public static function configuration_changes(DiscordPlan $plan,
-                                              Interaction $interaction,
-                                              object      $command): void
+                                                 Interaction $interaction,
+                                                 object      $command): void
     {
-
+        $arguments = $interaction->data->options->toArray();
+        $message = new MessageBuilder();
+        $gameCloudUser = new GameCloudUser(
+            $arguments["platform-id"]["value"],
+            $arguments["license-id"]["value"]
+        );
+        if ($arguments["add"]["value"]) {
+            $result = $gameCloudUser->getActions()->addAutomaticConfigurationChange(
+                $arguments["version"]["value"],
+                $arguments["file-name"]["value"],
+                $arguments["option-name"]["value"],
+                $arguments["option-value"]["value"],
+                $arguments["product-id"]["value"],
+                $arguments["email"]["value"]
+            );
+        } else {
+            $result = $gameCloudUser->getActions()->removeAutomaticConfigurationChange(
+                $arguments["version"]["value"],
+                $arguments["file-name"]["value"],
+                $arguments["option-name"]["value"],
+                $arguments["product-id"]["value"]
+            );
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message->setContent(strval($result)),
+            true
+        );
     }
 
     public static function disabled_detections(DiscordPlan $plan,
-                                              Interaction $interaction,
-                                              object      $command): void
+                                               Interaction $interaction,
+                                               object      $command): void
     {
-
+        $arguments = $interaction->data->options->toArray();
+        $message = new MessageBuilder();
+        $gameCloudUser = new GameCloudUser(
+            $arguments["platform-id"]["value"],
+            $arguments["license-id"]["value"]
+        );
+        if ($arguments["add"]["value"]) {
+            $result = $gameCloudUser->getActions()->addDisabledDetection(
+                $arguments["plugin-version"]["value"],
+                $arguments["server-version"]["value"],
+                $arguments["check"]["value"],
+                $arguments["detection"]["value"],
+                $arguments["email"]["value"]
+            );
+        } else {
+            $result = $gameCloudUser->getActions()->removeDisabledDetection(
+                $arguments["plugin-version"]["value"],
+                $arguments["server-version"]["value"],
+                $arguments["check"]["value"],
+                $arguments["detection"]["value"],
+            );
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message->setContent(strval($result)),
+            true
+        );
     }
 
 }
