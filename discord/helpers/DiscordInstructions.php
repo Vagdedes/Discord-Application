@@ -33,7 +33,8 @@ class DiscordInstructions
                             ?object $object,
                             ?array  $specificPublic = null,
                             ?string $userInput = null,
-                            bool    $callables = false): array
+                            bool    $callables = false,
+                            bool    $extra = false): array
     {
         if ($object !== null) {
             return $this->manager->replace(
@@ -78,7 +79,8 @@ class DiscordInstructions
                             false
                         );
                     }
-                )
+                ),
+                $extra
             );
         } else {
             return $messages;
@@ -101,6 +103,7 @@ class DiscordInstructions
                     $object,
                     $specificPublic,
                     $userInput,
+                    true,
                     true
                 )[0];
             }
