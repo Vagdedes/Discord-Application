@@ -1,8 +1,7 @@
 <?php
 require '/root/discord_bot/utilities/utilities.php';
-
 $token = get_keys_from_file(
-    "/root/discord_bot/private/credentials/discord_token"
+    "discord_token"
     . (!isset($argv[1]) || empty($argv[1]) ? "_0" : "_" . $argv[1])
 );
 
@@ -131,14 +130,6 @@ if (!empty($files)) {
         fwrite($file, implode("\n", $total));
         fclose($file);
     }
-    $email_credentials_directory = "/root/discord_bot/private/credentials/email_credentials";
-    $patreon1_credentials_directory = "/root/discord_bot/private/credentials/patreon_1_credentials";
-    $patreon2_credentials_directory = "/root/discord_bot/private/credentials/patreon_2_credentials";
-    $builtbybit_credentials_directory = "/root/discord_bot/private/credentials/builtbybit_credentials";
-    $polymart_credentials_directory = "/root/discord_bot/private/credentials/polymart_credentials";
-    $twilio_credentials_directory = "/root/discord_bot/private/credentials/twilio_credentials";
-    $stripe_credentials_directory = "/root/discord_bot/private/credentials/stripe_credentials";
-    $paypal_credentials_directory = "/root/discord_bot/private/credentials/paypal_credentials";
 }
 
 function initiate_discord_bot(): void
