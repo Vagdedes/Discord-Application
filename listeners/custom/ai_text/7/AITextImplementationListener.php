@@ -14,7 +14,11 @@ class AITextImplementationListener // Name can be changed
         $account = AccountMessageCreationListener::findAccountFromSession($originalMessage, $plan);
 
         if ($account !== null) {
-            $plan->instructions->manager->addExtra("owned-products", $account->getPurchases()->getCurrent(), true);
+            $plan->instructions->manager->addExtra(
+                "owned-products",
+                $account->getPurchases()->getCurrent(),
+                true
+            );
         }
         return array($localInstructions, $publicInstructions);
     }
