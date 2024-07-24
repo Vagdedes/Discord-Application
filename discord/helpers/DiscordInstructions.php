@@ -22,14 +22,15 @@ class DiscordInstructions
         $validProducts = $account->getProduct()->find(null, true, false);
 
         if ($validProducts->isPositiveOutcome()) {
+            $array = array();
             $validProducts = $validProducts->getObject();
 
             foreach ($validProducts as $arrayKey => $product) {
-                $validProducts[$arrayKey] = $account->getProduct()->clearObjectDetails($product);
+                $array[$arrayKey] = $account->getProduct()->clearObjectDetails($product);
             }
             $this->manager->addExtra(
                 "available-products",
-                $validProducts
+                $array
             );
         }
     }
