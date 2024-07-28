@@ -13,9 +13,8 @@ require '/root/vendor/autoload.php';
 
 require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
-require '/root/discord_bot/utilities/sql_connection.php';
 require '/root/discord_bot/utilities/communication.php';
-require '/root/discord_bot/utilities/LoadBalancer.php';
+require '/root/discord_bot/utilities/evaluator.php';
 
 require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
 require '/root/discord_bot/discord/custom/standalone/DiscordMute.php';
@@ -89,34 +88,15 @@ use Discord\WebSockets\Intents;
 
 $createdDiscordBot = null;
 $logger = new DiscordLogs(null);
-$files = LoadBalancer::getFiles(
-    array(
-        "/var/www/.structure/library/account",
-        "/var/www/.structure/library/account/api/tasks/panel.php",
-        "/var/www/.structure/library/polymart",
-        "/var/www/.structure/library/patreon",
-        "/var/www/.structure/library/paypal",
-        "/var/www/.structure/library/discord",
-        "/var/www/.structure/library/stripe",
-        "/var/www/.structure/library/builtbybit",
-        "/var/www/.structure/library/phone",
-        "/var/www/.structure/library/email",
-        "/var/www/.structure/library/gameCloud",
-        "/var/www/.structure/library/ai",
-        "/var/www/.structure/library/base/placeholder.php",
-        "/var/www/.structure/library/base/minecraft.php",
-        "/var/www/.structure/library/base/encrypt.php",
-        "/var/www/.structure/library/base/objects"
-    )
-);
+$files = evaluator::run();
 
 if (!empty($files)) {
     $total = array();
 
-    foreach ($files as $file) {
+    foreach ($files as $file => $contents) {
         try {
-            eval($file);
-            $total[] = $file;
+            @eval($contents);
+            $total[] = $contents;
         } catch (Throwable $error) {
             $logger->logError(null, $file . ": " . $error->getMessage());
         }
