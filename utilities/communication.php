@@ -4,6 +4,7 @@ $memory_private_connections_table = "memory.privateConnections";
 $private_connection_access = false;
 $current_sql_database = null;
 $previous_sql_database = null;
+
 //load_sql_database(); Moved to bot implementation
 
 class SqlDatabaseCredentials
@@ -109,57 +110,61 @@ function is_private_connection($checkClientIP = false): bool
             );
             $cacheKey = array(__METHOD__, get_raw_client_ip_address());
 
-            if (!empty($query)
-                && !has_memory_cooldown($cacheKey, null, false)) {
-                delete_sql_query(
-                    $memory_private_connections_table,
-                    array(
-                        array("id", "=", $query[0]->id, 0),
-                        array("expiration", "<", time())
-                    )
-                );
-                load_previous_sql_database();
-                set_sql_cache();
-                if (!empty(get_sql_query(
-                    $administrator_local_server_ip_addresses_table,
-                    array("id"),
-                    array(
-                        array("ip_address", get_local_ip_address()),
-                        array("deletion_date", null),
-                        null,
-                        array("expiration_date", "IS", null, 0),
-                        array("expiration_date", ">", get_current_date()),
-                        null,
-                    ),
-                    null,
-                    1
-                ))) {
-                    if ($checkClientIP) {
-                        set_sql_cache();
-                        if (!empty(get_sql_query(
-                            $administrator_local_server_ip_addresses_table,
-                            array("id"),
-                            array(
-                                array("ip_address", get_raw_client_ip_address()),
-                                array("deletion_date", null),
-                                null,
-                                array("expiration_date", "IS", null, 0),
-                                array("expiration_date", ">", get_current_date()),
-                                null,
-                            ),
+            if (!empty($query)) {
+                if (!function_exists("has_memory_cooldown")
+                    || !has_memory_cooldown($cacheKey, null, false)) {
+                    delete_sql_query(
+                        $memory_private_connections_table,
+                        array(
+                            array("id", "=", $query[0]->id, 0),
+                            array("expiration", "<", time())
+                        )
+                    );
+                    load_previous_sql_database();
+                    set_sql_cache();
+                    if (!empty(get_sql_query(
+                        $administrator_local_server_ip_addresses_table,
+                        array("id"),
+                        array(
+                            array("ip_address", get_local_ip_address()),
+                            array("deletion_date", null),
                             null,
-                            1
-                        ))) {
+                            array("expiration_date", "IS", null, 0),
+                            array("expiration_date", ">", get_current_date()),
+                            null,
+                        ),
+                        null,
+                        1
+                    ))) {
+                        if ($checkClientIP) {
+                            set_sql_cache();
+                            if (!empty(get_sql_query(
+                                $administrator_local_server_ip_addresses_table,
+                                array("id"),
+                                array(
+                                    array("ip_address", get_raw_client_ip_address()),
+                                    array("deletion_date", null),
+                                    null,
+                                    array("expiration_date", "IS", null, 0),
+                                    array("expiration_date", ">", get_current_date()),
+                                    null,
+                                ),
+                                null,
+                                1
+                            ))) {
+                                $private_connection_access = true;
+                                return true;
+                            }
+                        } else {
                             $private_connection_access = true;
                             return true;
                         }
-                    } else {
-                        $private_connection_access = true;
-                        return true;
                     }
                 }
             } else {
-                has_memory_cooldown($cacheKey, "5 minutes", true, true);
+                if (function_exists("has_memory_cooldown")) {
+                    has_memory_cooldown($cacheKey, "1 minute", true, true);
+                }
                 load_previous_sql_database();
             }
         }

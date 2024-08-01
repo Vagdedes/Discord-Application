@@ -319,10 +319,13 @@ function get_sql_query(string $table, array $select = null, array $where = null,
             $cacheKey[] = $sql_cache_tag;
         }
         $sql_cache_tag = null;
-        $cache = get_key_value_pair($cacheKey);
 
-        if (is_array($cache)) {
-            return $cache;
+        if (function_exists("get_key_value_pair")) {
+            $cache = get_key_value_pair($cacheKey);
+
+            if (is_array($cache)) {
+                return $cache;
+            }
         }
     } else {
         $hasCache = false;
@@ -352,7 +355,7 @@ function get_sql_query(string $table, array $select = null, array $where = null,
             $array[] = $object;
         }
     }
-    if ($hasCache) {
+    if ($hasCache && function_exists("set_key_value_pair")) {
         set_key_value_pair($cacheKey, $array);
     }
     return $array;
@@ -461,9 +464,12 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
         if ($sql_cache_tag !== null) {
             $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
-            clear_memory($array, true, 0, function ($value) {
-                return is_array($value);
-            });
+
+            if (function_exists("clear_memory")) {
+                clear_memory($array, true, 0, function ($value) {
+                    return is_array($value);
+                });
+            }
         }
         return true;
     } else {
@@ -491,9 +497,12 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
         if ($sql_cache_tag !== null) {
             $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
-            clear_memory($array, true, 0, function ($value) {
-                return is_array($value);
-            });
+
+            if (function_exists("clear_memory")) {
+                clear_memory($array, true, 0, function ($value) {
+                    return is_array($value);
+                });
+            }
         }
         return true;
     } else {

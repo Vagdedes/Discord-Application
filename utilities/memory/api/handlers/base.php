@@ -16,7 +16,7 @@ class IndividualMemoryBlock
         }
     }
 
-    public function set(mixed $value, $expiration = false): void
+    public function set(mixed $value, $expiration = false): bool
     {
         global $memory_array;
 
@@ -33,6 +33,7 @@ class IndividualMemoryBlock
         $object->creation = time();
         $object->expiration = is_numeric($expiration) ? $expiration : false;
         $memory_array[$this->key] = $object;
+        return true;
     }
 
     private function getObject(): ?object
@@ -63,9 +64,10 @@ class IndividualMemoryBlock
         return $this->getObject() !== null;
     }
 
-    public function delete(): void
+    public function delete(): bool
     {
         global $memory_array;
         unset($memory_array[$this->key]);
+        return true;
     }
 }

@@ -9,11 +9,10 @@ class evaluator
         exemptedFiles = array(
         "/var/www/.structure/library/base/communication.php",
         "/var/www/.structure/library/base/utilities.php",
-        "/var/www/.structure/library/base/sql.php"
+        "/var/www/.structure/library/base/sql.php",
+        "/var/www/.structure/library/memory/api/handlers/base.php"
     ),
-        exemptedPaths = array(
-        "/var/www/.structure/library/memory/"
-    );
+        exemptedPaths = array();
 
     public static function run(?array $scripts = null): array
     {
