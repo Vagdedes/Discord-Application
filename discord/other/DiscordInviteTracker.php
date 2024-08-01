@@ -12,8 +12,6 @@ class DiscordInviteTracker
     private static array $cached_invites = array();
     private static int $invite_links = 0, $invited_users = 0;
 
-    private const REFRESH_TIME = "15 seconds";
-
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -57,8 +55,6 @@ class DiscordInviteTracker
         $object->total_invite_links = 0;
         $object->active_invite_links = 0;
         $object->users_invited = 0;
-
-        set_sql_cache(self::REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER,
             null,
@@ -86,7 +82,6 @@ class DiscordInviteTracker
 
     public function getServerStats(int|string $serverID): array
     {
-        set_sql_cache(self::REFRESH_TIME);
         $query = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER,
             null,
@@ -324,7 +319,6 @@ class DiscordInviteTracker
             $hasLimit = $limit > 0;
 
             foreach ($this->goals as $goal) {
-                set_sql_cache(self::REFRESH_TIME);
                 $storage = get_sql_query(
                     BotDatabaseTable::BOT_INVITE_TRACKER_GOAL_STORAGE,
                     null,

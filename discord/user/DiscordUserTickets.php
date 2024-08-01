@@ -281,7 +281,6 @@ class DiscordUserTickets
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
-            set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
                 array("id", "ticket_id", "ticket_creation_id", "expiration_date"),
@@ -348,7 +347,6 @@ class DiscordUserTickets
 
     public function closeByID(int|string $ticketID, int|string $userID, ?string $reason = null): ?string
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id", "created_channel_id", "created_channel_server_id", "deletion_date"),
@@ -410,7 +408,6 @@ class DiscordUserTickets
                                    ?string         $reason = null,
                                    bool            $delete = true): ?string
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id", "deletion_date"),
@@ -684,7 +681,6 @@ class DiscordUserTickets
 
     private function hasCooldown(int|string $ticketID, int|string $userID, int|string $pastLookup): bool
     {
-        set_sql_cache("1 second");
         return !empty(get_sql_query(
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             array("id"),
@@ -703,7 +699,6 @@ class DiscordUserTickets
 
     private function hasMaxOpen(int|string $ticketID, int|string|null $userID, int|string $limit): bool
     {
-        set_sql_cache("1 second");
         return sizeof(get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
                 array("id"),

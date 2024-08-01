@@ -4,7 +4,6 @@
 $sql_connections = array();
 $sql_credentials = array();
 
-$sql_cache_time = false;
 $sql_cache_tag = null;
 
 $is_sql_usable = false;
@@ -61,11 +60,10 @@ function reset_all_sql_connections(): void
 
     if (!empty($sql_credentials)) {
         global $sql_connections,
-               $sql_cache_time, $sql_cache_tag,
+               $sql_cache_tag,
                $is_sql_usable;
         $sql_connections = array();
         $sql_credentials = array();
-        $sql_cache_time = false;
         $sql_cache_tag = null;
         $is_sql_usable = false;
     }
@@ -126,8 +124,7 @@ function close_sql_connection(bool $clear = false): bool
     global $sql_credentials;
 
     if (!empty($sql_credentials)) {
-        global $is_sql_usable, $sql_cache_time, $sql_cache_tag;
-        $sql_cache_time = false;
+        global $is_sql_usable, $sql_cache_tag;
         $sql_cache_tag = null;
 
         if ($is_sql_usable) {
@@ -256,10 +253,9 @@ function get_sql_cache_key(mixed $key, mixed $value = null): string
         : substr(serialize(array($key => $value)), 5, -1);
 }
 
-function set_sql_cache($time = null, mixed $tag = null): void
+function set_sql_cache(mixed $tag = null): void
 {
-    global $sql_cache_time, $sql_cache_tag;
-    $sql_cache_time = $time === null ? null : (is_array($time) ? implode(" ", $time) : $time);
+    global $sql_cache_tag;
     $sql_cache_tag = $tag;
 }
 
@@ -293,17 +289,15 @@ function sql_debug(): void
 
 function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
 {
-    global $sql_cache_time;
+    global $sql_cache_tag;
     $hasWhere = $where !== null;
 
     if ($hasWhere) {
         $where = sql_build_where($where, true);
     }
-    if ($sql_cache_time !== false) {
-        global $sql_cache_tag, $sql_credentials;
+    if ($sql_cache_tag !== null) {
+        global $sql_credentials;
         $hasCache = true;
-        $time = $sql_cache_time;
-        $sql_cache_time = false;
         $cacheKey = array(
             $sql_credentials[10],
             $table,
@@ -313,20 +307,18 @@ function get_sql_query(string $table, array $select = null, array $where = null,
             $limit
         );
 
-        if ($sql_cache_tag !== null) {
-            if (is_array($sql_cache_tag)) {
-                foreach ($sql_cache_tag as $key => $value) {
-                    if (is_numeric($key)) {
-                        $cacheKey[] = $value;
-                    } else {
-                        $cacheKey[$key] = $value;
-                    }
+        if (is_array($sql_cache_tag)) {
+            foreach ($sql_cache_tag as $key => $value) {
+                if (is_numeric($key)) {
+                    $cacheKey[] = $value;
+                } else {
+                    $cacheKey[$key] = $value;
                 }
-            } else {
-                $cacheKey[] = $sql_cache_tag;
             }
-            $sql_cache_tag = null;
+        } else {
+            $cacheKey[] = $sql_cache_tag;
         }
+        $sql_cache_tag = null;
         $cache = get_key_value_pair($cacheKey);
 
         if (is_array($cache)) {
@@ -361,7 +353,7 @@ function get_sql_query(string $table, array $select = null, array $where = null,
         }
     }
     if ($hasCache) {
-        set_key_value_pair($cacheKey, $array, $time);
+        set_key_value_pair($cacheKey, $array);
     }
     return $array;
 }
@@ -464,26 +456,19 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
         $query .= " LIMIT " . $limit;
     }
     if (sql_query($query . ";")) {
-        global $sql_cache_time;
+        global $sql_cache_tag;
 
-        if ($sql_cache_time !== false) {
-            global $sql_cache_tag;
-            $sql_cache_time = null;
+        if ($sql_cache_tag !== null) {
             $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
-            }, true);
+            });
         }
         return true;
     } else {
-        global $sql_cache_time;
-
-        if ($sql_cache_time !== false) {
-            global $sql_cache_tag;
-            $sql_cache_time = null;
-            $sql_cache_tag = null;
-        }
+        global $sql_cache_tag;
+        $sql_cache_tag = null;
         return false;
     }
 }
@@ -501,26 +486,19 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
         $query .= " LIMIT " . $limit;
     }
     if (sql_query($query . ";")) {
-        global $sql_cache_time;
+        global $sql_cache_tag;
 
-        if ($sql_cache_time !== false) {
-            global $sql_cache_tag;
-            $sql_cache_time = null;
+        if ($sql_cache_tag !== null) {
             $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
             $sql_cache_tag = null;
             clear_memory($array, true, 0, function ($value) {
                 return is_array($value);
-            }, true);
+            });
         }
         return true;
     } else {
-        global $sql_cache_time;
-
-        if ($sql_cache_time !== false) {
-            global $sql_cache_tag;
-            $sql_cache_time = null;
-            $sql_cache_tag = null;
-        }
+        global $sql_cache_tag;
+        $sql_cache_tag = null;
         return false;
     }
 }

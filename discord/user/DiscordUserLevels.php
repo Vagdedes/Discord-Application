@@ -13,7 +13,6 @@ class DiscordUserLevels
     private array $configurations;
 
     private const
-        REFRESH_TIME = "15 seconds",
         NOT_FOUND = "Could not find a levelling system related to this server and channel.";
 
     public const
@@ -102,7 +101,7 @@ class DiscordUserLevels
 
         if ($configuration !== null) {
             if ($level === null) {
-                $level = $this->getLevel($serverID, $channelID, $userID, $cache)[1];
+                $level = $this->getLevel($serverID, $channelID, $userID)[1];
             }
             foreach ($this->configurations[$this->plan->utilities->hash($serverID, $channelID)]->tiers as $tier) {
                 if ($level >= $tier->tier_points) {
@@ -337,14 +336,11 @@ class DiscordUserLevels
     }
 
     private function getLevel(int|string $serverID, int|string $channelID,
-                              int|string $userID, bool $cache = false): array
+                              int|string $userID): array
     {
         $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
-            if ($cache) {
-                set_sql_cache(self::REFRESH_TIME);
-            }
             $query = get_sql_query(
                 BotDatabaseTable::BOT_LEVEL_TRACKING,
                 array("level_points", "expiration_date"),
@@ -378,7 +374,6 @@ class DiscordUserLevels
         $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)] ?? null;
 
         if ($configuration !== null) {
-            set_sql_cache(self::REFRESH_TIME);
             $query = get_sql_query(
                 BotDatabaseTable::BOT_LEVEL_TRACKING,
                 null,

@@ -296,7 +296,6 @@ class DiscordUserTargets
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
-            set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
                 array("id", "target_id", "target_creation_id", "created_thread_id",
@@ -371,7 +370,6 @@ class DiscordUserTargets
 
     public function closeByID(int|string $targetID, int|string $userID, ?string $reason = null): ?string
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
             array("id", "server_id", "channel_id", "created_thread_id",
@@ -444,7 +442,6 @@ class DiscordUserTargets
                                            ?string         $reason = null,
                                            bool            $delete = true): ?string
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
             array("id", "created_thread_id", "deletion_date", "target_id"),

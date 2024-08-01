@@ -324,7 +324,6 @@ class DiscordTemporaryChannels
 
     private function isLocked(int|string $temporaryID): bool
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
             array("lock_date"),
@@ -492,7 +491,6 @@ class DiscordTemporaryChannels
 
     private function isBanned(User $user, int|string $temporaryID): bool
     {
-        set_sql_cache("1 second");
         return !empty(get_sql_query(
             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_BANS,
             null,
@@ -543,7 +541,6 @@ class DiscordTemporaryChannels
 
     private function getOwner(Member|User $user, int|string $temporaryID): array
     {
-        set_sql_cache("1 second");
         return get_sql_query(
             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_OWNERS,
             null,
@@ -678,7 +675,6 @@ class DiscordTemporaryChannels
 
     private function hasMaxOpen(int|string $temporaryID, int|string $limit): bool
     {
-        set_sql_cache("1 second");
         return sizeof(get_sql_query(
                 BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
                 array("id"),

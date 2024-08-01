@@ -96,7 +96,6 @@ class DiscordMute
                              ?string     $type = self::ALL): bool
     {
         $isThread = $channelOrThread instanceof Thread;
-        set_sql_cache("1 second");
         return !empty(get_sql_query(
             BotDatabaseTable::BOT_MUTE,
             null,

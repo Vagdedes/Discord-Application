@@ -133,7 +133,6 @@ class DiscordMessageNotifications
         $date = get_current_date();
         $isThread = $originalMessage instanceof Thread;
         $user = $isThread ? $originalMessage->owner_member : $originalMessage->member;
-        set_sql_cache("1 second");
 
         if (!empty(get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,

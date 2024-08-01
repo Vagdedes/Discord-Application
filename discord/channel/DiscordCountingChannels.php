@@ -10,8 +10,6 @@ class DiscordCountingChannels
     private array $countingPlaces;
     public int $ignoreDeletion;
 
-    private const REFRESH_TIME = "15 seconds";
-
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -185,7 +183,6 @@ class DiscordCountingChannels
             foreach ($this->countingPlaces as $row) {
                 if (!empty($row->goals)) {
                     foreach ($row->goals as $goal) {
-                        set_sql_cache(self::REFRESH_TIME);
                         $storage = get_sql_query(
                             BotDatabaseTable::BOT_COUNTING_GOAL_STORAGE,
                             null,

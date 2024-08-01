@@ -642,7 +642,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                 int|string      $userID,
                                 int|string|null $limit = 0, bool $object = true): array
     {
-        set_sql_cache("1 second");
         $array = get_sql_query(
             BotDatabaseTable::BOT_AI_MESSAGES,
             array("creation_date", "message_content"),
@@ -674,7 +673,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                int|string      $userID,
                                int|string|null $limit = 0, bool $object = true): array
     {
-        set_sql_cache("1 second");
         $array = get_sql_query(
             BotDatabaseTable::BOT_AI_REPLIES,
             array("creation_date", "message_content"),
@@ -824,7 +822,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {
-                        set_sql_cache("1 minute");
                         $timeout = !empty(get_sql_query(
                             BotDatabaseTable::BOT_AI_MESSAGE_TIMEOUTS,
                             array("id"),
@@ -894,7 +891,6 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {
-                        set_sql_cache("1 minute");
                         $timeout = !empty(get_sql_query(
                             BotDatabaseTable::BOT_AI_COST_TIMEOUTS,
                             array("id"),

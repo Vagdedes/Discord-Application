@@ -351,7 +351,6 @@ class DiscordUserQuestionnaire
     {
         if (strlen($message->content) > 0) {
             $channel = $message->channel;
-            set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
                 array("id", "questionnaire_id", "questionnaire_creation_id", "created_thread_id",
@@ -629,7 +628,6 @@ class DiscordUserQuestionnaire
 
     public function closeByID(int|string $questionnaireID, int|string $userID, ?string $reason = null): ?string
     {
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
             array("id", "server_id", "channel_id", "created_thread_id",
@@ -707,7 +705,6 @@ class DiscordUserQuestionnaire
         $hasQuery = $query !== null;
 
         if (!$hasQuery) {
-            set_sql_cache("1 second");
             $query = get_sql_query(
                 BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
                 array("id", "created_thread_id", "deletion_date", "questionnaire_id", "completion_date"),

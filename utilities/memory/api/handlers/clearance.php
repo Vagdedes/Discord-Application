@@ -3,7 +3,6 @@ function check_clear_memory(): void
 {
     global $memory_clearance_table, $memory_clearance_past, $memory_clearance_row_limit;
     load_sql_database(SqlDatabaseCredentials::MEMORY);
-    set_sql_cache("1 second"); // Use to prevent redundancy
     $memory_trackers_query = get_sql_query(
         $memory_clearance_table,
         array("tracker", "array", "abstract_search"),

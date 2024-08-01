@@ -37,7 +37,7 @@ class DiscordUserPolls
                            int              $maxChoices,
                            bool             $allowSameChoice): ?MessageBuilder
     {
-        $get = $this->getBase($interaction, $name, false);
+        $get = $this->getBase($interaction, $name);
 
         if ($get !== null) {
             if (!$this->owns($interaction, $get)) {
@@ -124,11 +124,8 @@ class DiscordUserPolls
         }
     }
 
-    private function getBase(Interaction $interaction, int|float|string $name, bool $cache = true): ?object
+    private function getBase(Interaction $interaction, int|float|string $name): ?object
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         $query = get_sql_query(
             BotDatabaseTable::BOT_POLLS,
             null,
@@ -266,7 +263,6 @@ class DiscordUserPolls
     private function getRunning(Guild $guild, object $query): ?object
     {
         $this->checkExpired();
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_POLL_TRACKING,
             null,
@@ -523,11 +519,8 @@ class DiscordUserPolls
 
     // Choices
 
-    private function getChoices(object $query, bool $cache = true): array
+    private function getChoices(object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         $array = get_sql_query(
             BotDatabaseTable::BOT_POLL_CHOICES,
             null,
@@ -562,7 +555,7 @@ class DiscordUserPolls
         } else if (!empty($this->getRunning($interaction->guild, $query))) {
             return MessageBuilder::new()->setContent("This user poll is currently running.");
         } else {
-            $choices = $this->getChoices($query, false);
+            $choices = $this->getChoices($query);
 
             if ($set) {
                 $size = sizeof($choices);
@@ -634,11 +627,8 @@ class DiscordUserPolls
 
     // Choice Picking
 
-    private function getPicks(?Interaction $interaction, object $query, bool $cache = true): array
+    private function getPicks(?Interaction $interaction, object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         return get_sql_query(
             BotDatabaseTable::BOT_POLL_CHOICE_TRACKING,
             null,
@@ -665,7 +655,7 @@ class DiscordUserPolls
             } else if ($running->expiration_date <= get_current_date()) {
                 return $this->endRaw($running);
             } else if ($set) {
-                $picks = $this->getPicks($interaction, $running, false);
+                $picks = $this->getPicks($interaction, $running);
                 $pickCount = sizeof($picks);
 
                 if ($pickCount > 0) {
@@ -700,7 +690,7 @@ class DiscordUserPolls
                     );
                 }
             } else if ($get->allow_choice_deletion !== null) {
-                $picks = $this->getPicks($interaction, $running, false);
+                $picks = $this->getPicks($interaction, $running);
                 $notMessage = "You have not picked this choice.";
 
                 if (empty($picks)) {
@@ -739,11 +729,8 @@ class DiscordUserPolls
 
     // Permissions
 
-    private function getPermissions(object $query, bool $cache = true): array
+    private function getPermissions(object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         return get_sql_query(
             BotDatabaseTable::BOT_POLL_PERMISSIONS,
             null,
@@ -779,7 +766,7 @@ class DiscordUserPolls
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else {
             $permissionToAdd = strtolower($permissionToAdd);
-            $permissions = $this->getPermissions($query, false);
+            $permissions = $this->getPermissions($query);
 
             if ($set) {
                 if (!empty($permissions)) {
@@ -842,11 +829,8 @@ class DiscordUserPolls
 
     // Roles
 
-    private function getRequiredRoles(object $query, bool $cache = true): array
+    private function getRequiredRoles(object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         return get_sql_query(
             BotDatabaseTable::BOT_POLL_ROLES,
             null,
@@ -892,7 +876,7 @@ class DiscordUserPolls
         if ($query === null) {
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else {
-            $roles = $this->getRequiredRoles($query, false);
+            $roles = $this->getRequiredRoles($query);
 
             if ($set) {
                 if (!empty($roles)) {

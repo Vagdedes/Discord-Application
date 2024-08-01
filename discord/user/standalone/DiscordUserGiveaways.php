@@ -32,7 +32,7 @@ class DiscordUserGiveaways
                            int              $winnerAmount,
                            bool             $repeatAfterEnding): ?MessageBuilder
     {
-        $get = $this->getBase($interaction, $name, false);
+        $get = $this->getBase($interaction, $name);
 
         if ($get !== null) {
             if (!$this->owns($interaction, $get)) {
@@ -120,11 +120,8 @@ class DiscordUserGiveaways
         }
     }
 
-    private function getBase(Interaction $interaction, int|float|string $name, bool $cache = true): ?object
+    private function getBase(Interaction $interaction, int|float|string $name): ?object
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         $query = get_sql_query(
             BotDatabaseTable::BOT_GIVEAWAYS,
             null,
@@ -260,7 +257,6 @@ class DiscordUserGiveaways
     private function getRunning(Guild $guild, object $query): ?object
     {
         $this->checkExpired();
-        set_sql_cache("1 second");
         $query = get_sql_query(
             BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
             null,
@@ -399,11 +395,8 @@ class DiscordUserGiveaways
 
     // Permissions
 
-    private function getPermissions(object $query, bool $cache = true): array
+    private function getPermissions(object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         return get_sql_query(
             BotDatabaseTable::BOT_GIVEAWAYS_PERMISSIONS,
             null,
@@ -439,7 +432,7 @@ class DiscordUserGiveaways
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else {
             $permissionToAdd = strtolower($permissionToAdd);
-            $permissions = $this->getPermissions($query, false);
+            $permissions = $this->getPermissions($query);
 
             if ($set) {
                 if (!empty($permissions)) {
@@ -502,11 +495,8 @@ class DiscordUserGiveaways
 
     // Roles
 
-    private function getRequiredRoles(object $query, bool $cache = true): array
+    private function getRequiredRoles(object $query): array
     {
-        if ($cache) {
-            set_sql_cache("1 second");
-        }
         return get_sql_query(
             BotDatabaseTable::BOT_GIVEAWAYS_ROLES,
             null,
@@ -552,7 +542,7 @@ class DiscordUserGiveaways
         if ($query === null) {
             return MessageBuilder::new()->setContent(self::NOT_EXISTS);
         } else {
-            $roles = $this->getRequiredRoles($query, false);
+            $roles = $this->getRequiredRoles($query);
 
             if ($set) {
                 if (!empty($roles)) {
