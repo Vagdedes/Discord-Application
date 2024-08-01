@@ -531,7 +531,8 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                             "content" => $content
                         )
                     )
-                )
+                ),
+                30
             );
 
             if ($debug) {
