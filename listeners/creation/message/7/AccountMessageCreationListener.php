@@ -13,11 +13,6 @@ use Discord\Parts\Interactions\Interaction;
 class AccountMessageCreationListener
 {
 
-    public const
-        ACCOUNT_CHANNEL_URL = "https://discord.com/channels/289384242075533313/760150094225211413",
-        NEWS_CHANNEL = 289385175983325184;
-    private static bool $dealtGiveaway = false;
-
     public static function getAttemptedAccountSession(Interaction $interaction,
                                                       DiscordPlan $plan): mixed
     {
@@ -128,10 +123,9 @@ class AccountMessageCreationListener
 
                 // Separator
 
-                if (!self::$dealtGiveaway
+                if (false
                     && $hasWinners
                     && $currentGiveawayOutcome->isPositiveOutcome()) {
-                    self::$dealtGiveaway = true;
                     $announcement = MessageBuilder::new();
                     //$announcement->setContent("||@everyone||");
                     $announcementEmbed = new Embed($plan->bot->discord);
@@ -139,7 +133,7 @@ class AccountMessageCreationListener
                         "GIVEAWAY WINNER"
                     );
                     $announcementEmbed->setTitle("Click to Participate!");
-                    $announcementEmbed->setURL(self::ACCOUNT_CHANNEL_URL);
+                    $announcementEmbed->setURL("");
                     $announcementEmbed->setDescription(
                         "Congratulations to **" . $lastGiveawayWinners
                         . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
@@ -147,7 +141,7 @@ class AccountMessageCreationListener
                     $announcementEmbed->setImage($lastGiveawayProduct->image);
                     $announcementEmbed->setTimestamp(time());
                     $announcement->addEmbed($announcementEmbed);
-                    $channel = $plan->bot->discord->getChannel(self::NEWS_CHANNEL);
+                    $channel = $plan->bot->discord->getChannel(0);
 
                     if ($channel !== null
                         && $channel->allowText()) {
