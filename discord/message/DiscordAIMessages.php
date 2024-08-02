@@ -8,7 +8,7 @@ use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\WebSockets\MessageReaction;
 
-class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
+class DiscordAIMessages // todo attachment reading
 {
     private DiscordPlan $plan;
     public ?array $model;
@@ -323,7 +323,7 @@ class DiscordAIMessages // todo [(image reading and creating), (embed replies)]
                                     // Separator
 
                                     if (!$mention
-                                        && false // todo fix
+                                        && false
                                         && $channel->ignore_mention_when_no_staff !== null
                                         && $originalMessage->channel instanceof Thread
                                         && strtotime(get_past_date("5 seconds")) > $originalMessage->channel->fetch()->create_timestamp->second) {

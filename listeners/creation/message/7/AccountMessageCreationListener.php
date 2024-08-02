@@ -19,7 +19,6 @@ class AccountMessageCreationListener
         return get_key_value_pair(
             string_to_integer(
                 $interaction->member->id
-                . $plan->applicationID
                 . "attempted-account-session"
             )
         );
@@ -32,7 +31,6 @@ class AccountMessageCreationListener
         set_key_value_pair(
             string_to_integer(
                 $interaction->member->id
-                . $plan->applicationID
                 . "attempted-account-session"
             ),
             $object,
@@ -47,7 +45,6 @@ class AccountMessageCreationListener
             array(
                 string_to_integer(
                     $interaction->member->id
-                    . $plan->applicationID
                     . "attempted-account-session"
                 )
             ),
@@ -62,7 +59,7 @@ class AccountMessageCreationListener
     public static function getAccountObject(Interaction|Message|null $interaction,
                                             DiscordPlan              $plan): object
     {
-        $account = new Account($plan->applicationID);
+        $account = new Account();
 
         if ($interaction !== null) {
             $account->getSession()->setCustomKey("discord", $interaction->member->id);

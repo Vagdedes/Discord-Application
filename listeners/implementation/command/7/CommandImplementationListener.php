@@ -25,7 +25,7 @@ class CommandImplementationListener
                                         object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -55,7 +55,7 @@ class CommandImplementationListener
                                         object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -86,7 +86,7 @@ class CommandImplementationListener
                                           object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -117,7 +117,7 @@ class CommandImplementationListener
                                             object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -150,7 +150,7 @@ class CommandImplementationListener
                                           object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -197,7 +197,7 @@ class CommandImplementationListener
                                                        object      $command): void
     {
         $message = new MessageBuilder();
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
         $object = $account->getSession()->getLastKnown();
 
@@ -254,7 +254,7 @@ class CommandImplementationListener
         if ($staffAccount === null) {
             $message->setContent(self::LOGGED_IN);
         } else {
-            $account = new Account($plan->applicationID);
+            $account = new Account();
             $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
             $object = $account->getSession()->getLastKnown();
 
@@ -335,7 +335,7 @@ class CommandImplementationListener
         if ($staffAccount === null) {
             $message->setContent(self::LOGGED_IN);
         } else {
-            $account = new Account($plan->applicationID);
+            $account = new Account();
             $account->getSession()->setCustomKey("discord", $interaction->data?->resolved?->users?->first()?->id);
             $object = $account->getSession()->getLastKnown();
 

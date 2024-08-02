@@ -77,9 +77,6 @@ class DiscordStatusMessages
             true,
             true
         );
-        if ($message === null) {
-            // todo ai
-        }
         $channelFound->sendMessage(
             $this->plan->listener->callStatusMessageImplementation(
                 $channel->listener_class,

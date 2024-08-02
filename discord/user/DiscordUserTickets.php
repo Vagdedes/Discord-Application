@@ -12,6 +12,7 @@ class DiscordUserTickets
     private DiscordPlan $plan;
     public int $ignoreDeletion;
     private array $tickets;
+    private array $abstractTickets;
     private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
@@ -23,6 +24,7 @@ class DiscordUserTickets
             BotDatabaseTable::BOT_TICKETS,
             null,
             array(
+                array("modal_component_id", "IS NOT", null), // Attention
                 array("deletion_date", null),
                 array("plan_id", $this->plan->planID),
                 null,
@@ -36,6 +38,25 @@ class DiscordUserTickets
             foreach ($tickets as $ticket) {
                 $this->tickets[$ticket->id] = $ticket;
                 $this->tickets[$ticket->name] = $ticket;
+            }
+        }
+        $tickets = get_sql_query(
+            BotDatabaseTable::BOT_TICKETS,
+            null,
+            array(
+                array("modal_component_id", "IS", null), // Attention
+                array("deletion_date", null),
+                array("plan_id", $this->plan->planID),
+                null,
+                array("expiration_date", "IS", null, 0),
+                array("expiration_date", ">", get_current_date()),
+                null
+            )
+        );
+
+        if (!empty($tickets)) {
+            foreach ($tickets as $ticket) {
+                $this->abstractTickets[$ticket->id] = $ticket;
             }
         }
         $this->checkExpired();
@@ -58,6 +79,103 @@ class DiscordUserTickets
             global $logger;
             $logger->logError($this->plan->planID, "Ticket not found with key: " . $key);
             return false;
+        }
+    }
+
+    public function create(Interaction     $interaction,
+                            ?MessageBuilder $message,
+                            int|string|null $categoryID, string $channelName, ?string $channelTopic,
+                            int|string|null $memberAllowPermissions, int|string|null $memberDenyPermissions,
+                            ?array          $rolePermissions,
+                            int|string|null $duration): void
+    {
+        if (empty($this->abstractTickets)) {
+            global $logger;
+            $logger->logError($this->plan->planID, "Abstract ticket not found for plan with ID: " . $this->plan->planID);
+            return;
+        }
+        $id = null;
+
+        foreach ($this->abstractTickets as $ticket) {
+            $id = $ticket->id;
+            break;
+        }
+        $date = get_current_date(); // Always first
+        $this->checkExpired();
+
+        while (true) {
+            $ticketID = random_number(19);
+
+            if (empty(get_sql_query(
+                BotDatabaseTable::BOT_TICKET_CREATIONS,
+                array("ticket_creation_id"),
+                array(
+                    array("ticket_creation_id", $ticketID)
+                ),
+                null,
+                1
+            ))) {
+                $insert = array(
+                    "plan_id" => $this->plan->planID,
+                    "ticket_id" => $id,
+                    "ticket_creation_id" => $ticketID,
+                    "server_id" => $interaction->guild_id,
+                    "channel_id" => $interaction->channel_id,
+                    "user_id" => $interaction->user->id,
+                    "creation_date" => $date,
+                    "deletion_date" => $duration !== null ? get_future_date($duration) : null
+                );
+
+                if (!empty($rolePermissions)) {
+                    foreach ($rolePermissions as $arrayKey => $role) {
+                        $rolePermissions[$arrayKey] = array(
+                            "id" => $arrayKey,
+                            "type" => "role",
+                            "allow" => $role->allow,
+                            "deny" => $role->deny
+                        );
+                    }
+                }
+                if (empty($memberAllowPermissions)
+                    && empty($memberDenyPermissions)) {
+                    $memberPermissions = array();
+                } else {
+                    $memberPermissions = array(
+                        array(
+                            "id" => $interaction->user->id,
+                            "type" => "member",
+                            "allow" => empty($memberAllowPermissions) ? 0 : $memberAllowPermissions,
+                            "deny" => empty($memberDenyPermissions) ? 0 : $memberDenyPermissions
+                        )
+                    );
+                }
+                $this->plan->utilities->createChannel(
+                    $interaction->guild,
+                    Channel::TYPE_TEXT,
+                    $categoryID,
+                    $channelName,
+                    $channelTopic,
+                    $rolePermissions,
+                    $memberPermissions
+                )->done(function (Channel $channel)
+                use ($ticketID, $insert, $interaction, $message, $id) {
+                    $insert["created_channel_id"] = $channel->id;
+                    $insert["created_channel_server_id"] = $channel->guild_id;
+
+                    if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                        if ($message !== null) {
+                            $channel->sendMessage($message);
+                        }
+                    } else {
+                        global $logger;
+                        $logger->logError(
+                            $this->plan->planID,
+                            "Failed to insert abstract ticket creation with ID: " . $id
+                        );
+                    }
+                });
+                break;
+            }
         }
     }
 

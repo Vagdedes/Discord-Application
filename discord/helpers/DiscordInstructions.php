@@ -15,7 +15,7 @@ class DiscordInstructions
 
     public function __construct(DiscordPlan $plan)
     {
-        $account = new Account($plan->applicationID);
+        $account = new Account();
         $this->plan = $plan;
         $this->manager = $account->getInstructions();
         $this->manager->setAI($plan->aiMessages->getManagerAI());

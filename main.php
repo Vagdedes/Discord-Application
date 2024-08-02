@@ -20,7 +20,6 @@ require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
 require '/root/discord_bot/discord/custom/standalone/DiscordMute.php';
 require '/root/discord_bot/discord/custom/DiscordCommands.php';
 
-require '/root/discord_bot/discord/other/standalone/DiscordWebAttachments.php';
 require '/root/discord_bot/discord/other/standalone/DiscordFAQ.php';
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 
@@ -31,7 +30,6 @@ require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserPolls.php';
 require '/root/discord_bot/discord/user/standalone/DiscordUserSuggestions.php';
-require '/root/discord_bot/discord/user/standalone/DiscordUserEvents.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';

@@ -7,7 +7,6 @@
  * Custom Commands
  * -
  * Invite Tracker
- * Web Attachments
  * Frequently Asked Questions (FAQ)
  * -
  * Reaction Roles
@@ -50,13 +49,11 @@ class DiscordBot
     public DiscordMute $mute;
     public DiscordAntiExpirationThreads $discordAntiExpirationThreads;
     public DiscordPermissions $permissions;
-    public DiscordWebAttachments $webAttachments;
     public DiscordFAQ $faq;
     public DiscordListener $listener;
     public DiscordJoinRoles $joinRoles;
     public DiscordStatisticsChannels $statisticsChannels;
     public DiscordUserSuggestions $userSuggestions;
-    public DiscordUserEvents $userEvents;
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordChannels $channels;
     private int $counter;
@@ -75,12 +72,10 @@ class DiscordBot
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->permissions = new DiscordPermissions($this);
-        $this->webAttachments = new DiscordWebAttachments($this);
         $this->faq = new DiscordFAQ($this);
         $this->joinRoles = new DiscordJoinRoles($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->userSuggestions = new DiscordUserSuggestions($this);
-        $this->userEvents = new DiscordUserEvents($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
 
         $this->load();
