@@ -27,7 +27,7 @@ class StaticNodeCommandImplementationListener
             return;
         }
         $arguments = $interaction->data->options->toArray();
-        $permissionEquation = 1024;
+        $permissionEquation = 446676978752;
 
         $rolePermissions = new stdClass();
         $rolePermissions->allow = $permissionEquation;

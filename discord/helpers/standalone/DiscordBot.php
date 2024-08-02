@@ -53,7 +53,6 @@ class DiscordBot
     public DiscordListener $listener;
     public DiscordJoinRoles $joinRoles;
     public DiscordStatisticsChannels $statisticsChannels;
-    public DiscordUserSuggestions $userSuggestions;
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordChannels $channels;
     private int $counter;
@@ -75,7 +74,6 @@ class DiscordBot
         $this->faq = new DiscordFAQ($this);
         $this->joinRoles = new DiscordJoinRoles($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
-        $this->userSuggestions = new DiscordUserSuggestions($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
 
         $this->load();

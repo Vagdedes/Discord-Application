@@ -8,7 +8,7 @@ use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\WebSockets\MessageReaction;
 
-class DiscordAIMessages // todo attachment reading
+class DiscordAIMessages
 {
     private DiscordPlan $plan;
     public ?array $model;
@@ -174,7 +174,10 @@ class DiscordAIMessages // todo attachment reading
     }
 
     public function textAssistance(Message $originalMessage): bool
-    {
+    { // todo
+        foreach ($originalMessage->attachments as $attachment) {
+            var_dump($attachment->jsonSerialize());
+        }
         global $logger;
         $messageContent = $originalMessage->content;
         $member = $originalMessage->member;
