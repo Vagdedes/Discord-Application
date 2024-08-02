@@ -38,8 +38,7 @@ class AccountMessageCreationListener
         );
     }
 
-    public static function clearAttemptedAccountSession(Interaction $interaction,
-                                                        DiscordPlan $plan): void
+    public static function clearAttemptedAccountSession(Interaction $interaction): void
     {
         clear_memory(
             array(

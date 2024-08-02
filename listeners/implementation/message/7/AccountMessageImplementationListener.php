@@ -78,7 +78,7 @@ class AccountMessageImplementationListener
                 if ($account === null) {
                     $account = AccountMessageCreationListener::getAccountObject($interaction, $plan);
                 }
-                AccountMessageCreationListener::clearAttemptedAccountSession($interaction, $plan);
+                AccountMessageCreationListener::clearAttemptedAccountSession($interaction);
                 return MessageBuilder::new()->setContent(
                     $account->getActions()->logOut()->getMessage()
                 );
