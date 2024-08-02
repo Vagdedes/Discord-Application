@@ -238,6 +238,8 @@ class DiscordChannels
             $object->require_contained_text = null;
             $object->require_ending_text = null;
             $object->min_message_length = null;
+            $object->max_message_length = null;
+            $object->max_attachments_length = null;
             $object->message_cooldown = null;
             $object->message_retention = null;
             $object->prompt_message = null;

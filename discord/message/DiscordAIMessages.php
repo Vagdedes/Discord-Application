@@ -174,10 +174,7 @@ class DiscordAIMessages
     }
 
     public function textAssistance(Message $originalMessage): bool
-    { // todo
-        foreach ($originalMessage->attachments as $attachment) {
-            var_dump($attachment->jsonSerialize());
-        }
+    {
         global $logger;
         $messageContent = $originalMessage->content;
         $member = $originalMessage->member;
@@ -422,7 +419,8 @@ class DiscordAIMessages
                                                             $channel->ai_disclaimer
                                                         ),
                                                         null,
-                                                        $channel->debug !== null
+                                                        $channel->debug !== null,
+                                                        $channel->max_attachments_length
                                                     );
 
                                                     if ($reply === null) {
@@ -485,7 +483,8 @@ class DiscordAIMessages
                                       ?Message      $self,
                                       array         $systemInstructions,
                                       int           $extraHash = null,
-                                      bool          $debug = false): ?string
+                                      bool          $debug = false,
+                                      ?int          $maxAttachmentsLength = 0): ?string
     {
         if (is_array($source)) {
             $debug = false;
@@ -505,6 +504,16 @@ class DiscordAIMessages
                     . "Referenced Message by '" . $reference->author->username . "':"
                     . DiscordProperties::NEW_LINE
                     . $reference->content;
+            }
+            if ($maxAttachmentsLength !== null
+                && $maxAttachmentsLength > 0
+                && !empty($source->attachments->first())) {
+                $totalSize = 0;
+                // todo
+
+                foreach ($source->attachments as $attachment) {
+
+                }
             }
         }
         $parent = $this->plan->utilities->getChannel($channel);
