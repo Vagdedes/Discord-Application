@@ -83,99 +83,96 @@ class DiscordUserTickets
     }
 
     public function create(Interaction     $interaction,
-                            ?MessageBuilder $message,
-                            int|string|null $categoryID, string $channelName, ?string $channelTopic,
-                            int|string|null $memberAllowPermissions, int|string|null $memberDenyPermissions,
-                            ?array          $rolePermissions,
-                            int|string|null $duration): void
+                           ?MessageBuilder $message,
+                           int|string|null $categoryID, string $channelName, ?string $channelTopic,
+                           int|string|null $memberAllowPermissions, int|string|null $memberDenyPermissions,
+                           ?array          $rolePermissions,
+                           int|string|null $duration): void
     {
-        if (empty($this->abstractTickets)) {
-            global $logger;
-            $logger->logError($this->plan->planID, "Abstract ticket not found for plan with ID: " . $this->plan->planID);
-            return;
-        }
-        $id = null;
+        try {
+            $date = get_current_date(); // Always first
+            $this->checkExpired();
 
-        foreach ($this->abstractTickets as $ticket) {
-            $id = $ticket->id;
-            break;
-        }
-        $date = get_current_date(); // Always first
-        $this->checkExpired();
+            while (true) {
+                $ticketID = random_number(19);
 
-        while (true) {
-            $ticketID = random_number(19);
-
-            if (empty(get_sql_query(
-                BotDatabaseTable::BOT_TICKET_CREATIONS,
-                array("ticket_creation_id"),
-                array(
-                    array("ticket_creation_id", $ticketID)
-                ),
-                null,
-                1
-            ))) {
-                $insert = array(
-                    "plan_id" => $this->plan->planID,
-                    "ticket_id" => $id,
-                    "ticket_creation_id" => $ticketID,
-                    "server_id" => $interaction->guild_id,
-                    "channel_id" => $interaction->channel_id,
-                    "user_id" => $interaction->user->id,
-                    "creation_date" => $date,
-                    "deletion_date" => $duration !== null ? get_future_date($duration) : null
-                );
-
-                if (!empty($rolePermissions)) {
-                    foreach ($rolePermissions as $arrayKey => $role) {
-                        $rolePermissions[$arrayKey] = array(
-                            "id" => $arrayKey,
-                            "type" => "role",
-                            "allow" => $role->allow,
-                            "deny" => $role->deny
-                        );
-                    }
-                }
-                if (empty($memberAllowPermissions)
-                    && empty($memberDenyPermissions)) {
-                    $memberPermissions = array();
-                } else {
-                    $memberPermissions = array(
-                        array(
-                            "id" => $interaction->user->id,
-                            "type" => "member",
-                            "allow" => empty($memberAllowPermissions) ? 0 : $memberAllowPermissions,
-                            "deny" => empty($memberDenyPermissions) ? 0 : $memberDenyPermissions
-                        )
+                if (empty(get_sql_query(
+                    BotDatabaseTable::BOT_TICKET_CREATIONS,
+                    array("ticket_creation_id"),
+                    array(
+                        array("ticket_creation_id", $ticketID)
+                    ),
+                    null,
+                    1
+                ))) {
+                    $insert = array(
+                        "plan_id" => null,
+                        "ticket_id" => null,
+                        "ticket_creation_id" => $ticketID,
+                        "server_id" => $interaction->guild_id,
+                        "channel_id" => $interaction->channel_id,
+                        "user_id" => $interaction->user->id,
+                        "creation_date" => $date,
+                        "deletion_date" => $duration !== null ? get_future_date($duration) : null
                     );
-                }
-                $this->plan->utilities->createChannel(
-                    $interaction->guild,
-                    Channel::TYPE_TEXT,
-                    $categoryID,
-                    $channelName,
-                    $channelTopic,
-                    $rolePermissions,
-                    $memberPermissions
-                )->done(function (Channel $channel)
-                use ($ticketID, $insert, $interaction, $message, $id) {
-                    $insert["created_channel_id"] = $channel->id;
-                    $insert["created_channel_server_id"] = $channel->guild_id;
 
-                    if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
-                        if ($message !== null) {
-                            $channel->sendMessage($message);
+                    if (!empty($rolePermissions)) {
+                        foreach ($rolePermissions as $arrayKey => $role) {
+                            $rolePermissions[$arrayKey] = array(
+                                "id" => $arrayKey,
+                                "type" => "role",
+                                "allow" => $role->allow,
+                                "deny" => $role->deny
+                            );
                         }
+                    }
+                    if (empty($memberAllowPermissions)
+                        && empty($memberDenyPermissions)) {
+                        $memberPermissions = array();
                     } else {
-                        global $logger;
-                        $logger->logError(
-                            $this->plan->planID,
-                            "Failed to insert abstract ticket creation with ID: " . $id
+                        $memberPermissions = array(
+                            array(
+                                "id" => $interaction->user->id,
+                                "type" => "member",
+                                "allow" => empty($memberAllowPermissions) ? 0 : $memberAllowPermissions,
+                                "deny" => empty($memberDenyPermissions) ? 0 : $memberDenyPermissions
+                            )
                         );
                     }
-                });
-                break;
+                    $this->plan->utilities->createChannel(
+                        $interaction->guild,
+                        Channel::TYPE_TEXT,
+                        $categoryID,
+                        $channelName,
+                        $channelTopic,
+                        $rolePermissions,
+                        $memberPermissions
+                    )->done(function (Channel $channel)
+                    use ($ticketID, $insert, $interaction, $message) {
+                        try {
+                            $insert["created_channel_id"] = $channel->id;
+                            $insert["created_channel_server_id"] = $channel->guild_id;
+
+                            if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                                if ($message !== null) {
+                                    $channel->sendMessage($message);
+                                }
+                            } else {
+                                global $logger;
+                                $logger->logError(
+                                    $this->plan->planID,
+                                    "Failed to insert abstract ticket."
+                                );
+                            }
+                        } catch (Throwable $exception) {
+                            var_dump(2, $exception->getTraceAsString());
+                        }
+                    });
+                    break;
+                }
             }
+        } catch (Throwable $exception) {
+            var_dump($exception->getTraceAsString());
         }
     }
 
