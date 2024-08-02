@@ -176,7 +176,7 @@ class DiscordTransferredMessages
                                     continue;
                                 }
                             }
-                            $channel->messages->fetch($sentMessage->end_message_id)->done(function (Message $message)
+                            $channel->messages->fetch($sentMessage->end_message_id, true)->done(function (Message $message)
                             use ($sentMessage, $editedMessage) {
                                 $message->edit($this->buildMessage($editedMessage, false));
 
@@ -251,7 +251,7 @@ class DiscordTransferredMessages
                                     continue;
                                 }
                             }
-                            $channel->messages->fetch($sentMessage->end_message_id)->done(function (Message $message)
+                            $channel->messages->fetch($sentMessage->end_message_id, true)->done(function (Message $message)
                             use ($sentMessage, $date) {
                                 if (set_sql_query(
                                     BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,

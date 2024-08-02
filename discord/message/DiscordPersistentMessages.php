@@ -277,7 +277,7 @@ class DiscordPersistentMessages
                                  array          $array, int $position): void
     {
         try {
-            $channel->messages->fetch($oldMessageRow->message_id)->done(
+            $channel->messages->fetch($oldMessageRow->message_id, true)->done(
                 function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
                     $this->plan->component->addReactions($message, $messageRow->id);
                     if ($message->user_id == $this->plan->bot->botID) {

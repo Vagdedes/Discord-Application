@@ -171,6 +171,7 @@ class DiscordUtilities
         try {
             $message->channel?->messages->fetch(
                 $message instanceof Message ? $message->id : $message,
+                true
             )->done(function (Message $message) use ($messageBuilder) {
                 $message->reply($messageBuilder);
             });
@@ -213,6 +214,7 @@ class DiscordUtilities
         try {
             $message->channel?->messages->fetch(
                 $message instanceof Message ? $message->id : $message,
+                true
             )->done(function (Message $message) use ($messageBuilder) {
                 $message->edit(
                     $messageBuilder instanceof MessageBuilder ? $messageBuilder
@@ -228,6 +230,7 @@ class DiscordUtilities
         try {
             $message->channel->messages->fetch(
                 $message instanceof Message ? $message->id : $message,
+                true
             )->done(function (Message $message) {
                 $message->delete();
             });

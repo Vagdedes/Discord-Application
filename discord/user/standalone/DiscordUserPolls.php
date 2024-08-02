@@ -509,7 +509,7 @@ class DiscordUserPolls
                 }
             }
             try {
-                $channel->messages->fetch($running->message_id)->done(function (Message $message) use ($builder) {
+                $channel->messages->fetch($running->message_id, true)->done(function (Message $message) use ($builder) {
                     $message->edit($builder);
                 });
             } catch (Throwable $ignored) {
