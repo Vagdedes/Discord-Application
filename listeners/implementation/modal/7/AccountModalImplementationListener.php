@@ -192,7 +192,8 @@ class AccountModalImplementationListener
                 $account = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
 
                 if ($account !== null) {
-                    $code = array_shift($objects->toArray())["value"];
+                    $code = clone $objects;
+                    $code = array_shift($code->toArray())["value"];
                     return MessageBuilder::new()->setContent(
                         $account->getEmail()->completeVerification($code, true)->getMessage()
                     );
