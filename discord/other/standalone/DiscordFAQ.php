@@ -1,6 +1,10 @@
 <?php
 
+use Discord\Builders\Components\Option;
+use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
+use Discord\Helpers\Collection;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class DiscordFAQ
@@ -107,7 +111,31 @@ class DiscordFAQ
         if (empty($query)) {
             $builder->setContent("There are no frequently-asked questions set-up in this server.");
         } else {
-            // todo
+            $selection = SelectMenu::new()
+                ->setPlaceholder("Select a question to view the answer.")
+                ->setMinValues(1)
+                ->setMaxValues(1);
+
+            foreach ($query as $index => $row) {
+                $selection->addOption(
+                    Option::new($row->question, $index)->setDescription(
+                        substr($row->answer, 0, 100)
+                    )
+                );
+            }
+            $selection->setListener(function (Interaction $interaction, Collection $options) use ($query) {
+                $index = $options[0]->getValue();
+                $embed = new Embed($this->bot->discord);
+                $embed->setTitle($query[$index]->question);
+                $embed->setDescription($query[$index]->answer);
+
+                $this->bot->utilities->acknowledgeMessage(
+                    $interaction,
+                    MessageBuilder::new()->addEmbed($embed),
+                    true
+                );
+            }, $this->bot->discord);
+            $builder->addComponent($selection);
         }
         return $builder;
     }
