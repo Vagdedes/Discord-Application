@@ -509,10 +509,56 @@ class DiscordAIMessages
                 && $maxAttachmentsLength > 0
                 && !empty($source->attachments->first())) {
                 $totalSize = 0;
-                // todo
+                $attachments = array();
 
                 foreach ($source->attachments as $attachment) {
+                    $size = $attachment->size;
 
+                    if ($size <= $maxAttachmentsLength) {
+                        $contents = timed_file_get_contents($attachment->url, 5);
+
+                        if ($contents !== false) {
+                            $attachment = $attachment->jsonSerialize();
+                            unset($attachment["id"]);
+                            unset($attachment["url"]);
+                            unset($attachment["proxy_url"]);
+                            unset($attachment["ephemeral"]);
+                            unset($attachment["size"]);
+
+                            foreach ($attachment as $attachmentKey => $attachmentValue) {
+                                if ($attachmentValue === null) {
+                                    unset($attachment[$attachmentKey]);
+                                }
+                            }
+                            $attachment["contents"] = $contents;
+                            $contentType = $attachment["content_type"];
+                            unset($attachment["content_type"]);
+                            $attachment = json_encode($attachment);
+                            $size = strlen($attachment);
+
+                            if ($size <= $maxAttachmentsLength) {
+                                $attachments[$size] = array(
+                                    $contentType,
+                                    $attachment
+                                );
+                            }
+                        }
+                    }
+                }
+                if (!empty($attachments)) {
+                    ksort($attachments);
+
+                    foreach ($attachments as $size => $attachment) {
+                        $totalSize += $size;
+
+                        if ($totalSize > $maxAttachmentsLength) {
+                            break;
+                        }
+                        $content .= $this->plan->instructions->manager->buildExtra(
+                            $attachment[0],
+                            $attachment[1]
+                        );
+                    }
                 }
             }
         }
@@ -620,6 +666,7 @@ class DiscordAIMessages
                             "creation_date" => $date,
                         )
                     );
+                    $this->plan->instructions->manager->autoRemoveExtra();
                     return $reply;
                 } else {
                     global $logger;
@@ -644,8 +691,8 @@ class DiscordAIMessages
                 $this->plan->planID,
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
-            $this->plan->instructions->manager->autoRemoveExtra();
         }
+        $this->plan->instructions->manager->autoRemoveExtra();
         return null;
     }
 
