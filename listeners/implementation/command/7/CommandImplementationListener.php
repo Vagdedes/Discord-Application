@@ -4,6 +4,7 @@ use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class CommandImplementationListener
@@ -33,8 +34,111 @@ class CommandImplementationListener
             $account = $account->transform($object->account_id);
 
             if ($account->exists()) {
+                $arguments = $interaction->data->options->toArray();
+                $data = $arguments["data"]["value"];
+
+                if ($data !== null) {
+                    $data = strtolower($data);
+                    $schemas = get_sql_database_schemas();
+
+                    if (!empty($schemas)) {
+                        $nullColumnsKey = "NULL: ";
+                        $embedCount = 0;
+                        $embedLength = strlen($nullColumnsKey);
+
+                        foreach ($schemas as $schema) {
+                            $tables = get_sql_database_tables($schema);
+
+                            if (!empty($tables)) {
+                                foreach ($tables as $table) {
+                                    $table = $schema . "." . $table;
+
+                                    if (str_contains(strtolower($table), $data)) {
+                                        $query = get_sql_query(
+                                            $table,
+                                            null,
+                                            array(
+                                                array("account_id", $account->getDetail("id")),
+                                            ),
+                                            array(
+                                                "DESC",
+                                                "id"
+                                            ),
+                                            DiscordInheritedLimits::MAX_FIELDS_PER_EMBED
+                                        );
+
+                                        if (!empty($query)) {
+                                            $embed = new Embed($plan->bot->discord);
+                                            $length = strlen($table);
+
+                                            if ($embedLength + $length <= DiscordInheritedLimits::EMBED_COLLECTIVE_LENGTH_LIMIT) {
+                                                $embed->setTitle($table);
+                                                $embedLength += $length;
+                                            } else {
+                                                break 2;
+                                            }
+                                            foreach ($query as $row) {
+                                                $index = $row->id;
+                                                unset($row->id);
+                                                unset($row->account_id);
+                                                $rowString = "";
+                                                $nullKeys = array();
+                                                $length = strlen($index);
+
+                                                if ($embedLength + $length <= DiscordInheritedLimits::EMBED_COLLECTIVE_LENGTH_LIMIT) {
+                                                    $embedLength += $length;
+                                                } else {
+                                                    break 3;
+                                                }
+                                                foreach ($row as $key => $value) {
+                                                    if (empty($value)) {
+                                                        $length = strlen($key);
+
+                                                        if ($embedLength + $length <= DiscordInheritedLimits::EMBED_COLLECTIVE_LENGTH_LIMIT) {
+                                                            $nullKeys[] = $key;
+                                                            $embedLength += $length;
+                                                        } else {
+                                                            break 4;
+                                                        }
+                                                    } else {
+                                                        $string = "$key: $value\n";
+                                                        $length = strlen($string);
+
+                                                        if ($embedLength + $length <= DiscordInheritedLimits::EMBED_COLLECTIVE_LENGTH_LIMIT) {
+                                                            $rowString .= $string;
+                                                            $embedLength += $length;
+                                                        } else {
+                                                            break 4;
+                                                        }
+                                                    }
+                                                }
+                                                if (!empty($nullKeys)) {
+                                                    $rowString .= $nullColumnsKey . implode(", ", $nullKeys);
+                                                }
+                                                $embed->addFieldValues(
+                                                    $index,
+                                                    DiscordSyntax::HEAVY_CODE_BLOCK
+                                                    . str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $rowString)
+                                                    . DiscordSyntax::HEAVY_CODE_BLOCK,
+                                                    false
+                                                );
+                                            }
+                                            $message->addEmbed($embed);
+                                            $embedCount++;
+
+                                            if ($embedCount === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                                                break 2;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 $message->setContent(
-                    "https://www.idealistic.ai/contents/?path=account/panel&platform=1&id="
+                    "ID: " . $account->getDetail("id") . "\n"
+                    . "URL: https://www.idealistic.ai/contents/?path=account/panel&platform=1&id="
                     . $account->getDetail("email_address")
                 );
             } else {
