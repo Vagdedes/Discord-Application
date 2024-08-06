@@ -644,9 +644,9 @@ class AccountMessageCreationListener
                                     $embed = new Embed($plan->bot->discord);
                                     $embed->setTitle("Account History");
                                     $embed->setDescription(
-                                        get_full_date($history[$counter]->creation_date)
+                                        get_full_date($history[$max - 1]->creation_date)
                                         . " - "
-                                        . get_full_date($history[$max - 1]->creation_date)
+                                        . get_full_date($history[$counter]->creation_date)
                                     );
 
                                     for ($x = $counter; $x < $max; $x++) {
