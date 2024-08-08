@@ -14,7 +14,7 @@ class DiscordAIMessages
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
-    public const PAST_MESSAGES = 20;
+    public const PAST_MESSAGES = 10;
 
     const REACTION_COMPONENT_NAME = "general-feedback";
 
