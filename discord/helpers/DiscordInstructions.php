@@ -19,20 +19,6 @@ class DiscordInstructions
         $this->plan = $plan;
         $this->manager = $account->getInstructions();
         $this->manager->setAI($plan->aiMessages->getManagerAI());
-        $validProducts = $account->getProduct()->find(null, true, false);
-
-        if ($validProducts->isPositiveOutcome()) {
-            $array = array();
-            $validProducts = $validProducts->getObject();
-
-            foreach ($validProducts as $arrayKey => $product) {
-                $array[$arrayKey] = $account->getProduct()->clearObjectDetails($product);
-            }
-            $this->manager->addExtra(
-                "available-products",
-                $array
-            );
-        }
     }
 
     public function replace(array   $messages,
