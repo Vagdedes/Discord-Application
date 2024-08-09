@@ -1359,6 +1359,30 @@ function get_text_list_from_iterable(mixed $iterable, int $count = 0, bool $simp
 
 // Objects & Arrays
 
+function clear_object_null_keys(object $object): object
+{
+    $newObject = clone $object;
+
+    foreach ($newObject as $key => $value) {
+        if ($value === null) {
+            unset($newObject->{$key});
+        }
+    }
+    return $newObject;
+}
+
+function clear_array_null_keys(object $array): object
+{
+    $newArray = clone $array;
+
+    foreach ($newArray as $key => $value) {
+        if ($value === null) {
+            unset($newArray[$key]);
+        }
+    }
+    return $newArray;
+}
+
 function get_object_depth_key(object $object, string $keys, string $separator = "."): array
 {
     $keys = explode($separator, $keys);
