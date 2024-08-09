@@ -1371,9 +1371,9 @@ function clear_object_null_keys(object $object): object
     return $newObject;
 }
 
-function clear_array_null_keys(object $array): object
+function clear_array_null_keys(array $array): array
 {
-    $newArray = clone $array;
+    $newArray = $array;
 
     foreach ($newArray as $key => $value) {
         if ($value === null) {
