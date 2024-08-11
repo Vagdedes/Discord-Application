@@ -577,4 +577,18 @@ class CommandImplementationListener
         );
     }
 
+    public static function manage_platform_user(DiscordPlan $plan,
+                                                Interaction $interaction,
+                                                object      $command): void
+    {
+
+    }
+
+    public static function financial_input(DiscordPlan $plan,
+                                           Interaction $interaction,
+                                           object      $command): void
+    {
+
+    }
+
 }
