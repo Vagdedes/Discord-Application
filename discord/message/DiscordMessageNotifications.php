@@ -207,6 +207,12 @@ class DiscordMessageNotifications
                     ->setContent($notificationMessage);
             } else if ($notification->message_name !== null) {
                 $notificationMessage = $this->plan->persistentMessages->get($object, $notification->message_name);
+
+                if ($notification->notification !== null) {
+                    $notificationMessage->setContent(
+                        $this->plan->instructions->replace(array($notification->notification), $object)[0]
+                    );
+                }
             } else {
                 $notificationMessage = MessageBuilder::new()->setContent(
                     $this->plan->instructions->replace(array($notification->notification), $object)[0]
