@@ -600,7 +600,7 @@ class CommandImplementationListener
         );
         $reason = $arguments["reason"]["value"];
         $duration = $arguments["duration"]["value"];
-        $product =  $arguments["product-id"]["value"];
+        $product = $arguments["product-id"]["value"];
         $type = $arguments["type"]["value"];
 
         if ($arguments["add"]["value"]) {
@@ -630,7 +630,22 @@ class CommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $year = $arguments["year"]["value"];
         $month = $arguments["month"]["value"];
-        // todo
+        $results = get_financial_input($year, $month);
+
+        if (!empty($results)) {
+            if (array_key_exists("total", $results)) {
+                $message = json_encode($results["total"]);
+            } else {
+                $message = "No information found. (2)";
+            }
+        } else {
+            $message = "No information found. (1)";
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($message),
+            true
+        );
     }
 
 }
