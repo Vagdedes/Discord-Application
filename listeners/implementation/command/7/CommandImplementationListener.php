@@ -285,7 +285,13 @@ class CommandImplementationListener
                                                     object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        var_dump(strval(queue_paypal_transaction($arguments["transaction-id"]["value"])));
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent(
+                strval(queue_paypal_transaction($arguments["transaction-id"]["value"]))
+            ),
+            true
+        );
     }
 
     public static function fail_paypal_transaction(DiscordPlan $plan,
@@ -293,7 +299,13 @@ class CommandImplementationListener
                                                    object      $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        var_dump(strval(process_failed_paypal_transaction($arguments["transaction-id"]["value"])));
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent(
+                strval(process_failed_paypal_transaction($arguments["transaction-id"]["value"]))
+            ),
+            true
+        );
     }
 
     public static function suspend_paypal_transactions(DiscordPlan $plan,
@@ -581,14 +593,44 @@ class CommandImplementationListener
                                                 Interaction $interaction,
                                                 object      $command): void
     {
+        $arguments = $interaction->data->options->toArray();
+        $gameCloudUser = new GameCloudUser(
+            $arguments["platform-id"]["value"],
+            $arguments["license-id"]["value"]
+        );
+        $reason = $arguments["reason"]["value"];
+        $duration = $arguments["duration"]["value"];
+        $product =  $arguments["product-id"]["value"];
+        $type = $arguments["type"]["value"];
 
+        if ($arguments["add"]["value"]) {
+            $message = strval($gameCloudUser->getVerification()->addLicenseManagement(
+                $product,
+                $type,
+                !empty($reason) ? $reason : null,
+                !empty($duration) ? get_future_date($duration) : null
+            ));
+        } else {
+            $message = strval($gameCloudUser->getVerification()->removeLicenseManagement(
+                $product,
+                $type
+            ));
+        }
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent($message),
+            true
+        );
     }
 
     public static function financial_input(DiscordPlan $plan,
                                            Interaction $interaction,
                                            object      $command): void
     {
-
+        $arguments = $interaction->data->options->toArray();
+        $year = $arguments["year"]["value"];
+        $month = $arguments["month"]["value"];
+        // todo
     }
 
 }
