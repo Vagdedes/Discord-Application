@@ -84,68 +84,71 @@ class AccountMessageCreationListener
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
         $account = self::getAccountObject($interaction, $plan);
-        $productGiveaway = $account->getProductGiveaway();
-        $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days");
-        $currentGiveaway = $currentGiveawayOutcome->getObject();
 
-        if ($currentGiveaway !== null) { // Check if current giveaway exists
-            $embed = new Embed($plan->bot->discord);
-            $lastGiveawayInformation = $productGiveaway->getLast();
+        if (false) {
+            $productGiveaway = $account->getProductGiveaway();
+            $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days");
+            $currentGiveaway = $currentGiveawayOutcome->getObject();
 
-            if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
-                $lastGiveawayInformation = $lastGiveawayInformation->getObject();
-                $lastGiveawayWinners = $lastGiveawayInformation[0];
-                $lastGiveawayProduct = $lastGiveawayInformation[1];
-                $hasWinners = !empty($lastGiveawayWinners);
-                $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
-                $productToWinName = strip_tags($currentGiveaway->product->name);
+            if ($currentGiveaway !== null) { // Check if current giveaway exists
+                $embed = new Embed($plan->bot->discord);
+                $lastGiveawayInformation = $productGiveaway->getLast();
 
-                if ($hasWinners) { // Check if winners exist
-                    $lastGiveawayWinners = implode(", ", $lastGiveawayWinners);
-                    $description = "**" . $lastGiveawayWinners
-                        . "** won the product **" . strip_tags($lastGiveawayProduct->name) . "** in the last giveaway.";
-                } else {
-                    $description = "";
-                }
-                $embed->setAuthor(
-                    "GIVEAWAY | " . $productToWinName . " (" . $days . " " . ($days == 1 ? "day" : "days") . " remaining)",
-                    $currentGiveaway->product->image,
-                );
-                $embed->setDescription($description);
-                $embed->setFooter(
-                    "To participate, create an account, verify your email, and finally download a product you own or will buy."
-                    . " You will be included in this and all future giveaways."
-                );
+                if ($lastGiveawayInformation->isPositiveOutcome()) { // Check if the product of the last giveaway is valid
+                    $lastGiveawayInformation = $lastGiveawayInformation->getObject();
+                    $lastGiveawayWinners = $lastGiveawayInformation[0];
+                    $lastGiveawayProduct = $lastGiveawayInformation[1];
+                    $hasWinners = !empty($lastGiveawayWinners);
+                    $days = max(get_date_days_difference($currentGiveaway->expiration_date), 1);
+                    $productToWinName = strip_tags($currentGiveaway->product->name);
 
-                // Separator
-
-                if (false
-                    && $hasWinners
-                    && $currentGiveawayOutcome->isPositiveOutcome()) {
-                    $announcement = MessageBuilder::new();
-                    //$announcement->setContent("||@everyone||");
-                    $announcementEmbed = new Embed($plan->bot->discord);
-                    $announcementEmbed->setAuthor(
-                        "GIVEAWAY WINNER"
+                    if ($hasWinners) { // Check if winners exist
+                        $lastGiveawayWinners = implode(", ", $lastGiveawayWinners);
+                        $description = "**" . $lastGiveawayWinners
+                            . "** won the product **" . strip_tags($lastGiveawayProduct->name) . "** in the last giveaway.";
+                    } else {
+                        $description = "";
+                    }
+                    $embed->setAuthor(
+                        "GIVEAWAY | " . $productToWinName . " (" . $days . " " . ($days == 1 ? "day" : "days") . " remaining)",
+                        $currentGiveaway->product->image,
                     );
-                    $announcementEmbed->setTitle("Click to Participate!");
-                    $announcementEmbed->setURL("");
-                    $announcementEmbed->setDescription(
-                        "Congratulations to **" . $lastGiveawayWinners
-                        . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
+                    $embed->setDescription($description);
+                    $embed->setFooter(
+                        "To participate, create an account, verify your email, and finally download a product you own or will buy."
+                        . " You will be included in this and all future giveaways."
                     );
-                    $announcementEmbed->setImage($lastGiveawayProduct->image);
-                    $announcementEmbed->setTimestamp(time());
-                    $announcement->addEmbed($announcementEmbed);
-                    $channel = $plan->bot->discord->getChannel(0);
 
-                    if ($channel !== null
-                        && $channel->allowText()) {
-                        $channel->sendMessage($announcement);
+                    // Separator
+
+                    if (false
+                        && $hasWinners
+                        && $currentGiveawayOutcome->isPositiveOutcome()) {
+                        $announcement = MessageBuilder::new();
+                        //$announcement->setContent("||@everyone||");
+                        $announcementEmbed = new Embed($plan->bot->discord);
+                        $announcementEmbed->setAuthor(
+                            "GIVEAWAY WINNER"
+                        );
+                        $announcementEmbed->setTitle("Click to Participate!");
+                        $announcementEmbed->setURL("");
+                        $announcementEmbed->setDescription(
+                            "Congratulations to **" . $lastGiveawayWinners
+                            . "** for winning the product **" . strip_tags($lastGiveawayProduct->name) . "**!"
+                        );
+                        $announcementEmbed->setImage($lastGiveawayProduct->image);
+                        $announcementEmbed->setTimestamp(time());
+                        $announcement->addEmbed($announcementEmbed);
+                        $channel = $plan->bot->discord->getChannel(0);
+
+                        if ($channel !== null
+                            && $channel->allowText()) {
+                            $channel->sendMessage($announcement);
+                        }
                     }
                 }
+                $messageBuilder->addEmbed($embed);
             }
-            $messageBuilder->addEmbed($embed);
         }
         return $messageBuilder;
     }
@@ -166,50 +169,69 @@ class AccountMessageCreationListener
         $products = $productObject->find(null, true, false);
 
         if ($products->isPositiveOutcome()) {
-            $select = SelectMenu::new();
-            $select->setMinValues(1);
-            $select->setMaxValues(1);
-            $select->setPlaceholder("Select a product to download.");
+            $products = $products->getObject();
+            $listSize = 0;
 
-            foreach ($products->getObject() as $product) {
+            foreach ($products as $product) {
                 if ($product->show_in_list !== null) {
-                    $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
-                    $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
-                    $select->addOption($option);
+                    $listSize++;
                 }
             }
 
-            $select->setListener(function (Interaction $interaction, Collection $options)
-            use ($productObject, $plan, $select, $account) {
-                $plan->utilities->acknowledgeMessage(
-                    $interaction,
-                    function () use ($plan, $interaction, $productObject, $options, $account) {
-                        $product = $productObject->find($options[0]->getValue(), true, false);
-
-                        if ($product->isPositiveOutcome()) {
-                            return self::loadProduct(
-                                $plan,
-                                $account,
-                                $product->getObject()[0]
-                            );
-                        } else {
-                            return MessageBuilder::new()->setContent($product->getMessage());
-                        }
-                    },
-                    true
+            if ($listSize === 0) {
+                $messageBuilder->setContent("No products listed.");
+            } else if ($listSize === 1) {
+                $messageBuilder = self::loadProduct(
+                    $plan,
+                    $account,
+                    $products[0]
                 );
-            }, $plan->bot->discord);
-            $messageBuilder->addComponent($select);
+            } else {
+                $select = SelectMenu::new();
+                $select->setMinValues(1);
+                $select->setMaxValues(1);
+                $select->setPlaceholder("Select a product to download.");
 
-            if (!$loggedIn) {
-                $actionRow = ActionRow::new();
-                $button = Button::new(Button::STYLE_SUCCESS)
-                    ->setLabel("You Must be Logged In to Download")
-                    ->setListener(function (Interaction $interaction) use ($plan) {
-                        $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-                    }, $plan->bot->discord);
-                $actionRow->addComponent($button);
-                $messageBuilder->addComponent($actionRow);
+                foreach ($products as $product) {
+                    if ($product->show_in_list !== null) {
+                        $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
+                        $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
+                        $select->addOption($option);
+                    }
+                }
+
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($productObject, $plan, $select, $account) {
+                    $plan->utilities->acknowledgeMessage(
+                        $interaction,
+                        function () use ($plan, $interaction, $productObject, $options, $account) {
+                            $product = $productObject->find($options[0]->getValue(), true, false);
+
+                            if ($product->isPositiveOutcome()) {
+                                return self::loadProduct(
+                                    $plan,
+                                    $account,
+                                    $product->getObject()[0]
+                                );
+                            } else {
+                                return MessageBuilder::new()->setContent($product->getMessage());
+                            }
+                        },
+                        true
+                    );
+                }, $plan->bot->discord);
+                $messageBuilder->addComponent($select);
+
+                if (!$loggedIn) {
+                    $actionRow = ActionRow::new();
+                    $button = Button::new(Button::STYLE_SUCCESS)
+                        ->setLabel("You Must be Logged In to Download")
+                        ->setListener(function (Interaction $interaction) use ($plan) {
+                            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
+                        }, $plan->bot->discord);
+                    $actionRow->addComponent($button);
+                    $messageBuilder->addComponent($actionRow);
+                }
             }
         } else {
             $messageBuilder->setContent("No products found.");
