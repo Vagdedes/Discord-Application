@@ -643,9 +643,9 @@ class AccountMessageCreationListener
                         $counter = $i * $limit;
                         $max = min($counter + $limit, $size);
                         $select->addOption(Option::new(
-                            get_full_date($history[$counter]->creation_date)
+                            get_full_date($history[$max - 1]->creation_date)
                             . " - "
-                            . get_full_date($history[$max - 1]->creation_date),
+                            . get_full_date($history[$counter]->creation_date),
                             $i
                         ));
                     }
