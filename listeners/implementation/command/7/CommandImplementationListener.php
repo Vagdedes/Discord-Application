@@ -630,22 +630,39 @@ class CommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $year = $arguments["year"]["value"];
         $month = $arguments["month"]["value"];
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent("Please wait..."),
+            true
+        );
         $results = get_financial_input($year, $month);
 
         if (!empty($results)) {
-            if (array_key_exists("total", $results)) {
-                $message = json_encode($results["total"]);
+            $results = $results["total"] ?? null;
+
+            if ($results !== null) {
+                if (is_array($results)) {
+                    $message = MessageBuilder::new();
+                    $embed = new Embed($plan->bot->discord);
+
+                    foreach ($results as $key => $value) {
+                        $embed->addFieldValues(
+                            $key,
+                            is_string($value) ? $value : json_encode($value),
+                            false
+                        );
+                    }
+                    $message->addEmbed($embed);
+                } else {
+                    $message = MessageBuilder::new()->setContent("No information found. (3)");
+                }
             } else {
-                $message = "No information found. (2)";
+                $message = MessageBuilder::new()->setContent("No information found. (2)");
             }
         } else {
-            $message = "No information found. (1)";
+            $message = MessageBuilder::new()->setContent("No information found. (1)");
         }
-        $plan->utilities->acknowledgeCommandMessage(
-            $interaction,
-            MessageBuilder::new()->setContent($message),
-            true
-        );
+        $interaction->updateOriginalResponse($message);
     }
 
 }
