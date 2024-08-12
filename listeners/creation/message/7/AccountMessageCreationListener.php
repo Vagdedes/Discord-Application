@@ -312,7 +312,6 @@ class AccountMessageCreationListener
                 . " " . strip_tags($product->latest_version->suffix));
         }
         $embed->setImage($product->image);
-        $release = $product->latest_version !== null ? $product->latest_version : "";
         //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
             ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
