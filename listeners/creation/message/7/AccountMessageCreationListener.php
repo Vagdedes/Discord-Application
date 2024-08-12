@@ -170,21 +170,21 @@ class AccountMessageCreationListener
 
         if ($products->isPositiveOutcome()) {
             $products = $products->getObject();
-            $listSize = 0;
+            $show = array();
 
             foreach ($products as $product) {
                 if ($product->show_in_list !== null) {
-                    $listSize++;
+                    $show[] = $product;
                 }
             }
 
-            if ($listSize === 0) {
+            if (sizeof($show) === 0) {
                 $messageBuilder->setContent("No products listed.");
-            } else if ($listSize === 1) {
+            } else if (sizeof($show) === 1) {
                 $messageBuilder = self::loadProduct(
                     $plan,
                     $account,
-                    $products[0]
+                    $show[0]
                 );
             } else {
                 $select = SelectMenu::new();
@@ -192,12 +192,10 @@ class AccountMessageCreationListener
                 $select->setMaxValues(1);
                 $select->setPlaceholder("Select a product to download.");
 
-                foreach ($products as $product) {
-                    if ($product->show_in_list !== null) {
-                        $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
-                        $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
-                        $select->addOption($option);
-                    }
+                foreach ($show as $product) {
+                    $option = Option::new(substr(strip_tags($product->name), 0, 100), $product->id);
+                    $option->setDescription(substr(DiscordSyntax::htmlToDiscord($product->description), 0, 100));
+                    $select->addOption($option);
                 }
 
                 $select->setListener(function (Interaction $interaction, Collection $options)
@@ -299,19 +297,22 @@ class AccountMessageCreationListener
             } else {
                 $embed->setFooter($price);
             }
-            $canDownload = true;
         } else {
             $embed->setFooter($price);
-            $canDownload = !empty($product->downloads);
         }
 
         $embed->setAuthor(
-            strip_tags($product->name) . ($canDownload ? " (Latest Version)" : ""),
+            strip_tags($product->name),
             null,
             $downloadURL
         );
+        if ($product->latest_version !== null) {
+            $embed->setTitle(strip_tags($product->latest_version->prefix) . " "
+                . $product->latest_version->version
+                . " " . strip_tags($product->latest_version->suffix));
+        }
         $embed->setImage($product->image);
-        //$release = $product->latest_version !== null ? $product->latest_version : null;
+        $release = $product->latest_version !== null ? $product->latest_version : "";
         //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
             ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
@@ -345,7 +346,7 @@ class AccountMessageCreationListener
                             }
                             $embed->setDescription(DiscordSyntax::htmlToDiscord($compatibleProduct->description));
                             $embed->setAuthor(
-                                $product->compatibility_description,
+                                strip_tags($product->compatibility_description),
                                 $compatibleProduct->image,
                             );
                             $messageBuilder->addEmbed($embed);
@@ -363,11 +364,11 @@ class AccountMessageCreationListener
                     $embed = new Embed($plan->bot->discord);
 
                     if ($family !== null) {
-                        $embed->setTitle($family);
+                        $embed->setTitle(strip_tags($family));
                     }
                     foreach ($divisions as $division) {
                         $embed->addFieldValues(
-                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                            DiscordSyntax::htmlToDiscord($division->name),
                             DiscordSyntax::htmlToDiscord($division->description),
                         );
                     }
@@ -404,7 +405,7 @@ class AccountMessageCreationListener
                             $division = $productDivisions[$options[0]->getValue()];
 
                             if ($division->has_title) {
-                                $embed->setTitle($division->title);
+                                $embed->setTitle(strip_tags($division->title));
                             }
 
                             foreach ($division->contents as $division) {
@@ -710,28 +711,6 @@ class AccountMessageCreationListener
             $embed->setDescription("Be the first to join!");
         }
         $messageBuilder->addEmbed($embed);
-        return $messageBuilder;
-    }
-
-    public static function product_advertisement(DiscordPlan    $plan,
-                                                 ?Interaction   $interaction,
-                                                 MessageBuilder $messageBuilder): MessageBuilder
-    {
-        $url = "https://discord.com/channels/289384242075533313/728076672217120808";
-        $embed = new Embed($plan->bot->discord);
-        $embed->setTitle("Spartan AntiCheat: Get Detection Slots!");
-        $embed->setURL($url);
-        $embed->setImage("https://vagdedes.com/.images/spartan/banner.png");
-        $embed->setDescription("When your server/network has more Online Players than your Detection Slots,"
-            . " your players will be checked in groups over time instead of all together every time the server refreshes.");
-        $messageBuilder->addEmbed($embed);
-
-        $row = ActionRow::new();
-        $button = Button::new(Button::STYLE_LINK)
-            ->setLabel("Start your FREE Trial today!")
-            ->setURL($url);
-        $row->addComponent($button);
-        $messageBuilder->addComponent($row);
         return $messageBuilder;
     }
 

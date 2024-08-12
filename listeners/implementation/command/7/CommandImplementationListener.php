@@ -647,7 +647,7 @@ class CommandImplementationListener
 
                     foreach ($results as $key => $value) {
                         $embed->addFieldValues(
-                            $key,
+                            is_string($key) ? $key : json_encode($key),
                             is_string($value) ? $value : json_encode($value),
                             false
                         );
@@ -662,7 +662,11 @@ class CommandImplementationListener
         } else {
             $message = MessageBuilder::new()->setContent("No information found. (1)");
         }
-        $interaction->updateOriginalResponse($message);
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            $message,
+            true
+        );
     }
 
 }
