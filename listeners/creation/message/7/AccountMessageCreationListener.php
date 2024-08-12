@@ -303,7 +303,7 @@ class AccountMessageCreationListener
 
         $embed->setAuthor(
             strip_tags($product->name),
-            null,
+            $product->image,
             $downloadURL
         );
         if ($product->latest_version !== null) {
