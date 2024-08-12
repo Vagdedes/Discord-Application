@@ -303,7 +303,7 @@ class AccountMessageCreationListener
 
         $embed->setAuthor(
             strip_tags($product->name),
-            $product->image,
+            $product->sub_image,
             $downloadURL
         );
         if ($product->latest_version !== null) {
@@ -314,7 +314,7 @@ class AccountMessageCreationListener
         $embed->setImage($product->image);
         //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
         $legalInformation = $product->legal_information !== null
-            ? "[By purchasing/downloading, you acknowledge and accept this product/service's terms](" . $product->legal_information . ")"
+            ? "[By purchasing/downloading, you accept these linked terms](" . $product->legal_information . ")"
             : null;
 
         $embed->addFieldValues(DiscordSyntax::htmlToDiscord($product->description), $legalInformation);
