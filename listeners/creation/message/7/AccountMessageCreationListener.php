@@ -491,6 +491,9 @@ class AccountMessageCreationListener
                     $card->image,
                     $card->url
                 );
+                if ($product->color !== null) {
+                    $embed->setColor($product->color);
+                }
                 $messageBuilder->addEmbed($embed);
             }
         }
