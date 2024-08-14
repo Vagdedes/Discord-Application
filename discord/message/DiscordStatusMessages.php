@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\User\Member;
+use Discord\Parts\Thread\Thread;
 
 class DiscordStatusMessages
 {
@@ -34,6 +35,17 @@ class DiscordStatusMessages
                         if ($channel->whitelist === null) {
                             $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
+                            if ($channel->thread_id !== null) {
+                                if (!empty($channel->threads->first())) {
+                                    foreach ($channel->threads as $thread) {
+                                        if ($thread instanceof Thread && $channel->thread_id == $thread->id) {
+                                            $channelFound = $thread;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
                             if ($channelFound !== null
                                 && $channelFound->allowText()
                                 && $channelFound->guild_id == $serverID) {
@@ -47,8 +59,20 @@ class DiscordStatusMessages
                                     if ($whitelist->user_id == $userID
                                         && ($whitelist->server_id === null
                                             || $whitelist->server_id == $serverID
-                                            && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id))) {
+                                            && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id)
+                                            && ($whitelist->thread_id === null || $whitelist->thread_id == $channel->thread_id))) {
                                         $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+
+                                        if ($channel->thread_id !== null) {
+                                            if (!empty($channel->threads->first())) {
+                                                foreach ($channel->threads as $thread) {
+                                                    if ($thread instanceof Thread && $channel->thread_id == $thread->id) {
+                                                        $channelFound = $thread;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
 
                                         if ($channelFound !== null
                                             && $channelFound->allowText()
