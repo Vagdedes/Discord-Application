@@ -144,9 +144,9 @@ class DiscordUtilities
 
     // Separator
 
-    public function acknowledgeMessage(Interaction    $interaction,
+    public function acknowledgeMessage(Interaction             $interaction,
                                        MessageBuilder|callable $messageBuilder,
-                                       bool           $ephemeral): void
+                                       bool                    $ephemeral): void
     {
         $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
             if ($messageBuilder instanceof MessageBuilder) {
@@ -159,9 +159,9 @@ class DiscordUtilities
 
     public function acknowledgeCommandMessage(Interaction    $interaction,
                                               MessageBuilder $messageBuilder,
-                                              bool           $ephemeral): void
+                                              bool           $ephemeral): mixed
     {
-        $interaction->respondWithMessage($messageBuilder, $ephemeral);
+        return $interaction->respondWithMessage($messageBuilder, $ephemeral);
     }
 
     // Separator

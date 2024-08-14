@@ -634,39 +634,36 @@ class CommandImplementationListener
             $interaction,
             MessageBuilder::new()->setContent("Please wait..."),
             true
-        );
-        $results = get_financial_input($year, $month);
+        )->done(function () use ($interaction, $year, $month, $plan) {
+            $results = get_financial_input($year, $month);
 
-        if (!empty($results)) {
-            $results = $results["total"] ?? null;
+            if (!empty($results)) {
+                $results = $results["total"] ?? null;
 
-            if ($results !== null) {
-                if (is_array($results)) {
-                    $message = MessageBuilder::new();
-                    $embed = new Embed($plan->bot->discord);
+                if ($results !== null) {
+                    if (is_object($results)) {
+                        $message = MessageBuilder::new();
+                        $embed = new Embed($plan->bot->discord);
 
-                    foreach ($results as $key => $value) {
-                        $embed->addFieldValues(
-                            is_string($key) ? $key : json_encode($key),
-                            is_string($value) ? $value : json_encode($value),
-                            false
-                        );
+                        foreach ($results as $key => $value) {
+                            $embed->addFieldValues(
+                                is_string($key) ? $key : json_encode($key),
+                                is_string($value) ? $value : json_encode($value),
+                                false
+                            );
+                        }
+                        $message->addEmbed($embed);
+                    } else {
+                        $message = MessageBuilder::new()->setContent("No information found. (3)");
                     }
-                    $message->addEmbed($embed);
                 } else {
-                    $message = MessageBuilder::new()->setContent("No information found. (3)");
+                    $message = MessageBuilder::new()->setContent("No information found. (2)");
                 }
             } else {
-                $message = MessageBuilder::new()->setContent("No information found. (2)");
+                $message = MessageBuilder::new()->setContent("No information found. (1)");
             }
-        } else {
-            $message = MessageBuilder::new()->setContent("No information found. (1)");
-        }
-        $plan->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $message,
-            true
-        );
+            $interaction->updateOriginalResponse($message);
+        });
     }
 
 }

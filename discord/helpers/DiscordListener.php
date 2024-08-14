@@ -136,7 +136,11 @@ class DiscordListener
                         $mute = $this->plan->bot->mute->isMuted($interaction->member, $interaction->channel, DiscordMute::COMMAND);
 
                         if ($mute !== null) {
-                            return $mute->creation_reason;
+                            $this->plan->utilities->acknowledgeCommandMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($mute->creation_reason),
+                                $command->ephemeral !== null
+                            );
                         } else if ($command->required_permission !== null
                             && !$this->plan->bot->permissions->hasPermission(
                                 $interaction->member,
