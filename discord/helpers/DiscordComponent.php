@@ -336,10 +336,6 @@ class DiscordComponent
                         }
                         $actionRow->addComponent($button);
 
-                        $this->plan->instructions->manager->addExtra(
-                            "message-button" . $componentID,
-                            $button->jsonSerialize()
-                        );
                         if (!$button->isDisabled() && $button->getStyle() !== Button::STYLE_LINK) {
                             $button->setListener(function (Interaction $interaction)
                             use ($actionRow, $button, $buttonObject, $messageBuilder) {
@@ -447,11 +443,7 @@ class DiscordComponent
                     $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
-
-                $this->plan->instructions->manager->addExtra(
-                    "message-selection" . $componentID,
-                    $select->jsonSerialize()
-                );
+                
                 if ($listener) {
                     $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
                         $interaction,

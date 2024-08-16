@@ -1366,6 +1366,10 @@ function clear_object_null_keys(object $object): object
     foreach ($newObject as $key => $value) {
         if ($value === null) {
             unset($newObject->{$key});
+        } else if (is_object($value)) {
+            $newObject->{$key} = clear_object_null_keys($value);
+        } else if (is_array($value)) {
+            $newObject->{$key} = clear_array_null_keys($value);
         }
     }
     return $newObject;
@@ -1378,6 +1382,10 @@ function clear_array_null_keys(array $array): array
     foreach ($newArray as $key => $value) {
         if ($value === null) {
             unset($newArray[$key]);
+        } else if (is_object($value)) {
+            $newArray[$key] = clear_object_null_keys($value);
+        } else if (is_array($value)) {
+            $newArray[$key] = clear_array_null_keys($value);
         }
     }
     return $newArray;
