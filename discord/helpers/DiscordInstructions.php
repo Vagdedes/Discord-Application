@@ -38,7 +38,8 @@ class DiscordInstructions
                     "publicInstructions" => function () use ($specificPublic, $userInput) {
                         return $this->manager->getPublic(
                             $specificPublic,
-                            $userInput
+                            $userInput,
+                            false
                         );
                     },
                     "botReplies" => function () use ($object) {
