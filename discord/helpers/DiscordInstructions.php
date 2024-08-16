@@ -33,7 +33,7 @@ class DiscordInstructions
                 $messages,
                 $object,
                 !$callables
-                    ? array()
+                    ? null
                     : array(
                     "publicInstructions" => function () use ($specificPublic, $userInput) {
                         return $this->manager->getPublic(

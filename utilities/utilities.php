@@ -61,7 +61,7 @@ function get_raw_google_doc(string $url, bool $returnHTML = false, int $timeoutS
         if (sizeof($html) > 1) {
             $html = explode('<script', $html[1])[0];
             $html = str_replace("</span>", "\n</span>", $html);
-            $html = strip_tags($html);
+            $html = strip_tags($html,"<a>");
 
             if ($returnHTML) {
                 $html = str_replace("\n", "<br>", $html);
