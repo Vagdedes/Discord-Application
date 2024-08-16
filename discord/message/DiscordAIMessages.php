@@ -571,54 +571,38 @@ class DiscordAIMessages
             if ($extraHash !== null) {
                 $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
             }
+            $input = array(
+                "messages" => array(
+                    array(
+                        "role" => "system",
+                        "content" => $this->plan->instructions->build(
+                            $systemInstructions[0],
+                            $systemInstructions[1],
+                            $systemInstructions[2],
+                            $content
+                        )
+                    ),
+                    array(
+                        "role" => "user",
+                        "content" => $content
+                    )
+                )
+            );
             $outcome = $managerAI->getResult(
                 $hash,
-                array(
-                    "messages" => array(
-                        array(
-                            "role" => "system",
-                            "content" => $this->plan->instructions->build(
-                                $systemInstructions[0],
-                                $systemInstructions[1],
-                                $systemInstructions[2],
-                                $content
-                            )
-                        ),
-                        array(
-                            "role" => "user",
-                            "content" => $content
-                        )
-                    )
-                ),
+                $input,
                 30
             );
 
             if ($debug) {
-                foreach ($systemInstructions as $instruction) {
-                    if (!empty($instruction)) {
-                        foreach (str_split($instruction, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                            $this->plan->utilities->replyMessage(
-                                $self,
-                                MessageBuilder::new()->setContent($split)
-                            );
-                        }
-                    }
+                foreach (str_split(json_encode($input), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                    $this->plan->utilities->replyMessage(
+                        $self,
+                        MessageBuilder::new()->setContent($split)
+                    );
                 }
             }
             if (array_shift($outcome)) { // Success
-                if ($debug) {
-                    foreach ($outcome as $part) {
-                        if (@json_decode($part) === null) {
-                            $part = @json_encode($part);
-                        }
-                        foreach (str_split($part, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                            $this->plan->utilities->replyMessage(
-                                $self,
-                                MessageBuilder::new()->setContent($split)
-                            );
-                        }
-                    }
-                }
                 $model = array_shift($outcome);
                 $replyObject = array_shift($outcome);
                 $reply = $managerAI->getText($model, $replyObject);
