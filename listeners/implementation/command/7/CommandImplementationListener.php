@@ -642,7 +642,7 @@ class CommandImplementationListener
 
                 if ($results !== null) {
                     if (is_object($results)) {
-                        $message = MessageBuilder::new();
+                        $message = MessageBuilder::new()->setContent("Completed");
                         $embed = new Embed($plan->bot->discord);
 
                         foreach ($results as $key => $value) {
