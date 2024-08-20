@@ -61,7 +61,6 @@ class DiscordLogs
         if ($this->ignoreAction > 0 && $action === Event::MESSAGE_CREATE) {
             $this->ignoreAction--;
         } else {
-            check_clear_memory();
             $date = get_current_date();
             $hasObjectParameter = $object !== null;
             $hasOldObjectParameter = $oldObject !== null;
