@@ -1,16 +1,11 @@
 <?php
-// Connection
-
 $sql_connections = array();
 $sql_credentials = array();
-
-$sql_cache_tag = null;
-
 $is_sql_usable = false;
-
 $debug = false;
 
 // Connection
+
 function set_sql_credentials(string          $hostname,
                              string          $username,
                              ?string         $password = null,
@@ -60,11 +55,9 @@ function reset_all_sql_connections(): void
 
     if (!empty($sql_credentials)) {
         global $sql_connections,
-               $sql_cache_tag,
                $is_sql_usable;
         $sql_connections = array();
         $sql_credentials = array();
-        $sql_cache_tag = null;
         $is_sql_usable = false;
     }
 }
@@ -124,8 +117,7 @@ function close_sql_connection(bool $clear = false): bool
     global $sql_credentials;
 
     if (!empty($sql_credentials)) {
-        global $is_sql_usable, $sql_cache_tag;
-        $sql_cache_tag = null;
+        global $is_sql_usable;
 
         if ($is_sql_usable) {
             global $sql_connections;
@@ -246,17 +238,101 @@ function sql_build_order(string|array|null $order): ?string
 
 // Cache
 
-function get_sql_cache_key(mixed $key, mixed $value = null): string
+function sql_clear_cache(string $table, array $columns): bool
 {
-    return $value === null
-        ? serialize($key)
-        : substr(serialize(array($key => $value)), 5, -1);
+    $retrieverTable = "memory.queryCacheRetriever";
+    $trackerTable = "memory.queryCacheTracker";
+
+    if (in_array("*", $columns)) {
+        $columns[] = "*";
+    }
+    $query = sql_query(
+        "SELECT id, hash FROM " . $trackerTable
+        . " WHERE table_name = '$table' AND column_name IN ('" . implode("', '", $columns) . "');"
+    );
+
+    if (($query->num_rows ?? 0) > 0) {
+        $ids = array();
+        $hashes = array();
+
+        while ($row = $query->fetch_assoc()) {
+            $ids[] = $row["id"];
+
+            if (!in_array($row["hash"], $hashes)) {
+                $hashes[] = $row["hash"];
+            }
+        }
+        $query = sql_query(
+            "DELETE FROM " . $retrieverTable
+            . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');"
+        );
+
+        if ($query) {
+            $query = sql_query(
+                "DELETE FROM " . $trackerTable
+                . " WHERE id IN ('" . implode("', '", $ids) . "');"
+            );
+        }
+        return (bool)$query;
+    } else {
+        return false;
+    }
 }
 
-function set_sql_cache(mixed $tag = null): void
+function sql_store_cache(string $table, array $query, array $columns,
+                         mixed  $hash, bool $cacheExists): bool
 {
-    global $sql_cache_tag;
-    $sql_cache_tag = $tag;
+    if (empty($columns)) {
+        $columns[] = array($table, "*", $hash);
+    } else {
+        foreach ($columns as $key => $column) {
+            $columns[$key] = array($table, $column, $hash);
+        }
+    }
+    $store = json_encode($query);
+
+    if (strlen($store) <= 16314) {
+        load_sql_database(SqlDatabaseCredentials::MEMORY);
+        $retrieverTable = "memory.queryCacheRetriever";
+        $trackerTable = "memory.queryCacheTracker";
+
+        if ($cacheExists) {
+            $query = sql_query(
+                "UPDATE " . $retrieverTable
+                . " SET results = '$store' "
+                . "WHERE table_name = '$table' AND hash = '$hash';"
+            );
+
+            if ($query) {
+                $query = sql_query(
+                    "DELETE FROM " . $trackerTable
+                    . " WHERE table_name = '$table' AND hash = '$hash';"
+                );
+            }
+        } else {
+            $query = sql_query(
+                "INSERT INTO " . $retrieverTable
+                . " (table_name, hash, results) "
+                . "VALUES ('$table', '$hash', '$store');"
+            );
+        }
+        if ($query) {
+            $columnsString = array();
+
+            foreach ($columns as $column) {
+                $columnsString[] = "('" . implode("', '", $column) . "')";
+            }
+            $query = sql_query(
+                "INSERT INTO " . $trackerTable
+                . " (table_name, column_name, hash) "
+                . "VALUES " . implode(", ", $columnsString) . ";"
+            );
+        }
+        load_previous_sql_database();
+        return (bool)$query;
+    } else {
+        return false;
+    }
 }
 
 // Encoding
@@ -289,46 +365,16 @@ function sql_debug(): void
 
 function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
 {
-    global $sql_cache_tag;
     $hasWhere = $where !== null;
+    $columns = array();
 
     if ($hasWhere) {
+        foreach ($where as $condition) {
+            if (is_array($condition)) {
+                $columns[] = $condition[0];
+            }
+        }
         $where = sql_build_where($where, true);
-    }
-    if ($sql_cache_tag !== null) {
-        global $sql_credentials;
-        $hasCache = true;
-        $cacheKey = array(
-            $sql_credentials[10],
-            $table,
-            $select,
-            $hasWhere ? $where[1] : null,
-            $order,
-            $limit
-        );
-
-        if (is_array($sql_cache_tag)) {
-            foreach ($sql_cache_tag as $key => $value) {
-                if (is_numeric($key)) {
-                    $cacheKey[] = $value;
-                } else {
-                    $cacheKey[$key] = $value;
-                }
-            }
-        } else {
-            $cacheKey[] = $sql_cache_tag;
-        }
-        $sql_cache_tag = null;
-
-        if (function_exists("get_key_value_pair")) {
-            $cache = get_key_value_pair($cacheKey);
-
-            if (is_array($cache)) {
-                return $cache;
-            }
-        }
-    } else {
-        $hasCache = false;
     }
     $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
 
@@ -342,6 +388,31 @@ function get_sql_query(string $table, array $select = null, array $where = null,
         $query .= " LIMIT " . $limit;
     }
 
+    $hash = array_to_integer(array(
+        $select,
+        $hasWhere ? $where[1] : null,
+        $order,
+        $limit
+    ));
+    load_sql_database(SqlDatabaseCredentials::MEMORY);
+    $cache = sql_query(
+        "SELECT results FROM memory.queryCacheRetriever "
+        . "WHERE table_name = '$table' AND hash = '$hash' "
+        . "LIMIT 1;"
+    );
+    load_previous_sql_database();
+
+    if (($cache->num_rows ?? 0) > 0) {
+        $row = $cache->fetch_assoc();
+        $results = json_decode($row["results"], false);
+
+        if (is_array($results)) {
+            return $results;
+        }
+        $cacheExists = true;
+    } else {
+        $cacheExists = false;
+    }
     $query = sql_query($query . ";");
     $array = array();
 
@@ -355,9 +426,7 @@ function get_sql_query(string $table, array $select = null, array $where = null,
             $array[] = $object;
         }
     }
-    if ($hasCache && function_exists("set_key_value_pair")) {
-        set_key_value_pair($cacheKey, $array);
-    }
+    sql_store_cache($table, $array, $columns, $hash, $cacheExists);
     return $array;
 }
 
@@ -414,21 +483,53 @@ function sql_query(string $command): mixed
 
 // Insert
 
-function sql_insert(string $table, array $pairs)
+function sql_insert(string $table, array $pairs): mixed
 {
-    $columnsArray = "";
-    $valuesArray = "";
+    $columnsArray = array();
+    $valuesArray = array();
 
     foreach ($pairs as $column => $value) {
-        $columnsArray .= properly_sql_encode($column) . ", ";
-        $valuesArray .= ($value === null ? "NULL, " :
-            (is_bool($value) ? ($value ? "'1', " : "NULL, ") :
-                "'" . properly_sql_encode($value, true) . "', "));
+        $columnsArray [] = properly_sql_encode($column);
+        $valuesArray [] = ($value === null ? "NULL" :
+            (is_bool($value) ? ($value ? "'1'" : "NULL") :
+                "'" . properly_sql_encode($value, true) . "'"));
     }
-    $columnsArray = substr($columnsArray, 0, -2);
-    $valuesArray = substr($valuesArray, 0, -2);
+    $columnsArray = implode(", ", $columnsArray);
+    $valuesArray = implode(", ", $valuesArray);
     $table = properly_sql_encode($table);
-    return sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
+    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
+
+    if ($result) {
+        sql_clear_cache($table, array_keys($pairs));
+    }
+    return $result;
+}
+
+function sql_insert_multiple(string $table, array $columns, array $values): mixed
+{
+    $columnsArray = array();
+    $valuesArray = array();
+
+    foreach ($columns as $column) {
+        $columnsArray [] = properly_sql_encode($column);
+    }
+    foreach ($values as $subValues) {
+        foreach ($subValues as $key => $value) {
+            $subValues[$key] = ($value === null ? "NULL" :
+                (is_bool($value) ? ($value ? "'1'" : "NULL") :
+                    "'" . properly_sql_encode($value, true) . "'"));
+        }
+        $valuesArray [] = "(" . implode(", ", $subValues) . ")";
+    }
+    $columnsArray = implode(", ", $columnsArray);
+    $valuesArray = implode(", ", $valuesArray);
+    $table = properly_sql_encode($table);
+    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES $valuesArray;");
+
+    if ($result) {
+        sql_clear_cache($table, $columns);
+    }
+    return $result;
 }
 
 // Set
@@ -459,22 +560,9 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
         $query .= " LIMIT " . $limit;
     }
     if (sql_query($query . ";")) {
-        global $sql_cache_tag;
-
-        if ($sql_cache_tag !== null) {
-            $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
-            $sql_cache_tag = null;
-
-            if (function_exists("clear_memory")) {
-                clear_memory($array, true, 0, function ($value) {
-                    return is_array($value);
-                });
-            }
-        }
+        sql_clear_cache($table, array_keys($what));
         return true;
     } else {
-        global $sql_cache_tag;
-        $sql_cache_tag = null;
         return false;
     }
 }
@@ -483,6 +571,7 @@ function set_sql_query(string $table, array $what, array $where = null, string|a
 
 function delete_sql_query(string $table, array $where, string|array|null $order = null, int $limit = 0): bool
 {
+    $columnsQuery = sql_query("SELECT * FROM " . $table . " LIMIT 1;");
     $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);
 
     if ($order !== null) {
@@ -492,22 +581,11 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
         $query .= " LIMIT " . $limit;
     }
     if (sql_query($query . ";")) {
-        global $sql_cache_tag;
-
-        if ($sql_cache_tag !== null) {
-            $array = array(is_array($sql_cache_tag) ? get_sql_cache_key($sql_cache_tag) : $sql_cache_tag); // Not needed but will help with speed
-            $sql_cache_tag = null;
-
-            if (function_exists("clear_memory")) {
-                clear_memory($array, true, 0, function ($value) {
-                    return is_array($value);
-                });
-            }
+        if (($columnsQuery->num_rows ?? 0) > 0) {
+            sql_clear_cache($table, array_keys($columnsQuery->fetch_assoc()));
         }
         return true;
     } else {
-        global $sql_cache_tag;
-        $sql_cache_tag = null;
         return false;
     }
 }
@@ -519,7 +597,7 @@ function get_sql_database_tables(string $database): array
     $array = array();
     $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
 
-    if (isset($query->num_rows) && $query->num_rows > 0) {
+    if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
             $array[] = $row["TABLE_NAME"];
         }
@@ -532,7 +610,7 @@ function get_sql_database_schemas(): array
     $array = array();
     $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA;");
 
-    if (isset($query->num_rows) && $query->num_rows > 0) {
+    if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
             if ($row["SCHEMA_NAME"] !== "information_schema") {
                 $array[] = $row["SCHEMA_NAME"];

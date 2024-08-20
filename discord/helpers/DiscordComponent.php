@@ -29,7 +29,6 @@ class DiscordComponent
     public function showModal(Interaction $interaction, int|string $key,
                               ?callable   $customListener = null): bool
     {
-        set_sql_cache(self::class);
         $query = get_sql_query(
             BotDatabaseTable::BOT_MODAL_COMPONENTS,
             null,
@@ -47,7 +46,6 @@ class DiscordComponent
 
         if (!empty($query)) {
             $query = $query[0];
-            set_sql_cache(self::class);
             $subQuery = get_sql_query(
                 BotDatabaseTable::BOT_MODAL_SUB_COMPONENTS,
                 null,
@@ -178,7 +176,6 @@ class DiscordComponent
     public function addReactions(Message    $message,
                                  int|string $componentID): void
     {
-        set_sql_cache(self::class);
         $query = get_sql_query(
             BotDatabaseTable::BOT_REACTION_COMPONENTS,
             null,
@@ -233,7 +230,6 @@ class DiscordComponent
                                int|string     $componentID,
                                bool           $listener = true): MessageBuilder
     {
-        set_sql_cache(self::class);
         $query = get_sql_query(
             BotDatabaseTable::BOT_BUTTON_COMPONENTS,
             null,
@@ -381,7 +377,6 @@ class DiscordComponent
                                  int|string     $componentID,
                                  bool           $listener = true): MessageBuilder
     {
-        set_sql_cache(self::class);
         $query = get_sql_query(
             BotDatabaseTable::BOT_SELECTION_COMPONENTS,
             null,
@@ -399,7 +394,6 @@ class DiscordComponent
 
         if (!empty($query)) {
             $query = $query[0];
-            set_sql_cache(self::class);
             $subQuery = get_sql_query(
                 BotDatabaseTable::BOT_SELECTION_SUB_COMPONENTS,
                 null,
