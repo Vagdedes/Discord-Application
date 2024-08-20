@@ -219,8 +219,7 @@ class DiscordProperties
 {
     public const
         DEFAULT_PROMPT_MESSAGE = "...",
-        SYSTEM_REFRESH_MILLISECONDS = 900_000, // 15 minutes
-        SYSTEM_REFRESH_SECONDS = self::SYSTEM_REFRESH_MILLISECONDS / 1_000,
-        SYSTEM_REFRESH_TIME = (DiscordProperties::SYSTEM_REFRESH_SECONDS / 60) . " minutes",
+        SYSTEM_REFRESH_MILLISECONDS = 60_000, // 1 minute
+        SYSTEM_REFRESH_TIME = (DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 1_000) . " seconds",
         NEW_LINE = "\n";
 }
