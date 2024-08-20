@@ -370,7 +370,7 @@ class DiscordAIMessages
                                             if ($channel->prompt_message !== null) {
                                                 $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
                                             } else {
-                                                $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
+                                                $promptMessage = "...";
                                             }
                                             if ($cache !== null) {
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(

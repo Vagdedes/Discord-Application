@@ -502,7 +502,7 @@ class DiscordUserQuestionnaire
             if ($questionnaire->prompt_message !== null) {
                 $promptMessage = $this->plan->instructions->replace(array($questionnaire->prompt_message), $object)[0];
             } else {
-                $promptMessage = DiscordProperties::DEFAULT_PROMPT_MESSAGE;
+                $promptMessage = "...";
             }
             $message->reply(MessageBuilder::new()->setContent(
                 $promptMessage
