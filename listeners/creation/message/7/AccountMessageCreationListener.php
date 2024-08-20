@@ -84,6 +84,14 @@ class AccountMessageCreationListener
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
         $account = self::getAccountObject($interaction, $plan);
+        $embed = new Embed($plan->bot->discord);
+        $embed->setAuthor(
+            "Spartan AntiCheat: Bedrock Edition NOW FREE!",
+            "https://vagdedes.com/.images/spartan/logo.png",
+            "https://hangar.papermc.io/IdealisticAI/Spartan-AntiCheat-Geyser"
+        );
+        $embed->setColor("FFFFFF");
+        $messageBuilder->addEmbed($embed);
 
         if (false) {
             $productGiveaway = $account->getProductGiveaway();
