@@ -243,9 +243,10 @@ function sql_clear_cache(string $table, array $columns): bool
     $retrieverTable = "memory.queryCacheRetriever";
     $trackerTable = "memory.queryCacheTracker";
 
-    if (in_array("*", $columns)) {
+    if (!in_array("*", $columns)) {
         $columns[] = "*";
     }
+    load_sql_database(SqlDatabaseCredentials::MEMORY);
     $query = sql_query(
         "SELECT id, hash FROM " . $trackerTable
         . " WHERE table_name = '$table' AND column_name IN ('" . implode("', '", $columns) . "');"
@@ -263,24 +264,30 @@ function sql_clear_cache(string $table, array $columns): bool
             }
         }
         $query = sql_query(
-            "DELETE FROM " . $retrieverTable
-            . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');"
+            "DELETE FROM " . $trackerTable
+            . " WHERE id IN ('" . implode("', '", $ids) . "');"
         );
 
         if ($query) {
             $query = sql_query(
-                "DELETE FROM " . $trackerTable
-                . " WHERE id IN ('" . implode("', '", $ids) . "');"
+                "DELETE FROM " . $retrieverTable
+                . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');"
             );
+
         }
+        load_previous_sql_database();
         return (bool)$query;
     } else {
+        load_previous_sql_database();
         return false;
     }
 }
 
-function sql_store_cache(string $table, array $query, array $columns,
-                         mixed  $hash, bool $cacheExists): bool
+function sql_store_cache(string           $table,
+                         array            $query,
+                         ?array           $columns,
+                         int|string|float $hash,
+                         bool             $cacheExists): bool
 {
     if (empty($columns)) {
         $columns[] = array($table, "*", $hash);
@@ -363,17 +370,11 @@ function sql_debug(): void
     $debug = true;
 }
 
-function get_sql_query(string $table, array $select = null, array $where = null, string|array|null $order = null, int $limit = 0): array
+function get_sql_query(string $table, ?array $select = null, ?array $where = null, string|array|null $order = null, int $limit = 0): array
 {
     $hasWhere = $where !== null;
-    $columns = array();
 
     if ($hasWhere) {
-        foreach ($where as $condition) {
-            if (is_array($condition)) {
-                $columns[] = $condition[0];
-            }
-        }
         $where = sql_build_where($where, true);
     }
     $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
@@ -426,7 +427,7 @@ function get_sql_query(string $table, array $select = null, array $where = null,
             $array[] = $object;
         }
     }
-    sql_store_cache($table, $array, $columns, $hash, $cacheExists);
+    sql_store_cache($table, $array, $select, $hash, $cacheExists);
     return $array;
 }
 
@@ -534,7 +535,7 @@ function sql_insert_multiple(string $table, array $columns, array $values): mixe
 
 // Set
 
-function set_sql_query(string $table, array $what, array $where = null, string|array|null $order = null, int $limit = 0): bool
+function set_sql_query(string $table, array $what, ?array $where = null, string|array|null $order = null, int $limit = 0): bool
 {
     $query = "UPDATE " . $table . " SET ";
     $counter = 0;
