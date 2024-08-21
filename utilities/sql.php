@@ -243,7 +243,7 @@ function sql_delete_outdated_cache(int $time = 60 * 60): bool
     $retrieverTable = "memory.queryCacheRetriever";
     $trackerTable = "memory.queryCacheTracker";
     $query = sql_query(
-        "SELECT id FROM $retrieverTable "
+        "DELETE FROM $retrieverTable "
         . "WHERE last_access_time < '" . (time() - $time) . "';"
     );
 
