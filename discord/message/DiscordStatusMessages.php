@@ -36,8 +36,8 @@ class DiscordStatusMessages
                             $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                             if ($channel->thread_id !== null) {
-                                if (!empty($channel->threads->first())) {
-                                    foreach ($channel->threads as $thread) {
+                                if (!empty($channelFound->threads->first())) {
+                                    foreach ($channelFound->threads as $thread) {
                                         if ($thread instanceof Thread && $channel->thread_id == $thread->id) {
                                             $channelFound = $thread;
                                             break;
@@ -55,17 +55,17 @@ class DiscordStatusMessages
                             $whitelist = $this->plan->bot->channels->getWhitelist($this->plan);
 
                             if (!empty($whitelist)) {
-                                foreach ($whitelist as $whitelist) {
-                                    if ($whitelist->user_id == $userID
-                                        && ($whitelist->server_id === null
-                                            || $whitelist->server_id == $serverID
-                                            && ($whitelist->channel_id === null || $whitelist->channel_id == $channel->channel_id)
-                                            && ($whitelist->thread_id === null || $whitelist->thread_id == $channel->thread_id))) {
+                                foreach ($whitelist as $whitelisted) {
+                                    if ($whitelisted->user_id == $userID
+                                        && ($whitelisted->server_id === null
+                                            || $whitelisted->server_id == $serverID
+                                            && ($whitelisted->channel_id === null || $whitelisted->channel_id == $channel->channel_id)
+                                            && ($whitelisted->thread_id === null || $whitelisted->thread_id == $channel->thread_id))) {
                                         $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
 
                                         if ($channel->thread_id !== null) {
-                                            if (!empty($channel->threads->first())) {
-                                                foreach ($channel->threads as $thread) {
+                                            if (!empty($channelFound->threads->first())) {
+                                                foreach ($channelFound->threads as $thread) {
                                                     if ($thread instanceof Thread && $channel->thread_id == $thread->id) {
                                                         $channelFound = $thread;
                                                         break;
