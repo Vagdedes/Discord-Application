@@ -218,7 +218,7 @@ class DiscordInheritedLimits
 class DiscordProperties
 {
     public const
-        SYSTEM_REFRESH_MILLISECONDS = 60_000, // 1 minute
+        SYSTEM_REFRESH_MILLISECONDS = 60_000 * 15, // 60_000 = minute
         SYSTEM_REFRESH_TIME = (DiscordProperties::SYSTEM_REFRESH_MILLISECONDS / 1_000) . " seconds",
         NEW_LINE = "\n";
 }
