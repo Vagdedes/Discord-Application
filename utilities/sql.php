@@ -238,7 +238,7 @@ function sql_build_order(string|array|null $order): ?string
 
 // Cache
 
-function delete_outdated_cache(int $time = 60 * 60): bool
+function sql_delete_outdated_cache(int $time = 60 * 60): bool
 {
     $retrieverTable = "memory.queryCacheRetriever";
     $trackerTable = "memory.queryCacheTracker";
