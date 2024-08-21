@@ -83,17 +83,18 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        $account = self::getAccountObject($interaction, $plan);
-        $embed = new Embed($plan->bot->discord);
-        $embed->setAuthor(
-            "Spartan AntiCheat: Bedrock Edition NOW FREE!",
-            "https://vagdedes.com/.images/spartan/logo.png",
-            "https://hangar.papermc.io/IdealisticAI/Spartan-AntiCheat-Geyser"
-        );
-        $embed->setColor("FFFFFF");
-        $messageBuilder->addEmbed($embed);
-
         if (false) {
+            $embed = new Embed($plan->bot->discord);
+            $embed->setAuthor(
+                "Spartan AntiCheat: Bedrock Edition NOW FREE!",
+                "https://vagdedes.com/.images/spartan/logo.png",
+                "https://hangar.papermc.io/IdealisticAI/Spartan-AntiCheat-Geyser"
+            );
+            $embed->setColor("FFFFFF");
+            $messageBuilder->addEmbed($embed);
+        }
+        if (false) {
+            $account = self::getAccountObject($interaction, $plan);
             $productGiveaway = $account->getProductGiveaway();
             $currentGiveawayOutcome = $productGiveaway->getCurrent(null, 1, "14 days");
             $currentGiveaway = $currentGiveawayOutcome->getObject();
