@@ -70,7 +70,7 @@ class AccountMessageCreationListener
                                                   DiscordPlan              $plan): ?object
     {
         $account = self::getAccountObject($interaction, $plan);
-        $method = $account->getSession()->find();
+        $method = $account->getSession()->find(false);
 
         if ($method->isPositiveOutcome()) {
             return $method->getObject();

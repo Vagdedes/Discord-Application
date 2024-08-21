@@ -395,8 +395,15 @@ function sql_debug(): void
 function get_sql_query(string $table, ?array $select = null, ?array $where = null, string|array|null $order = null, int $limit = 0): array
 {
     $hasWhere = $where !== null;
+    $columns = $select ?? array();
 
     if ($hasWhere) {
+        foreach ($where as $single) {
+            if (is_array($single)
+                && !in_array($single[0], $columns)) {
+                $columns[] = $single[0];
+            }
+        }
         $where = sql_build_where($where, true);
     }
     $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
@@ -411,13 +418,16 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $query .= " LIMIT " . $limit;
     }
 
-    $hash = array_to_integer(array(
-        $table,
-        $select,
-        $hasWhere ? $where[1] : null,
-        $order,
-        $limit
-    ));
+    $hash = array_to_integer(
+        array(
+            $table,
+            $select,
+            $hasWhere ? $where[1] : null,
+            $order,
+            $limit
+        ),
+        true
+    );
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $cache = sql_query(
         "SELECT results FROM memory.queryCacheRetriever "
@@ -450,7 +460,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
             $array[] = $object;
         }
     }
-    sql_store_cache($table, $array, $select, $hash, $cacheExists);
+    sql_store_cache($table, $array, $columns, $hash, $cacheExists);
     return $array;
 }
 

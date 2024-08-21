@@ -737,10 +737,10 @@ function array_to_integer(?array $array, bool $long = false): int
     $result = 1;
 
     foreach ($array as $value) {
-        if (is_integer($value)) {
-            $result = ($result * 31) + $value;
+        if ($long) {
+            $result = overflow_long(($result * 31) + string_to_integer(serialize($value), true));
         } else {
-            $result = ($result * 31) + string_to_integer(serialize($value), $long);
+            $result = overflow_integer(($result * 31) + string_to_integer(serialize($value), false));
         }
     }
     return $result;
