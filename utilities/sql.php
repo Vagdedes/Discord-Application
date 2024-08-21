@@ -291,7 +291,7 @@ function sql_clear_cache(string $table, array $columns): bool
         if ($query) {
             $query = sql_query(
                 "DELETE FROM " . $retrieverTable
-                . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');"
+                . " WHERE hash IN ('" . implode("', '", $hashes) . "');"
             );
 
         }
@@ -328,8 +328,8 @@ function sql_store_cache(string           $table,
         if ($cacheExists) {
             $query = sql_query(
                 "UPDATE " . $retrieverTable
-                . " SET results = '$store', last_access_time = '$time' "
-                . "WHERE table_name = '$table' AND hash = '$hash';"
+                . " SET results = '$store', last_access_time = '$time'"
+                . " WHERE hash = '$hash';"
             );
 
             if ($query) {
@@ -341,8 +341,8 @@ function sql_store_cache(string           $table,
         } else {
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
-                . " (table_name, hash, results, last_access_time) "
-                . "VALUES ('$table', '$hash', '$store', '$time');"
+                . " (hash, results, last_access_time) "
+                . "VALUES ('$hash', '$store', '$time');"
             );
         }
         if ($query) {
@@ -412,6 +412,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     }
 
     $hash = array_to_integer(array(
+        $table,
         $select,
         $hasWhere ? $where[1] : null,
         $order,
@@ -420,7 +421,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $cache = sql_query(
         "SELECT results FROM memory.queryCacheRetriever "
-        . "WHERE table_name = '$table' AND hash = '$hash' "
+        . "WHERE hash = '$hash' "
         . "LIMIT 1;"
     );
     load_previous_sql_database();
