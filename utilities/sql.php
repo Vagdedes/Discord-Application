@@ -238,6 +238,26 @@ function sql_build_order(string|array|null $order): ?string
 
 // Cache
 
+function delete_outdated_cache(int $time = 60 * 60): bool
+{
+    $retrieverTable = "memory.queryCacheRetriever";
+    $trackerTable = "memory.queryCacheTracker";
+    $query = sql_query(
+        "SELECT id FROM $retrieverTable "
+        . "WHERE last_access_time < '" . (time() - $time) . "';"
+    );
+
+    if ($query) {
+        $query = sql_query(
+            "DELETE FROM $trackerTable "
+            . "WHERE last_access_time < '" . (time() - $time) . "';"
+        );
+        return (bool)$query;
+    } else {
+        return false;
+    }
+}
+
 function sql_clear_cache(string $table, array $columns): bool
 {
     $retrieverTable = "memory.queryCacheRetriever";
@@ -289,16 +309,18 @@ function sql_store_cache(string           $table,
                          int|string|float $hash,
                          bool             $cacheExists): bool
 {
+    $time = time();
+
     if (empty($columns)) {
         $columns[] = array($table, "*", $hash);
     } else {
         foreach ($columns as $key => $column) {
-            $columns[$key] = array($table, $column, $hash);
+            $columns[$key] = array($table, $column, $hash, $time);
         }
     }
     $store = json_encode($query);
 
-    if (strlen($store) <= 16314) {
+    if (strlen($store) <= 16312) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
         $retrieverTable = "memory.queryCacheRetriever";
         $trackerTable = "memory.queryCacheTracker";
@@ -306,7 +328,7 @@ function sql_store_cache(string           $table,
         if ($cacheExists) {
             $query = sql_query(
                 "UPDATE " . $retrieverTable
-                . " SET results = '$store' "
+                . " SET results = '$store', last_access_time = '$time' "
                 . "WHERE table_name = '$table' AND hash = '$hash';"
             );
 
@@ -319,8 +341,8 @@ function sql_store_cache(string           $table,
         } else {
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
-                . " (table_name, hash, results) "
-                . "VALUES ('$table', '$hash', '$store');"
+                . " (table_name, hash, results, last_access_time) "
+                . "VALUES ('$table', '$hash', '$store', '$time');"
             );
         }
         if ($query) {
@@ -331,7 +353,7 @@ function sql_store_cache(string           $table,
             }
             $query = sql_query(
                 "INSERT INTO " . $trackerTable
-                . " (table_name, column_name, hash) "
+                . " (table_name, column_name, hash, last_access_time) "
                 . "VALUES " . implode(", ", $columnsString) . ";"
             );
         }
