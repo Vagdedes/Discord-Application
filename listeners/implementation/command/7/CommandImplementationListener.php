@@ -4,11 +4,22 @@ use Discord\Builders\Components\Option;
 use Discord\Builders\Components\SelectMenu;
 use Discord\Builders\MessageBuilder;
 use Discord\Helpers\Collection;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class CommandImplementationListener
 {
+
+    private const COLOUR_ROLES = array(
+        "red" => 1276174603055796305,
+        "blue" => 1276174656713396305,
+        "green" => 1276174660870082641,
+        "orange" => 1276174700560777297,
+        "yellow" => 1276174704255959141,
+        "purple" => 1276174743724101666,
+        "gray" => 1276175693444677655
+    );
 
     private const OBJECT_NOT_FOUND = "Object not found.",
         ACCOUNT_NOT_FOUND = "Account not found.",
@@ -21,9 +32,9 @@ class CommandImplementationListener
             . " | " . json_encode($reply->getObject());
     }
 
-    public static function account_info(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function account_info(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -154,9 +165,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function give_product(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function give_product(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -185,9 +196,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function remove_product(DiscordPlan $plan,
-                                          Interaction $interaction,
-                                          object      $command): void
+    public static function remove_product(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -216,9 +227,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function exchange_product(DiscordPlan $plan,
-                                            Interaction $interaction,
-                                            object      $command): void
+    public static function exchange_product(DiscordPlan         $plan,
+                                            Interaction|Message $interaction,
+                                            object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -249,9 +260,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function delete_account(DiscordPlan $plan,
-                                          Interaction $interaction,
-                                          object      $command): void
+    public static function delete_account(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -280,9 +291,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function queue_paypal_transaction(DiscordPlan $plan,
-                                                    Interaction $interaction,
-                                                    object      $command): void
+    public static function queue_paypal_transaction(DiscordPlan         $plan,
+                                                    Interaction|Message $interaction,
+                                                    object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -294,9 +305,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function fail_paypal_transaction(DiscordPlan $plan,
-                                                   Interaction $interaction,
-                                                   object      $command): void
+    public static function fail_paypal_transaction(DiscordPlan         $plan,
+                                                   Interaction|Message $interaction,
+                                                   object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -308,9 +319,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function suspend_paypal_transactions(DiscordPlan $plan,
-                                                       Interaction $interaction,
-                                                       object      $command): void
+    public static function suspend_paypal_transactions(DiscordPlan         $plan,
+                                                       Interaction|Message $interaction,
+                                                       object              $command): void
     {
         $message = new MessageBuilder();
         $account = new Account();
@@ -360,9 +371,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function account_functionality(DiscordPlan $plan,
-                                                 Interaction $interaction,
-                                                 object      $command): void
+    public static function account_functionality(DiscordPlan         $plan,
+                                                 Interaction|Message $interaction,
+                                                 object              $command): void
     {
         $staffAccount = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
         $message = new MessageBuilder();
@@ -399,7 +410,7 @@ class CommandImplementationListener
                             $select->addOption($option);
                         }
 
-                        $select->setListener(function (Interaction $interaction, Collection $options)
+                        $select->setListener(function (Interaction|Message $interaction, Collection $options)
                         use ($block, $reason, $duration, $plan, $account, $staffAccount) {
                             $plan->utilities->acknowledgeMessage(
                                 $interaction,
@@ -441,9 +452,9 @@ class CommandImplementationListener
         }
     }
 
-    public static function account_moderation(DiscordPlan $plan,
-                                              Interaction $interaction,
-                                              object      $command): void
+    public static function account_moderation(DiscordPlan         $plan,
+                                              Interaction|Message $interaction,
+                                              object              $command): void
     {
         $staffAccount = AccountMessageCreationListener::findAccountFromSession($interaction, $plan);
         $message = new MessageBuilder();
@@ -480,7 +491,7 @@ class CommandImplementationListener
                             $select->addOption($option);
                         }
 
-                        $select->setListener(function (Interaction $interaction, Collection $options)
+                        $select->setListener(function (Interaction|Message $interaction, Collection $options)
                         use ($punish, $reason, $duration, $plan, $account, $staffAccount) {
                             $plan->utilities->acknowledgeMessage(
                                 $interaction,
@@ -522,9 +533,9 @@ class CommandImplementationListener
         }
     }
 
-    public static function configuration_changes(DiscordPlan $plan,
-                                                 Interaction $interaction,
-                                                 object      $command): void
+    public static function configuration_changes(DiscordPlan         $plan,
+                                                 Interaction|Message $interaction,
+                                                 object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $message = new MessageBuilder();
@@ -556,9 +567,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function disabled_detections(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function disabled_detections(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $message = new MessageBuilder();
@@ -589,9 +600,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function manage_platform_user(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+    public static function manage_platform_user(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $gameCloudUser = new GameCloudUser(
@@ -623,9 +634,9 @@ class CommandImplementationListener
         );
     }
 
-    public static function financial_input(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+    public static function financial_input(DiscordPlan         $plan,
+                                           Interaction|Message $interaction,
+                                           object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $year = $arguments["year"]["value"];
@@ -664,6 +675,104 @@ class CommandImplementationListener
             }
             $interaction->updateOriginalResponse($message);
         });
+    }
+
+    public static function color_red(DiscordPlan         $plan,
+                                     Interaction|Message $interaction,
+                                     object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "red") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_blue(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "blue") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_green(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "green") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_yellow(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "yellow") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_orange(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "orange") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_purple(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "purple") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
+    }
+
+    public static function color_gray(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
+    {
+        foreach (self::COLOUR_ROLES as $role => $id) {
+            if ($role == "gray") {
+                $interaction->member->addRole($id);
+            } else {
+                $interaction->member->removeRole($id);
+            }
+        }
+        $interaction->react("👍");
     }
 
 }

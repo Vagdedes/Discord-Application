@@ -237,34 +237,15 @@ class DiscordCommands
                                 $command->required_permission
                             )) {
                             return $command->no_permission_message;
-                        } else {
-                            $outcome = $this->customProcess(
-                                $command,
-                                $message,
-                                $user
+                        } else if ($command->listener_class !== null && $command->listener_method !== null) {
+                            call_user_func_array(
+                                array($command->listener_class, $command->listener_method),
+                                array($this->plan, $message, $command)
                             );
-
-                            if ($outcome !== null) {
-                                return $outcome;
-                            }
                         }
                     }
                 }
             }
-        }
-        return null;
-    }
-
-    private function customProcess(object  $command,
-                                   Message $message, Member $user): string|null|MessageBuilder
-    {
-        $arguments = explode($command->argument_separator ?? " ", $message->content);
-        unset($arguments[0]);
-        $argumentSize = sizeof($arguments);
-
-        switch ($command->command_identification) {
-            default:
-                break;
         }
         return null;
     }
