@@ -34,7 +34,7 @@ class AccountMessageCreationListener
                 . "attempted-account-session"
             ),
             $object,
-            "10 minutes"
+            DiscordProperties::SYSTEM_REFRESH_TIME
         );
     }
 
