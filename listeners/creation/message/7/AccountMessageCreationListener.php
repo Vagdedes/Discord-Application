@@ -83,7 +83,7 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        if (false) {
+        if (true) {
             $embed = new Embed($plan->bot->discord);
             $embed->setAuthor(
                 "Spartan AntiCheat: Bedrock Edition NOW FREE!",
@@ -307,6 +307,16 @@ class AccountMessageCreationListener
                 $embed->setFooter($price);
             }
         } else {
+            if (!$isLoggedIn) {
+                $actionRow = ActionRow::new();
+                $button = Button::new(Button::STYLE_SUCCESS)
+                    ->setLabel("You Must be Logged In to Download")
+                    ->setListener(function (Interaction $interaction) use ($plan) {
+                        $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
+                    }, $plan->bot->discord);
+                $actionRow->addComponent($button);
+                $messageBuilder->addComponent($actionRow);
+            }
             $embed->setFooter($price);
         }
 
