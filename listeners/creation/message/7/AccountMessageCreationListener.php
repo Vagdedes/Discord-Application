@@ -264,13 +264,13 @@ class AccountMessageCreationListener
         $downloadURL = $account->getProduct()->findIdentificationURL($product);
 
         if ($downloadURL === null) {
-            $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->findOrCreate(
+            $downloadToken = $account->getDownloads()->create(
                 $productID,
-                30,
+                2,
                 false,
                 null,
                 null
-            ) : null;
+            );
             $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
                 ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
                 : null;
@@ -447,7 +447,9 @@ class AccountMessageCreationListener
 
         // Separator
 
-        $productButtons = $hasPurchased ? $product->buttons->post_purchase : $product->buttons->pre_purchase;
+        $productButtons = $hasPurchased
+            ? $product->buttons->post_purchase
+            : $product->buttons->pre_purchase;
 
         if (!empty($productButtons)) {
             $actionRow = ActionRow::new();
@@ -504,7 +506,9 @@ class AccountMessageCreationListener
 
         // Separator
 
-        $productCards = $hasPurchased ? $product->cards->post_purchase : $product->cards->pre_purchase;
+        $productCards = $hasPurchased
+            ? $product->cards->post_purchase
+            : $product->cards->pre_purchase;
 
         if (!empty($productCards)) {
             foreach ($productCards as $card) {
