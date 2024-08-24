@@ -261,16 +261,20 @@ class AccountMessageCreationListener
             : ($hasPurchased
                 ? $product->divisions->post_purchase
                 : $product->divisions->pre_purchase);
-        $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->findOrCreate(
-            $productID,
-            30,
-            false,
-            null,
-            null
-        ) : null;
-        $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
-            ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
-            : null;
+        $downloadURL = $account->getProduct()->findIdentificationURL($product);
+
+        if ($downloadURL === null) {
+            $downloadToken = $hasPurchased && $isLoggedIn ? $account->getDownloads()->findOrCreate(
+                $productID,
+                30,
+                false,
+                null,
+                null
+            ) : null;
+            $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
+                ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
+                : null;
+        }
         $hasTiers = sizeof($product->tiers->paid) > 1;
         $paidTiers = $product->tiers->paid;
         $tier = array_shift($paidTiers);
