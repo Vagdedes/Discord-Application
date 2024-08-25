@@ -67,40 +67,8 @@ Get Unlimited “Detection Slots”:
 Redirect to the Discord text-channel: #my-account
 
 
-General Documentation:
-https://bit.ly/3Itw7Fd
-
-
 Cloud Feature, Auto Updater & File Synchronization:
 Fix and report issues in real-time without updating with the plugin or restarting your server. Learn more via the URL: https://bit.ly/40JF6t4
-
-
-Blocked Hacks:
-https://bit.ly/3pXttv5
-
-
-Dealing with the Detections:
-https://bit.ly/3M3xrj8
-
-
-settings.yml Configuration:
-https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/settings.md
-
-
-messages.yml Configuration:
-https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/messages.md
-
-
-messages.yml Configuration Translations:
-https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/message_translations.md
-
-
-checks.yml Configuration:
-https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/checks.md
-
-
-compatibility.yml Configuration:
-https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/compatibility.md
 
 
 Videos:
