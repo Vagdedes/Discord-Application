@@ -84,23 +84,23 @@ https://bit.ly/3M3xrj8
 
 
 settings.yml Configuration:
-https://bit.ly/3RZZSCh
+https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/settings.md
 
 
 messages.yml Configuration:
-https://bit.ly/3FiZozF
+https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/messages.md
 
 
 messages.yml Configuration Translations:
-https://bit.ly/3QhPOmU
+https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/message_translations.md
 
 
 checks.yml Configuration:
-https://bit.ly/3rQXVxq
+https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/checks.md
 
 
 compatibility.yml Configuration:
-https://bit.ly/3QiLpAg
+https://raw.githubusercontent.com/Vagdedes/Spartan-AntiCheat/main/src/documentation/compatibility.md
 
 
 Videos:
