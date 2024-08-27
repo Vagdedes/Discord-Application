@@ -67,7 +67,7 @@ Get Unlimited “Detection Slots”:
 Redirect to the Discord text-channel: #my-account
 
 
-Cloud Feature, Auto Updater & File Synchronization:
+Cloud Feature:
 Fix and report issues in real-time without updating with the plugin or restarting your server. Learn more via the URL: https://bit.ly/40JF6t4
 
 
@@ -165,10 +165,6 @@ Functionality:
 Skip the hustle of downloading, updating & uploading files to a server/FTP. With the use of a simple command, you can open an inventory menu and make the configuration adjustments you want to your server and plugins, which will then be automatically distributed via the SQL database.
 
 
-Auto Updater:
-https://bit.ly/40JF6t4
-
-
 Commands & Permissions:
 https://bit.ly/46KtEQd
 
@@ -179,47 +175,3 @@ https://bit.ly/3txHYg5
 
 Developer API Documentation:
 https://bit.ly/3PP3Fja
-
-
-
-Minecraft Product - Anti Alt Account:
-
-
-Hot Product:
-No
-
-
-Link:
-https://bit.ly/3SeLANM
-
-
-Supported Versions:
-1.7 up to the latest Minecraft version. Do not specify the latest as a number.
-
-
-Cost:
-Free
-
-
-Slogan:
-Prevent Hackers From Joining Your Server.
-
-
-Functionality:
-Check players against thousands of punished hackers, daily collected by the Spartan AntiCheat. If the player is found to be ban evading, they are punished based on your configuration, thus preventing hackers from causing damage before they even join your server.
-
-
-Auto Updater:
-https://bit.ly/40JF6t4
-
-
-Commands & Permissions:
-https://bit.ly/48ULfGh
-
-
-Configuration Tutorial (punishments.yml, settings.yml, messages.yml, sql.yml, Available Syntax/Placeholders):
-https://bit.ly/3ty5mdh
-
-
-Developer API Documentation:
-https://bit.ly/45CJ1sd 
