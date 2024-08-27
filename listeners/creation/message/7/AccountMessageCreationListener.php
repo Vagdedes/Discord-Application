@@ -297,7 +297,15 @@ class AccountMessageCreationListener
                 $embed->setFooter($price);
             }
         } else {
-            $embed->setFooter($price);
+            if ($product->download_note !== null) {
+                if ($price !== null) {
+                    $embed->setFooter($price . " (" . DiscordSyntax::htmlToDiscord($product->download_note) . ")");
+                } else {
+                    $embed->setFooter(DiscordSyntax::htmlToDiscord($product->download_note));
+                }
+            } else {
+                $embed->setFooter($price);
+            }
         }
 
         $embed->setAuthor(
