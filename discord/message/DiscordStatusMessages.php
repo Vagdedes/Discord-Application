@@ -2,8 +2,8 @@
 
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
-use Discord\Parts\User\Member;
 use Discord\Parts\Thread\Thread;
+use Discord\Parts\User\Member;
 
 class DiscordStatusMessages
 {
@@ -90,17 +90,11 @@ class DiscordStatusMessages
         }
     }
 
-    private function process(Channel $channelFound, Member $member,
-                             object  $channel,
-                             ?string $message,
-                             int     $case): void
+    private function process(Channel|Thread $channelFound, Member $member,
+                             object         $channel,
+                             ?string        $message,
+                             int            $case): void
     {
-        has_memory_cooldown(
-            array(self::class, $this->plan->planID, $member->guild_id, $member->id, $case),
-            "5 minutes",
-            true,
-            true
-        );
         $channelFound->sendMessage(
             $this->plan->listener->callStatusMessageImplementation(
                 $channel->listener_class,
@@ -125,7 +119,14 @@ class DiscordStatusMessages
     private function hasCooldown(Member $member, int $case): bool
     {
         return has_memory_cooldown(
-            array(self::class, $member->guild_id, $member->id, $case),
-            "5 minutes", false);
+            array(
+                self::class,
+                $this->plan->planID,
+                $member->guild_id,
+                $member->id,
+                $case
+            ),
+            "5 minutes"
+        );
     }
 }
