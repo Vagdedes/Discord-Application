@@ -170,9 +170,6 @@ class AccountMessageCreationListener
 
         if ($account === null) {
             $account = self::getAccountObject($interaction, $plan);
-            $loggedIn = false;
-        } else {
-            $loggedIn = true;
         }
         $productObject = $account->getProduct();
         $products = $productObject->find(null, true, false);
@@ -228,17 +225,6 @@ class AccountMessageCreationListener
                     );
                 }, $plan->bot->discord);
                 $messageBuilder->addComponent($select);
-
-                if (!$loggedIn) {
-                    $actionRow = ActionRow::new();
-                    $button = Button::new(Button::STYLE_SUCCESS)
-                        ->setLabel("You Must be Logged In to Download")
-                        ->setListener(function (Interaction $interaction) use ($plan) {
-                            $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-                        }, $plan->bot->discord);
-                    $actionRow->addComponent($button);
-                    $messageBuilder->addComponent($actionRow);
-                }
             }
         } else {
             $messageBuilder->setContent("No products found.");
@@ -311,16 +297,6 @@ class AccountMessageCreationListener
                 $embed->setFooter($price);
             }
         } else {
-            if (!$isLoggedIn) {
-                $actionRow = ActionRow::new();
-                $button = Button::new(Button::STYLE_SUCCESS)
-                    ->setLabel("You Must be Logged In to Download")
-                    ->setListener(function (Interaction $interaction) use ($plan) {
-                        $plan->persistentMessages->send($interaction, "0-register_or_log_in", true);
-                    }, $plan->bot->discord);
-                $actionRow->addComponent($button);
-                $messageBuilder->addComponent($actionRow);
-            }
             $embed->setFooter($price);
         }
 
