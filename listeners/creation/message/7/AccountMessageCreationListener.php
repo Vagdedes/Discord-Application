@@ -710,21 +710,4 @@ class AccountMessageCreationListener
         return $messageBuilder;
     }
 
-    public static function register_or_log_in(DiscordPlan    $plan,
-                                              ?Interaction   $interaction,
-                                              MessageBuilder $messageBuilder): MessageBuilder
-    {
-        $account = self::getAccountObject($interaction, $plan);
-        $accounts = $account->getRegistry()->getAccountAmount();
-        $embed = new Embed($plan->bot->discord);
-
-        if ($accounts > 0) {
-            $embed->setDescription("Join **" . $accounts . "** other **" . ($accounts === 1 ? "user" : "users") . "**!");
-        } else {
-            $embed->setDescription("Be the first to join!");
-        }
-        $messageBuilder->addEmbed($embed);
-        return $messageBuilder;
-    }
-
 }
