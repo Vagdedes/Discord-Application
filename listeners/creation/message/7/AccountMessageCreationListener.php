@@ -83,7 +83,7 @@ class AccountMessageCreationListener
                                       ?Interaction   $interaction,
                                       MessageBuilder $messageBuilder): MessageBuilder
     {
-        if (true) {
+        if (false) {
             $embed = new Embed($plan->bot->discord);
             $embed->setAuthor(
                 "Spartan AntiCheat: Bedrock Edition NOW FREE!",
