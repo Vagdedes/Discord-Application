@@ -259,7 +259,7 @@ class AccountMessageCreationListener
             : null;
 
         if (empty($downloadURLs)) {
-            $downloadURLs = $account->getProduct()->findIdentificationURLs($product);
+            $downloadURLs = $account->getProduct()->findIdentifications($product);
         }
         $hasTiers = sizeof($product->tiers->paid) > 1;
         $paidTiers = $product->tiers->paid;
@@ -284,9 +284,9 @@ class AccountMessageCreationListener
 
                 $button = Button::new(Button::STYLE_LINK)
                     ->setLabel(
-                        $isString ? "Download" : explode(" ", $object->accepted_account->name, 2)[0]
+                        $isString ? "Download" : "Download (" . explode(" ", $object->accepted_account->name, 2)[0] . ")"
                     )->setUrl(
-                        $isString ? $object : "Download (" . $object->product_url . ")"
+                        $isString ? $object : $object->product_url
                     );
                 $actionRow->addComponent($button);
             }
