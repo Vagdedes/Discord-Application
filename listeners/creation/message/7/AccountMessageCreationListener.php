@@ -247,19 +247,19 @@ class AccountMessageCreationListener
             : ($hasPurchased
                 ? $product->divisions->post_purchase
                 : $product->divisions->pre_purchase);
-        $downloadURL = $account->getProduct()->findIdentificationURL($product);
+        $downloadToken = $account->getDownloads()->create(
+            $productID,
+            2,
+            false,
+            null,
+            null
+        );
+        $downloadURLs = $downloadToken != null && $downloadToken->isPositiveOutcome()
+            ? array($product->download_placeholder . "?userToken=" . $downloadToken->getObject())
+            : null;
 
-        if ($downloadURL === null) {
-            $downloadToken = $account->getDownloads()->create(
-                $productID,
-                2,
-                false,
-                null,
-                null
-            );
-            $downloadURL = $downloadToken != null && $downloadToken->isPositiveOutcome()
-                ? $product->download_placeholder . "?userToken=" . $downloadToken->getObject()
-                : null;
+        if (empty($downloadURLs)) {
+            $downloadURLs = $account->getProduct()->findIdentificationURLs($product);
         }
         $hasTiers = sizeof($product->tiers->paid) > 1;
         $paidTiers = $product->tiers->paid;
@@ -276,15 +276,20 @@ class AccountMessageCreationListener
             $embed->setColor($product->color);
         }
 
-        if ($downloadURL !== null) {
+        if (!empty($downloadURLs)) {
             $actionRow = ActionRow::new();
-            $button = Button::new(Button::STYLE_LINK)
-                ->setLabel(
-                    "Download"
-                )->setUrl(
-                    $downloadURL
-                );
-            $actionRow->addComponent($button);
+
+            foreach ($downloadURLs as $object) {
+                $isString = is_string($object);
+
+                $button = Button::new(Button::STYLE_LINK)
+                    ->setLabel(
+                        $isString ? "Download" : explode(" ", $object->accepted_account->name, 2)[0]
+                    )->setUrl(
+                        $isString ? $object : "Download (" . $object->product_url . ")"
+                    );
+                $actionRow->addComponent($button);
+            }
             $messageBuilder->addComponent($actionRow);
 
             if ($product->download_note !== null) {
@@ -310,8 +315,7 @@ class AccountMessageCreationListener
 
         $embed->setAuthor(
             strip_tags($product->name),
-            $product->sub_image,
-            $downloadURL
+            $product->sub_image
         );
         if ($product->latest_version !== null) {
             $embed->setTitle(strip_tags($product->latest_version->prefix) . " "
