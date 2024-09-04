@@ -259,7 +259,14 @@ class AccountMessageCreationListener
             : null;
 
         if (empty($downloadURLs)) {
-            $downloadURLs = $account->getProduct()->findIdentifications($product);
+            $downloadURLs = $account->getProduct()->findIdentifications(
+                $product,
+                array(
+                    AccountAccounts::SPIGOTMC_URL,
+                    AccountAccounts::BUILTBYBIT_URL,
+                    AccountAccounts::POLYMART_URL,
+                )
+            );
         }
         $hasTiers = sizeof($product->tiers->paid) > 1;
         $paidTiers = $product->tiers->paid;
