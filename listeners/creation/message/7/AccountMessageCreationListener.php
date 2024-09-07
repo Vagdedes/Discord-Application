@@ -632,7 +632,7 @@ class AccountMessageCreationListener
             if ($size > 0) {
                 $embed->addFieldValues(
                     "__**Objectives**__",
-                    "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete."
+                    "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete. Complete as many as possible."
                 );
                 foreach ($objectives as $count => $objective) {
                     $hasURL = !$objective->optional_url && $objective->url !== null;
