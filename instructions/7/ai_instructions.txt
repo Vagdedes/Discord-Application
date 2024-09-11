@@ -137,6 +137,9 @@ How “Detection Slots” work:
 Detection Slots determine how many players Spartan can check simultaneously for cheating. With more Detection Slots, you can check more players at once. If you have fewer Detection Slots than online players, players will be checked in groups sequentially instead of all at once. 
 
 
+Spartan works better with ProtocolLib:
+Download the always latest ProtocolLib plugin version from its original developer via the URL: https://ci.dmulloy2.net/job/ProtocolLib/lastSuccessfulBuild/artifact/build/libs/ProtocolLib.jar
+
 
 Minecraft Product - File GUI:
 
