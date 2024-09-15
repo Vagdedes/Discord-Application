@@ -780,9 +780,10 @@ class CommandImplementationListener
                                                 object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
+        $embed = $arguments["embed"]["value"];
         $builder = $plan->persistentMessages->get(
             $interaction,
-            $arguments["embed"]["value"],
+            $embed
         );
 
         if ($builder !== null) {
@@ -796,7 +797,7 @@ class CommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Embed not found."),
+                MessageBuilder::new()->setContent("Embed not found: " . $embed),
                 true
             );
         }

@@ -299,4 +299,5 @@ class DiscordPersistentMessages
             $this->process($array, $position + 1);
         }
     }
+
 }

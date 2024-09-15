@@ -1,15 +1,16 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Interactions\Interaction;
 
 class DefaultCommandImplementationListener
 {
 
-    public static function toggle_ai(DiscordPlan $plan,
-                                     Interaction $interaction,
-                                     object      $command): void
+    public static function toggle_ai(DiscordPlan         $plan,
+                                     Interaction|Message $interaction,
+                                     object              $command): void
     {
         // todo
         $plan->utilities->acknowledgeCommandMessage(
@@ -19,9 +20,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function create_faq(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+    public static function create_faq(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $message = $plan->bot->faq->addOrEdit(
@@ -45,9 +46,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function delete_faq(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+    public static function delete_faq(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $message = $plan->bot->faq->delete(
@@ -70,9 +71,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_faq(DiscordPlan $plan,
-                                   Interaction $interaction,
-                                   object      $command): void
+    public static function get_faq(DiscordPlan         $plan,
+                                   Interaction|Message $interaction,
+                                   object              $command): void
     {
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
@@ -83,9 +84,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function set_ai_cost_limit(DiscordPlan $plan,
-                                             Interaction $interaction,
-                                             object      $command): void
+    public static function set_ai_cost_limit(DiscordPlan         $plan,
+                                             Interaction|Message $interaction,
+                                             object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -125,9 +126,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function set_ai_message_limit(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+    public static function set_ai_message_limit(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -167,9 +168,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function remove_ai_cost_limit(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+    public static function remove_ai_cost_limit(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -210,9 +211,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function remove_ai_message_limit(DiscordPlan $plan,
-                                                   Interaction $interaction,
-                                                   object      $command): void
+    public static function remove_ai_message_limit(DiscordPlan         $plan,
+                                                   Interaction|Message $interaction,
+                                                   object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $timePeriod = $arguments["time-period"]["value"];
@@ -255,9 +256,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function create_giveaway(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+    public static function create_giveaway(DiscordPlan         $plan,
+                                           Interaction|Message $interaction,
+                                           object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -276,9 +277,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function delete_giveaway(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+    public static function delete_giveaway(DiscordPlan         $plan,
+                                           Interaction|Message $interaction,
+                                           object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -291,9 +292,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function start_giveaway(DiscordPlan $plan,
-                                          Interaction $interaction,
-                                          object      $command): void
+    public static function start_giveaway(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -307,9 +308,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function end_giveaway(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function end_giveaway(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -322,9 +323,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function add_giveaway_permission(DiscordPlan $plan,
-                                                   Interaction $interaction,
-                                                   object      $command): void
+    public static function add_giveaway_permission(DiscordPlan         $plan,
+                                                   Interaction|Message $interaction,
+                                                   object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -338,9 +339,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function remove_giveaway_permission(DiscordPlan $plan,
-                                                      Interaction $interaction,
-                                                      object      $command): void
+    public static function remove_giveaway_permission(DiscordPlan         $plan,
+                                                      Interaction|Message $interaction,
+                                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -355,9 +356,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function add_giveaway_role(DiscordPlan $plan,
-                                             Interaction $interaction,
-                                             object      $command): void
+    public static function add_giveaway_role(DiscordPlan         $plan,
+                                             Interaction|Message $interaction,
+                                             object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -371,9 +372,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function remove_giveaway_role(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+    public static function remove_giveaway_role(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -390,9 +391,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function create_poll(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function create_poll(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -410,9 +411,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function delete_poll(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function delete_poll(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -425,9 +426,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function start_poll(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+    public static function start_poll(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -441,9 +442,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function end_poll(DiscordPlan $plan,
-                                    Interaction $interaction,
-                                    object      $command): void
+    public static function end_poll(DiscordPlan         $plan,
+                                    Interaction|Message $interaction,
+                                    object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -456,9 +457,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function add_poll_choice(DiscordPlan $plan,
-                                           Interaction $interaction,
-                                           object      $command): void
+    public static function add_poll_choice(DiscordPlan         $plan,
+                                           Interaction|Message $interaction,
+                                           object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -473,9 +474,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function remove_poll_choice(DiscordPlan $plan,
-                                              Interaction $interaction,
-                                              object      $command): void
+    public static function remove_poll_choice(DiscordPlan         $plan,
+                                              Interaction|Message $interaction,
+                                              object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -491,9 +492,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function add_poll_permission(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function add_poll_permission(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -507,9 +508,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function remove_poll_permission(DiscordPlan $plan,
-                                                  Interaction $interaction,
-                                                  object      $command): void
+    public static function remove_poll_permission(DiscordPlan         $plan,
+                                                  Interaction|Message $interaction,
+                                                  object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -524,9 +525,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function add_poll_role(DiscordPlan $plan,
-                                         Interaction $interaction,
-                                         object      $command): void
+    public static function add_poll_role(DiscordPlan         $plan,
+                                         Interaction|Message $interaction,
+                                         object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -540,9 +541,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function remove_poll_role(DiscordPlan $plan,
-                                            Interaction $interaction,
-                                            object      $command): void
+    public static function remove_poll_role(DiscordPlan         $plan,
+                                            Interaction|Message $interaction,
+                                            object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->utilities->acknowledgeCommandMessage(
@@ -559,9 +560,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function create_embed_message(DiscordPlan $plan,
-                                                Interaction $interaction,
-                                                object      $command): void
+    public static function create_embed_message(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
 
@@ -615,9 +616,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function mute_user(DiscordPlan $plan,
-                                     Interaction $interaction,
-                                     object      $command): void
+    public static function mute_user(DiscordPlan         $plan,
+                                     Interaction|Message $interaction,
+                                     object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $type = $arguments["type"]["value"];
@@ -685,9 +686,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function unmute_user(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function unmute_user(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $type = $arguments["type"]["value"];
@@ -755,9 +756,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function temporary_channel_lock(DiscordPlan $plan,
-                                                  Interaction $interaction,
-                                                  object      $command): void
+    public static function temporary_channel_lock(DiscordPlan         $plan,
+                                                  Interaction|Message $interaction,
+                                                  object              $command): void
     {
         $outcome = $plan->temporaryChannels->setLock($interaction->member);
 
@@ -771,9 +772,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function temporary_channel_unlock(DiscordPlan $plan,
-                                                    Interaction $interaction,
-                                                    object      $command): void
+    public static function temporary_channel_unlock(DiscordPlan         $plan,
+                                                    Interaction|Message $interaction,
+                                                    object              $command): void
     {
         $outcome = $plan->temporaryChannels->setLock(
             $interaction->member,
@@ -790,9 +791,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function temporary_channel_ban(DiscordPlan $plan,
-                                                 Interaction $interaction,
-                                                 object      $command): void
+    public static function temporary_channel_ban(DiscordPlan         $plan,
+                                                 Interaction|Message $interaction,
+                                                 object              $command): void
     {
         $outcome = $plan->temporaryChannels->setBan(
             $interaction->member,
@@ -811,9 +812,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function temporary_channel_unban(DiscordPlan $plan,
-                                                   Interaction $interaction,
-                                                   object      $command): void
+    public static function temporary_channel_unban(DiscordPlan         $plan,
+                                                   Interaction|Message $interaction,
+                                                   object              $command): void
     {
         $outcome = $plan->temporaryChannels->setBan(
             $interaction->member,
@@ -832,9 +833,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function temporary_channel_add_owner(DiscordPlan $plan,
-                                                       Interaction $interaction,
-                                                       object      $command): void
+    public static function temporary_channel_add_owner(DiscordPlan         $plan,
+                                                       Interaction|Message $interaction,
+                                                       object              $command): void
     {
         $outcome = $plan->temporaryChannels->setOwner(
             $interaction->member,
@@ -853,9 +854,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function temporary_channel_remove_owner(DiscordPlan $plan,
-                                                          Interaction $interaction,
-                                                          object      $command): void
+    public static function temporary_channel_remove_owner(DiscordPlan         $plan,
+                                                          Interaction|Message $interaction,
+                                                          object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $outcome = $plan->temporaryChannels->setOwner(
@@ -877,9 +878,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function close_ticket(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function close_ticket(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -940,9 +941,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_tickets(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function get_tickets(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $tickets = $plan->userTickets->getMultiple(
@@ -968,9 +969,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_ticket(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+    public static function get_ticket(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $ticketID = $arguments["ticket-id"]["value"] ?? null;
@@ -1001,9 +1002,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function list_commands(DiscordPlan $plan,
-                                         Interaction $interaction,
-                                         object      $command): void
+    public static function list_commands(DiscordPlan         $plan,
+                                         Interaction|Message $interaction,
+                                         object              $command): void
     {
         $content = "";
 
@@ -1037,9 +1038,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function close_questionnaire(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function close_questionnaire(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -1103,9 +1104,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_questionnaires(DiscordPlan $plan,
-                                              Interaction $interaction,
-                                              object      $command): void
+    public static function get_questionnaires(DiscordPlan         $plan,
+                                              Interaction|Message $interaction,
+                                              object              $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $questionnaires = $plan->userQuestionnaire->getMultiple(
@@ -1132,9 +1133,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_questionnaire(DiscordPlan $plan,
-                                             Interaction $interaction,
-                                             object      $command): void
+    public static function get_questionnaire(DiscordPlan         $plan,
+                                             Interaction|Message $interaction,
+                                             object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $questionnaireID = $arguments["target-id"]["value"] ?? null;
@@ -1165,9 +1166,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function close_target(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function close_target(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $argumentSize = sizeof($arguments);
@@ -1231,9 +1232,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_targets(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function get_targets(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $targets = $plan->userTargets->getMultiple(
@@ -1259,9 +1260,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_target(DiscordPlan $plan,
-                                      Interaction $interaction,
-                                      object      $command): void
+    public static function get_target(DiscordPlan         $plan,
+                                      Interaction|Message $interaction,
+                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $targetID = $arguments["target-id"]["value"] ?? null;
@@ -1292,9 +1293,9 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function list_counting_goals(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function list_counting_goals(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $findUserID = $interaction->data?->resolved?->users?->first()?->id;
         $goals = $plan->countingChannels->getStoredGoals(
@@ -1317,9 +1318,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function create_note(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function create_note(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->create(
@@ -1329,9 +1330,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function edit_note(DiscordPlan $plan,
-                                     Interaction $interaction,
-                                     object      $command): void
+    public static function edit_note(DiscordPlan         $plan,
+                                     Interaction|Message $interaction,
+                                     object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->edit(
@@ -1342,9 +1343,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function get_note(DiscordPlan $plan,
-                                    Interaction $interaction,
-                                    object      $command): void
+    public static function get_note(DiscordPlan         $plan,
+                                    Interaction|Message $interaction,
+                                    object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->send(
@@ -1354,9 +1355,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function get_notes(DiscordPlan $plan,
-                                     Interaction $interaction,
-                                     object      $command): void
+    public static function get_notes(DiscordPlan         $plan,
+                                     Interaction|Message $interaction,
+                                     object              $command): void
     {
         $plan->userNotes->sendAll(
             $interaction,
@@ -1364,9 +1365,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function delete_note(DiscordPlan $plan,
-                                       Interaction $interaction,
-                                       object      $command): void
+    public static function delete_note(DiscordPlan         $plan,
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->delete(
@@ -1377,9 +1378,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function modify_note_setting(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function modify_note_setting(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->changeSetting(
@@ -1391,9 +1392,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function modify_note_participant(DiscordPlan $plan,
-                                                   Interaction $interaction,
-                                                   object      $command): void
+    public static function modify_note_participant(DiscordPlan         $plan,
+                                                   Interaction|Message $interaction,
+                                                   object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->modifyParticipant(
@@ -1408,9 +1409,9 @@ class DefaultCommandImplementationListener
         );
     }
 
-    public static function invite_stats(DiscordPlan $plan,
-                                        Interaction $interaction,
-                                        object      $command): void
+    public static function invite_stats(DiscordPlan         $plan,
+                                        Interaction|Message $interaction,
+                                        object              $command): void
     {
         $user = $interaction->data?->resolved?->users?->first();
 
@@ -1502,9 +1503,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_user_level(DiscordPlan $plan,
-                                          Interaction $interaction,
-                                          object      $command): void
+    public static function get_user_level(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
     {
         $user = $interaction->data?->resolved?->users?->first();
         $object = $plan->userLevels->getTier(
@@ -1537,9 +1538,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function set_user_level(DiscordPlan $plan,
-                                          Interaction $interaction,
-                                          object      $command): void
+    public static function set_user_level(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $process = $plan->userLevels->setLevel(
@@ -1564,9 +1565,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function increase_user_level(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function increase_user_level(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $process = $plan->userLevels->increaseLevel(
@@ -1591,9 +1592,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function decrease_user_level(DiscordPlan $plan,
-                                               Interaction $interaction,
-                                               object      $command): void
+    public static function decrease_user_level(DiscordPlan         $plan,
+                                               Interaction|Message $interaction,
+                                               object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $process = $plan->userLevels->decreaseLevel(
@@ -1618,9 +1619,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function reset_user_level(DiscordPlan $plan,
-                                            Interaction $interaction,
-                                            object      $command): void
+    public static function reset_user_level(DiscordPlan         $plan,
+                                            Interaction|Message $interaction,
+                                            object              $command): void
     {
         $process = $plan->userLevels->resetLevel(
             $interaction->guild_id,
@@ -1643,9 +1644,9 @@ class DefaultCommandImplementationListener
         }
     }
 
-    public static function get_level_leaderboard(DiscordPlan $plan,
-                                                 Interaction $interaction,
-                                                 object      $command): void
+    public static function get_level_leaderboard(DiscordPlan         $plan,
+                                                 Interaction|Message $interaction,
+                                                 object              $command): void
     {
         $object = $plan->userLevels->getLevels(
             $interaction->guild_id,

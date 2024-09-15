@@ -1,13 +1,14 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
+use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
 
 class StaticNodeCommandImplementationListener
 {
 
     public static function create_ticket(DiscordPlan $plan,
-                                         Interaction $interaction,
+                                         Interaction|Message $interaction,
                                          object      $command): void
     {
         // channel.role.user
