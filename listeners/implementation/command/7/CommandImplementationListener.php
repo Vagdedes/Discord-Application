@@ -797,7 +797,7 @@ class CommandImplementationListener
         } else {
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent("Embed not found: " . $embed),
+                MessageBuilder::new()->setContent("Embed not found for plan '" . $plan->planID . "': " . $embed),
                 true
             );
         }
