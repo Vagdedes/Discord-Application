@@ -775,4 +775,31 @@ class CommandImplementationListener
         $interaction->react("👍");
     }
 
+    public static function vagdedes_embed_reply(DiscordPlan         $plan,
+                                                Interaction|Message $interaction,
+                                                object              $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $builder = $plan->persistentMessages->get(
+            $interaction,
+            $arguments["embed"]["value"],
+        );
+
+        if ($builder !== null) {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                $builder->setContent(
+                    $arguments["reply"]["value"]
+                ),
+                false
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Embed not found."),
+                true
+            );
+        }
+    }
+
 }
