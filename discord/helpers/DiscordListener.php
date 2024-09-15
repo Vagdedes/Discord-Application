@@ -160,7 +160,7 @@ class DiscordListener
                         } else {
                             call_user_func_array(
                                 array($class, $method),
-                                array($this->plan, $interaction, $command)
+                                array($this->plan->commands->getPlan($command), $interaction, $command)
                             );
                         }
                     }

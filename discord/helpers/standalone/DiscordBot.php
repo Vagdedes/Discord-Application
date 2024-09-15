@@ -80,6 +80,11 @@ class DiscordBot
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
     }
 
+    public function getPlan(int|string $planID): ?DiscordPlan
+    {
+        return $this->plans[(int)$planID] ?? null;
+    }
+
     private function load(): void
     {
         $query = get_sql_query(
@@ -97,19 +102,13 @@ class DiscordBot
 
         if (empty($query)) {
             global $logger;
-            $logger->logError(null, "(1) Found no plans for bot with ID: " . $this->botID);
-            // In case connection or database fails, log but do not exit
+            $logger->logError(null, "Found no plans for bot with ID: " . $this->botID);
         } else {
-            foreach ($query as $plan) {
-                $this->plans[] = new DiscordPlan(
+            foreach ($query as $row) {
+                $this->plans[(int)$row->id] = new DiscordPlan(
                     $this,
-                    $plan->id
+                    $row->id
                 );
-            }
-
-            if (empty($query)) {
-                global $logger;
-                $logger->logError(null, "(2) Found no plans for bot with ID: " . $this->botID);
             }
         }
     }

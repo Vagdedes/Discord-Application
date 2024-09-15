@@ -22,7 +22,7 @@ class DiscordCommands
                 array("command_reply", "IS NOT", null),
                 null,
                 array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
+                array("plan_id", $plan->planID),
                 null,
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -39,7 +39,7 @@ class DiscordCommands
                 array("command_placeholder", "!=", "/"),
                 null,
                 array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
+                array("plan_id", $plan->planID),
                 null,
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -133,7 +133,7 @@ class DiscordCommands
                                 break;
                             default:
                                 $logger->logError(
-                                    $this->plan->planID,
+                                    $planCopy->planID,
                                     "Invalid argument '" . $argument->id . "' in command with ID: " . $command->id
                                 );
                                 break;
@@ -179,7 +179,8 @@ class DiscordCommands
                     $this->plan->planID,
                     $message->guild_id,
                     $message->channel_id,
-                    $user->id, $message->content
+                    $user->id,
+                    $message->content
                 );
                 $cache = get_key_value_pair($cacheKey);
 
@@ -202,7 +203,7 @@ class DiscordCommands
                         if (($command->server_id === null || $command->server_id == $message->guild_id)
                             && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
-                            $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+                            $mute = $planCopy->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
                             if ($mute !== null) {
                                 return $mute->creation_reason;
@@ -240,7 +241,7 @@ class DiscordCommands
                         } else if ($command->listener_class !== null && $command->listener_method !== null) {
                             call_user_func_array(
                                 array($command->listener_class, $command->listener_method),
-                                array($this->plan, $message, $command)
+                                array($this->getPlan($command), $message, $command)
                             );
                         }
                     }
@@ -255,8 +256,12 @@ class DiscordCommands
     {
         if ($command->cooldown_duration !== null) {
             $cacheKey = array(
-                __METHOD__, $this->plan->planID, $serverID, $channelID, $userID,
-                $command->command_placeholder . $command->command_identification);
+                __METHOD__,
+                $this->plan->planID,
+                $serverID, $channelID,
+                $userID,
+                $command->command_placeholder . $command->command_identification
+            );
             $cache = get_key_value_pair($cacheKey);
 
             if ($cache !== null) {
@@ -268,5 +273,19 @@ class DiscordCommands
         } else {
             return array(false, null);
         }
+    }
+
+    public function getPlan(object $command): DiscordPlan
+    {
+        if ($command->plan_id !== null) {
+            $planCopy = $this->plan->bot->getPlan($command->plan_id);
+
+            if ($planCopy === null) {
+                $planCopy = $this->plan;
+            }
+        } else {
+            $planCopy = $this->plan;
+        }
+        return $planCopy;
     }
 }
