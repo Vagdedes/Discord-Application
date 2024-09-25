@@ -571,23 +571,26 @@ class DiscordAIMessages
             if ($extraHash !== null) {
                 $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
             }
-            $input = array(
-                "messages" => array(
-                    array(
-                        "role" => "system",
-                        "content" => $this->plan->instructions->build(
-                            $systemInstructions[0],
-                            $systemInstructions[1],
-                            $systemInstructions[2],
-                            $content
-                        )
-                    ),
-                    array(
-                        "role" => "user",
-                        "content" => $content
-                    )
+            $messages = array(
+                array(
+                    "role" => "user",
+                    "content" => $content
                 )
             );
+            $system = $this->plan->instructions->build(
+                $systemInstructions[0],
+                $systemInstructions[1],
+                $systemInstructions[2],
+                $content
+            );
+
+            if (!empty($system)) {
+                $messages[] = array(
+                    "role" => "system",
+                    "content" => $system
+                );
+            }
+            $input = array("messages" => $messages);
             $outcome = $managerAI->getResult(
                 $hash,
                 $input,
