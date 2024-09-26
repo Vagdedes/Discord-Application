@@ -179,26 +179,42 @@ function initiate_discord_bot(): void
 
             if ($ai || $userLevel) {
                 $createdDiscordBot->tranferredMessages->trackCreation($message);
+                $message->channel->getMessageHistory(
+                    [
+                        'limit' => ($ai ? 100 : 1),
+                        'cache' => true
+                    ]
+                )->done(function ($messageHistory)
+                use ($createdDiscordBot, $userLevel, &$ai, $message) {
+                    $messageHistoryNew = array();
 
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($ai && $plan->aiMessages->textAssistance($message)) {
-                        $ai = false;
+                    foreach ($messageHistory as $messageHistoryItem) {
+                        $messageHistoryNew[] = $messageHistoryItem;
                     }
-                    if ($userLevel) {
-                        foreach (array(
-                                     DiscordUserLevels::CHAT_CHARACTER_POINTS,
-                                     DiscordUserLevels::ATTACHMENT_POINTS
-                                 ) as $type) {
-                            $plan->userLevels->runLevel(
-                                $message->guild_id,
-                                $createdDiscordBot->utilities->getChannel($message->channel),
-                                $message->member,
-                                $type,
-                                $message
-                            );
+                    foreach ($createdDiscordBot->plans as $plan) {
+                        if ($ai
+                            && $plan->aiMessages->textAssistance(
+                                $message,
+                                $messageHistoryNew
+                            )) {
+                            $ai = false;
+                        }
+                        if ($userLevel) {
+                            foreach (array(
+                                         DiscordUserLevels::CHAT_CHARACTER_POINTS,
+                                         DiscordUserLevels::ATTACHMENT_POINTS
+                                     ) as $type) {
+                                $plan->userLevels->runLevel(
+                                    $message->guild_id,
+                                    $createdDiscordBot->utilities->getChannel($message->channel),
+                                    $message->member,
+                                    $type,
+                                    $message
+                                );
+                            }
                         }
                     }
-                }
+                });
             }
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_CREATE, $message);
         });

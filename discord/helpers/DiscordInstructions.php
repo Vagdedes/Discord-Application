@@ -48,8 +48,8 @@ class DiscordInstructions
                             $object->channelID,
                             $object->threadID,
                             $object->userID,
-                            DiscordAIMessages::PAST_MESSAGES,
-                            false
+                            $object->messageHistory,
+                            DiscordAIMessages::PAST_MESSAGES
                         );
                     },
                     "botMessages" => function () use ($object) {
@@ -58,8 +58,8 @@ class DiscordInstructions
                             $object->channelID,
                             $object->threadID,
                             $object->userID,
-                            DiscordAIMessages::PAST_MESSAGES,
-                            false
+                            $object->messageHistory,
+                            DiscordAIMessages::PAST_MESSAGES
                         );
                     },
                     "allMessages" => function () use ($object) {
@@ -68,8 +68,8 @@ class DiscordInstructions
                             $object->channelID,
                             $object->threadID,
                             $object->userID,
-                            DiscordAIMessages::PAST_MESSAGES,
-                            false
+                            $object->messageHistory,
+                            DiscordAIMessages::PAST_MESSAGES
                         );
                     }
                 ),
@@ -109,9 +109,11 @@ class DiscordInstructions
     public function getObject(?Guild              $server = null,
                               Channel|Thread|null $channel = null,
                               Member|User|null    $user = null,
-                              ?Message            $message = null): object
+                              ?Message            $message = null,
+                              array               $messageHistory = []): object
     {
         $object = new stdClass();
+        $object->messageHistory = $messageHistory;
         $object->serverID = $server?->id;
         $object->serverName = $server?->name;
 

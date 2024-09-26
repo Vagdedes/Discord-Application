@@ -10,6 +10,8 @@ use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
+use React\EventLoop\Loop;
+use React\Promise\Deferred;
 
 class DiscordUtilities
 {

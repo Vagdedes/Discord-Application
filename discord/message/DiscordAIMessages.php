@@ -173,7 +173,7 @@ class DiscordAIMessages
         }
     }
 
-    public function textAssistance(Message $originalMessage): bool
+    public function textAssistance(Message $originalMessage, array $messageHistory): bool
     {
         global $logger;
         $messageContent = $originalMessage->content;
@@ -182,7 +182,8 @@ class DiscordAIMessages
             $originalMessage->guild,
             $originalMessage->channel,
             $member,
-            $originalMessage
+            $originalMessage,
+            $messageHistory
         );
         $command = $this->plan->commands->process(
             $originalMessage,
@@ -622,21 +623,6 @@ class DiscordAIMessages
                     $date = get_current_date();
 
                     sql_insert(
-                        BotDatabaseTable::BOT_AI_MESSAGES,
-                        array(
-                            "plan_id" => $this->plan->planID,
-                            "ai_hash" => $extraHash,
-                            "bot_id" => $this->plan->bot->botID,
-                            "server_id" => $channel->guild_id,
-                            "channel_id" => $parent->id,
-                            "thread_id" => $thread,
-                            "user_id" => $user->id,
-                            "message_id" => $self?->id,
-                            "message_content" => $content,
-                            "creation_date" => $date,
-                        )
-                    );
-                    sql_insert(
                         BotDatabaseTable::BOT_AI_REPLIES,
                         array(
                             "plan_id" => $this->plan->planID,
@@ -646,8 +632,6 @@ class DiscordAIMessages
                             "channel_id" => $parent->id,
                             "thread_id" => $thread,
                             "user_id" => $user->id,
-                            "message_id" => $self?->id,
-                            "message_content" => $reply,
                             "cost" => $cost,
                             "currency_id" => $model->currency->id,
                             "creation_date" => $date,
@@ -686,101 +670,160 @@ class DiscordAIMessages
     // Separator
 
     public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                int|string      $userID,
-                                int|string|null $limit = 0, bool $object = true): array
+                                int|string|null $userID,
+                                array           $messageHistory = [],
+                                int|string      $limit = 100): array
     {
-        $array = get_sql_query(
-            BotDatabaseTable::BOT_AI_MESSAGES,
-            array("creation_date", "message_content"),
-            array(
-                array("user_id", $userID),
-                $serverID !== null ? array("server_id", $serverID) : "",
-                $channelID !== null ? array("channel_id", $channelID) : "",
-                $threadID !== null ? array("thread_id", $threadID) : "",
-                array("deletion_date", null)
-            ),
-            array(
-                "DESC",
-                "id"
-            ),
-            $limit !== null ? (int)$limit : 0
-        );
-
-        if (!$object) {
-            foreach ($array as $arrayKey => $row) {
-                unset($array[$arrayKey]);
-                $array[strtotime($row->creation_date)] = $row->message_content;
-            }
-            krsort($array);
+        if ($channelID === null || $userID === null) {
+            return array();
         }
-        return $array;
+        $channel = $this->plan->bot->discord->getChannel($channelID);
+
+        if ($channel !== null
+            && ($serverID === null
+                || $channel->guild_id == $serverID)) {
+            if ($threadID !== null) {
+                $found = false;
+
+                if (!empty($channel->threads->first())) {
+                    foreach ($channel->threads as $thread) {
+                        if ($thread->id == $threadID) {
+                            $channel = $thread;
+                            $found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$found) {
+                    return array();
+                }
+            }
+            $array = array();
+
+            if (!empty($messageHistory)) {
+                foreach ($messageHistory as $message) {
+                    if ($message->user_id == $userID) {
+                        $array[] = $message->content;
+
+                        if (sizeof($array) == $limit) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return $array;
+        } else {
+            return array();
+        }
     }
 
     public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                               int|string      $userID,
-                               int|string|null $limit = 0, bool $object = true): array
+                               int|string|null $userID,
+                               array           $messageHistory = [],
+                               int|string      $limit = 100): array
     {
-        $array = get_sql_query(
-            BotDatabaseTable::BOT_AI_REPLIES,
-            array("creation_date", "message_content"),
-            array(
-                array("user_id", $userID),
-                $serverID !== null ? array("server_id", $serverID) : "",
-                $channelID !== null ? array("channel_id", $channelID) : "",
-                $threadID !== null ? array("thread_id", $threadID) : "",
-                array("deletion_date", null)
-            ),
-            array(
-                "DESC",
-                "id"
-            ),
-            $limit !== null ? (int)$limit : 0
-        );
-
-        if (!$object) {
-            foreach ($array as $arrayKey => $row) {
-                unset($array[$arrayKey]);
-                $array[strtotime($row->creation_date)] = $row->message_content;
-            }
-            krsort($array);
+        if ($channelID === null || $userID === null) {
+            return array();
         }
-        return $array;
+        $channel = $this->plan->bot->discord->getChannel($channelID);
+
+        if ($channel !== null
+            && ($serverID === null
+                || $channel->guild_id == $serverID)) {
+            if ($threadID !== null) {
+                $found = false;
+
+                if (!empty($channel->threads->first())) {
+                    foreach ($channel->threads as $thread) {
+                        if ($thread->id == $threadID) {
+                            $channel = $thread;
+                            $found = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$found) {
+                    return array();
+                }
+            }
+            $array = array();
+
+            if (!empty($messageHistory)) {
+                foreach ($messageHistory as $message) {
+                    if ($message->user_id == $this->plan->bot->botID
+                        && $message->referenced_message !== null
+                        && $message->referenced_message->user_id == $userID) {
+                        $array[] = $message->content;
+
+                        if (sizeof($array) == $limit) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return $array;
+        } else {
+            return array();
+        }
     }
 
     public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                    int|string      $userID,
-                                    ?int            $limit = 0, bool $object = true): array
+                                    int|string|null $userID,
+                                    array           $messageHistory = [],
+                                    int|string      $limit = 100): array
     {
-        $final = array();
-        $messages = $this->getMessages($serverID, $channelID, $threadID, $userID, $limit, $object);
-        $replies = $this->getReplies($serverID, $channelID, $threadID, $userID, $limit, $object);
+        if ($channelID === null || $userID === null) {
+            return array();
+        }
+        $channel = $this->plan->bot->discord->getChannel($channelID);
 
-        if (!empty($messages)) {
-            if ($object) {
-                foreach ($messages as $row) {
-                    $row->user = true;
-                    $final[strtotime($row->creation_date)] = $row;
+        if ($channel !== null
+            && ($serverID === null
+                || $channel->guild_id == $serverID)) {
+            if ($threadID !== null) {
+                $found = false;
+
+                if (!empty($channel->threads->first())) {
+                    foreach ($channel->threads as $thread) {
+                        if ($thread->id == $threadID) {
+                            $channel = $thread;
+                            $found = true;
+                            break;
+                        }
+                    }
                 }
-            } else {
-                foreach ($messages as $arrayKey => $row) {
-                    $final[$arrayKey] = "user: " . $row;
-                }
-            }
-        }
-        if (!empty($replies)) {
-            if ($object) {
-                foreach ($replies as $row) {
-                    $row->user = false;
-                    $final[strtotime($row->creation_date)] = $row;
-                }
-            } else {
-                foreach ($messages as $arrayKey => $row) {
-                    $final[$arrayKey] = "bot (you): " . $row;
+
+                if (!$found) {
+                    return array();
                 }
             }
+            $array = array();
+
+            if (!empty($messageHistory)) {
+                foreach ($messageHistory as $message) {
+                    if ($message->user_id == $userID) {
+                        $array[] = "user: " . $message->content;
+
+                        if (sizeof($array) == $limit) {
+                            break;
+                        }
+                    } else if ($message->user_id == $this->plan->bot->botID
+                        && $message->referenced_message !== null
+                        && $message->referenced_message->user_id == $userID) {
+                        $array[] = "bot: " . $message->content;
+
+                        if (sizeof($array) == $limit) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return $array;
+        } else {
+            return array();
         }
-        krsort($final);
-        return $final;
     }
 
     // Separator
@@ -1166,4 +1209,5 @@ class DiscordAIMessages
             return "Failed to deleted any limit associated from the database.";
         }
     }
+
 }

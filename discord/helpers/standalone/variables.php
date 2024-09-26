@@ -98,7 +98,6 @@ class BotDatabaseTable
         BOT_AI_INSTRUCTIONS = "discord.botAIInstructions",
         BOT_AI_FEEDBACK = "discord.botAIFeedback",
         BOT_AI_MENTIONS = "discord.botAIMentions",
-        BOT_AI_MESSAGES = "discord.botAIMessages",
         BOT_AI_REPLIES = "discord.botAIReplies",
         BOT_ROLE_PERMISSIONS = "discord.botRolePermissions",
         BOT_USER_PERMISSIONS = "discord.botUserPermissions",
