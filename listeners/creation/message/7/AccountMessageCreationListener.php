@@ -624,7 +624,7 @@ class AccountMessageCreationListener
             $embed = new Embed($plan->bot->discord);
             $embed->setDescription(
                 "Welcome back **" . $account->getDetail("name") . "**!"
-                . "\nDon't forget to connect any accounts you have so we can provide you with your purchases."
+                . "\n\nDon't forget to connect any accounts you have so we can provide you with your purchases."
             );
             $messageBuilder->addEmbed($embed);
 
