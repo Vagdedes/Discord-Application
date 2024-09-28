@@ -622,28 +622,10 @@ class AccountMessageCreationListener
 
         if ($account !== null) {
             $embed = new Embed($plan->bot->discord);
-            $embed->setDescription("Welcome back **" . $account->getDetail("name") . "**");
-
-            // Separator
-
-            $objectives = $account->getObjectives()->get();
-            $size = sizeof($objectives);
-
-            if ($size > 0) {
-                $embed->addFieldValues(
-                    "__**Objectives**__",
-                    "You have " . $size . ($size === 1 ? " objective" : " objectives") . " to complete. Complete as many as possible."
-                );
-                foreach ($objectives as $count => $objective) {
-                    $hasURL = !$objective->optional_url && $objective->url !== null;
-                    $embed->addFieldValues(
-                        "__" . ($count + 1) . "__ " . $objective->title,
-                        ($hasURL ? "[" : "")
-                        . $objective->description
-                        . ($hasURL ? "](" . $objective->url . ")" : "")
-                    );
-                }
-            }
+            $embed->setDescription(
+                "Welcome back **" . $account->getDetail("name") . "**!"
+                . "\nDon't forget to connect any accounts you have so we can provide you with your purchases."
+            );
             $messageBuilder->addEmbed($embed);
 
             // Separator
