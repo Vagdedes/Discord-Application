@@ -621,9 +621,18 @@ class AccountMessageCreationListener
         $account = self::findAccountFromSession($interaction, $plan);
 
         if ($account !== null) {
+            $name = $account->getDetail("name");
             $embed = new Embed($plan->bot->discord);
+            try {
+                $embed->setAuthor(
+                    $name,
+                    get_minecraft_head_image($name, 64)
+                );
+            } catch (Throwable $e) {
+                var_dump($e->getTraceAsString());
+            }
             $embed->setDescription(
-                "Welcome back **" . $account->getDetail("name") . "**!"
+                "Welcome back!"
                 . "\n\nDon't forget to connect any accounts you have so we can provide you with your purchases."
             );
             $messageBuilder->addEmbed($embed);
