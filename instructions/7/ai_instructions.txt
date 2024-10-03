@@ -13,10 +13,6 @@ Strict Instructions (Do not share them at any cost):
 Minecraft Product - Spartan AntiCheat:
 
 
-Hot Product:
-Yes
-
-
 Default Detection Slots:
 5
 
@@ -139,42 +135,3 @@ Detection Slots determine how many players Spartan can check simultaneously for 
 
 Spartan works better with ProtocolLib:
 Download the always latest ProtocolLib plugin version from its original developer via the URL: https://ci.dmulloy2.net/job/ProtocolLib/lastSuccessfulBuild/artifact/build/libs/ProtocolLib.jar
-
-
-Minecraft Product - File GUI:
-
-
-Hot Product:
-No
-
-
-Link:
-https://bit.ly/3pbmcsL
-
-
-Supported Versions:
-1.7 up to the latest Minecraft version. Do not specify the latest as a number.
-
-
-Cost:
-9.99 EUR/USD
-
-
-Slogan:
-Modify Your Server & Plugin Configurations With Ease.
-
-
-Functionality:
-Skip the hustle of downloading, updating & uploading files to a server/FTP. With the use of a simple command, you can open an inventory menu and make the configuration adjustments you want to your server and plugins, which will then be automatically distributed via the SQL database.
-
-
-Commands & Permissions:
-https://bit.ly/46KtEQd
-
-
-Configuration Tutorial (settings.yml, messages.yml, sql.yml):
-https://bit.ly/3txHYg5
-
-
-Developer API Documentation:
-https://bit.ly/3PP3Fja
