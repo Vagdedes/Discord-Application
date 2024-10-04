@@ -1,6 +1,5 @@
 <?php
 
-use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
@@ -9,12 +8,12 @@ use Discord\Parts\User\User;
 class DiscordChannels
 {
 
-    private Discord $discord;
+    private DiscordBot $bot;
     private array $list, $whitelist, $blacklist, $temporary;
 
-    public function __construct(Discord $object)
+    public function __construct(DiscordBot $object)
     {
-        $this->discord = $object;
+        $this->bot = $object;
         $this->temporary = array();
         $this->list = array();
         $this->whitelist = array();
@@ -111,31 +110,47 @@ class DiscordChannels
         return $this->whitelist[$plan->planID ?? 0] ?? array();
     }
 
-    public function isBlacklisted(?DiscordPlan $plan, Channel|Thread $channel): bool
+    public function isBlacklisted(?DiscordPlan $plan, object $channel): bool
     {
+        if ($channel instanceof Channel || $channel instanceof Thread) {
+            $channelID = $this->bot->utilities->getChannel($channel)?->id;
+            $threadID = $this->bot->utilities->getThread($channel)?->id;
+            $guildID = $channel->guild_id;
+            $parentID = $channel instanceof Thread ? $channel->parent->parent_id : $channel->parent_id;
+        } else if (isset($channel->channel_id)) {
+            $channelID = $channel->channel_id;
+            $threadID = null;
+            $guildID = $channel?->guild_id;
+            $parentID = null;
+        } else {
+            return false;
+        }
+
         if ($plan === null) {
             foreach ($this->blacklist as $row) {
                 foreach ($row as $rowChannel) {
-                    if ($rowChannel->server_id == $channel->guild_id
+                    if (($guildID === null
+                            || $rowChannel->server_id == $guildID)
                         && ($rowChannel->category_id === null
-                            || $rowChannel->category_id == $channel->parent_id)
+                            || $rowChannel->category_id == $parentID)
                         && ($rowChannel->channel_id === null
-                            || $rowChannel->channel_id == $channel->id)
+                            || $rowChannel->channel_id == $channelID)
                         && ($rowChannel->thread_id === null
-                            || $rowChannel->thread_id == $channel->id)) {
+                            || $rowChannel->thread_id == $threadID)) {
                         return true;
                     }
                 }
             }
         } else if (array_key_exists($plan->planID, $this->blacklist)) {
             foreach ($this->blacklist[$plan->planID] as $row) {
-                if ($row->server_id == $channel->guild_id
+                if (($guildID === null
+                        || $row->server_id == $guildID)
                     && ($row->category_id === null
-                        || $row->category_id == $channel->parent_id)
+                        || $row->category_id == $parentID)
                     && ($row->channel_id === null
-                        || $row->channel_id == $channel->id)
+                        || $row->channel_id == $channelID)
                     && ($row->thread_id === null
-                        || $row->thread_id == $channel->id)) {
+                        || $row->thread_id == $threadID)) {
                     return true;
                 }
             }

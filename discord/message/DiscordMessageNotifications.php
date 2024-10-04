@@ -114,7 +114,7 @@ class DiscordMessageNotifications
                 if ($notification->is_thread === null
                     && $notification->server_id == $message->guild_id) {
                     $original = $message->channel;
-                    $channel = $this->plan->utilities->getChannel($original);
+                    $channel = $this->plan->utilities->getChannelOrThread($original);
 
                     if (($notification->category_id === null || $notification->category_id == $channel->parent_id)
                         && ($notification->channel_id === null || $notification->channel_id == $channel->id)
@@ -231,7 +231,7 @@ class DiscordMessageNotifications
                     $original, $thread, $notification, $isThread,
                     $originalMessage, $date, $user, $lockThread, $deleteMessage
                 ) {
-                    $channel = $isThread ? $thread->parent : $this->plan->utilities->getChannel($original);
+                    $channel = $isThread ? $thread->parent : $this->plan->utilities->getChannelOrThread($original);
 
                     if ($isThread) {
                         if ($lockThread) {

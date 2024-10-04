@@ -180,7 +180,8 @@ class DiscordLogs
     private function prepareLogMessage(object          $row, string $date,
                                        int|string|null $userID, ?string $action,
                                        mixed           $object, mixed $oldObject,
-                                       MessageBuilder  $message): ?MessageBuilder
+                                       MessageBuilder  $message,
+                                       int             $chunksProcessed = 0): ?MessageBuilder
     {
         $syntaxExtra = strlen(DiscordSyntax::HEAVY_CODE_BLOCK) * 2;
         $this->ignoreAction++;
@@ -188,12 +189,18 @@ class DiscordLogs
         $loopObject = is_object($object)
             ? (method_exists($object, "getRawAttributes") ? $object->getRawAttributes() : json_decode(@json_encode($object), true))
             : (is_array($object) ? $object : array());
+        $chunksRemaining = DiscordInheritedLimits::MAX_FIELDS_PER_EMBED - $chunksProcessed;
 
-        foreach (array_chunk(
-                     $loopObject,
-                     DiscordInheritedLimits::MAX_FIELDS_PER_EMBED,
-                     true
-                 ) as $chunk) {
+        if ($chunksRemaining == 0) {
+            return $message;
+        }
+        $chunks = array_chunk(
+            $loopObject,
+            $chunksRemaining,
+            true
+        );
+
+        foreach ($chunks as $chunk) {
             unset($chunk["guild_id"]);
             unset($chunk["guild"]);
 
@@ -219,23 +226,27 @@ class DiscordLogs
                 $embed->setTitle($this->beautifulText($action));
 
                 if ($object instanceof Message) {
+                    if ($this->bot->channels->isBlacklisted(null, $object->channel)) {
+                        return null;
+                    }
                     $embed->setDescription($object->link);
                 } else if ($object instanceof Member) {
                     $embed->setDescription("<@" . $object->id . ">");
-                } else if ($object instanceof Channel) {
-                    if ($this->bot->channels->isBlacklisted(null, $object)) {
-                        return null;
-                    }
-                    $embed->setDescription("<#" . $object->id . ">");
-                } else if ($object instanceof Thread) {
+                } else if ($object instanceof Channel || $object instanceof Thread) {
                     if ($this->bot->channels->isBlacklisted(null, $object)) {
                         return null;
                     }
                     $embed->setDescription("<#" . $object->id . ">");
                 } else if ($object instanceof Invite) {
+                    if ($this->bot->channels->isBlacklisted(null, $object->channel)) {
+                        return null;
+                    }
                     $embed->setDescription($object->invite_url
                         . "\nIn: <#" . $object->channel_id . ">"
                         . "\nBy: <@" . $object->inviter->id . ">");
+                } else if (is_object($object)
+                    && $this->bot->channels->isBlacklisted(null, $object)) {
+                    return null;
                 }
                 $embed->setTimestamp(strtotime($date));
 
@@ -291,7 +302,15 @@ class DiscordLogs
             }
         }
         return $oldObject !== null
-            ? $this->prepareLogMessage($row, $date, $userID, $action, $oldObject, null, $message)
+            ? $this->prepareLogMessage(
+                $row,
+                $date,
+                $userID,
+                $action,
+                $oldObject,
+                null,
+                $message,
+                $chunksProcessed + sizeof($chunks))
             : $message;
     }
 

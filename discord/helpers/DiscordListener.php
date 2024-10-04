@@ -14,7 +14,7 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordListener
 {
-    private Discord $discord;
+    private DiscordBot $bot;
     private ?DiscordPlan $plan;
     private const
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
@@ -51,13 +51,13 @@ class DiscordListener
         IMPLEMENTATION_USER_POLLS = "/root/discord_bot/listeners/custom/user_polls/",
         IMPLEMENTATION_MESSAGE_OBJECTIVE = "/root/discord_bot/listeners/custom/objective_message/";
 
-    public function __construct(Discord|DiscordPlan $object)
+    public function __construct(DiscordBot|DiscordPlan $object)
     {
         if ($object instanceof DiscordPlan) {
-            $this->discord = $object->bot->discord;
+            $this->bot = $object->bot;
             $this->plan = $object;
         } else {
-            $this->discord = $object;
+            $this->bot = $object;
             $this->plan = null;
         }
     }

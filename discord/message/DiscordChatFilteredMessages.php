@@ -233,7 +233,7 @@ class DiscordChatFilteredMessages
         }
 
         if ($block) {
-            $channel = $this->plan->utilities->getChannel($message->channel);
+            $channel = $this->plan->utilities->getChannelOrThread($message->channel);
 
             if (!sql_insert(
                 BotDatabaseTable::BOT_MESSAGE_MESSAGE_FILTER_TRACKING,

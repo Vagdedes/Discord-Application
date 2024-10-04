@@ -563,7 +563,7 @@ class DiscordAIMessages
                 }
             }
         }
-        $parent = $this->plan->utilities->getChannel($channel);
+        $parent = $this->plan->utilities->getChannelOrThread($channel);
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
@@ -896,7 +896,7 @@ class DiscordAIMessages
     {
         $array = array();
         $serverID = $message->guild_id;
-        $channelID = $this->plan->utilities->getChannel($message->channel)->id;
+        $channelID = $this->plan->utilities->getChannelOrThread($message->channel)->id;
         $threadID = $message->thread?->id;
         $userID = $message->member->id;
         $date = get_current_date();
@@ -1044,7 +1044,7 @@ class DiscordAIMessages
         if ($message !== null
             && !empty($message->mentions->first())
             && !in_array($reaction->member->id, $this->messageFeedback[$hash])) {
-            $channel = $this->plan->utilities->getChannel($message->channel);
+            $channel = $this->plan->utilities->getChannelOrThread($message->channel);
 
             if (!empty(get_sql_query(
                 BotDatabaseTable::BOT_AI_FEEDBACK,

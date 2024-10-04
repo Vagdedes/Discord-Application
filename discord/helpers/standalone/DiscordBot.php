@@ -64,9 +64,9 @@ class DiscordBot
         $this->botID = $botID;
         $this->plans = array();
 
-        $this->utilities = new DiscordUtilities($this->discord);
-        $this->listener = new DiscordListener($this->discord);
-        $this->channels = new DiscordChannels($this->discord);
+        $this->utilities = new DiscordUtilities($this);
+        $this->listener = new DiscordListener($this);
+        $this->channels = new DiscordChannels($this);
 
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);

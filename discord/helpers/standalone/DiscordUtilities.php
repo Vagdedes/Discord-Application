@@ -16,23 +16,23 @@ use React\Promise\Deferred;
 class DiscordUtilities
 {
 
-    private Discord $discord;
+    private DiscordBot $bot;
     private ?DiscordPlan $plan;
 
-    public function __construct(Discord|DiscordPlan $object)
+    public function __construct(DiscordBot|DiscordPlan $object)
     {
         if ($object instanceof DiscordPlan) {
-            $this->discord = $object->bot->discord;
+            $this->bot = $object->bot;
             $this->plan = $object;
         } else {
-            $this->discord = $object;
+            $this->bot = $object;
             $this->plan = null;
         }
     }
 
     public function getUser(int|string $userID): ?object
     {
-        $users = $this->discord->users->toArray();
+        $users = $this->bot->discord->users->toArray();
         return $users[$userID] ?? null;
     }
 
@@ -44,13 +44,13 @@ class DiscordUtilities
 
     public function getUsername(int|string $userID): string
     {
-        $users = $this->discord->users->toArray();
+        $users = $this->bot->discord->users->toArray();
         return $users[$userID]?->username ?? $userID;
     }
 
     public function getAvatar(int|string $userID): ?string
     {
-        $users = $this->discord->users->toArray();
+        $users = $this->bot->discord->users->toArray();
         return $users[$userID]?->avatar ?? null;
     }
 
@@ -58,14 +58,24 @@ class DiscordUtilities
 
     public function getGuild(int|string $serverID): ?Guild
     {
-        return $this->discord->guilds->toArray()[$serverID] ?? null;
+        return $this->bot->discord->guilds->toArray()[$serverID] ?? null;
     }
 
     // Separator
 
-    public function getChannel(Channel|Thread $channel): Channel
+    public function getChannelOrThread(Channel|Thread $channel): Channel
     {
         return $channel instanceof Thread ? $channel->parent : $channel;
+    }
+
+    public function getChannel(Channel|Thread $channel): ?Channel
+    {
+        return $channel instanceof Thread ? null : $channel;
+    }
+
+    public function getThread(Channel|Thread $channel): ?Thread
+    {
+        return $channel instanceof Thread ? $channel : null;
     }
 
     public function createChannel(Guild|int|string $guild,
@@ -124,7 +134,7 @@ class DiscordUtilities
                                  string|null|float|int $reason = null): bool
     {
         if (!($channel instanceof Channel)) {
-            $channel = $this->discord->getChannel($channel);
+            $channel = $this->bot->discord->getChannel($channel);
 
             if ($channel === null) {
                 return false;
@@ -246,7 +256,7 @@ class DiscordUtilities
         $messageBuilder = MessageBuilder::new()->setContent(
             $this->plan->instructions->replace(array($hasContent ? $row->message_content : ""), $object)[0]
         );
-        $embed = new Embed($this->discord);
+        $embed = new Embed($this->bot->discord);
         $addEmbed = false;
 
         if (!empty($row->embed_title)) {
@@ -302,10 +312,10 @@ class DiscordUtilities
     {
         $array = array();
 
-        if (!empty($this->discord->guilds->first())) {
+        if (!empty($this->bot->discord->guilds->first())) {
             $array[] = null;
 
-            foreach ($this->discord->guilds as $guild) {
+            foreach ($this->bot->discord->guilds as $guild) {
                 $array[] = array("server_id", "=", $guild->id, 0);
             }
             $array[] = array("server_id", "IS", null);

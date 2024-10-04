@@ -57,7 +57,7 @@ class DiscordObjectiveChannels
                 if ($channel->start_server_id === $message->guild_id
                     && $channel->start_channel_id == $message->channel_id
                     && ($channel->thread_id === null || $channel->thread_id == $message->thread->id)) {
-                    $channelObj = $this->plan->bot->utilities->getChannel($message->channel);
+                    $channelObj = $this->plan->bot->utilities->getChannelOrThread($message->channel);
 
                     if (sql_insert(
                         BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
@@ -168,7 +168,7 @@ class DiscordObjectiveChannels
 
                 $channel->sendMessage($messageBuilder)->done(function (Message $endMessage)
                 use ($message, $date) {
-                    $channelObj = $this->plan->bot->utilities->getChannel($endMessage->channel);
+                    $channelObj = $this->plan->bot->utilities->getChannelOrThread($endMessage->channel);
 
                     if (!set_sql_query(
                         BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,

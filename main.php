@@ -206,7 +206,7 @@ function initiate_discord_bot(): void
                                      ) as $type) {
                                 $plan->userLevels->runLevel(
                                     $message->guild_id,
-                                    $createdDiscordBot->utilities->getChannel($message->channel),
+                                    $createdDiscordBot->utilities->getChannelOrThread($message->channel),
                                     $message->member,
                                     $type,
                                     $message
@@ -548,7 +548,7 @@ function initiate_discord_bot(): void
             foreach ($createdDiscordBot->plans as $plan) {
                 $plan->userLevels->runLevel(
                     $reaction->guild_id,
-                    $createdDiscordBot->utilities->getChannel($reaction->channel),
+                    $createdDiscordBot->utilities->getChannelOrThread($reaction->channel),
                     $reaction->member,
                     DiscordUserLevels::REACTION_POINTS,
                     $reaction

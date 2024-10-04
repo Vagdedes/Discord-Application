@@ -60,7 +60,7 @@ class DiscordTransferredMessages
     public function trackCreation(Message $message): void
     {
         if (!empty($this->sources)) {
-            $original = $this->bot->utilities->getChannel($message->channel);
+            $original = $this->bot->utilities->getChannelOrThread($message->channel);
 
             foreach ($this->sources as $receiveChannel) {
                 if ($receiveChannel->server_id == $original->guild_id
