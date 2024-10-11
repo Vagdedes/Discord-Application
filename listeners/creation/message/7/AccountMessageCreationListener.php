@@ -631,10 +631,11 @@ class AccountMessageCreationListener
             } catch (Throwable $e) {
                 var_dump($e->getTraceAsString());
             }
-            $embed->setDescription(
+            $embed->setTitle(
                 "Welcome back!"
                 . "\n\nDon't forget to connect any accounts you have so we can provide you with your purchases."
             );
+            $embed->setFooter("Accounts who leave the Discord server are deleted!");
             $messageBuilder->addEmbed($embed);
 
             // Separator
