@@ -98,7 +98,7 @@ On the BuiltByBit platform you can purchase both “Spartan AntiCheat: Java Edit
 
 
 Free “Spartan AntiCheat: Java Edition”:
-If you leave a review on “Spartan AntiCheat: Bedrock Edition” on the BuiltByBit or Polymart platform you get the “Spartan AntiCheat: Java Edition” for free via the #my-account Discord text-channel by opening a thread in the #support forum-channel with tag “REVIEW FOR JAVA”. Make sure to create or have an account via the #my-account Discord-text channel.
+If you leave a review on “Spartan AntiCheat: Bedrock Edition” on any platform you get the “Spartan AntiCheat: Java Edition” for free via the #my-account Discord text-channel by opening a thread in the #support forum-channel with tag “REVIEW FOR JAVA”. Make sure to create or have an account via the #my-account Discord-text channel.
 
 
 Free “Spartan AntiCheat: Bedrock Edition”:
@@ -118,7 +118,7 @@ When a user owns any version of Spartan, it may notify them of the missing oppos
 
 
 Using both “Spartan AntiCheat: Java Edition” and “Spartan AntiCheat: Bedrock Edition”:
-To use all editions of the Spartan AntiCheat together and avoid the console error “Ambiguous plugin name” navigate to the #my-account Discord text-channel and download only one of the editions, this choice is yours. Upon loading the edition you downloaded, the other editions will load automatically by checking your purchases.
+To use all editions of the Spartan AntiCheat together and avoid the console error “Ambiguous plugin name” you must use only one of the 2 downloaded Spartan editions. The other edition will load automatically if you own both “Spartan AntiCheat: Java Edition” & “Spartan AntiCheat: Bedrock Edition” prouducts but also the product "Spartan AntiCheat: Java & Bedrock editions in one jar".
 
 
 Enable Cross Server Notifications:
