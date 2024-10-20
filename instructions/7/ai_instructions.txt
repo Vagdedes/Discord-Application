@@ -129,9 +129,5 @@ Preventions and Punishments:
 The Spartan AntiCheat adjusts itself by collecting and analyzing player data. In the initial stages of this data collection, such as the first days of having the plugin, there won’t be enough data for Spartan to prevent hacks or execute punishments, which will result in only notifications taking place. Once enough data is collected, preventions and finally punishments will be enabled.
 
 
-How “Detection Slots” work:
-Detection Slots determine how many players Spartan can check simultaneously for cheating. With more Detection Slots, you can check more players at once. If you have fewer Detection Slots than online players, players will be checked in groups sequentially instead of all at once. 
-
-
 Spartan works better with ProtocolLib:
 Download the always latest ProtocolLib plugin version from its original developer via the URL: https://ci.dmulloy2.net/job/ProtocolLib/lastSuccessfulBuild/artifact/build/libs/ProtocolLib.jar
