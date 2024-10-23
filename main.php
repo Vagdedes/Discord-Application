@@ -188,7 +188,7 @@ function initiate_discord_bot(): void
                     foreach ($createdDiscordBot->plans as $plan) {
                         if ($ai && $plan->aiMessages->textAssistance(
                                 $message,
-                                $messageHistory
+                                $messageHistory->toArray()
                             )) {
                             $ai = false;
                         }
