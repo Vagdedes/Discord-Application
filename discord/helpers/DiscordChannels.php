@@ -311,11 +311,6 @@ class DiscordChannels
                     ]
                 )->done(function ($channel, $thread, $messageHistory, $maxMessagesPerThread, &$updated, &$array) {
                     foreach ($messageHistory as $message) {
-                        $threadName = $thread->name = $thread->name ?? $thread->id;
-                        $message = $message->author->username . "[in thread '" . $threadName
-                            . "' on '" . $message->timestamp->toDateTimeString() . "']: "
-                            . $message->content;
-
                         if (array_key_exists($channel->id, $array)) {
                             if (array_key_exists($thread->id, $array[$channel->id])) {
                                 if (sizeof($array[$channel->id][$thread->id]) == $maxMessagesPerThread) {
