@@ -327,9 +327,12 @@ class DiscordObjectiveChannels
                     }
                     $this->createThread($channel, $channelObj, $creation);
                 } else {
-                    $channelObj->getMessageHistory([
-                        'limit' => 100,
-                    ])->done(function (Collection $messages) use ($channel, $channelObj) {
+                    $channelObj->getMessageHistory(
+                        [
+                            'limit' => 100,
+                            'cache' => true
+                        ]
+                    )->done(function (Collection $messages) use ($channel, $channelObj) {
                         foreach ($messages as $message) {
                             $this->messages[$this->plan->utilities->hash(
                                 $channelObj->guild_id,

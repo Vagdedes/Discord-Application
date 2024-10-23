@@ -14,7 +14,10 @@ class DiscordAIMessages
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
-    public const PAST_MESSAGES = 50;
+    public const
+        PAST_MESSAGES = 50,
+        THREADS_ANALYZED = 20,
+        THREAD_ANALYZED_MESSAGES = 10;
 
     const REACTION_COMPONENT_NAME = "general-feedback";
 
@@ -173,7 +176,7 @@ class DiscordAIMessages
         }
     }
 
-    public function textAssistance(Message $originalMessage, array $messageHistory): bool
+    public function textAssistance(Message $originalMessage, mixed $messageHistory): bool
     {
         global $logger;
         $messageContent = $originalMessage->content;

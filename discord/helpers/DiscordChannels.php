@@ -294,4 +294,66 @@ class DiscordChannels
             return false;
         }
     }
+
+    public static function getThreadHistory(Channel    $channel,
+                                            array      &$array,
+                                            int|string $maxThreads,
+                                            int|string $maxMessagesPerThread): array
+    {
+        if (!empty($channel->threads)) {
+            $updated = array();
+
+            foreach ($channel->threads as $thread) {
+                $thread->getMessageHistory(
+                    [
+                        'limit' => (int)$maxMessagesPerThread,
+                        'cache' => true
+                    ]
+                )->done(function ($channel, $thread, $messageHistory, $maxMessagesPerThread, &$updated, &$array) {
+                    foreach ($messageHistory as $message) {
+                        $threadName = $thread->name = $thread->name ?? $thread->id;
+                        $message = $message->author->username . "[in thread '" . $threadName
+                            . "' on '" . $message->timestamp->toDateTimeString() . "']: "
+                            . $message->content;
+
+                        if (array_key_exists($channel->id, $array)) {
+                            if (array_key_exists($thread->id, $array[$channel->id])) {
+                                if (sizeof($array[$channel->id][$thread->id]) == $maxMessagesPerThread) {
+                                    array_shift($array[$channel->id][$thread->id]);
+                                }
+                                $array[$channel->id][$thread->id][] = $message;
+                            } else {
+                                $array[$channel->id][$thread->id] = array($message);
+                            }
+                        } else {
+                            $array[$channel->id][$thread->id] = array($message);
+                        }
+                        $updated[] = $thread->id;
+                    }
+                });
+
+                if (sizeof($updated) == $maxThreads) {
+                    break;
+                }
+            }
+            $totalThreads = sizeof($array[$channel->id]);
+
+            if ($totalThreads > $maxThreads) {
+                $totalThreads -= $maxThreads;
+
+                foreach (array_keys($array[$channel->id]) as $threadID) {
+                    if (!in_array($threadID, $updated)) {
+                        unset($array[$channel->id][$threadID]);
+                        $totalThreads--;
+
+                        if ($totalThreads == 0) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return $array;
+    }
+
 }

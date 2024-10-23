@@ -12,6 +12,7 @@ class DiscordInstructions
 
     private DiscordPlan $plan;
     public mixed $manager;
+    private static array $threadHistory = array();
 
     public function __construct(DiscordPlan $plan)
     {
@@ -71,6 +72,24 @@ class DiscordInstructions
                             $object->messageHistory,
                             DiscordAIMessages::PAST_MESSAGES
                         );
+                    },
+                    "threadMessages" => function () use ($object) {
+                        if ($object->channelID !== null) {
+                            $channel = $this->plan->bot->discord->getChannel($object->channelID);
+
+                            if ($channel !== null) {
+                                return DiscordChannels::getThreadHistory(
+                                    $channel,
+                                    DiscordInstructions::$threadHistory,
+                                    DiscordAIMessages::THREADS_ANALYZED,
+                                    DiscordAIMessages::THREAD_ANALYZED_MESSAGES
+                                );
+                            } else {
+                                return array();
+                            }
+                        } else {
+                            return array();
+                        }
                     }
                 ),
                 $extra
@@ -110,7 +129,7 @@ class DiscordInstructions
                               Channel|Thread|null $channel = null,
                               Member|User|null    $user = null,
                               ?Message            $message = null,
-                              array               $messageHistory = []): object
+                              mixed               $messageHistory = []): object
     {
         $object = new stdClass();
         $object->messageHistory = $messageHistory;
