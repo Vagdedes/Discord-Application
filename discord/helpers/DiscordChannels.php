@@ -300,7 +300,7 @@ class DiscordChannels
                                             int|string $maxThreads,
                                             int|string $maxMessagesPerThread): array
     {
-        if (!empty($channel->threads)) {
+        if (!empty($channel->threads->first())) {
             $updated = array();
 
             foreach ($channel->threads as $thread) {
