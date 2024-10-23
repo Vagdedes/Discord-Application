@@ -12,7 +12,6 @@ class DiscordInstructions
 
     private DiscordPlan $plan;
     public mixed $manager;
-    private static array $threadHistory = array();
 
     public function __construct(DiscordPlan $plan)
     {
@@ -78,9 +77,8 @@ class DiscordInstructions
                             $channel = $this->plan->bot->discord->getChannel($object->channelID);
 
                             if ($channel !== null) {
-                                return DiscordChannels::getThreadHistory(
+                                return DiscordChannels::getAsyncThreadHistory(
                                     $channel,
-                                    DiscordInstructions::$threadHistory,
                                     DiscordAIMessages::THREADS_ANALYZED,
                                     DiscordAIMessages::THREAD_ANALYZED_MESSAGES
                                 );
