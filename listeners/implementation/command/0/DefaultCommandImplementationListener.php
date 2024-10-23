@@ -8,6 +8,79 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    public static function find_message_reference(DiscordPlan         $plan,
+                                                  Interaction|Message $interaction,
+                                                  object              $command)
+    {
+        $arguments = $interaction->data->options->toArray();
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_LOGS,
+            array("object"),
+            array(
+                array("server_id", $interaction->guild_id),
+                array("action", "MESSAGE_CREATE")
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            10_000
+        );
+
+        if (!empty($query)) {
+            $messageID = $arguments["message-id"]["value"];
+
+            if (is_numeric($messageID)) {
+                foreach ($query as $row) {
+                    $row = json_decode($row->object, false);
+
+                    if ($row->id == $messageID) {
+                        if (isset($row->message_reference->message_id)) {
+                            foreach ($query as $rowChild) {
+                                $rowChildObject = json_decode($rowChild->object, false);
+
+                                if ($rowChildObject->id == $row->message_reference->message_id) {
+                                    $plan->utilities->acknowledgeCommandMessage(
+                                        $interaction,
+                                        MessageBuilder::new()->setContent(substr(
+                                            $rowChild->object, 0, DiscordInheritedLimits::MESSAGE_MAX_LENGTH
+                                        )),
+                                        true
+                                    );
+                                }
+                            }
+                        } else {
+                            $plan->utilities->acknowledgeCommandMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent("Message found but not reference."),
+                                true
+                            );
+                        }
+                        return;
+                    }
+                }
+
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("Message not found."),
+                    true
+                );
+            } else {
+                $plan->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent("ID is not numeric."),
+                    true
+                );
+            }
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("No database rows returned."),
+                true
+            );
+        }
+    }
+
     public static function toggle_ai(DiscordPlan         $plan,
                                      Interaction|Message $interaction,
                                      object              $command): void
