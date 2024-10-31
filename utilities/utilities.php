@@ -162,12 +162,11 @@ function get_curl(string $url, string $type, array $headers, mixed $arguments,
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-    if ($arguments != null) {
+    if ($arguments !== null) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $arguments);
     }
-    if ($type != null) {
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $type);
-    }
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $type);
+
     if ($timeoutSeconds > 0) {
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeoutSeconds);
     }
