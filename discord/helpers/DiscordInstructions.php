@@ -105,19 +105,17 @@ class DiscordInstructions
         $local = $this->manager->getLocal($specificLocal, $userInput);
 
         if (!empty($local)) {
-            $information = "";
-
-            foreach ($local as $instruction) {
-                $information .= $this->replace(
-                    array($instruction),
+            foreach ($local as $key => $value) {
+                $local[$key] = $this->replace(
+                    array($value),
                     $object,
                     $specificPublic,
                     $userInput,
                     true,
                     true
-                )[0];
+                );
             }
-            return $information;
+            return @json_encode($local);
         } else {
             return "";
         }
