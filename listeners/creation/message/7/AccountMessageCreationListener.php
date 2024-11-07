@@ -325,8 +325,10 @@ class AccountMessageCreationListener
             $product->sub_image
         );
         if ($product->latest_version !== null) {
-            $embed->setTitle(strip_tags($product->latest_version->prefix) . " "
-                . $product->latest_version->version
+            $embed->setTitle(strip_tags($product->latest_version->prefix)
+                . ($product->latest_version?->version !== null
+                    ? " " . $product->latest_version->version
+                    : "")
                 . " " . strip_tags($product->latest_version->suffix));
         }
         $embed->setImage($product->image);
