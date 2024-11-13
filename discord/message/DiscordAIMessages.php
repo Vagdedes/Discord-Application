@@ -47,14 +47,17 @@ class DiscordAIMessages
                     $object->implement_class = $row->implement_class;
                     $object->implement_method = $row->implement_method;
                     $object->managerAI = new ManagerAI(
+                        $row->model_type,
                         $row->model_family,
                         $row->api_key,
-                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH,
-                        $row->temperature,
-                        $row->frequency_penalty,
-                        $row->presence_penalty,
-                        $row->completions,
-                        $row->top_p,
+                        array(
+                            "temperature" => $row->temperature !== null ? (float)$row->temperature : null,
+                            "top_p" => $row->top_p !== null ? (float)$row->top_p : null,
+                            "frequency_penalty" => $row->frequency_penalty !== null ? (float)$row->frequency_penalty : null,
+                            "presence_penalty" => $row->presence_penalty !== null ? (float)$row->presence_penalty : null,
+                            "n" => (int)$row->completions,
+                            "max_tokens" => AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH)
+                        )
                     );
                     $object->mentions = get_sql_query(
                         BotDatabaseTable::BOT_AI_MENTIONS,
@@ -164,16 +167,20 @@ class DiscordAIMessages
         }
     }
 
-    public function getManagerAI(int|string|null $aiModelID = null): mixed
+    public function getModel(int|string|null $aiModelID = null): mixed
     {
         if ($aiModelID === null) {
             $array = $this->model;
-            $model = array_shift($array);
-            return $model?->managerAI;
+            return array_shift($array);
         } else {
-            $model = $this->model[$aiModelID] ?? null;
-            return $model?->managerAI;
+            return $this->model[$aiModelID] ?? null;
         }
+    }
+
+    public function getManagerAI(int|string|null $aiModelID = null): mixed
+    {
+        $model = $this->getModel($aiModelID);
+        return $model?->managerAI;
     }
 
     public function textAssistance(Message $originalMessage, mixed $messageHistory): bool
@@ -240,10 +247,10 @@ class DiscordAIMessages
                     if (!$stop
                         && $foundChannel
                         && $channel->ai_model_id !== null) {
-                        $model = $this->model[$channel->ai_model_id] ?? null;
+                        $model = $this->getModel($channel->ai_model_id);
 
                         if ($model !== null) {
-                            if ($model->managerAI->exists) {
+                            if ($model->managerAI->exists()) {
                                 if ($member->id == $this->plan->bot->botID) {
                                     return false;
                                 }
@@ -612,7 +619,7 @@ class DiscordAIMessages
             if (array_shift($outcome)) { // Success
                 $model = array_shift($outcome);
                 $replyObject = array_shift($outcome);
-                $reply = $managerAI->getText($model, $replyObject);
+                $reply = $model->getText($replyObject);
 
                 if (!empty($reply)) {
                     if (!empty($systemInstructions[3])) {
@@ -621,7 +628,7 @@ class DiscordAIMessages
                             . $systemInstructions[3]
                             . DiscordSyntax::SPOILER;
                     }
-                    $cost = $managerAI->getCost($model, $replyObject);
+                    $cost = $model->getCost($replyObject);
                     $thread = $channel instanceof Thread ? $channel->id : null;
                     $date = get_current_date();
 
