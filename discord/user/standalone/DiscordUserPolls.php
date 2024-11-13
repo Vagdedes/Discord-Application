@@ -20,8 +20,7 @@ class DiscordUserPolls
 
         NOT_EXISTS = "This user poll does not exist.",
         NOT_OWNED = "You do not own this user poll.",
-        NOT_RUNNING = "This user poll is not currently running.",
-        MAX_CHOICES = 25;
+        NOT_RUNNING = "This user poll is not currently running.";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -529,7 +528,7 @@ class DiscordUserPolls
                 array("poll_id", $query->id)
             ),
             null,
-            self::MAX_CHOICES
+            DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION
         );
 
         if (empty($array)) {
@@ -561,7 +560,7 @@ class DiscordUserPolls
                 $size = sizeof($choices);
 
                 if ($size > 0) {
-                    if ($size == self::MAX_CHOICES) {
+                    if ($size == DiscordInheritedLimits::MAX_CHOICES_PER_SELECTION) {
                         return MessageBuilder::new()->setContent(
                             "This user poll already has the maximum amount of choices."
                         );

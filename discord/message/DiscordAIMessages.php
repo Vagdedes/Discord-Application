@@ -588,6 +588,7 @@ class DiscordAIMessages
                     "content" => $content
                 )
             );
+            $length = strlen($content);
             $system = $this->plan->instructions->build(
                 $systemInstructions[0],
                 $systemInstructions[1],
@@ -600,11 +601,13 @@ class DiscordAIMessages
                     "role" => "system",
                     "content" => $system
                 );
+                $length += strlen($system);
             }
             $input = array("messages" => $messages);
             $outcome = $managerAI->getResult(
                 $hash,
                 $input,
+                $length,
                 30
             );
 
