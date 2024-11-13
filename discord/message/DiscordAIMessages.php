@@ -47,7 +47,6 @@ class DiscordAIMessages
                     $object->implement_class = $row->implement_class;
                     $object->implement_method = $row->implement_method;
                     $object->managerAI = new ManagerAI(
-                        $row->model_type,
                         $row->model_family,
                         $row->api_key,
                         array(
