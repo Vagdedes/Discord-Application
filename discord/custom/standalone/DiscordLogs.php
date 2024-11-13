@@ -96,7 +96,7 @@ class DiscordLogs
                             && $channel->guild_id == $row->server_id) {
                             $messagesToSendCallable = function ($oldObject) use ($row, $date, $userID, $action, $object, $channel) {
                                 if ($row->thread_id === null) {
-                                    if ($channel->allowText()
+                                    if ($this->bot->utilities->allowText($channel)
                                         && ($row->ignore_bot === null
                                             || $userID != $this->bot->botID)) {
                                         $messageBuilder = $this->prepareLogMessage(

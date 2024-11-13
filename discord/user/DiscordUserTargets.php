@@ -212,15 +212,15 @@ class DiscordUserTargets
                                     $this->plan,
                                     $channel,
                                     array(
-                                    "message_retention" => "1 minute",
-                                    "message_cooldown" => 1,
-                                    "assistance" => 1,
-                                    "failure_message" => $query->failure_message,
-                                    "cooldown_message" => $query->cooldown_message,
-                                    "prompt_message" => $query->prompt_message,
-                                    "local_instructions" => $query->localInstructions,
-                                    "public_instructions" => $query->publicInstructions,
-                                ));
+                                        "message_retention" => "1 minute",
+                                        "message_cooldown" => 1,
+                                        "assistance" => 1,
+                                        "failure_message" => $query->failure_message,
+                                        "cooldown_message" => $query->cooldown_message,
+                                        "prompt_message" => $query->prompt_message,
+                                        "local_instructions" => $query->localInstructions,
+                                        "public_instructions" => $query->publicInstructions,
+                                    ));
                                 $message = MessageBuilder::new()->setContent(
                                     $this->plan->instructions->replace(
                                         array($query->create_message),
@@ -244,7 +244,7 @@ class DiscordUserTargets
                         $channel = $this->plan->bot->discord->getChannel($query->create_channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
+                            && $this->plan->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             $message = MessageBuilder::new()->setContent(
                                 $this->plan->instructions->replace(
@@ -406,7 +406,7 @@ class DiscordUserTargets
                         $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
+                            && $this->plan->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             if ($query->created_thread_id !== null) {
                                 $this->ignoreThreadDeletion++;
@@ -539,7 +539,7 @@ class DiscordUserTargets
                 $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
-                    && $channel->allowText()
+                    && $this->plan->utilities->allowText($channel)
                     && $channel->guild_id == $query->server_id) {
                     if ($query->created_thread_id !== null) {
                         $this->ignoreThreadDeletion++;
@@ -777,7 +777,7 @@ class DiscordUserTargets
                     $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $channel->allowText()
+                        && $this->plan->utilities->allowText($channel)
                         && $channel->guild_id == $row->server_id) {
                         if ($row->created_thread_id !== null) {
                             $this->ignoreThreadDeletion++;

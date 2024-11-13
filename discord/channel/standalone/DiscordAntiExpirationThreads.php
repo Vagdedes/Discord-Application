@@ -30,7 +30,7 @@ class DiscordAntiExpirationThreads
 
                 if ($channel !== null
                     && $channel->guild_id == $row->server_id
-                    && $channel->allowText()) {
+                    && $this->bot->utilities->allowText($channel)) {
                     if ($row->thread_id === null) {
                         $this->execute($channel, $row);
                     } else if (!empty($channel->threads->first())) {

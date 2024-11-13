@@ -300,7 +300,7 @@ class DiscordCountingChannels
             $channel = $this->plan->bot->discord->getChannel($row->notifications_channel_id);
 
             if ($channel !== null
-                && $channel->allowText()
+                && $this->plan->utilities->allowText($channel)
                 && $channel->guild_id == $row->server_id) {
                 $messageBuilder = MessageBuilder::new();
                 $embed = new Embed($this->plan->bot->discord);

@@ -30,6 +30,15 @@ class DiscordUtilities
         }
     }
 
+    public function allowText(Channel|Thread $channel): bool
+    {
+        if ($channel instanceof Channel) {
+            return $channel->allowText();
+        } else {
+            return $channel->parent->allowText();
+        }
+    }
+
     public function getUser(int|string $userID): ?object
     {
         $users = $this->bot->discord->users->toArray();

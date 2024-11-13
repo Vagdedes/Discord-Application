@@ -47,7 +47,7 @@ class DiscordStatusMessages
                             }
 
                             if ($channelFound !== null
-                                && $channelFound->allowText()
+                                && $this->plan->utilities->allowText($channelFound)
                                 && $channelFound->guild_id == $serverID) {
                                 $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                             }
@@ -75,7 +75,7 @@ class DiscordStatusMessages
                                         }
 
                                         if ($channelFound !== null
-                                            && $channelFound->allowText()
+                                            && $this->plan->utilities->allowText($channelFound)
                                             && $channelFound->guild_id == $serverID) {
                                             $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                                         }

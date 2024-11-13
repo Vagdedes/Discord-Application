@@ -275,7 +275,7 @@ class DiscordUserTickets
             $channel = $this->plan->bot->discord->getChannel($query->post_channel_id);
 
             if ($channel !== null
-                && $channel->allowText()
+                && $this->plan->utilities->allowText($channel)
                 && $channel->guild_id == $query->post_server_id) {
                 $channel->sendMessage($message);
             }
@@ -497,7 +497,7 @@ class DiscordUserTickets
                         $channel = $this->plan->bot->discord->getChannel($query->created_channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
+                            && $this->plan->utilities->allowText($channel)
                             && $channel->guild_id == $query->created_channel_server_id) {
                             $this->ignoreDeletion++;
                             $channel->guild->channels->delete(
@@ -870,7 +870,7 @@ class DiscordUserTickets
                     $channel = $this->plan->bot->discord->getChannel($row->created_channel_id);
 
                     if ($channel !== null
-                        && $channel->allowText()
+                        && $this->plan->utilities->allowText($channel)
                         && $channel->guild_id == $row->created_channel_server_id) {
                         $this->ignoreDeletion++;
                         $channel->guild->channels->delete($channel);

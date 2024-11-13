@@ -32,7 +32,7 @@ class DiscordReminderMessages
                     $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $channel->allowText()
+                        && $this->plan->utilities->allowText($channel)
                         && $channel->guild_id == $row->server_id) {
                         $this->execute($channel, $row);
                     } else if (!empty($channel->threads->first())) {

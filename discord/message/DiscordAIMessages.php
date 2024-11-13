@@ -645,7 +645,7 @@ class DiscordAIMessages
                             "thread_id" => $thread,
                             "user_id" => $user->id,
                             "cost" => $cost,
-                            "currency_id" => $model->currency->id,
+                            "currency_id" => $model->getCurrency()->id,
                             "creation_date" => $date,
                         )
                     );

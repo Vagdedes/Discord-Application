@@ -318,10 +318,8 @@ class AccountModalImplementationListener
         $channel = $plan->bot->discord->getChannel("TO-DO");
 
         if ($channel !== null
-            && $channel->allowText()
+            && $plan->utilities->allowText($channel)
             && !empty($channel->threads->first())) {
-            global $website_domain;
-
             foreach ($channel->threads as $thread) {
                 if ($thread->id === "TO-DO") {
                     $message = MessageBuilder::new();

@@ -183,7 +183,7 @@ class DiscordUserLevels
                 if ($configuration->notification_channel_id !== null) {
                     $channel = $this->plan->bot->discord->getChannel($configuration->notification_channel_id);
                     $proceed = $channel !== null
-                        && $channel->allowText()
+                        && $this->plan->utilities->allowText($channel)
                         && $channel->guild_id == $serverID;
                 } else {
                     $proceed = true;

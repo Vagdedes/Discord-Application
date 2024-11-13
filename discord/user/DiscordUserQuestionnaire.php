@@ -282,7 +282,7 @@ class DiscordUserQuestionnaire
                         $channel = $this->plan->bot->discord->getChannel($query->create_channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
+                            && $this->plan->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             $question = $this->getQuestion($insert);
 
@@ -547,7 +547,7 @@ class DiscordUserQuestionnaire
 
                         if ($channel !== null
                             && $channel->guild_id == $questionnaire->outcome_server_id
-                            && $channel->allowText()) {
+                            && $this->plan->utilities->allowText($channel)) {
                             $channel->sendMessage($messageBuilder);
                         }
                     } else {
@@ -595,7 +595,7 @@ class DiscordUserQuestionnaire
 
                             if ($channel !== null
                                 && $channel->guild_id == $questionnaire->outcome_server_id
-                                && $channel->allowText()) {
+                                && $this->plan->utilities->allowText($channel)) {
                                 $channel->sendMessage($messageBuilder);
                             }
                         } else {
@@ -665,7 +665,7 @@ class DiscordUserQuestionnaire
                         $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                         if ($channel !== null
-                            && $channel->allowText()
+                            && $this->plan->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             if ($query->created_thread_id !== null) {
                                 $this->ignoreThreadDeletion++;
@@ -806,7 +806,7 @@ class DiscordUserQuestionnaire
                 $channel = $this->plan->bot->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
-                    && $channel->allowText()
+                    && $this->plan->utilities->allowText($channel)
                     && $channel->guild_id == $query->server_id) {
                     if ($query->created_thread_id !== null) {
                         $this->ignoreThreadDeletion++;
@@ -1147,7 +1147,7 @@ class DiscordUserQuestionnaire
                     $channel = $this->plan->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $channel->allowText()
+                        && $this->plan->utilities->allowText($channel)
                         && $channel->guild_id == $row->server_id) {
                         if ($row->created_thread_id !== null) {
                             $this->ignoreThreadDeletion++;

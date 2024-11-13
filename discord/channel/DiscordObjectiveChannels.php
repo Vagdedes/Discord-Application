@@ -303,7 +303,7 @@ class DiscordObjectiveChannels
             );
 
             if ($channelObj !== null
-                && $channelObj->allowText()) {
+                && $this->plan->utilities->allowText($channelObj)) {
                 if ($hasThread) {
                     if (!empty($channelObj->threads->first())) {
                         foreach ($channelObj->threads as $thread) {

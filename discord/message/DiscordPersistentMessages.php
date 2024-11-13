@@ -198,7 +198,7 @@ class DiscordPersistentMessages
                                 }
                             }
                         }
-                    } else if ($channel->allowText()) {
+                    } else if ($this->plan->utilities->allowText($channel)) {
                         $finalChannel = $channel;
                     } else {
                         $finalChannel = null;
