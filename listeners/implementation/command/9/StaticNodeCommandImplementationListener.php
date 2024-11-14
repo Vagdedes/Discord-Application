@@ -38,27 +38,39 @@ class StaticNodeCommandImplementationListener
         $everyonePermissions->allow = 0;
         $everyonePermissions->deny = $permissionEquation;
 
-        $plan->userTickets->create(
-            $interaction,
-            null,
-            $channel?->id,
-            $arguments["channel-name"]["value"],
-            null,
-            null,
-            null,
-            array(
-                $interaction->data?->resolved?->roles?->first()?->id => $rolePermissions,
-                $interaction->guild_id => $everyonePermissions
-            ),
-            null
-        );
-        $plan->utilities->acknowledgeCommandMessage(
-            $interaction,
-            MessageBuilder::new()->setContent(
-                "Attempting to create abstract ticket..."
-            ),
-            true
-        );
+        $channelName =  $arguments["channel-name"]["value"] ?? null;
+
+        if ($channelName !== null) {
+            $plan->userTickets->create(
+                $interaction,
+                null,
+                $channel?->id,
+                $arguments["channel-name"]["value"],
+                null,
+                null,
+                null,
+                array(
+                    $interaction->data?->resolved?->roles?->first()?->id => $rolePermissions,
+                    $interaction->guild_id => $everyonePermissions
+                ),
+                null
+            );
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Attempting to create abstract ticket..."
+                ),
+                true
+            );
+        } else {
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Channel name is required."
+                ),
+                true
+            );
+        }
     }
 
 }

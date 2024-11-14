@@ -46,7 +46,7 @@ class CommandImplementationListener
 
             if ($account->exists()) {
                 $arguments = $interaction->data->options->toArray();
-                $data = $arguments["data"]["value"];
+                $data = $arguments["data"]["value"] ?? null;
 
                 if ($data !== null) {
                     $data = strtolower($data);
@@ -180,7 +180,7 @@ class CommandImplementationListener
             if ($account->exists()) {
                 $arguments = $interaction->data->options->toArray();
                 $reply = $account->getPurchases()->add(
-                    $arguments["product-id"]["value"]
+                    $arguments["product-id"]["value"] ?? null
                 );
                 $message->setContent(self::printResult($reply));
             } else {
@@ -211,7 +211,7 @@ class CommandImplementationListener
             if ($account->exists()) {
                 $arguments = $interaction->data->options->toArray();
                 $reply = $account->getPurchases()->remove(
-                    $arguments["product-id"]["value"]
+                    $arguments["product-id"]["value"] ?? null
                 );
                 $message->setContent(self::printResult($reply));
             } else {
@@ -242,9 +242,9 @@ class CommandImplementationListener
             if ($account->exists()) {
                 $arguments = $interaction->data->options->toArray();
                 $reply = $account->getPurchases()->exchange(
-                    $arguments["product-id"]["value"],
+                    $arguments["product-id"]["value"] ?? null,
                     null,
-                    $arguments["exchange-product-id"]["value"]
+                    $arguments["exchange-product-id"]["value"] ?? null
                 );
                 $message->setContent(self::printResult($reply));
             } else {
@@ -275,7 +275,7 @@ class CommandImplementationListener
             if ($account->exists()) {
                 $arguments = $interaction->data->options->toArray();
                 $reply = $account->getActions()->deleteAccount(
-                    $arguments["permanent"]["value"]
+                    $arguments["permanent"]["value"] ?? null
                 );
                 $message->setContent(self::printResult($reply));
             } else {
@@ -299,7 +299,7 @@ class CommandImplementationListener
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
             MessageBuilder::new()->setContent(
-                strval(queue_paypal_transaction($arguments["transaction-id"]["value"]))
+                strval(queue_paypal_transaction($arguments["transaction-id"]["value"] ?? null))
             ),
             true
         );
@@ -313,7 +313,7 @@ class CommandImplementationListener
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
             MessageBuilder::new()->setContent(
-                strval(process_failed_paypal_transaction($arguments["transaction-id"]["value"]))
+                strval(process_failed_paypal_transaction($arguments["transaction-id"]["value"] ?? null))
             ),
             true
         );
@@ -338,8 +338,8 @@ class CommandImplementationListener
                 if (empty($transactions)) {
                     $message->setContent("No transactions available.");
                 } else {
-                    $reason = $arguments["reason"]["value"];
-                    $coverFees = $arguments["cover-fees"]["value"];
+                    $reason = $arguments["reason"]["value"] ?? null;
+                    $coverFees = $arguments["cover-fees"]["value"] ?? null;
                     $success = 0;
                     $failure = 0;
 
@@ -397,9 +397,9 @@ class CommandImplementationListener
                         $message->setContent("No functionalities available.");
                     } else {
                         $arguments = $interaction->data->options->toArray();
-                        $block = $arguments["block"]["value"];
-                        $reason = $arguments["reason"]["value"];
-                        $duration = $arguments["duration"]["value"];
+                        $block = $arguments["block"]["value"] ?? null;
+                        $reason = $arguments["reason"]["value"] ?? null;
+                        $duration = $arguments["duration"]["value"] ?? null;
                         $select = SelectMenu::new();
                         $select->setMinValues(1);
                         $select->setMaxValues(1);
@@ -478,9 +478,9 @@ class CommandImplementationListener
                         $message->setContent("No moderations available.");
                     } else {
                         $arguments = $interaction->data->options->toArray();
-                        $punish = $arguments["punish"]["value"];
-                        $reason = $arguments["reason"]["value"];
-                        $duration = $arguments["duration"]["value"];
+                        $punish = $arguments["punish"]["value"] ?? null;
+                        $reason = $arguments["reason"]["value"] ?? null;
+                        $duration = $arguments["duration"]["value"] ?? null;
                         $select = SelectMenu::new();
                         $select->setMinValues(1);
                         $select->setMaxValues(1);
@@ -540,24 +540,24 @@ class CommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $message = new MessageBuilder();
         $gameCloudUser = new GameCloudUser(
-            $arguments["platform-id"]["value"],
-            $arguments["license-id"]["value"]
+            $arguments["platform-id"]["value"] ?? null,
+            $arguments["license-id"]["value"] ?? null
         );
-        if ($arguments["add"]["value"]) {
+        if ($arguments["add"]["value"] ?? false) {
             $result = $gameCloudUser->getActions()->addAutomaticConfigurationChange(
-                $arguments["version"]["value"],
-                $arguments["file-name"]["value"],
-                $arguments["option-name"]["value"],
-                $arguments["option-value"]["value"],
-                $arguments["product-id"]["value"],
-                $arguments["email"]["value"]
+                $arguments["version"]["value"] ?? null,
+                $arguments["file-name"]["value"] ?? null,
+                $arguments["option-name"]["value"] ?? null,
+                $arguments["option-value"]["value"] ?? null,
+                $arguments["product-id"]["value"] ?? null,
+                $arguments["email"]["value"] ?? null
             );
         } else {
             $result = $gameCloudUser->getActions()->removeAutomaticConfigurationChange(
-                $arguments["version"]["value"],
-                $arguments["file-name"]["value"],
-                $arguments["option-name"]["value"],
-                $arguments["product-id"]["value"]
+                $arguments["version"]["value"] ?? null,
+                $arguments["file-name"]["value"] ?? null,
+                $arguments["option-name"]["value"] ?? null,
+                $arguments["product-id"]["value"] ?? null
             );
         }
         $plan->utilities->acknowledgeCommandMessage(
@@ -574,23 +574,23 @@ class CommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $message = new MessageBuilder();
         $gameCloudUser = new GameCloudUser(
-            $arguments["platform-id"]["value"],
-            $arguments["license-id"]["value"]
+            $arguments["platform-id"]["value"] ?? null,
+            $arguments["license-id"]["value"] ?? null
         );
         if ($arguments["add"]["value"]) {
             $result = $gameCloudUser->getActions()->addDisabledDetection(
-                $arguments["plugin-version"]["value"],
-                $arguments["server-version"]["value"],
-                $arguments["check"]["value"],
-                $arguments["detection"]["value"],
-                $arguments["email"]["value"]
+                $arguments["plugin-version"]["value"] ?? null,
+                $arguments["server-version"]["value"] ?? null,
+                $arguments["check"]["value"] ?? null,
+                $arguments["detection"]["value"] ?? null,
+                $arguments["email"]["value"] ?? null
             );
         } else {
             $result = $gameCloudUser->getActions()->removeDisabledDetection(
-                $arguments["plugin-version"]["value"],
-                $arguments["server-version"]["value"],
-                $arguments["check"]["value"],
-                $arguments["detection"]["value"],
+                $arguments["plugin-version"]["value"] ?? null,
+                $arguments["server-version"]["value"] ?? null,
+                $arguments["check"]["value"] ?? null,
+                $arguments["detection"]["value"] ?? null,
             );
         }
         $plan->utilities->acknowledgeCommandMessage(
@@ -606,15 +606,15 @@ class CommandImplementationListener
     {
         $arguments = $interaction->data->options->toArray();
         $gameCloudUser = new GameCloudUser(
-            $arguments["platform-id"]["value"],
-            $arguments["license-id"]["value"]
+            $arguments["platform-id"]["value"] ?? null,
+            $arguments["license-id"]["value"] ?? null
         );
-        $reason = $arguments["reason"]["value"];
-        $duration = $arguments["duration"]["value"];
-        $product = $arguments["product-id"]["value"];
-        $type = $arguments["type"]["value"];
+        $reason = $arguments["reason"]["value"] ?? null;
+        $duration = $arguments["duration"]["value"] ?? null;
+        $product = $arguments["product-id"]["value"] ?? null;
+        $type = $arguments["type"]["value"] ?? null;
 
-        if ($arguments["add"]["value"]) {
+        if ($arguments["add"]["value"] ?? false) {
             $message = strval($gameCloudUser->getVerification()->addLicenseManagement(
                 $product,
                 $type,
@@ -639,8 +639,8 @@ class CommandImplementationListener
                                            object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $year = $arguments["year"]["value"];
-        $month = $arguments["month"]["value"];
+        $year = $arguments["year"]["value"] ?? null;
+        $month = $arguments["month"]["value"] ?? null;
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
             MessageBuilder::new()->setContent("Please wait..."),
@@ -780,7 +780,7 @@ class CommandImplementationListener
                                                 object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $embed = $arguments["embed"]["value"];
+        $embed = $arguments["embed"]["value"] ?? null;
         $builder = $plan->persistentMessages->get(
             $interaction,
             $embed
@@ -790,7 +790,7 @@ class CommandImplementationListener
             $plan->utilities->acknowledgeCommandMessage(
                 $interaction,
                 $builder->setContent(
-                    $arguments["reply"]["value"]
+                    $arguments["reply"]["value"] ?? null
                 ),
                 false
             );

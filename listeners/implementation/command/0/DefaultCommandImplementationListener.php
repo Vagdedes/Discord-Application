@@ -28,7 +28,7 @@ class DefaultCommandImplementationListener
         );
 
         if (!empty($query)) {
-            $messageID = $arguments["message-id"]["value"];
+            $messageID = $arguments["message-id"]["value"] ?? null;
 
             if (is_numeric($messageID)) {
                 foreach ($query as $row) {
@@ -100,8 +100,8 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $message = $plan->bot->faq->addOrEdit(
             $interaction,
-            $arguments["question"]["value"],
-            $arguments["answer"]["value"]
+            $arguments["question"]["value"] ?? null,
+            $arguments["answer"]["value"] ?? null
         );
 
         if ($message === null) {
@@ -126,7 +126,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $message = $plan->bot->faq->delete(
             $interaction,
-            $arguments["question"]["value"]
+            $arguments["question"]["value"] ?? null
         );
 
         if ($message === null) {
@@ -162,7 +162,7 @@ class DefaultCommandImplementationListener
                                              object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $timePeriod = $arguments["time-period"]["value"];
+        $timePeriod = $arguments["time-period"]["value"] ?? null;
 
         if (!is_valid_text_time($timePeriod)) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -174,11 +174,11 @@ class DefaultCommandImplementationListener
             $message = $plan->aiMessages->setLimit(
                 $interaction,
                 true,
-                $arguments["currency-limit"]["value"],
+                $arguments["currency-limit"]["value"] ?? null,
                 $timePeriod,
-                $arguments["per-user"]["value"],
-                $arguments["time-out"]["value"],
-                $arguments["message"]["value"],
+                $arguments["per-user"]["value"] ?? null,
+                $arguments["time-out"]["value"] ?? null,
+                $arguments["message"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first(),
                 $interaction->data?->resolved?->channels?->first()
             );
@@ -204,7 +204,7 @@ class DefaultCommandImplementationListener
                                                 object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $timePeriod = $arguments["time-period"]["value"];
+        $timePeriod = $arguments["time-period"]["value"] ?? null;
 
         if (!is_valid_text_time($timePeriod)) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -216,11 +216,11 @@ class DefaultCommandImplementationListener
             $message = $plan->aiMessages->setLimit(
                 $interaction,
                 false,
-                $arguments["message-limit"]["value"],
+                $arguments["message-limit"]["value"] ?? null,
                 $timePeriod,
-                $arguments["per-user"]["value"],
-                $arguments["time-out"]["value"],
-                $arguments["message"]["value"],
+                $arguments["per-user"]["value"] ?? null,
+                $arguments["time-out"]["value"] ?? null,
+                $arguments["message"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first(),
                 $interaction->data?->resolved?->channels?->first()
             );
@@ -246,7 +246,7 @@ class DefaultCommandImplementationListener
                                                 object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $timePeriod = $arguments["time-period"]["value"];
+        $timePeriod = $arguments["time-period"]["value"] ?? null;
 
         if (!is_valid_text_time($timePeriod)) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -260,7 +260,7 @@ class DefaultCommandImplementationListener
                 true,
                 null,
                 $timePeriod,
-                $arguments["per-user"]["value"],
+                $arguments["per-user"]["value"] ?? null,
                 null,
                 null,
                 $interaction->data?->resolved?->roles?->first(),
@@ -289,7 +289,7 @@ class DefaultCommandImplementationListener
                                                    object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $timePeriod = $arguments["time-period"]["value"];
+        $timePeriod = $arguments["time-period"]["value"] ?? null;
 
         if (!is_valid_text_time($timePeriod)) {
             $plan->utilities->acknowledgeCommandMessage(
@@ -303,7 +303,7 @@ class DefaultCommandImplementationListener
                 false,
                 null,
                 $timePeriod,
-                $arguments["per-user"]["value"],
+                $arguments["per-user"]["value"] ?? null,
                 null,
                 null,
                 $interaction->data?->resolved?->roles?->first(),
@@ -338,13 +338,13 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->create(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["title"]["value"],
-                $arguments["description"]["value"],
-                $arguments["minimum-participants"]["value"],
-                $arguments["maximum-participants"]["value"],
-                $arguments["winner-amount"]["value"],
-                $arguments["repeat-after-ending"]["value"]
+                $arguments["name"]["value"] ?? null,
+                $arguments["title"]["value"] ?? null,
+                $arguments["description"]["value"] ?? null,
+                $arguments["minimum-participants"]["value"] ?? null,
+                $arguments["maximum-participants"]["value"] ?? null,
+                $arguments["winner-amount"]["value"] ?? null,
+                $arguments["repeat-after-ending"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Giveaway successfully created."),
             true
         );
@@ -359,7 +359,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->delete(
                 $interaction,
-                $arguments["name"]["value"]
+                $arguments["name"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Giveaway successfully deleted."),
             true
         );
@@ -374,8 +374,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->start(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["duration"]["value"],
+                $arguments["name"]["value"] ?? null,
+                $arguments["duration"]["value"] ?? null,
             ) ?? MessageBuilder::new()->setContent("Giveaway successfully started."),
             true
         );
@@ -390,7 +390,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->end(
                 $interaction,
-                $arguments["name"]["value"]
+                $arguments["name"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Giveaway successfully ended."),
             true
         );
@@ -405,8 +405,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->setRequiredPermission(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["permission"]["value"]
+                $arguments["name"]["value"] ?? null,
+                $arguments["permission"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully added."),
             true
         );
@@ -421,8 +421,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->setRequiredPermission(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["permission"]["value"],
+                $arguments["name"]["value"] ?? null,
+                $arguments["permission"]["value"] ?? null,
                 false
             ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully removed."),
             true
@@ -438,7 +438,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->setRequiredRole(
                 $interaction,
-                $arguments["name"]["value"],
+                $arguments["name"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first()->id
             ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully added."),
             true
@@ -454,7 +454,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userGiveaways->setRequiredRole(
                 $interaction,
-                $arguments["name"]["value"],
+                $arguments["name"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first()->id,
                 false
             ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully removed."),
@@ -473,12 +473,12 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->create(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["title"]["value"],
-                $arguments["description"]["value"],
-                $arguments["allow-choice-deletion"]["value"],
-                $arguments["max-choices"]["value"],
-                $arguments["allow-same-choice"]["value"]
+                $arguments["name"]["value"] ?? null,
+                $arguments["title"]["value"] ?? null,
+                $arguments["description"]["value"] ?? null,
+                $arguments["allow-choice-deletion"]["value"] ?? null,
+                $arguments["max-choices"]["value"] ?? null,
+                $arguments["allow-same-choice"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Poll successfully created."),
             true
         );
@@ -493,7 +493,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->delete(
                 $interaction,
-                $arguments["name"]["value"]
+                $arguments["name"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Poll successfully deleted."),
             true
         );
@@ -508,8 +508,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->start(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["duration"]["value"],
+                $arguments["name"]["value"] ?? null,
+                $arguments["duration"]["value"] ?? null,
             ) ?? MessageBuilder::new()->setContent("Poll successfully started."),
             true
         );
@@ -524,7 +524,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->end(
                 $interaction,
-                $arguments["name"]["value"]
+                $arguments["name"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Poll successfully ended."),
             true
         );
@@ -539,9 +539,9 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setChoice(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["choice"]["value"],
-                $arguments["description"]["value"]
+                $arguments["name"]["value"] ?? null,
+                $arguments["choice"]["value"] ?? null,
+                $arguments["description"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Poll choice successfully added."),
             true
         );
@@ -556,8 +556,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setChoice(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["choice"]["value"],
+                $arguments["name"]["value"] ?? null,
+                $arguments["choice"]["value"] ?? null,
                 null,
                 false
             ) ?? MessageBuilder::new()->setContent("Poll choice successfully removed."),
@@ -574,8 +574,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setRequiredPermission(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["permission"]["value"]
+                $arguments["name"]["value"] ?? null,
+                $arguments["permission"]["value"] ?? null
             ) ?? MessageBuilder::new()->setContent("Poll required permission successfully added."),
             true
         );
@@ -590,8 +590,8 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setRequiredPermission(
                 $interaction,
-                $arguments["name"]["value"],
-                $arguments["permission"]["value"],
+                $arguments["name"]["value"] ?? null,
+                $arguments["permission"]["value"] ?? null,
                 false
             ) ?? MessageBuilder::new()->setContent("Poll required permission successfully removed."),
             true
@@ -607,7 +607,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setRequiredRole(
                 $interaction,
-                $arguments["name"]["value"],
+                $arguments["name"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first()->id
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully added."),
             true
@@ -623,7 +623,7 @@ class DefaultCommandImplementationListener
             $interaction,
             $plan->userPolls->setRequiredRole(
                 $interaction,
-                $arguments["name"]["value"],
+                $arguments["name"]["value"] ?? null,
                 $interaction->data?->resolved?->roles?->first()->id,
                 false
             ) ?? MessageBuilder::new()->setContent("Poll required role successfully removed."),
@@ -685,7 +685,7 @@ class DefaultCommandImplementationListener
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
             $message,
-            $arguments["ephemeral"]["value"]
+            $arguments["ephemeral"]["value"] ?? null
         );
     }
 
@@ -694,7 +694,7 @@ class DefaultCommandImplementationListener
                                      object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $type = $arguments["type"]["value"];
+        $type = $arguments["type"]["value"] ?? null;
 
         switch ($type) {
             case DiscordMute::VOICE:
@@ -725,7 +725,7 @@ class DefaultCommandImplementationListener
                 $interaction->member,
                 $interaction->data?->resolved?->members?->first(),
                 $interaction->data?->resolved?->channels?->first(),
-                $arguments["reason"]["value"],
+                $arguments["reason"]["value"] ?? null,
                 strtolower($type),
                 $duration !== null ? strtolower($duration) : null
             );
@@ -764,7 +764,7 @@ class DefaultCommandImplementationListener
                                        object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
-        $type = $arguments["type"]["value"];
+        $type = $arguments["type"]["value"] ?? null;
 
         switch ($type) {
             case DiscordMute::VOICE:
@@ -786,7 +786,7 @@ class DefaultCommandImplementationListener
             $interaction->member,
             $interaction->data?->resolved?->members?->first(),
             $interaction->data?->resolved?->channels?->first(),
-            $arguments["reason"]["value"],
+            $arguments["reason"]["value"] ?? null,
             strtolower($type)
         );
 
@@ -1398,7 +1398,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->create(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $arguments["reason"]["value"] ?? null
         );
     }
@@ -1410,7 +1410,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->edit(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $interaction->data?->resolved?->users?->first()?->id,
             $arguments["reason"]["value"] ?? null
         );
@@ -1423,7 +1423,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->send(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $interaction->data?->resolved?->users?->first()?->id
         );
     }
@@ -1445,7 +1445,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->delete(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $interaction->data?->resolved?->users?->first()?->id,
             $arguments["reason"]["value"] ?? null
         );
@@ -1458,7 +1458,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->changeSetting(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $interaction->data?->resolved?->users?->first()?->id,
             $arguments["view-public"]["value"] ?? false,
             $arguments["read-history"]["value"] ?? false
@@ -1472,7 +1472,7 @@ class DefaultCommandImplementationListener
         $arguments = $interaction->data->options->toArray();
         $plan->userNotes->modifyParticipant(
             $interaction,
-            $arguments["key"]["value"],
+            $arguments["key"]["value"] ?? null,
             $interaction->data?->resolved?->users?->first()?->id,
             $interaction->data?->resolved?->users?->last()?->id,
             $arguments["read-history"]["value"] ?? false,
@@ -1620,7 +1620,7 @@ class DefaultCommandImplementationListener
             $interaction->guild_id,
             $interaction->channel_id,
             $interaction->data?->resolved?->users?->first()?->id,
-            $arguments["amount"]["value"]
+            $arguments["amount"]["value"] ?? null
         );
 
         if (is_string($process)) {
@@ -1647,7 +1647,7 @@ class DefaultCommandImplementationListener
             $interaction->guild_id,
             $interaction->channel_id,
             $interaction->data?->resolved?->users?->first()?->id,
-            $arguments["amount"]["value"]
+            $arguments["amount"]["value"] ?? null
         );
 
         if (is_string($process)) {
@@ -1674,7 +1674,7 @@ class DefaultCommandImplementationListener
             $interaction->guild_id,
             $interaction->channel_id,
             $interaction->data?->resolved?->users?->first()?->id,
-            $arguments["amount"]["value"]
+            $arguments["amount"]["value"] ?? null
         );
 
         if (is_string($process)) {

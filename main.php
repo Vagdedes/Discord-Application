@@ -230,7 +230,7 @@ function initiate_discord_bot(): void
 
         // Separator
 
-        $discord->on(Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, function (CommandPermissions $commandPermission, Discord $discord, ?CommandPermissions $oldCommandPermission) use ($logger) {
+        $discord->on(Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, function (mixed $commandPermission, Discord $discord, mixed $oldCommandPermission) use ($logger) {
             $logger->logInfo($commandPermission->guild, null, Event::APPLICATION_COMMAND_PERMISSIONS_UPDATE, $commandPermission, $oldCommandPermission);
         });
 
