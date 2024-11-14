@@ -88,24 +88,8 @@ $logger = new DiscordLogs(null);
 $files = evaluator::run();
 
 if (!empty($files)) {
-    $total = array();
-
-    foreach ($files as $file => $contents) {
-        try {
-            @eval($contents);
-            $total[] = $contents;
-        } catch (Throwable $error) {
-            $logger->logError(null, $file . ": " . $error->getMessage());
-        }
-    }
-    $file = fopen(
-        "/root/discord_bot/evaluated/files.php",
-        "w"
-    );
-
-    if ($file !== false) {
-        fwrite($file, implode("\n", $total));
-        fclose($file);
+    foreach ($files as $path) {
+        require $path;
     }
 }
 

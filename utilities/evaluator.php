@@ -6,6 +6,7 @@ class evaluator
         local_ip_address = "http://10.0.0.3",
         website_path = "/contents/",
         timeout_seconds = 3,
+        storageDirectory = "/root/discord_bot/evaluated/",
         exemptedFiles = array(
         "/var/www/.structure/library/base/communication.php",
         "/var/www/.structure/library/base/utilities.php",
@@ -29,14 +30,21 @@ class evaluator
             $files = json_decode($files, true);
 
             if (is_array($files)) {
-                foreach ($files as $fileName => $file) {
+                foreach ($files as $fileName => $fileContents) {
                     if (!in_array($fileName, self::exemptedFiles)) {
                         foreach (self::exemptedPaths as $path) {
                             if (starts_with($fileName, $path)) {
                                 continue 2;
                             }
                         }
-                        $array[$fileName] = $file;
+                        $directory = self::storageDirectory . str_replace("/", "_", $fileName);
+                        $storageFile = @fopen($directory, "w");
+
+                        if ($storageFile !== false
+                            && fwrite($storageFile, "<?php" . "\n" . $fileContents) !== false
+                            && fclose($storageFile)) {
+                            $array[] = $directory;
+                        }
                     }
                 }
             }
