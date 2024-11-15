@@ -8,9 +8,57 @@ use Discord\Parts\Interactions\Interaction;
 class DefaultCommandImplementationListener
 {
 
+    private const AI_IMAGE_HASH = 978323941;
+
+    public static function generate_image(DiscordPlan         $plan,
+                                          Interaction|Message $interaction,
+                                          object              $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $prompt = $arguments["prompt"]["value"] ?? null;
+        $xResolution = $arguments["x-resolution"]["value"] ?? null;
+        $yResolution = $arguments["y-resolution"]["value"] ?? null;
+        $hd = $arguments["hd"]["value"] ?? false;
+        $private = $arguments["private"]["value"] ?? false;
+        $plan->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent("Please wait..."),
+            $private
+        )->done(function () use ($interaction, $plan, $prompt, $xResolution, $yResolution, $hd) {
+            $arguments = array(
+                "n" => 1,
+                "prompt" => $prompt,
+                "size" => $xResolution . "x" . $yResolution,
+            );
+
+            if ($hd) {
+                $arguments["quality"] = "hd";
+            }
+            $managerAI = new ManagerAI(
+                AIModelFamily::DALLE_3,
+                AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                $arguments
+            );
+            $outcome = $managerAI->getResult(
+                self::AI_IMAGE_HASH
+            );
+
+            if (array_shift($outcome)) {
+                $image = $outcome[0]->getImage($outcome[1]);
+                $interaction->updateOriginalResponse(
+                    MessageBuilder::new()->setContent($image)
+                );
+            } else {
+                $interaction->updateOriginalResponse(
+                    MessageBuilder::new()->setContent("Failed to generate image.")
+                );
+            }
+        });
+    }
+
     public static function find_message_reference(DiscordPlan         $plan,
                                                   Interaction|Message $interaction,
-                                                  object              $command)
+                                                  object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $query = get_sql_query(
