@@ -50,7 +50,7 @@ class DefaultCommandImplementationListener
                 );
             } else {
                 $interaction->updateOriginalResponse(
-                    MessageBuilder::new()->setContent("Failed to generate image.")
+                    MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
                 );
             }
         });
