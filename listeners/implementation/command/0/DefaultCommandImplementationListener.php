@@ -20,6 +20,7 @@ class DefaultCommandImplementationListener
         $yResolution = $arguments["y-resolution"]["value"] ?? null;
         $hd = $arguments["hd"]["value"] ?? false;
         $private = $arguments["private"]["value"] ?? false;
+        $pastMessages = $arguments["past-messages"]["value"] ?? 0; // todo
         $plan->utilities->acknowledgeCommandMessage(
             $interaction,
             MessageBuilder::new()->setContent("Please wait..."),
@@ -45,9 +46,13 @@ class DefaultCommandImplementationListener
 
             if (array_shift($outcome)) {
                 $image = $outcome[0]->getImage($outcome[1]);
-                $interaction->updateOriginalResponse(
-                    MessageBuilder::new()->setContent($image)
-                );
+                $messageBuilder = MessageBuilder::new();
+                $embed = new Embed($plan->bot->discord);
+                $embed->setImage($image);
+                $embed->setDescription($prompt);
+                $messageBuilder->addEmbed($embed);
+
+                $interaction->updateOriginalResponse($messageBuilder);
             } else {
                 $interaction->updateOriginalResponse(
                     MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
