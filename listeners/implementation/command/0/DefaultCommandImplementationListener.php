@@ -20,44 +20,80 @@ class DefaultCommandImplementationListener
         $yResolution = $arguments["y-resolution"]["value"] ?? null;
         $hd = $arguments["hd"]["value"] ?? false;
         $private = $arguments["private"]["value"] ?? false;
-        $pastMessages = $arguments["past-messages"]["value"] ?? 0; // todo
-        $plan->utilities->acknowledgeCommandMessage(
-            $interaction,
-            MessageBuilder::new()->setContent("Please wait..."),
-            $private
-        )->done(function () use ($interaction, $plan, $prompt, $xResolution, $yResolution, $hd) {
-            $arguments = array(
-                "n" => 1,
-                "prompt" => $prompt,
-                "size" => $xResolution . "x" . $yResolution,
-            );
+        $pastMessages = $arguments["past-messages"]["value"] ?? 0;
+        $initialPrompt = "Please wait...";
+        $interaction->channel->getMessageHistory(
+            [
+                'limit' => max(min($pastMessages, 100), 1),
+                'cache' => true
+            ]
+        )->done(function ($messageHistory)
+        use ($interaction, $plan, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $initialPrompt, $private) {
+            $messageHistory = $messageHistory->toArray();
 
-            if ($hd) {
-                $arguments["quality"] = "hd";
-            }
-            $managerAI = new ManagerAI(
-                AIModelFamily::DALLE_3,
-                AIHelper::getAuthorization(AIAuthorization::OPENAI),
-                $arguments
-            );
-            $outcome = $managerAI->getResult(
-                self::AI_IMAGE_HASH
-            );
-
-            if (array_shift($outcome)) {
-                $image = $outcome[0]->getImage($outcome[1]);
-                $messageBuilder = MessageBuilder::new();
-                $embed = new Embed($plan->bot->discord);
-                $embed->setImage($image);
-                $embed->setDescription($prompt);
-                $messageBuilder->addEmbed($embed);
-
-                $interaction->updateOriginalResponse($messageBuilder);
-            } else {
-                $interaction->updateOriginalResponse(
-                    MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
+            $plan->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent($initialPrompt),
+                $private
+            )->done(function ()
+            use ($interaction, $plan, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $initialPrompt, $messageHistory) {
+                $promptLimit = 4000;
+                $arguments = array(
+                    "n" => 1,
+                    "prompt" => $prompt,
+                    "size" => $xResolution . "x" . $yResolution,
                 );
-            }
+                $addedPrompts = false;
+
+                if ($pastMessages > 0) {
+                    while (strlen($arguments["prompt"]) < $promptLimit
+                        && !empty($messageHistory)
+                        && $pastMessages > 0) {
+                        $newPrompt = array_shift($messageHistory)->content;
+
+                        if (empty($newPrompt)
+                            || $newPrompt === $initialPrompt) {
+                            continue;
+                        }
+                        $newPrompt .= "\n\n";
+
+                        if (strlen($arguments["prompt"]) + strlen($newPrompt) > $promptLimit) {
+                            break;
+                        }
+                        $arguments["prompt"] = $newPrompt . $arguments["prompt"];
+                        $pastMessages--;
+                        $addedPrompts = true;
+                    }
+                }
+                if ($hd) {
+                    $arguments["quality"] = "hd";
+                }
+                $managerAI = new ManagerAI(
+                    AIModelFamily::DALLE_3,
+                    AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                    $arguments
+                );
+                $outcome = $managerAI->getResult(
+                    self::AI_IMAGE_HASH
+                );
+
+                if (array_shift($outcome)) {
+                    $image = $outcome[0]->getImage($outcome[1]);
+                    $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                    $embed = new Embed($plan->bot->discord);
+                    $embed->setImage($image);
+
+                    if ($addedPrompts) {
+                        $embed->setDescription($arguments["prompt"]);
+                    }
+                    $messageBuilder->addEmbed($embed);
+                    $interaction->updateOriginalResponse($messageBuilder);
+                } else {
+                    $interaction->updateOriginalResponse(
+                        MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
+                    );
+                }
+            });
         });
     }
 
