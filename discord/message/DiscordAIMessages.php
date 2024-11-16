@@ -19,6 +19,8 @@ class DiscordAIMessages
         THREADS_ANALYZED = 20,
         THREAD_ANALYZED_MESSAGES = 10;
 
+    private const AI_HASH = 192840142;
+
     const REACTION_COMPONENT_NAME = "general-feedback";
 
     public function __construct(DiscordPlan $plan)
@@ -492,7 +494,7 @@ class DiscordAIMessages
                                       Message|array $source,
                                       ?Message      $self,
                                       array         $systemInstructions,
-                                      int           $extraHash = null,
+                                      int           $hash = self::AI_HASH,
                                       bool          $debug = false,
                                       ?int          $maxAttachmentsLength = 0): ?string
     {
@@ -576,11 +578,6 @@ class DiscordAIMessages
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
-            $hash = overflow_long(overflow_long($this->plan->planID * 31) + (int)$user->id);
-
-            if ($extraHash !== null) {
-                $hash = overflow_long(overflow_long($hash * 31) + $extraHash);
-            }
             $messages = array(
                 array(
                     "role" => "user",
@@ -638,7 +635,7 @@ class DiscordAIMessages
                         BotDatabaseTable::BOT_AI_REPLIES,
                         array(
                             "plan_id" => $this->plan->planID,
-                            "ai_hash" => $extraHash,
+                            "ai_hash" => $hash,
                             "bot_id" => $this->plan->bot->botID,
                             "server_id" => $channel->guild_id,
                             "channel_id" => $parent->id,
