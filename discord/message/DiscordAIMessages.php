@@ -604,7 +604,7 @@ class DiscordAIMessages
                 $hash,
                 $input,
                 $length,
-                30
+                60
             );
 
             if ($debug) {
