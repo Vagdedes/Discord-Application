@@ -430,7 +430,7 @@ class DiscordAIMessages
                                                             $array[1],
                                                             $channel->ai_disclaimer
                                                         ),
-                                                        null,
+                                                        self::AI_HASH,
                                                         $channel->debug !== null,
                                                         $channel->max_attachments_length
                                                     );
@@ -494,7 +494,7 @@ class DiscordAIMessages
                                       Message|array $source,
                                       ?Message      $self,
                                       array         $systemInstructions,
-                                      int           $hash = self::AI_HASH,
+                                      int           $hash,
                                       bool          $debug = false,
                                       ?int          $maxAttachmentsLength = 0): ?string
     {
@@ -615,6 +615,7 @@ class DiscordAIMessages
                     );
                 }
             }
+
             if (array_shift($outcome)) { // Success
                 $model = array_shift($outcome);
                 $replyObject = array_shift($outcome);
