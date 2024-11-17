@@ -5,6 +5,7 @@ use Discord\Builders\Components\Button;
 use Discord\Builders\Components\Option;
 use Discord\Builders\Components\StringSelect;
 use Discord\Builders\MessageBuilder;
+use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
@@ -39,7 +40,8 @@ class DiscordPersistentMessages
         );
 
         if (!empty($query)) {
-            $this->process($query, 0);
+            $this->processDatabase($query, 0);
+            $this->processDiscord();
         }
     }
 
@@ -175,7 +177,85 @@ class DiscordPersistentMessages
         return $this->plan->interactionRoles->process($messageBuilder, $messageRow->id);
     }
 
-    private function process(array $array, int $position): void
+    private function processDiscord(): void
+    {
+        $discord = $this->plan->bot->discord;
+
+        if (!empty($discord->guilds->first())) {
+            foreach ($discord->guilds as $guild) {
+                if (empty($guild->channels->first())) {
+                    continue;
+                }
+                foreach ($guild->channels as $channel) {
+                    $this->processDiscordChannel($channel);
+
+                    if (!empty($channel->threads->first())) {
+                        foreach ($channel->threads as $thread) {
+                            $this->processDiscordChannel($thread);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private function processDiscordChannel(Channel|Thread $channel): void
+    {
+        $dbMessages = $this->messages;
+        $botID = $this->plan->bot->botID;
+        $plan = $this->plan;
+
+        $channel->getMessageHistory([
+            'limit' => 100,
+            'cache' => true
+        ])->done(function (Collection $messages) use ($dbMessages, $botID, $plan) {
+            foreach ($messages as $message) {
+                if ($message->author->id != $botID) {
+                    continue;
+                }
+                foreach ($dbMessages as $dbMessage) {
+                    if ($dbMessage->embed_title === null
+                        && $dbMessage->embed_description === null
+                        && $dbMessage->embed_image === null
+                        && $dbMessage->embed_url === null
+                        && $dbMessage->embed_footer === null
+                        && $dbMessage->embed_author_url === null
+                        && $dbMessage->embed_author_icon_url === null
+                        && $dbMessage->embed_author_name === null
+                        && $dbMessage->embed_timestamp === null) {
+                        continue;
+                    }
+                    if (empty($message->embeds->first())
+                        || $message->embeds->count() > 1) {
+                        continue;
+                    }
+                    foreach ($message->embeds as $embed) {
+                        if ($dbMessage->embed_title == $embed->title
+                            && $dbMessage->embed_description == $embed->description
+                            && $dbMessage->embed_image == $embed->image?->url
+                            && $dbMessage->embed_url == $embed->url
+                            && $dbMessage->embed_footer == $embed->footer?->text
+                            && $dbMessage->embed_author_url == $embed->author?->url
+                            && $dbMessage->embed_author_icon_url == $embed->author?->icon_url
+                            && $dbMessage->embed_author_name == $embed->author?->name
+                            && $dbMessage->embed_timestamp == $embed->timestamp) {
+                            $message->edit($this->build(null, $dbMessage)->setContent($message->content))->done(
+                                function (Message $message) use ($dbMessage, $plan) {
+                                    $plan->instructions->manager->addExtra(
+                                        "interactive-message-" . $message->id,
+                                        $message->getRawAttributes()
+                                    );
+                                }
+                            );
+                            break 2;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private function processDatabase(array $array, int $position): void
     {
         $messageRow = $array[$position] ?? null;
 
@@ -216,7 +296,7 @@ class DiscordPersistentMessages
                                     $this->plan->planID,
                                     "Message {$oldMessageRow->id} is a copy of {$oldMessageRow->copy_of} but it does not exist."
                                 );
-                                $this->process($array, $position + 1);
+                                $this->processDatabase($array, $position + 1);
                                 return;
                             }
                         } else if ($messageRow->name !== null) {
@@ -228,12 +308,12 @@ class DiscordPersistentMessages
                             $this->editMessage($finalChannel, $custom, $messageRow, $oldMessageRow, $array, $position);
                         }
                     } else {
-                        $this->process($array, $position + 1);
+                        $this->processDatabase($array, $position + 1);
                     }
                 }
             } else if ($messageRow->name !== null) {
                 $this->messages[$messageRow->name] = $messageRow;
-                $this->process($array, $position + 1);
+                $this->processDatabase($array, $position + 1);
             }
         }
     }
@@ -261,7 +341,7 @@ class DiscordPersistentMessages
                     "interactive-message-" . $message->id,
                     $message->getRawAttributes()
                 );
-                $this->process($array, $position + 1);
+                $this->processDatabase($array, $position + 1);
             }
         );
     }
@@ -292,11 +372,11 @@ class DiscordPersistentMessages
                         $message->delete();
                         $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
                     }
-                    $this->process($array, $position + 1);
+                    $this->processDatabase($array, $position + 1);
                 }
             );
         } catch (Throwable $ignored) {
-            $this->process($array, $position + 1);
+            $this->processDatabase($array, $position + 1);
         }
     }
 

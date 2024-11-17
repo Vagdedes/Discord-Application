@@ -111,7 +111,7 @@ function initiate_discord_bot(): void
         load_sql_database();
         $botID = $discord->id;
 
-        if (!empty($discord->guilds->toArray())) {
+        if (!empty($discord->guilds->first())) {
             foreach ($discord->guilds as $guild) {
                 if ($guild instanceof Guild) {
                     $member = $guild->members->toArray()[$botID];
