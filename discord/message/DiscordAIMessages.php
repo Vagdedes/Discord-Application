@@ -577,7 +577,7 @@ class DiscordAIMessages
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
-            if (false && $source instanceof Message) {
+            if ($source instanceof Message) {
                 if (empty($source->attachments->first())) {
                     $messages = array(
                         array(
@@ -594,11 +594,14 @@ class DiscordAIMessages
                             && $attachment->url !== null) {
                             $object1 = new stdClass();
                             $object1->type = "text";
-                            $object1->content = $content;
+                            $object1->text = $content;
+
+                            $object3 = new stdClass();
+                            $object3->url = $attachment->url;
 
                             $object2 = new stdClass();
                             $object2->type = "image_url";
-                            $object2->content = $attachment->url;
+                            $object2->image_url = $object3;
                             $messages = array(
                                 array(
                                     "role" => "user",
