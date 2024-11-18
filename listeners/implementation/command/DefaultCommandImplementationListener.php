@@ -68,7 +68,7 @@ class DefaultCommandImplementationListener
                 if ($hd) {
                     $arguments["quality"] = "hd";
                 }
-                $managerAI = new ManagerAI(
+                $managerAI = new AIManager(
                     AIModelFamily::DALLE_3,
                     AIHelper::getAuthorization(AIAuthorization::OPENAI),
                     $arguments
