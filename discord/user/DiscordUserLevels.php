@@ -9,7 +9,7 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordUserLevels
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $configurations;
 
     private const
@@ -22,18 +22,14 @@ class DiscordUserLevels
         REACTION_POINTS = "reaction_points",
         INVITE_USE_POINTS = "invite_use_points";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->configurations = get_sql_query(
             BotDatabaseTable::BOT_LEVELS,
             null,
             array(
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -81,7 +77,7 @@ class DiscordUserLevels
                     $row->channels = $channelsQuery;
 
                     foreach ($channelsQuery as $channel) {
-                        $this->configurations[$this->plan->utilities->hash($channel->server_id, $channel->channel_id)] = $row;
+                        $this->configurations[$this->bot->utilities->hash($channel->server_id, $channel->channel_id)] = $row;
                     }
                 } else {
                     $logger->logError(
@@ -96,13 +92,13 @@ class DiscordUserLevels
                             int|string $userID, int|string|null $level = null,
                             bool       $cache = false): array|string
     {
-        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             if ($level === null) {
                 $level = $this->getLevel($serverID, $channelID, $userID)[1];
             }
-            foreach ($this->configurations[$this->plan->utilities->hash($serverID, $channelID)]->tiers as $tier) {
+            foreach ($this->configurations[$this->bot->utilities->hash($serverID, $channelID)]->tiers as $tier) {
                 if ($level >= $tier->tier_points) {
                     return array($tier, $level);
                 }
@@ -118,7 +114,7 @@ class DiscordUserLevels
                              string     $type, mixed $reference): void
     {
         if (!$this->hasCooldown($serverID, $channel->id, $user->id)) {
-            $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channel->id)];
+            $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channel->id)];
 
             switch ($type) {
                 case self::CHAT_CHARACTER_POINTS:
@@ -180,16 +176,16 @@ class DiscordUserLevels
 
             if (is_array($outcome)) {
                 if ($configuration->notification_channel_id !== null) {
-                    $channel = $this->plan->bot->discord->getChannel($configuration->notification_channel_id);
+                    $channel = $this->bot->discord->getChannel($configuration->notification_channel_id);
                     $proceed = $channel !== null
-                        && $this->plan->utilities->allowText($channel)
+                        && $this->bot->utilities->allowText($channel)
                         && $channel->guild_id == $serverID;
                 } else {
                     $proceed = true;
                 }
 
                 if ($proceed) {
-                    $object = $this->plan->instructions->getObject(
+                    $object = $this->bot->instructions->getObject(
                         $channel->guild,
                         $channel,
                         $user,
@@ -198,9 +194,9 @@ class DiscordUserLevels
                             : ($reference instanceof MessageReaction ? $reference->message : null),
                     );
                     $messageBuilder = $configuration->message_name !== null
-                        ? $this->plan->persistentMessages->get($object, $configuration->message_name)
+                        ? $this->bot->persistentMessages->get($object, $configuration->message_name)
                         : MessageBuilder::new()->setContent(
-                            $this->plan->instructions->replace(array($configuration->message_content), $object)[0]
+                            $this->bot->instructions->replace(array($configuration->message_content), $object)[0]
                         );
 
                     if ($messageBuilder !== null) {
@@ -214,7 +210,7 @@ class DiscordUserLevels
                 }
 
                 $newTier = $outcome[1];
-                $this->plan->listener->callUserLevelsImplementation(
+                $this->bot->listener->callUserLevelsImplementation(
                     $newTier->listener_class,
                     $newTier->listener_method,
                     $channel,
@@ -269,7 +265,7 @@ class DiscordUserLevels
                              int|string $userID,
                              int|string $amount): string|array|null
     {
-        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             $level = $this->getLevel($serverID, $channelID, $userID);
@@ -336,7 +332,7 @@ class DiscordUserLevels
     private function getLevel(int|string $serverID, int|string $channelID,
                               int|string $userID): array
     {
-        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)];
+        $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channelID)];
 
         if ($configuration !== null) {
             $query = get_sql_query(
@@ -369,7 +365,7 @@ class DiscordUserLevels
 
     public function getLevels(int|string $serverID, int|string $channelID): array|string
     {
-        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)] ?? null;
+        $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channelID)] ?? null;
 
         if ($configuration !== null) {
             $query = get_sql_query(
@@ -414,7 +410,7 @@ class DiscordUserLevels
     private function hasCooldown(int|string $serverID, int|string $channelID,
                                  int|string $userID): bool
     {
-        $configuration = $this->configurations[$this->plan->utilities->hash($serverID, $channelID)] ?? null;
+        $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channelID)] ?? null;
 
         if ($configuration === null) {
             return true;

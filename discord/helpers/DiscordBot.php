@@ -42,7 +42,6 @@ use Discord\Discord;
 class DiscordBot
 {
     public int|string $botID;
-    public array $plans;
     private string $refreshDate;
     public Discord $discord;
     public DiscordUtilities $utilities;
@@ -55,6 +54,26 @@ class DiscordBot
     public DiscordStatisticsChannels $statisticsChannels;
     public DiscordTransferredMessages $tranferredMessages;
     public DiscordChannels $channels;
+    public DiscordInstructions $instructions;
+    public DiscordCommands $commands;
+    public DiscordComponent $component;
+    public DiscordPersistentMessages $persistentMessages;
+    public DiscordUserTickets $userTickets;
+    public DiscordUserTargets $userTargets;
+    public DiscordCountingChannels $countingChannels;
+    public DiscordUserLevels $userLevels;
+    public DiscordInviteTracker $inviteTracker;
+    public DiscordInteractionRoles $interactionRoles;
+    public DiscordTemporaryChannels $temporaryChannels;
+    public DiscordReminderMessages $reminderMessages;
+    public DiscordUserQuestionnaire $userQuestionnaire;
+    public DiscordAIMessages $aiMessages;
+    public DiscordStatusMessages $statusMessages;
+    public DiscordUserNotes $userNotes;
+    public DiscordUserGiveaways $userGiveaways;
+    public DiscordChatFilteredMessages $chatFilteredMessages;
+    public DiscordObjectiveChannels $objectiveChannels;
+    public DiscordNotificationMessages $notificationMessages;
     private int $counter;
 
     public function __construct(Discord $discord, int|string $botID)
@@ -62,12 +81,10 @@ class DiscordBot
         $this->counter = 0;
         $this->discord = $discord;
         $this->botID = $botID;
-        $this->plans = array();
 
         $this->utilities = new DiscordUtilities($this);
         $this->listener = new DiscordListener($this);
         $this->channels = new DiscordChannels($this);
-
         $this->mute = new DiscordMute($this);
         $this->discordAntiExpirationThreads = new DiscordAntiExpirationThreads($this);
         $this->permissions = new DiscordPermissions($this);
@@ -75,42 +92,27 @@ class DiscordBot
         $this->joinRoles = new DiscordJoinRoles($this);
         $this->statisticsChannels = new DiscordStatisticsChannels($this);
         $this->tranferredMessages = new DiscordTransferredMessages($this);
+        $this->commands = new DiscordCommands($this);
+        $this->component = new DiscordComponent($this);
+        $this->aiMessages = new DiscordAIMessages($this);
+        $this->instructions = new DiscordInstructions($this); // Dependent on exact above
+        $this->persistentMessages = new DiscordPersistentMessages($this);
+        $this->userTickets = new DiscordUserTickets($this);
+        $this->countingChannels = new DiscordCountingChannels($this);
+        $this->userLevels = new DiscordUserLevels($this);
+        $this->temporaryChannels = new DiscordTemporaryChannels($this);
+        $this->reminderMessages = new DiscordReminderMessages($this);
+        $this->userQuestionnaire = new DiscordUserQuestionnaire($this);
+        $this->statusMessages = new DiscordStatusMessages($this);
+        $this->userTargets = new DiscordUserTargets($this);
+        $this->userNotes = new DiscordUserNotes($this);
+        $this->inviteTracker = new DiscordInviteTracker($this);
+        $this->userGiveaways = new DiscordUserGiveaways($this);
+        $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
+        $this->objectiveChannels = new DiscordObjectiveChannels($this);
+        $this->notificationMessages = new DiscordNotificationMessages($this);
 
-        $this->load();
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
-    }
-
-    public function getPlan(int|string $planID): ?DiscordPlan
-    {
-        return $this->plans[(int)$planID] ?? null;
-    }
-
-    private function load(): void
-    {
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_PLANS,
-            array("id", "account_id"),
-            array(
-                array("bot_id", $this->botID),
-                array("deletion_date", null),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            )
-        );
-
-        if (empty($query)) {
-            global $logger;
-            $logger->logError("Found no plans for bot with ID: " . $this->botID);
-        } else {
-            foreach ($query as $row) {
-                $this->plans[(int)$row->id] = new DiscordPlan(
-                    $this,
-                    $row->id
-                );
-            }
-        }
     }
 
     public function refresh($force = false): bool
@@ -127,9 +129,7 @@ class DiscordBot
                 $this->discord->close(true);
                 initiate_discord_bot();
             } else {
-                $this->plans = array();
                 load_sql_database();
-                $this->load();
             }
             return true;
         } else {

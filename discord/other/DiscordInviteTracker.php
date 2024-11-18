@@ -6,21 +6,20 @@ use Discord\Parts\Guild\Guild;
 
 class DiscordInviteTracker
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $goals;
 
     private static array $cached_invites = array();
     private static int $invite_links = 0, $invited_users = 0;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->goals = get_sql_query(
             BotDatabaseTable::BOT_INVITE_TRACKER_GOALS,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -33,7 +32,7 @@ class DiscordInviteTracker
             self::$invite_links = 0;
             self::$invited_users = 0;
 
-            foreach ($this->plan->bot->discord->guilds as $guild) {
+            foreach ($this->bot->discord->guilds as $guild) {
                 self::track($guild, $this);
             }
         }
@@ -209,7 +208,7 @@ class DiscordInviteTracker
 
                                 if ($channelID !== null) {
                                     if ($inviteTracker !== null) {
-                                        $inviteTracker->plan->userLevels->runLevel(
+                                        $inviteTracker->bot->userLevels->runLevel(
                                             $serverID,
                                             $invite->channel,
                                             $invite->inviter,
@@ -281,26 +280,26 @@ class DiscordInviteTracker
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $object = $inviteTracker->plan->instructions->getObject(
+                    $object = $inviteTracker->bot->instructions->getObject(
                         $invite->guild,
                         $invite->channel,
                         $invite->inviter
                     );
                     $messageBuilder = $goal->message_name !== null
-                        ? $inviteTracker->plan->persistentMessages->get($object, $goal->message_name)
+                        ? $inviteTracker->bot->persistentMessages->get($object, $goal->message_name)
                         : MessageBuilder::new()->setContent(
-                            $inviteTracker->plan->instructions->replace(array($goal->message_content), $object)[0]
+                            $inviteTracker->bot->instructions->replace(array($goal->message_content), $object)[0]
                         );
 
                     if ($messageBuilder !== null) {
-                        $channel = $inviteTracker->plan->bot->discord->getChannel($goal->message_channel_id);
+                        $channel = $inviteTracker->bot->discord->getChannel($goal->message_channel_id);
 
                         if ($channel !== null
                             && $channel->guild_id === $goal->message_server_id) {
                             $channel->sendMessage($messageBuilder);
                         }
                     } else {
-                        $inviteTracker->plan->listener->callInviteTrackerImplementation(
+                        $inviteTracker->bot->listener->callInviteTrackerImplementation(
                             $goal->listener_class,
                             $goal->listener_method,
                             $invite

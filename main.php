@@ -52,7 +52,6 @@ require '/root/discord_bot/discord/helpers/DiscordBot.php';
 require '/root/discord_bot/discord/helpers/variables.php';
 require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
 require '/root/discord_bot/discord/helpers/DiscordChannels.php';
-require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
@@ -167,25 +166,23 @@ function initiate_discord_bot(): void
                 use ($createdDiscordBot, $message) {
                     $ai = true;
 
-                    foreach ($createdDiscordBot->plans as $plan) {
-                        if ($ai && $plan->aiMessages->textAssistance(
-                                $message,
-                                $messageHistory->toArray()
-                            )) {
-                            $ai = false;
-                        }
-                        foreach (array(
-                                     DiscordUserLevels::CHAT_CHARACTER_POINTS,
-                                     DiscordUserLevels::ATTACHMENT_POINTS
-                                 ) as $type) {
-                            $plan->userLevels->runLevel(
-                                $message->guild_id,
-                                $createdDiscordBot->utilities->getChannelOrThread($message->channel),
-                                $message->member,
-                                $type,
-                                $message
-                            );
-                        }
+                    if ($ai && $createdDiscordBot->aiMessages->textAssistance(
+                            $message,
+                            $messageHistory->toArray()
+                        )) {
+                        $ai = false;
+                    }
+                    foreach (array(
+                                 DiscordUserLevels::CHAT_CHARACTER_POINTS,
+                                 DiscordUserLevels::ATTACHMENT_POINTS
+                             ) as $type) {
+                        $createdDiscordBot->userLevels->runLevel(
+                            $message->guild_id,
+                            $createdDiscordBot->utilities->getChannelOrThread($message->channel),
+                            $message->member,
+                            $type,
+                            $message
+                        );
                     }
                 });
             }
@@ -195,32 +192,24 @@ function initiate_discord_bot(): void
         $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->tranferredMessages->trackDeletion($message);
 
-            foreach ($createdDiscordBot->plans as $plan) {
-                if ($plan->countingChannels->ignoreDeletion === 0) {
-                    if ($plan->countingChannels->restore($message)) {
-                        break;
-                    }
-                } else {
-                    $plan->countingChannels->ignoreDeletion--;
-                }
-                $plan->objectiveChannels->trackDeletion($message);
+            if ($createdDiscordBot->countingChannels->ignoreDeletion === 0) {
+                $createdDiscordBot->countingChannels->restore($message);
+            } else {
+                $createdDiscordBot->countingChannels->ignoreDeletion--;
             }
+            $createdDiscordBot->objectiveChannels->trackDeletion($message);
             $logger->logInfo($message?->guild_id, null, Event::MESSAGE_DELETE, $message);
         });
 
         $discord->on(Event::MESSAGE_UPDATE, function (Message $message, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->tranferredMessages->trackModification($message);
 
-            foreach ($createdDiscordBot->plans as $plan) {
-                if ($plan->countingChannels->ignoreDeletion === 0) {
-                    if ($plan->countingChannels->moderate($message)) {
-                        break;
-                    }
-                } else {
-                    $plan->countingChannels->ignoreDeletion--;
-                }
-                $plan->objectiveChannels->trackModification($message);
+            if ($createdDiscordBot->countingChannels->ignoreDeletion === 0) {
+                $createdDiscordBot->countingChannels->moderate($message);
+            } else {
+                $createdDiscordBot->countingChannels->ignoreDeletion--;
             }
+            $createdDiscordBot->objectiveChannels->trackModification($message);
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_UPDATE, $message);
         });
 
@@ -265,27 +254,25 @@ function initiate_discord_bot(): void
         $discord->on(Event::CHANNEL_DELETE, function (Channel $channel, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
 
-            foreach ($createdDiscordBot->plans as $plan) {
-                if ($plan->userTickets->ignoreDeletion === 0) {
-                    $plan->userTickets->closeByChannel($channel, null, null, false);
-                } else {
-                    $plan->userTickets->ignoreDeletion--;
-                }
-                if ($plan->userTargets->ignoreChannelDeletion === 0) {
-                    $plan->userTargets->closeByChannelOrThread($channel, null, null, false);
-                } else {
-                    $plan->userTargets->ignoreChannelDeletion--;
-                }
-                if ($plan->userQuestionnaire->ignoreChannelDeletion === 0) {
-                    $plan->userQuestionnaire->closeByChannelOrThread($channel, null, null, null, false);
-                } else {
-                    $plan->userQuestionnaire->ignoreChannelDeletion--;
-                }
-                if ($plan->temporaryChannels->ignoreDeletion === 0) {
-                    $plan->temporaryChannels->closeByChannel($channel, false);
-                } else {
-                    $plan->temporaryChannels->ignoreDeletion--;
-                }
+            if ($createdDiscordBot->userTickets->ignoreDeletion === 0) {
+                $createdDiscordBot->userTickets->closeByChannel($channel, null, null, false);
+            } else {
+                $createdDiscordBot->userTickets->ignoreDeletion--;
+            }
+            if ($createdDiscordBot->userTargets->ignoreChannelDeletion === 0) {
+                $createdDiscordBot->userTargets->closeByChannelOrThread($channel, null, null, false);
+            } else {
+                $createdDiscordBot->userTargets->ignoreChannelDeletion--;
+            }
+            if ($createdDiscordBot->userQuestionnaire->ignoreChannelDeletion === 0) {
+                $createdDiscordBot->userQuestionnaire->closeByChannelOrThread($channel, null, null, null, false);
+            } else {
+                $createdDiscordBot->userQuestionnaire->ignoreChannelDeletion--;
+            }
+            if ($createdDiscordBot->temporaryChannels->ignoreDeletion === 0) {
+                $createdDiscordBot->temporaryChannels->closeByChannel($channel, false);
+            } else {
+                $createdDiscordBot->temporaryChannels->ignoreDeletion--;
             }
             $logger->logInfo($channel->guild, null, Event::CHANNEL_DELETE, $channel);
         });
@@ -298,12 +285,7 @@ function initiate_discord_bot(): void
 
         $discord->on(Event::THREAD_CREATE, function (Thread $thread, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
-
-            foreach ($createdDiscordBot->plans as $plan) {
-                if ($plan->notificationMessages->executeThread($thread)) {
-                    break;
-                }
-            }
+            $createdDiscordBot->notificationMessages->executeThread($thread);
             $logger->logInfo($thread->guild, $thread->owner_id, Event::THREAD_CREATE, $thread);
         });
 
@@ -315,17 +297,15 @@ function initiate_discord_bot(): void
             $createdDiscordBot->statisticsChannels->refresh();
 
             if ($thread instanceof Thread) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->userTargets->ignoreThreadDeletion === 0) {
-                        $plan->userTargets->closeByChannelOrThread($thread->parent);
-                    } else {
-                        $plan->userTargets->ignoreThreadDeletion--;
-                    }
-                    if ($plan->userQuestionnaire->ignoreThreadDeletion === 0) {
-                        $plan->userQuestionnaire->closeByChannelOrThread($thread->parent);
-                    } else {
-                        $plan->userQuestionnaire->ignoreThreadDeletion--;
-                    }
+                if ($createdDiscordBot->userTargets->ignoreThreadDeletion === 0) {
+                    $createdDiscordBot->userTargets->closeByChannelOrThread($thread->parent);
+                } else {
+                    $createdDiscordBot->userTargets->ignoreThreadDeletion--;
+                }
+                if ($createdDiscordBot->userQuestionnaire->ignoreThreadDeletion === 0) {
+                    $createdDiscordBot->userQuestionnaire->closeByChannelOrThread($thread->parent);
+                } else {
+                    $createdDiscordBot->userQuestionnaire->ignoreThreadDeletion--;
                 }
                 $logger->logInfo($thread->guild, null, Event::THREAD_DELETE, $thread);
             } else {
@@ -401,9 +381,7 @@ function initiate_discord_bot(): void
             $createdDiscordBot->statisticsChannels->refresh();
 
             if ($member instanceof Member) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    $plan->statusMessages->run($member, DiscordStatusMessages::GOODBYE);
-                }
+                $createdDiscordBot->statusMessages->run($member, DiscordStatusMessages::GOODBYE);
                 $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_REMOVE, $member);
             } else {
                 $logger->logInfo($member?->guild, null, Event::GUILD_MEMBER_REMOVE, $member);
@@ -413,10 +391,7 @@ function initiate_discord_bot(): void
         $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->joinRoles->run($member);
             $createdDiscordBot->statisticsChannels->refresh();
-
-            foreach ($createdDiscordBot->plans as $plan) {
-                $plan->statusMessages->run($member, DiscordStatusMessages::WELCOME);
-            }
+            $createdDiscordBot->statusMessages->run($member, DiscordStatusMessages::WELCOME);
             $logger->logInfo($member->guild, $member->id, Event::GUILD_MEMBER_ADD, $member);
             $logger->logInfo($member->guild, $member->id, DiscordLogs::GUILD_MEMBER_ADD_VIA_INVITE, $member);
         });
@@ -518,16 +493,14 @@ function initiate_discord_bot(): void
         // Separator
 
         $discord->on(Event::MESSAGE_REACTION_ADD, function (MessageReaction $reaction, Discord $discord) use ($logger, $createdDiscordBot) {
-            foreach ($createdDiscordBot->plans as $plan) {
-                $plan->userLevels->runLevel(
-                    $reaction->guild_id,
-                    $createdDiscordBot->utilities->getChannelOrThread($reaction->channel),
-                    $reaction->member,
-                    DiscordUserLevels::REACTION_POINTS,
-                    $reaction
-                );
-                $plan->component->handleReaction($reaction);
-            }
+            $createdDiscordBot->userLevels->runLevel(
+                $reaction->guild_id,
+                $createdDiscordBot->utilities->getChannelOrThread($reaction->channel),
+                $reaction->member,
+                DiscordUserLevels::REACTION_POINTS,
+                $reaction
+            );
+            $createdDiscordBot->component->handleReaction($reaction);
             $logger->logInfo($reaction->guild, $reaction->user_id, Event::MESSAGE_REACTION_ADD, $reaction);
         });
 
@@ -574,11 +547,7 @@ function initiate_discord_bot(): void
         $discord->on(Event::VOICE_STATE_UPDATE, function (VoiceStateUpdate $state, Discord $discord, $oldstate)
         use ($logger, $createdDiscordBot) {
             if ($state->channel_id === null) {
-                foreach ($createdDiscordBot->plans as $plan) {
-                    if ($plan->temporaryChannels->trackLeave($oldstate)) {
-                        break;
-                    }
-                }
+                $createdDiscordBot->temporaryChannels->trackLeave($oldstate);
             } else {
                 $mute = $createdDiscordBot->mute->isMuted($state->member, $state->channel, DiscordMute::VOICE);
 
@@ -589,22 +558,10 @@ function initiate_discord_bot(): void
                     $state->channel->unmuteMember($state->member);
                 }
                 if ($oldstate === null) {
-                    foreach ($createdDiscordBot->plans as $plan) {
-                        if ($plan->temporaryChannels->trackJoin($state)) {
-                            break;
-                        }
-                    }
+                    $createdDiscordBot->temporaryChannels->trackJoin($state);
                 } else if ($state->channel_id != $oldstate->channel_id) {
-                    foreach ($createdDiscordBot->plans as $plan) {
-                        if ($plan->temporaryChannels->trackLeave($oldstate)) {
-                            break;
-                        }
-                    }
-                    foreach ($createdDiscordBot->plans as $plan) {
-                        if ($plan->temporaryChannels->trackJoin($state)) {
-                            break;
-                        }
-                    }
+                    $createdDiscordBot->temporaryChannels->trackLeave($oldstate);
+                    $createdDiscordBot->temporaryChannels->trackJoin($state);
                 }
             }
             $logger->logInfo($state->guild, $state->user_id, Event::VOICE_STATE_UPDATE, $state, $oldstate);

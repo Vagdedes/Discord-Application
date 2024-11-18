@@ -4,20 +4,19 @@ use Discord\Parts\Channel\Message;
 
 class DiscordChatFilteredMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $filters;
 
     private const AI_HASH = 248901024;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->filters = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_MESSAGE_FILTER,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -152,7 +151,7 @@ class DiscordChatFilteredMessages
                 }
 
                 if ($check) {
-                    $object = $this->plan->instructions->getObject(
+                    $object = $this->bot->instructions->getObject(
                         $message->guild,
                         $message->channel,
                         $message->member,
@@ -178,7 +177,7 @@ class DiscordChatFilteredMessages
                     }
                     if ($filter->ai_model_id !== null
                         && !empty($filter->constants)) {
-                        $reply = $this->plan->aiMessages->rawTextAssistance(
+                        $reply = $this->bot->aiMessages->rawTextAssistance(
                             $filter->ai_model_id,
                             $message,
                             null,
@@ -233,7 +232,7 @@ class DiscordChatFilteredMessages
         }
 
         if ($block) {
-            $channel = $this->plan->utilities->getChannelOrThread($message->channel);
+            $channel = $this->bot->utilities->getChannelOrThread($message->channel);
 
             if (!sql_insert(
                 BotDatabaseTable::BOT_MESSAGE_MESSAGE_FILTER_TRACKING,
@@ -258,14 +257,14 @@ class DiscordChatFilteredMessages
                     . ($constantID !== null ? " constant " : " ") . "ID: " . $row->id
                 );
             }
-            $blockMessage = $this->plan->instructions->replace(
+            $blockMessage = $this->bot->instructions->replace(
                 array($row->message ?? ""),
                 $object
             )[0];
 
             if (!empty($blockMessage) && $row->mute_period !== null) {
-                $this->plan->bot->mute->mute(
-                    $this->plan->bot->discord->user,
+                $this->bot->mute->mute(
+                    $this->bot->discord->user,
                     $message->member,
                     $message->channel,
                     $blockMessage,

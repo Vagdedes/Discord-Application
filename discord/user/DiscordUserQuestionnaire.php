@@ -8,7 +8,7 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordUserQuestionnaire
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $questionnaires;
     public int $ignoreChannelDeletion, $ignoreThreadDeletion;
 
@@ -16,10 +16,10 @@ class DiscordUserQuestionnaire
         FAILED_QUESTION = "Failed to find question, please contact an administrator or try again later.",
         AI_HASH = 689043243;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
         global $logger;
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->ignoreChannelDeletion = 0;
         $this->ignoreThreadDeletion = 0;
         $this->questionnaires = array();
@@ -27,7 +27,6 @@ class DiscordUserQuestionnaire
             BotDatabaseTable::BOT_QUESTIONNAIRES,
             null,
             array(
-                array("plan_id", $plan->planID),
                 array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -131,7 +130,7 @@ class DiscordUserQuestionnaire
         }
         $members = null;
 
-        foreach ($this->plan->bot->discord->guilds as $guild) {
+        foreach ($this->bot->discord->guilds as $guild) {
             if ($guild->id == $query->server_id) {
                 $members = $guild->members;
                 break;
@@ -142,7 +141,7 @@ class DiscordUserQuestionnaire
             return;
         } else {
             $members = $members->toArray();
-            unset($members[$this->plan->bot->botID]);
+            unset($members[$this->bot->botID]);
             $removalList = get_sql_query(
                 BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
                 array("user_id"),
@@ -187,7 +186,6 @@ class DiscordUserQuestionnaire
                     1
                 ))) {
                     $insert = array(
-                        "plan_id" => $this->plan->planID,
                         "questionnaire_id" => $query->id,
                         "questionnaire_creation_id" => $questionnaireID,
                         "user_id" => $member->user->id,
@@ -224,12 +222,12 @@ class DiscordUserQuestionnaire
                                 "deny" => $query->deny_permission
                             )
                         );
-                        $this->plan->utilities->createChannel(
+                        $this->bot->utilities->createChannel(
                             $member->guild,
                             Channel::TYPE_TEXT,
                             $query->create_channel_category_id,
                             (empty($query->create_channel_name)
-                                ? $this->plan->utilities->getUsername($member->user->id)
+                                ? $this->bot->utilities->getUsername($member->user->id)
                                 : $query->create_channel_name)
                             . "-" . $questionnaireID,
                             $query->create_channel_topic,
@@ -244,7 +242,7 @@ class DiscordUserQuestionnaire
                                 if ($question === true) {
                                     $this->closeByChannelOrThread($channel);
                                 } else {
-                                    $object = $this->plan->instructions->getObject(
+                                    $object = $this->bot->instructions->getObject(
                                         $member->guild,
                                         $channel,
                                         $member
@@ -252,16 +250,16 @@ class DiscordUserQuestionnaire
 
                                     if (is_string($question)) {
                                         $message = MessageBuilder::new()->setContent(
-                                            $this->plan->instructions->replace(
+                                            $this->bot->instructions->replace(
                                                 array($question),
                                                 $object
                                             )[0]
                                         );
                                     } else {
                                         $message = $question->message_name !== null
-                                            ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                            ? $this->bot->persistentMessages->get($object, $question->message_name)
                                             : MessageBuilder::new()->setContent(
-                                                $this->plan->instructions->replace(
+                                                $this->bot->instructions->replace(
                                                     array($question->message_content),
                                                     $object
                                                 )[0]
@@ -277,15 +275,15 @@ class DiscordUserQuestionnaire
                             }
                         });
                     } else if ($query->create_channel_id !== null) {
-                        $channel = $this->plan->bot->discord->getChannel($query->create_channel_id);
+                        $channel = $this->bot->discord->getChannel($query->create_channel_id);
 
                         if ($channel !== null
-                            && $this->plan->utilities->allowText($channel)
+                            && $this->bot->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             $question = $this->getQuestion($insert);
 
                             if ($question !== true) {
-                                $object = $this->plan->instructions->getObject(
+                                $object = $this->bot->instructions->getObject(
                                     $member->guild,
                                     $channel,
                                     $member
@@ -293,16 +291,16 @@ class DiscordUserQuestionnaire
 
                                 if (is_string($question)) {
                                     $message = MessageBuilder::new()->setContent(
-                                        $this->plan->instructions->replace(
+                                        $this->bot->instructions->replace(
                                             array($question),
                                             $object
                                         )[0]
                                     );
                                 } else {
                                     $message = $question->message_name !== null
-                                        ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                        ? $this->bot->persistentMessages->get($object, $question->message_name)
                                         : MessageBuilder::new()->setContent(
-                                            $this->plan->instructions->replace(
+                                            $this->bot->instructions->replace(
                                                 array($question->message_content),
                                                 $object
                                             )[0]
@@ -368,7 +366,7 @@ class DiscordUserQuestionnaire
                     if ($query->deletion_date !== null) {
                         if ($query->created_thread_id !== null) {
                             $this->ignoreThreadDeletion++;
-                            $this->plan->utilities->deleteThread(
+                            $this->bot->utilities->deleteThread(
                                 $channel,
                                 $query->created_thread_id
                             );
@@ -391,7 +389,7 @@ class DiscordUserQuestionnaire
                         )) {
                             if ($query->created_thread_id !== null) {
                                 $this->ignoreThreadDeletion++;
-                                $this->plan->utilities->deleteThread(
+                                $this->bot->utilities->deleteThread(
                                     $channel,
                                     $query->created_thread_id
                                 );
@@ -406,14 +404,14 @@ class DiscordUserQuestionnaire
                                 "(1) Failed to close expired questionnaire with ID: " . $query->id
                             );
                         }
-                    } else if ($message->member->id != $this->plan->bot->botID) {
+                    } else if ($message->member->id != $this->bot->botID) {
                         $question = $this->getQuestion($query);
 
                         if ($question === true) {
                             $this->complete($message, $query, $object);
                         } else if (is_string($question)) {
                             $message->reply(MessageBuilder::new()->setContent(
-                                $this->plan->instructions->replace(
+                                $this->bot->instructions->replace(
                                     array($question),
                                     $object
                                 )[0]
@@ -438,13 +436,13 @@ class DiscordUserQuestionnaire
                             } else {
                                 if (is_string($question)) {
                                     $messageBuilder = MessageBuilder::new()->setContent(
-                                        $this->plan->instructions->replace(array($question), $object)[0]
+                                        $this->bot->instructions->replace(array($question), $object)[0]
                                     );
                                 } else {
                                     $messageBuilder = $question->message_name !== null
-                                        ? $this->plan->persistentMessages->get($object, $question->message_name)
+                                        ? $this->bot->persistentMessages->get($object, $question->message_name)
                                         : MessageBuilder::new()->setContent(
-                                            $this->plan->instructions->replace(
+                                            $this->bot->instructions->replace(
                                                 array($question->message_content),
                                                 $object
                                             )[0]
@@ -458,7 +456,7 @@ class DiscordUserQuestionnaire
                                 "Failed to insert questionnaire answer with ID: " . $query->id
                             );
                             $message->reply(MessageBuilder::new()->setContent(
-                                $this->plan->instructions->replace(
+                                $this->bot->instructions->replace(
                                     array($query->failure_message),
                                     $object
                                 )[0]
@@ -483,7 +481,7 @@ class DiscordUserQuestionnaire
                 "Failed to find questionnaire answers with ID: " . $query->id
             );
             $message->reply(MessageBuilder::new()->setContent(
-                $this->plan->instructions->replace(
+                $this->bot->instructions->replace(
                     array($query->failure_message),
                     $object
                 )[0]
@@ -492,7 +490,7 @@ class DiscordUserQuestionnaire
             $questionnaire = $this->questionnaires[$query->questionnaire_id];
 
             if ($questionnaire->prompt_message !== null) {
-                $promptMessage = $this->plan->instructions->replace(array($questionnaire->prompt_message), $object)[0];
+                $promptMessage = $this->bot->instructions->replace(array($questionnaire->prompt_message), $object)[0];
             } else {
                 $promptMessage = "...";
             }
@@ -505,7 +503,7 @@ class DiscordUserQuestionnaire
                 $messageBuilder = MessageBuilder::new();
 
                 foreach (array_chunk($answers, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                    $embed = new Embed($this->plan->bot->discord);
+                    $embed = new Embed($this->bot->discord);
 
                     foreach ($chunk as $answer) {
                         $count++;
@@ -528,18 +526,18 @@ class DiscordUserQuestionnaire
                 }
                 if ($questionnaire->finish_message !== null) {
                     $message->author->sendMessage(MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(
+                        $this->bot->instructions->replace(
                             array($questionnaire->finish_message),
                             $object
                         )[0]
                     ));
 
                     if ($questionnaire->outcome_channel_id !== null) {
-                        $channel = $this->plan->bot->discord->getChannel($questionnaire->outcome_channel_id);
+                        $channel = $this->bot->discord->getChannel($questionnaire->outcome_channel_id);
 
                         if ($channel !== null
                             && $channel->guild_id == $questionnaire->outcome_server_id
-                            && $this->plan->utilities->allowText($channel)) {
+                            && $this->bot->utilities->allowText($channel)) {
                             $channel->sendMessage($messageBuilder);
                         }
                     } else {
@@ -549,7 +547,7 @@ class DiscordUserQuestionnaire
                         );
                     }
                 } else if ($questionnaire->ai_model_id !== null) {
-                    $reply = $this->plan->aiMessages->rawTextAssistance(
+                    $reply = $this->bot->aiMessages->rawTextAssistance(
                         $questionnaire->ai_model_id,
                         $message,
                         null,
@@ -563,9 +561,9 @@ class DiscordUserQuestionnaire
                     );
 
                     if ($reply !== null) {
-                        $this->plan->utilities->sendMessageInPieces($message->member, $reply);
+                        $this->bot->utilities->sendMessageInPieces($message->member, $reply);
                     } else {
-                        $reply = $this->plan->instructions->replace(array($questionnaire->failure_message), $object)[0];
+                        $reply = $this->bot->instructions->replace(array($questionnaire->failure_message), $object)[0];
                         $message->author->sendMessage($reply);
                     }
 
@@ -582,11 +580,11 @@ class DiscordUserQuestionnaire
                         1
                     )) {
                         if ($questionnaire->outcome_channel_id !== null) {
-                            $channel = $this->plan->bot->discord->getChannel($questionnaire->outcome_channel_id);
+                            $channel = $this->bot->discord->getChannel($questionnaire->outcome_channel_id);
 
                             if ($channel !== null
                                 && $channel->guild_id == $questionnaire->outcome_server_id
-                                && $this->plan->utilities->allowText($channel)) {
+                                && $this->bot->utilities->allowText($channel)) {
                                 $channel->sendMessage($messageBuilder);
                             }
                         } else {
@@ -601,7 +599,7 @@ class DiscordUserQuestionnaire
                             "Failed to insert questionnaire completion with ID: " . $query->id
                         );
                         $message->author->sendMessage(MessageBuilder::new()->setContent(
-                            $this->plan->instructions->replace(
+                            $this->bot->instructions->replace(
                                 array($query->failure_message),
                                 $object
                             )[0]
@@ -651,14 +649,14 @@ class DiscordUserQuestionnaire
                             null,
                             1
                         )) {
-                        $channel = $this->plan->bot->discord->getChannel($query->channel_id);
+                        $channel = $this->bot->discord->getChannel($query->channel_id);
 
                         if ($channel !== null
-                            && $this->plan->utilities->allowText($channel)
+                            && $this->bot->utilities->allowText($channel)
                             && $channel->guild_id == $query->server_id) {
                             if ($query->created_thread_id !== null) {
                                 $this->ignoreThreadDeletion++;
-                                $this->plan->utilities->deleteThread(
+                                $this->bot->utilities->deleteThread(
                                     $channel,
                                     $query->created_thread_id,
                                     empty($reason) ? null : $userID . ": " . $reason
@@ -733,7 +731,7 @@ class DiscordUserQuestionnaire
                         if ($delete) {
                             if ($query->created_thread_id !== null) {
                                 $this->ignoreThreadDeletion++;
-                                $this->plan->utilities->deleteThread(
+                                $this->bot->utilities->deleteThread(
                                     $channel,
                                     $query->created_thread_id,
                                     empty($reason) ? null : $userID . ": " . $reason
@@ -792,14 +790,14 @@ class DiscordUserQuestionnaire
                 null,
                 1
             )) {
-                $channel = $this->plan->bot->discord->getChannel($query->channel_id);
+                $channel = $this->bot->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
-                    && $this->plan->utilities->allowText($channel)
+                    && $this->bot->utilities->allowText($channel)
                     && $channel->guild_id == $query->server_id) {
                     if ($query->created_thread_id !== null) {
                         $this->ignoreThreadDeletion++;
-                        $this->plan->utilities->deleteThread(
+                        $this->bot->utilities->deleteThread(
                             $channel,
                             $query->created_thread_id
                         );
@@ -894,8 +892,8 @@ class DiscordUserQuestionnaire
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing questionnaire with ID **" . $questionnaire->questionnaire_creation_id . "**");
 
-        $embed = new Embed($this->plan->bot->discord);
-        $user = $this->plan->utilities->getUser($questionnaire->user_id);
+        $embed = new Embed($this->bot->discord);
+        $user = $this->bot->utilities->getUser($questionnaire->user_id);
 
         if ($user !== null) {
             $embed->setAuthor($user->id, $user->avatar);
@@ -919,7 +917,7 @@ class DiscordUserQuestionnaire
             $answers = $questionnaire->answers;
 
             foreach (array_chunk($answers, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                $embed = new Embed($this->plan->bot->discord);
+                $embed = new Embed($this->bot->discord);
 
                 foreach ($chunk as $answer) {
                     $count++;
@@ -942,10 +940,10 @@ class DiscordUserQuestionnaire
         $this->checkExpired();
         $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing last **" . sizeof($questionnaires) . " questionnaires** of user **" . $this->plan->utilities->getUsername($userID) . "**");
+        $messageBuilder->setContent("Showing last **" . sizeof($questionnaires) . " questionnaires** of user **" . $this->bot->utilities->getUsername($userID) . "**");
 
         foreach ($questionnaires as $questionnaire) {
-            $embed = new Embed($this->plan->bot->discord);
+            $embed = new Embed($this->bot->discord);
 
             if (!empty($questionnaire->questionnaire->title)) {
                 $embed->setTitle($questionnaire->questionnaire->title);
@@ -1090,7 +1088,6 @@ class DiscordUserQuestionnaire
             BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("completion_date", null),
                 array("expired", null),
@@ -1116,14 +1113,14 @@ class DiscordUserQuestionnaire
                     null,
                     1
                 )) {
-                    $channel = $this->plan->bot->discord->getChannel($row->channel_id);
+                    $channel = $this->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $this->plan->utilities->allowText($channel)
+                        && $this->bot->utilities->allowText($channel)
                         && $channel->guild_id == $row->server_id) {
                         if ($row->created_thread_id !== null) {
                             $this->ignoreThreadDeletion++;
-                            $this->plan->utilities->deleteThread(
+                            $this->bot->utilities->deleteThread(
                                 $channel,
                                 $row->created_thread_id
                             );

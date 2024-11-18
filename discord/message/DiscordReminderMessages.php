@@ -8,17 +8,16 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordReminderMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $query = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_REMINDERS,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -29,10 +28,10 @@ class DiscordReminderMessages
         if (!empty($query)) {
             foreach ($query as $row) {
                 if ($row->thread_id === null) {
-                    $channel = $this->plan->bot->discord->getChannel($row->channel_id);
+                    $channel = $this->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
-                        && $this->plan->utilities->allowText($channel)
+                        && $this->bot->utilities->allowText($channel)
                         && $channel->guild_id == $row->server_id) {
                         $this->execute($channel, $row);
                     } else if (!empty($channel->threads->first())) {
@@ -93,18 +92,18 @@ class DiscordReminderMessages
                     );
                 }
             } else {
-                $object = $this->plan->instructions->getObject(
+                $object = $this->bot->instructions->getObject(
                     $channel->guild,
                     $channel
                 );
                 $messageBuilder = $row->message_name !== null
-                    ? $this->plan->persistentMessages->get($object, $row->message_name)
+                    ? $this->bot->persistentMessages->get($object, $row->message_name)
                     : MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($row->message_content), $object)[0]
+                        $this->bot->instructions->replace(array($row->message_content), $object)[0]
                     );
 
                 if ($messageBuilder !== null) {
-                    $messageBuilder = $this->plan->listener->callReminderMessageImplementation(
+                    $messageBuilder = $this->bot->listener->callReminderMessageImplementation(
                         $row->listener_class,
                         $row->listener_method,
                         $channel,

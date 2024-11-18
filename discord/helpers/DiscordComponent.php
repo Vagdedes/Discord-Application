@@ -15,12 +15,12 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordComponent
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $reactions;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->reactions = array();
     }
 
@@ -64,7 +64,7 @@ class DiscordComponent
             );
 
             if (!empty($subQuery)) {
-                $object = $this->plan->instructions->getObject(
+                $object = $this->bot->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
                     $interaction->user,
@@ -73,18 +73,18 @@ class DiscordComponent
 
                 foreach ($subQuery as $arrayKey => $textInput) {
                     $input = TextInput::new(
-                        $this->plan->instructions->replace(array($textInput->title), $object)[0],
+                        $this->bot->instructions->replace(array($textInput->title), $object)[0],
                         $textInput->allow_lines !== null ? TextInput::STYLE_PARAGRAPH : TextInput::STYLE_SHORT,
                         $textInput->custom_id
                     )->setRequired(
                         $textInput->required !== null
                     )->setPlaceholder(
-                        $this->plan->instructions->replace(array($textInput->placeholder), $object)[0]
+                        $this->bot->instructions->replace(array($textInput->placeholder), $object)[0]
                     );
 
                     if ($textInput->default_value) {
                         $input->setValue(
-                            $this->plan->instructions->replace(array($textInput->default_value), $object)[0]
+                            $this->bot->instructions->replace(array($textInput->default_value), $object)[0]
                         );
                     }
                     if ($textInput->min_length !== null) {
@@ -93,7 +93,7 @@ class DiscordComponent
                     if ($textInput->max_length !== null) {
                         $input->setMaxLength($textInput->max_length);
                     }
-                    $input = $this->plan->listener->callModalCreation(
+                    $input = $this->bot->listener->callModalCreation(
                         $interaction,
                         $input,
                         $arrayKey,
@@ -111,15 +111,15 @@ class DiscordComponent
                 if ($customListener === null) {
                     $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
                         if ($query->response !== null) {
-                            $embed = new Embed($this->plan->bot->discord);
-                            $embed->setDescription($this->plan->instructions->replace(array($query->response), $object)[0]);
-                            $this->plan->utilities->acknowledgeMessage(
+                            $embed = new Embed($this->bot->discord);
+                            $embed->setDescription($this->bot->instructions->replace(array($query->response), $object)[0]);
+                            $this->bot->utilities->acknowledgeMessage(
                                 $interaction,
                                 MessageBuilder::new()->addEmbed($embed),
                                 $query->ephemeral !== null
                             );
                         } else {
-                            $this->plan->listener->callModalImplementation(
+                            $this->bot->listener->callModalImplementation(
                                 $interaction,
                                 $query->implement_listener_class,
                                 $query->implement_listener_method,
@@ -204,18 +204,17 @@ class DiscordComponent
 
     public function handleReaction(MessageReaction $reaction): void
     {
-        if ($reaction->member->id != $this->plan->bot->botID) {
+        if ($reaction->member->id != $this->bot->botID) {
             $reactionObjects = $this->reactions[$reaction->message_id] ?? null;
 
             if (!empty($reactionObjects)) {
                 $reactionObject = $reactionObjects[$reaction->emoji->name] ?? null;
 
                 if ($reactionObject !== null) {
-                    $this->plan->listener->callReactionCreation(
+                    $this->bot->listener->callReactionCreation(
                         $reaction,
                         $reactionObject->listener_class,
-                        $reactionObject->listener_method,
-                        $reactionObject->controlled_message_id
+                        $reactionObject->listener_method
                     );
                 }
             }
@@ -333,11 +332,11 @@ class DiscordComponent
                             $button->setListener(function (Interaction $interaction)
                             use ($actionRow, $button, $buttonObject, $messageBuilder) {
                                 $this->extract($interaction, $messageBuilder, $buttonObject, $button);
-                            }, $this->plan->bot->discord);
+                            }, $this->bot->discord);
                         }
                     }
                     if ($listener) {
-                        $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                        $messageBuilder = $this->bot->listener->callMessageBuilderCreation(
                             $interaction,
                             $messageBuilder,
                             $buttonObject->creation_listener_class,
@@ -361,7 +360,7 @@ class DiscordComponent
             if ($listener !== null && !$button->isDisabled()) {
                 $button->setListener(function (Interaction $interaction) use ($listener, $actionRow, $button) {
                     $listener($interaction, $button);
-                }, $this->plan->bot->discord);
+                }, $this->bot->discord);
             }
         }
         return $actionRow;
@@ -436,7 +435,7 @@ class DiscordComponent
                 $messageBuilder->addComponent($select);
                 
                 if ($listener) {
-                    $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+                    $messageBuilder = $this->bot->listener->callMessageBuilderCreation(
                         $interaction,
                         $messageBuilder,
                         $query->creation_listener_class,
@@ -447,7 +446,7 @@ class DiscordComponent
                     $select->setListener(function (Interaction $interaction, Collection $options)
                     use ($query, $select, $messageBuilder) {
                         $this->extract($interaction, $messageBuilder, $query, $options);
-                    }, $this->plan->bot->discord);
+                    }, $this->bot->discord);
                 }
             } else {
                 global $logger;
@@ -483,7 +482,7 @@ class DiscordComponent
         if ($listener !== null && !$select->isDisabled()) {
             $select->setListener(function (Interaction $interaction, Collection $options) use ($listener, $select) {
                 $listener($interaction, $options);
-            }, $this->plan->bot->discord);
+            }, $this->bot->discord);
         }
         return $select;
     }
@@ -495,23 +494,23 @@ class DiscordComponent
                              object         $databaseObject, mixed $objects = null): void
     {
         if ($databaseObject->response !== null) {
-            $embed = new Embed($this->plan->bot->discord);
+            $embed = new Embed($this->bot->discord);
             $embed->setDescription(
-                $this->plan->instructions->replace(array($databaseObject->response),
-                    $this->plan->instructions->getObject(
+                $this->bot->instructions->replace(array($databaseObject->response),
+                    $this->bot->instructions->getObject(
                         $interaction->guild,
                         $interaction->channel,
                         $interaction->user,
                         $interaction->message,
                     ))[0]
             );
-            $this->plan->utilities->acknowledgeMessage(
+            $this->bot->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->addEmbed($embed),
                 $databaseObject->ephemeral !== null
             );
         } else {
-            $this->plan->listener->callMessageImplementation(
+            $this->bot->listener->callMessageImplementation(
                 $interaction,
                 $messageBuilder,
                 $databaseObject->implement_listener_class,

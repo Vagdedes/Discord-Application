@@ -1,7 +1,6 @@
 <?php
 
 use Discord\Builders\MessageBuilder;
-use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
@@ -11,23 +10,15 @@ use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
 use React\EventLoop\Loop;
-use React\Promise\Deferred;
 
 class DiscordUtilities
 {
 
     private DiscordBot $bot;
-    private ?DiscordPlan $plan;
 
-    public function __construct(DiscordBot|DiscordPlan $object)
+    public function __construct(DiscordBot $bot)
     {
-        if ($object instanceof DiscordPlan) {
-            $this->bot = $object->bot;
-            $this->plan = $object;
-        } else {
-            $this->bot = $object;
-            $this->plan = null;
-        }
+        $this->bot = $bot;
     }
 
     public function allowText(Channel|Thread $channel): bool
@@ -263,17 +254,17 @@ class DiscordUtilities
     {
         $hasContent = !empty($row->message_content);
         $messageBuilder = MessageBuilder::new()->setContent(
-            $this->plan->instructions->replace(array($hasContent ? $row->message_content : ""), $object)[0]
+            $this->bot->instructions->replace(array($hasContent ? $row->message_content : ""), $object)[0]
         );
         $embed = new Embed($this->bot->discord);
         $addEmbed = false;
 
         if (!empty($row->embed_title)) {
-            $embed->setTitle($this->plan->instructions->replace(array($row->embed_title), $object)[0]);
+            $embed->setTitle($this->bot->instructions->replace(array($row->embed_title), $object)[0]);
             $addEmbed = true;
         }
         if (!empty($row->embed_description)) {
-            $embed->setDescription($this->plan->instructions->replace(array($row->embed_description), $object)[0]);
+            $embed->setDescription($this->bot->instructions->replace(array($row->embed_description), $object)[0]);
             $addEmbed = true;
         }
         if (!empty($row->embed_url)) {
@@ -293,12 +284,12 @@ class DiscordUtilities
             $addEmbed = true;
         }
         if (!empty($row->embed_footer)) {
-            $embed->setFooter($this->plan->instructions->replace(array($row->embed_footer), $object)[0]);
+            $embed->setFooter($this->bot->instructions->replace(array($row->embed_footer), $object)[0]);
             $addEmbed = true;
         }
         if (!empty($row->embed_author_name)) {
             $embed->setAuthor(
-                $this->plan->instructions->replace(array($row->embed_author_name), $object)[0],
+                $this->bot->instructions->replace(array($row->embed_author_name), $object)[0],
                 $row->embed_author_icon_url,
                 $row->embed_author_url,
             );

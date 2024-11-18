@@ -9,19 +9,18 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordObjectiveChannels
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $channels, $messages;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->messages = array();
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -52,12 +51,12 @@ class DiscordObjectiveChannels
 
     public function trackCreation(Message $message): bool
     {
-        if (!empty($this->channels) && $message->author->id != $this->plan->bot->botID) {
+        if (!empty($this->channels) && $message->author->id != $this->bot->botID) {
             foreach ($this->channels as $channel) {
                 if ($channel->start_server_id === $message->guild_id
                     && $channel->start_channel_id == $message->channel_id
                     && ($channel->thread_id === null || $channel->thread_id == $message->thread->id)) {
-                    $channelObj = $this->plan->bot->utilities->getChannelOrThread($message->channel);
+                    $channelObj = $this->bot->utilities->getChannelOrThread($message->channel);
 
                     if (sql_insert(
                         BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
@@ -73,7 +72,7 @@ class DiscordObjectiveChannels
                             "creation_date" => get_current_date()
                         ))) {
                         // Only these because more cannot be held by just a deleted message object
-                        $this->messages[$this->plan->utilities->hash(
+                        $this->messages[$this->bot->utilities->hash(
                             $message->guild_id,
                             $message->channel_id,
                             $message->id)] = array($channel, $message);
@@ -90,7 +89,7 @@ class DiscordObjectiveChannels
 
     public function trackModification(Message $message): void
     {
-        $hash = $this->plan->utilities->hash(
+        $hash = $this->bot->utilities->hash(
             $message->guild_id,
             $message->channel_id,
             $message->id
@@ -139,7 +138,7 @@ class DiscordObjectiveChannels
 
     public function trackDeletion(object $message): void
     {
-        $hash = $this->plan->utilities->hash(
+        $hash = $this->bot->utilities->hash(
             $message->guild_id,
             $message->channel_id,
             $message->id
@@ -158,7 +157,7 @@ class DiscordObjectiveChannels
                 $message = $data[1];
                 $date = get_current_date();
                 $messageBuilder = MessageBuilder::new();
-                $embed = new Embed($this->plan->bot->discord);
+                $embed = new Embed($this->bot->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);
                 $embed->setDescription(
                     DiscordSyntax::HEAVY_CODE_BLOCK . $message->content . DiscordSyntax::HEAVY_CODE_BLOCK
@@ -167,7 +166,7 @@ class DiscordObjectiveChannels
 
                 $channel->sendMessage($messageBuilder)->done(function (Message $endMessage)
                 use ($message, $date) {
-                    $channelObj = $this->plan->bot->utilities->getChannelOrThread($endMessage->channel);
+                    $channelObj = $this->bot->utilities->getChannelOrThread($endMessage->channel);
 
                     if (!set_sql_query(
                         BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
@@ -235,7 +234,7 @@ class DiscordObjectiveChannels
                 "deny" => 0
             );
         }
-        $this->plan->utilities->createChannel(
+        $this->bot->utilities->createChannel(
             $creation ? $channel->start_server_id : $channel->end_server_id,
             Channel::TYPE_TEXT,
             $creation ? $channel->start_category_id : $channel->end_category_id,
@@ -294,14 +293,14 @@ class DiscordObjectiveChannels
         $hasThread = $creation ? ($channel->start_thread_id !== null) : ($channel->end_thread_id !== null);
 
         if ($creation ? ($channel->start_channel_id !== null) : ($channel->end_channel_id !== null)) {
-            $channelObj = $this->plan->bot->discord->getChannel(
+            $channelObj = $this->bot->discord->getChannel(
                 $creation
                     ? $channel->start_channel_id
                     : $channel->end_channel_id
             );
 
             if ($channelObj !== null
-                && $this->plan->utilities->allowText($channelObj)) {
+                && $this->bot->utilities->allowText($channelObj)) {
                 if ($hasThread) {
                     if (!empty($channelObj->threads->first())) {
                         foreach ($channelObj->threads as $thread) {
@@ -313,7 +312,7 @@ class DiscordObjectiveChannels
                                     'limit' => 100,
                                 ])->done(function (Collection $messages) use ($channel, $channelObj) {
                                     foreach ($messages as $message) {
-                                        $this->messages[$this->plan->utilities->hash(
+                                        $this->messages[$this->bot->utilities->hash(
                                             $channelObj->guild_id,
                                             $channelObj->id,
                                             $message->id)] = array($channel, $message);
@@ -332,7 +331,7 @@ class DiscordObjectiveChannels
                         ]
                     )->done(function (Collection $messages) use ($channel, $channelObj) {
                         foreach ($messages as $message) {
-                            $this->messages[$this->plan->utilities->hash(
+                            $this->messages[$this->bot->utilities->hash(
                                 $channelObj->guild_id,
                                 $channelObj->id,
                                 $message->id)] = array($channel, $message);

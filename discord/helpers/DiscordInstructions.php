@@ -10,15 +10,15 @@ use Discord\Parts\User\User;
 class DiscordInstructions
 {
 
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     public mixed $manager;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
         $account = new Account();
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->manager = $account->getInstructions();
-        $this->manager->setAI($plan->aiMessages->getManagerAI());
+        $this->manager->setAI($bot->aiMessages->getManagerAI());
     }
 
     public function replace(array   $messages,
@@ -43,7 +43,7 @@ class DiscordInstructions
                         );
                     },
                     "botReplies" => function () use ($object) {
-                        return $this->plan->aiMessages->getReplies(
+                        return $this->bot->aiMessages->getReplies(
                             $object->serverID,
                             $object->channelID,
                             $object->threadID,
@@ -53,7 +53,7 @@ class DiscordInstructions
                         );
                     },
                     "botMessages" => function () use ($object) {
-                        return $this->plan->aiMessages->getMessages(
+                        return $this->bot->aiMessages->getMessages(
                             $object->serverID,
                             $object->channelID,
                             $object->threadID,
@@ -63,7 +63,7 @@ class DiscordInstructions
                         );
                     },
                     "allMessages" => function () use ($object) {
-                        return $this->plan->aiMessages->getConversation(
+                        return $this->bot->aiMessages->getConversation(
                             $object->serverID,
                             $object->channelID,
                             $object->threadID,
@@ -74,7 +74,7 @@ class DiscordInstructions
                     },
                     "threadMessages" => function () use ($object) {
                         if ($object->channelID !== null) {
-                            $channel = $this->plan->bot->discord->getChannel($object->channelID);
+                            $channel = $this->bot->bot->discord->getChannel($object->channelID);
 
                             if ($channel !== null) {
                                 return DiscordChannels::getAsyncThreadHistory(
@@ -149,8 +149,8 @@ class DiscordInstructions
         $object->displayName = $user?->displayname;
         $object->messageContent = $message?->content;
         $object->messageID = $message?->id;
-        $object->botID = $this->plan->bot->botID;
-        $object->botName = $this->plan->bot->discord->user->id;
+        $object->botID = $this->bot->botID;
+        $object->botName = $this->bot->discord->user->id;
         $object->domain = get_domain();
         $object->date = get_current_date();
         $object->year = date("Y");
@@ -159,17 +159,10 @@ class DiscordInstructions
         $object->minute = date("i");
         $object->second = date("s");
         $object->channel = $channel === null || $user === null ? null
-            : $this->plan->bot->channels->getIfHasAccess($this->plan, $channel, $user);
+            : $this->bot->channels->getIfHasAccess($channel, $user);
 
         $object->placeholderArray = array();
         $object->newLine = DiscordProperties::NEW_LINE;
-
-        $object->planName = $this->plan->name;
-        $object->planDescription = $this->plan->description;
-        $object->planCreationDate = $this->plan->creationDate;
-        $object->planCreationReason = $this->plan->creationReason;
-        $object->planExpirationDate = $this->plan->expirationDate;
-        $object->planExpirationReason = $this->plan->expirationReason;
         return $object;
     }
 }

@@ -7,15 +7,15 @@ use Discord\Parts\User\Member;
 
 class DiscordStatusMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
     public const
         WELCOME = 1,
         GOODBYE = 2;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
     }
 
     public function run(Member $member, int $type): void
@@ -24,7 +24,7 @@ class DiscordStatusMessages
         $userID = $member->id;
 
         if (!$this->hasCooldown($member, $type)) {
-            $list = $this->plan->bot->channels->getList($this->plan);
+            $list = $this->bot->channels->getList();
 
             if (!empty($list)) {
                 $messageColumn = $type === self::WELCOME ? "welcome_message" : "goodbye_message";
@@ -33,7 +33,7 @@ class DiscordStatusMessages
                     if ($channel->server_id == $serverID
                         && $channel->{$messageColumn} !== null) {
                         if ($channel->whitelist === null) {
-                            $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+                            $channelFound = $this->bot->discord->getChannel($channel->channel_id);
 
                             if ($channel->thread_id !== null) {
                                 if (!empty($channelFound->threads->first())) {
@@ -47,12 +47,12 @@ class DiscordStatusMessages
                             }
 
                             if ($channelFound !== null
-                                && $this->plan->utilities->allowText($channelFound)
+                                && $this->bot->utilities->allowText($channelFound)
                                 && $channelFound->guild_id == $serverID) {
                                 $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                             }
                         } else {
-                            $whitelist = $this->plan->bot->channels->getWhitelist($this->plan);
+                            $whitelist = $this->bot->channels->getWhitelist();
 
                             if (!empty($whitelist)) {
                                 foreach ($whitelist as $whitelisted) {
@@ -61,7 +61,7 @@ class DiscordStatusMessages
                                             || $whitelisted->server_id == $serverID
                                             && ($whitelisted->channel_id === null || $whitelisted->channel_id == $channel->channel_id)
                                             && ($whitelisted->thread_id === null || $whitelisted->thread_id == $channel->thread_id))) {
-                                        $channelFound = $this->plan->bot->discord->getChannel($channel->channel_id);
+                                        $channelFound = $this->bot->discord->getChannel($channel->channel_id);
 
                                         if ($channel->thread_id !== null) {
                                             if (!empty($channelFound->threads->first())) {
@@ -75,7 +75,7 @@ class DiscordStatusMessages
                                         }
 
                                         if ($channelFound !== null
-                                            && $this->plan->utilities->allowText($channelFound)
+                                            && $this->bot->utilities->allowText($channelFound)
                                             && $channelFound->guild_id == $serverID) {
                                             $this->process($channelFound, $member, $channel, $channel->{$messageColumn}, $type);
                                         }
@@ -96,14 +96,14 @@ class DiscordStatusMessages
                              int            $case): void
     {
         $channelFound->sendMessage(
-            $this->plan->listener->callStatusMessageImplementation(
+            $this->bot->listener->callStatusMessageImplementation(
                 $channel->listener_class,
                 $channel->listener_method,
                 $channelFound,
                 $member,
                 MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($message),
-                        $this->plan->instructions->getObject(
+                    $this->bot->instructions->replace(array($message),
+                        $this->bot->instructions->getObject(
                             $member->guild,
                             $channelFound,
                             $member,
@@ -121,7 +121,7 @@ class DiscordStatusMessages
         return has_memory_cooldown(
             array(
                 self::class,
-                $this->plan->planID,
+                $this->bot->botID,
                 $member->guild_id,
                 $member->id,
                 $case

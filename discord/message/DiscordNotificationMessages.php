@@ -7,20 +7,19 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordNotificationMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $notifications;
 
     private const AI_HASH = 634512434;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->notifications = get_sql_query(
             BotDatabaseTable::BOT_MESSAGE_NOTIFICATIONS,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -114,7 +113,7 @@ class DiscordNotificationMessages
                 if ($notification->is_thread === null
                     && $notification->server_id == $message->guild_id) {
                     $original = $message->channel;
-                    $channel = $this->plan->utilities->getChannelOrThread($original);
+                    $channel = $this->bot->utilities->getChannelOrThread($original);
 
                     if (($notification->category_id === null || $notification->category_id == $channel->parent_id)
                         && ($notification->channel_id === null || $notification->channel_id == $channel->id)
@@ -158,10 +157,10 @@ class DiscordNotificationMessages
                 if ($role->has_role !== null) {
                     $dealtHas = true;
 
-                    if ($this->plan->bot->permissions->hasRole($user, $role->role_id)) {
+                    if ($this->bot->permissions->hasRole($user, $role->role_id)) {
                         $has = true;
                     }
-                } else if ($this->plan->bot->permissions->hasRole($user, $role->role_id)) {
+                } else if ($this->bot->permissions->hasRole($user, $role->role_id)) {
                     return false;
                 }
             }
@@ -175,14 +174,14 @@ class DiscordNotificationMessages
         $original = $isThread ? $originalMessage : $originalMessage->channel;
         $callable = function (Message $originalMessage, ?Thread $thread = null)
         use ($notification, $isThread, $original, $user, $date, $lockThread, $deleteMessage) {
-            $object = $this->plan->instructions->getObject(
+            $object = $this->bot->instructions->getObject(
                 $originalMessage->guild,
                 $original,
                 $user,
                 $originalMessage
             );
             if ($notification->ai_model_id !== null) {
-                $notificationMessage = $this->plan->aiMessages->rawTextAssistance(
+                $notificationMessage = $this->bot->aiMessages->rawTextAssistance(
                     $notification->ai_model_id,
                     $originalMessage,
                     null,
@@ -200,24 +199,24 @@ class DiscordNotificationMessages
                     $logger->logError(
                         "Failed to get AI message for message notification with ID: " . $notification->id
                     );
-                    $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
+                    $notificationMessage = $this->bot->instructions->replace(array($notification->notification), $object)[0];
                 }
-                $notificationMessage = $this->plan->persistentMessages->get($object, $notification->message_name)
+                $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name)
                     ->setContent($notificationMessage);
             } else if ($notification->message_name !== null) {
-                $notificationMessage = $this->plan->persistentMessages->get($object, $notification->message_name);
+                $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name);
 
                 if ($notification->notification !== null) {
                     $notificationMessage->setContent(
-                        $this->plan->instructions->replace(array($notification->notification), $object)[0]
+                        $this->bot->instructions->replace(array($notification->notification), $object)[0]
                     );
                 }
             } else {
                 $notificationMessage = MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($notification->notification), $object)[0]
+                    $this->bot->instructions->replace(array($notification->notification), $object)[0]
                 );
             }
-            $builder = $this->plan->listener->callNotificationMessageImplementation(
+            $builder = $this->bot->listener->callNotificationMessageImplementation(
                 $notificationMessage,
                 $notification->listener_class,
                 $notification->listener_method,
@@ -230,7 +229,7 @@ class DiscordNotificationMessages
                     $original, $thread, $notification, $isThread,
                     $originalMessage, $date, $user, $lockThread, $deleteMessage
                 ) {
-                    $channel = $isThread ? $thread->parent : $this->plan->utilities->getChannelOrThread($original);
+                    $channel = $isThread ? $thread->parent : $this->bot->utilities->getChannelOrThread($original);
 
                     if ($isThread) {
                         if ($lockThread) {
@@ -242,7 +241,7 @@ class DiscordNotificationMessages
                         $originalMessage->delete();
                     }
                     if ($notification->feedback !== null) {
-                        $this->plan->component->addReactions($message, DiscordAIMessages::REACTION_COMPONENT_NAME);
+                        $this->bot->component->addReactions($message, DiscordAIMessages::REACTION_COMPONENT_NAME);
                     }
                     if (!sql_insert(
                         BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,

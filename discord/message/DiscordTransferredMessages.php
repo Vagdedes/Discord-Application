@@ -1,14 +1,9 @@
 <?php
 
-namespace message;
-
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Thread\Thread;
-use DiscordBot;
-use DiscordInviteTracker;
-use DiscordSyntax;
 
 class DiscordTransferredMessages
 {

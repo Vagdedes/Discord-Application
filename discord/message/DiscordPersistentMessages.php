@@ -13,21 +13,17 @@ use Discord\Parts\Thread\Thread;
 
 class DiscordPersistentMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $messages;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $query = get_sql_query(
             BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
             null,
             array(
                 array("deletion_date", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $this->plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -77,14 +73,14 @@ class DiscordPersistentMessages
     public function create(Interaction $interaction,
                            string      $message, array $components, bool $ephemeral): bool
     {
-        $object = $this->plan->instructions->getObject(
+        $object = $this->bot->instructions->getObject(
             $interaction->guild,
             $interaction->channel,
             $interaction->user,
             $interaction->message,
         );
         $messageBuilder = MessageBuilder::new()->setContent(
-            $this->plan->instructions->replace(array($message), $object)[0]
+            $this->bot->instructions->replace(array($message), $object)[0]
         );
 
         foreach ($components as $component) {
@@ -93,7 +89,7 @@ class DiscordPersistentMessages
 
                 if ($placeholder !== null) {
                     $component->setPlaceholder(
-                        $this->plan->instructions->replace(array($placeholder), $object)[0]
+                        $this->bot->instructions->replace(array($placeholder), $object)[0]
                     );
                     $options = $component->getOptions();
 
@@ -111,7 +107,7 @@ class DiscordPersistentMessages
 
                         if ($description !== null) {
                             $option->setDescription(
-                                $this->plan->instructions->replace(array($description), $object)[0]
+                                $this->bot->instructions->replace(array($description), $object)[0]
                             );
                         }
                         $options[$arrayKey] = $option;
@@ -127,7 +123,7 @@ class DiscordPersistentMessages
 
                         if ($label !== null) {
                             $subComponent->setLabel(
-                                $this->plan->instructions->replace(array($label), $object)[0]
+                                $this->bot->instructions->replace(array($label), $object)[0]
                             );
                         }
                     }
@@ -136,16 +132,16 @@ class DiscordPersistentMessages
             $messageBuilder->addComponent($component);
         }
 
-        $this->plan->utilities->acknowledgeMessage($interaction, $messageBuilder, $ephemeral);
+        $this->bot->utilities->acknowledgeMessage($interaction, $messageBuilder, $ephemeral);
         return true;
     }
 
     private function build(?object $interaction, object $messageRow): MessageBuilder
     {
-        $messageBuilder = $this->plan->utilities->buildMessageFromObject(
+        $messageBuilder = $this->bot->utilities->buildMessageFromObject(
             $messageRow,
             $interaction instanceof Interaction ?
-                $this->plan->instructions->getObject(
+                $this->bot->instructions->getObject(
                     $interaction->guild,
                     $interaction->channel,
                     $interaction->member,
@@ -156,30 +152,30 @@ class DiscordPersistentMessages
         if ($messageBuilder === null) {
             $messageBuilder = MessageBuilder::new();
         }
-        $messageBuilder = $this->plan->component->addButtons(
+        $messageBuilder = $this->bot->component->addButtons(
             $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->id,
             $messageRow->listener_recursion !== null
         );
-        $messageBuilder = $this->plan->component->addSelection(
+        $messageBuilder = $this->bot->component->addSelection(
             $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->id,
             $messageRow->listener_recursion !== null
         );
-        $messageBuilder = $this->plan->listener->callMessageBuilderCreation(
+        $messageBuilder = $this->bot->listener->callMessageBuilderCreation(
             $interaction instanceof Interaction ? $interaction : null,
             $messageBuilder,
             $messageRow->listener_class,
             $messageRow->listener_method
         );
-        return $this->plan->interactionRoles->process($messageBuilder, $messageRow->id);
+        return $this->bot->interactionRoles->process($messageBuilder, $messageRow->id);
     }
 
     private function processDiscord(): void
     {
-        $discord = $this->plan->bot->discord;
+        $discord = $this->bot->discord;
 
         if (!empty($discord->guilds->first())) {
             foreach ($discord->guilds as $guild) {
@@ -202,13 +198,13 @@ class DiscordPersistentMessages
     private function processDiscordChannel(Channel|Thread $channel): void
     {
         $dbMessages = $this->messages;
-        $botID = $this->plan->bot->botID;
-        $plan = $this->plan;
+        $botID = $this->bot->botID;
+        $bot = $this->bot;
 
         $channel->getMessageHistory([
             'limit' => 100,
             'cache' => true
-        ])->done(function (Collection $messages) use ($dbMessages, $botID, $plan) {
+        ])->done(function (Collection $messages) use ($dbMessages, $botID, $bot) {
             foreach ($messages as $message) {
                 if ($message->author->id != $botID) {
                     continue;
@@ -240,8 +236,8 @@ class DiscordPersistentMessages
                             && $dbMessage->embed_author_name == $embed->author?->name
                             && $dbMessage->embed_timestamp == $embed->timestamp) {
                             $message->edit($this->build(null, $dbMessage)->setContent($message->content))->done(
-                                function (Message $message) use ($dbMessage, $plan) {
-                                    $plan->instructions->manager->addExtra(
+                                function (Message $message) use ($dbMessage, $bot) {
+                                    $bot->instructions->manager->addExtra(
                                         "interactive-message-" . $message->id,
                                         $message->getRawAttributes()
                                     );
@@ -263,7 +259,7 @@ class DiscordPersistentMessages
             if ($messageRow->server_id !== null
                 && $messageRow->channel_id !== null) {
                 global $logger;
-                $channel = $this->plan->bot->discord->getChannel($messageRow->channel_id);
+                $channel = $this->bot->discord->getChannel($messageRow->channel_id);
 
                 if ($channel !== null
                     && $channel->guild_id == $messageRow->server_id) {
@@ -278,7 +274,7 @@ class DiscordPersistentMessages
                                 }
                             }
                         }
-                    } else if ($this->plan->utilities->allowText($channel)) {
+                    } else if ($this->bot->utilities->allowText($channel)) {
                         $finalChannel = $channel;
                     } else {
                         $finalChannel = null;
@@ -323,7 +319,7 @@ class DiscordPersistentMessages
     {
         $channel->sendMessage($this->build(null, $messageRow))->done(
             function (Message $message) use ($messageRow, $oldMessageRow, $array, $position) {
-                $this->plan->component->addReactions($message, $messageRow->id);
+                $this->bot->component->addReactions($message, $messageRow->id);
                 $messageRow->message_id = $message->id;
                 set_sql_query(
                     BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
@@ -336,7 +332,7 @@ class DiscordPersistentMessages
                     null,
                     1
                 );
-                $this->plan->instructions->manager->addExtra(
+                $this->bot->instructions->manager->addExtra(
                     "interactive-message-" . $message->id,
                     $message->getRawAttributes()
                 );
@@ -353,15 +349,15 @@ class DiscordPersistentMessages
         try {
             $channel->messages->fetch($oldMessageRow->message_id, true)->done(
                 function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
-                    $this->plan->component->addReactions($message, $messageRow->id);
-                    if ($message->user_id == $this->plan->bot->botID) {
+                    $this->bot->component->addReactions($message, $messageRow->id);
+                    if ($message->user_id == $this->bot->botID) {
                         if ($custom) {
                             $messageRow->message_id = $message->id;
                         }
-                        $plan = $this->plan;
+                        $bot = $this->bot;
                         $message->edit($this->build(null, $messageRow))->done(
-                            function (Message $message) use ($plan) {
-                                $plan->instructions->manager->addExtra(
+                            function (Message $message) use ($bot) {
+                                $bot->instructions->manager->addExtra(
                                     "interactive-message-" . $message->id,
                                     $message->getRawAttributes()
                                 );

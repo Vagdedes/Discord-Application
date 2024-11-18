@@ -8,7 +8,7 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordUserGiveaways
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
     private const
         MANAGE_PERMISSION = "idealistic.user.giveaway.manage",
@@ -17,9 +17,9 @@ class DiscordUserGiveaways
         NOT_OWNED = "You do not own this user giveaway.",
         NOT_RUNNING = "This user giveaway is not currently running.";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->checkExpired();
         $this->keepAlive();
     }
@@ -157,11 +157,10 @@ class DiscordUserGiveaways
                 if (sql_insert(
                     BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
                     array(
-                        "plan_id" => $this->plan->planID,
                         "giveaway_id" => $running->giveaway_id,
                         "giveaway_creation_id" => $running->giveaway_creation_id,
                         "server_id" => $running->server_id,
-                        "channel_id" => $this->plan->utilities->getChannelOrThread($interaction->channel)->id,
+                        "channel_id" => $this->bot->utilities->getChannelOrThread($interaction->channel)->id,
                         "thread_id" => $interaction->message->thread?->id,
                         "user_id" => $interaction->member->id,
                         "expiration_date" => $running->expiration_date,
@@ -193,11 +192,10 @@ class DiscordUserGiveaways
                 if (sql_insert(
                     BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
                     array(
-                        "plan_id" => $this->plan->planID,
                         "giveaway_id" => $get->id,
                         "giveaway_creation_id" => $giveawayCreationID,
                         "server_id" => $interaction->guild_id,
-                        "channel_id" => $this->plan->utilities->getChannelOrThread($interaction->channel)->id,
+                        "channel_id" => $this->bot->utilities->getChannelOrThread($interaction->channel)->id,
                         "thread_id" => $interaction->message->thread?->id,
                         "user_id" => $interaction->member->id,
                         "expiration_date" => get_future_date($duration),
@@ -316,7 +314,7 @@ class DiscordUserGiveaways
             }
         }
         $builder = MessageBuilder::new();
-        $embed = new Embed($this->plan->bot->discord);
+        $embed = new Embed($this->bot->discord);
         $embed->setAuthor("GIVEAWAY");
         $embed->setTitle($get->title);
         $embed->setDescription($get->description);
@@ -333,7 +331,7 @@ class DiscordUserGiveaways
         $builder->addEmbed($embed);
 
         if ($running->message_id === null) {
-            $channel = $this->plan->bot->discord->getChannel($running->channel_id);
+            $channel = $this->bot->discord->getChannel($running->channel_id);
 
             if ($running->thread_id === null) {
                 $channel->sendMessage($builder)->done(function (Message $message) use ($running) {
@@ -372,7 +370,7 @@ class DiscordUserGiveaways
         } else if ($message !== null) {
             $message->edit($builder);
         } else {
-            $channel = $this->plan->bot->discord->getChannel($running->channel_id);
+            $channel = $this->bot->discord->getChannel($running->channel_id);
 
             if ($running->thread_id !== null) {
                 if (!empty($channel->threads->first())) {
@@ -413,7 +411,7 @@ class DiscordUserGiveaways
 
         if (!empty($permissions)) {
             foreach ($permissions as $permission) {
-                if (!$this->plan->bot->permissions->hasPermission($interaction->member, $permission->permission_id)) {
+                if (!$this->bot->permissions->hasPermission($interaction->member, $permission->permission_id)) {
                     return false;
                 }
             }
@@ -624,7 +622,7 @@ class DiscordUserGiveaways
     private function owns(Interaction $interaction, object $query): bool
     {
         return $query->user_id == $interaction->member->id
-            || $this->plan->bot->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
+            || $this->bot->permissions->hasPermission($interaction->member, self::MANAGE_PERMISSION);
     }
 
     // Maintenance
@@ -635,7 +633,6 @@ class DiscordUserGiveaways
             BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expiration_date", ">=", get_current_date()),
                 null,
@@ -662,7 +659,6 @@ class DiscordUserGiveaways
             BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("copy", null),
                 array("running", "IS NOT", null),

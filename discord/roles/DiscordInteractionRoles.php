@@ -10,19 +10,18 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordInteractionRoles
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $interactions;
 
-    public function __construct(DiscordBot $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->interactions = array();
         $query = get_sql_query(
             BotDatabaseTable::BOT_INTERACTION_ROLES,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -115,7 +114,7 @@ class DiscordInteractionRoles
                                     $interaction,
                                     $choice
                                 );
-                            }, $this->plan->bot->discord);
+                            }, $this->bot->discord);
                             $actionRow->addComponent($button);
                         }
                         $messageBuilder->addComponent($actionRow);
@@ -141,7 +140,7 @@ class DiscordInteractionRoles
                             $interaction,
                             $choice
                         );
-                    }, $this->plan->bot->discord);
+                    }, $this->bot->discord);
                     $messageBuilder->addComponent($select);
                     break;
                 default:
@@ -162,7 +161,7 @@ class DiscordInteractionRoles
             $role = $role[$choice->role_id] ?? null;
 
             if ($role !== null) {
-                $add = !$this->plan->bot->permissions->hasRole($interaction->member, $choice->role_id);
+                $add = !$this->bot->permissions->hasRole($interaction->member, $choice->role_id);
                 $promise = $add
                     ? $interaction->member->addRole($role)
                     : $interaction->member->removeRole($role);

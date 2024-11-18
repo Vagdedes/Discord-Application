@@ -5,27 +5,21 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Command\Option;
 use Discord\Parts\User\Member;
-use DiscordMute;
-use DiscordPlan;
 
 class DiscordCommands
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     public array $staticCommands, $dynamicCommands, $nativeCommands;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->staticCommands = get_sql_query(
             BotDatabaseTable::BOT_COMMANDS,
             null,
             array(
                 array("deletion_date", null),
                 array("command_reply", "IS NOT", null),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -39,10 +33,6 @@ class DiscordCommands
                 array("deletion_date", null),
                 array("command_reply", null),
                 array("command_placeholder", "!=", "/"),
-                null,
-                array("plan_id", "IS", null, 0),
-                array("plan_id", $plan->planID),
-                null,
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -92,7 +82,7 @@ class DiscordCommands
                     global $logger;
 
                     foreach ($command->arguments as $argument) {
-                        $option = new Option($this->plan->bot->discord);
+                        $option = new Option($this->bot->discord);
                         $option->setName(
                             $argument->name
                         )->setRequired(
@@ -157,12 +147,12 @@ class DiscordCommands
                         $commandBuilder->addOption($option);
                     }
                 }
-                $this->plan->bot->discord->application->commands->save(
-                    $this->plan->bot->discord->application->commands->create(
+                $this->bot->discord->application->commands->save(
+                    $this->bot->discord->application->commands->create(
                         $commandBuilder->toArray()
                     )
                 );
-                $this->plan->listener->callCommandImplementation(
+                $this->bot->listener->callCommandImplementation(
                     $command,
                     $command->listener_class,
                     $command->listener_method
@@ -173,11 +163,10 @@ class DiscordCommands
 
     public function process(Message $message, Member $user): string|null|MessageBuilder
     {
-        if ($user->id !== $this->plan->bot->botID) {
+        if ($user->id !== $this->bot->botID) {
             if (!empty($this->staticCommands)) {
                 $cacheKey = array(
                     __METHOD__,
-                    $this->plan->planID,
                     $message->guild_id,
                     $message->channel_id,
                     $user->id,
@@ -186,7 +175,7 @@ class DiscordCommands
                 $cache = get_key_value_pair($cacheKey);
 
                 if ($cache !== null) {
-                    $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+                    $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
                     if ($mute !== null) {
                         return $mute->creation_reason;
@@ -204,12 +193,12 @@ class DiscordCommands
                         if (($command->server_id === null || $command->server_id == $message->guild_id)
                             && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                             && $message->content == ($command->command_placeholder . $command->command_identification)) {
-                            $mute = $planCopy->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+                            $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
                             if ($mute !== null) {
                                 return $mute->creation_reason;
                             } else if ($command->required_permission !== null
-                                && !$this->plan->bot->permissions->hasPermission(
+                                && !$this->bot->permissions->hasPermission(
                                     $user,
                                     $command->required_permission
                                 )) {
@@ -229,12 +218,12 @@ class DiscordCommands
                     if (($command->server_id === null || $command->server_id == $message->guild_id)
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
                         && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
-                        $mute = $this->plan->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+                        $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
                         if ($mute !== null) {
                             return $mute->creation_reason;
                         } else if ($command->required_permission !== null
-                            && !$this->plan->bot->permissions->hasPermission(
+                            && !$this->bot->permissions->hasPermission(
                                 $user,
                                 $command->required_permission
                             )) {
@@ -242,7 +231,7 @@ class DiscordCommands
                         } else if ($command->listener_class !== null && $command->listener_method !== null) {
                             call_user_func_array(
                                 array($command->listener_class, $command->listener_method),
-                                array($this->getPlan($command), $message, $command)
+                                array($this->bot, $message, $command)
                             );
                         }
                     }
@@ -258,7 +247,7 @@ class DiscordCommands
         if ($command->cooldown_duration !== null) {
             $cacheKey = array(
                 __METHOD__,
-                $this->plan->planID,
+                $this->bot->botID,
                 $serverID, $channelID,
                 $userID,
                 $command->command_placeholder . $command->command_identification
@@ -276,17 +265,4 @@ class DiscordCommands
         }
     }
 
-    public function getPlan(object $command): DiscordPlan
-    {
-        if ($command->plan_id !== null) {
-            $planCopy = $this->plan->bot->getPlan($command->plan_id);
-
-            if ($planCopy === null) {
-                $planCopy = $this->plan;
-            }
-        } else {
-            $planCopy = $this->plan;
-        }
-        return $planCopy;
-    }
 }

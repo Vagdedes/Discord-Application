@@ -14,7 +14,6 @@ use Discord\Parts\WebSockets\MessageReaction;
 class DiscordListener
 {
     private DiscordBot $bot;
-    private ?DiscordPlan $plan;
     private const
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
         IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
@@ -35,15 +34,9 @@ class DiscordListener
         IMPLEMENTATION_NOTIFICATION_MESSAGE = "/root/discord_bot/listeners/custom/notification_message/",
         IMPLEMENTATION_AI_TEXT = "/root/discord_bot/listeners/custom/ai_text/";
 
-    public function __construct(DiscordBot|DiscordPlan $object)
+    public function __construct(DiscordBot $bot)
     {
-        if ($object instanceof DiscordPlan) {
-            $this->bot = $object->bot;
-            $this->plan = $object;
-        } else {
-            $this->bot = $object;
-            $this->plan = null;
-        }
+        $this->bot = $bot;
     }
 
     public function callMessageImplementation(Interaction    $interaction,
@@ -53,10 +46,10 @@ class DiscordListener
                                               mixed          $objects = null): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_MESSAGE . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $messageBuilder, $objects)
+                array($this->bot, $interaction, $messageBuilder, $objects)
             );
         }
     }
@@ -67,10 +60,10 @@ class DiscordListener
                                             mixed       $objects = null): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_MODAL . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_MODAL . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $objects)
+                array($this->bot, $interaction, $objects)
             );
         }
     }
@@ -81,10 +74,10 @@ class DiscordListener
                                                ?string        $method): MessageBuilder
     {
         if ($class !== null && $method !== null) {
-            require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::CREATION_MESSAGE . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $messageBuilder)
+                array($this->bot, $interaction, $messageBuilder)
             );
         } else {
             return $messageBuilder;
@@ -98,10 +91,10 @@ class DiscordListener
                                       ?string     $method): TextInput
     {
         if ($class !== null && $method !== null) {
-            require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::CREATION_MODAL . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $input, $position)
+                array($this->bot, $interaction, $input, $position)
             );
         } else {
             return $input;
@@ -113,35 +106,31 @@ class DiscordListener
                                               ?string $method): void
     {
         if ($class !== null && $method !== null) {
-            require_once(
-                self::IMPLEMENTATION_COMMAND
-                . (empty($command->plan_id) ? "0" : $command->plan_id)
-                . "/" . $class . '.php'
-            );
+            require_once(self::IMPLEMENTATION_COMMAND . $class . '.php');
             try {
-                $this->plan->bot->discord->listenCommand(
+                $this->bot->discord->listenCommand(
                     $command->command_identification,
                     function (Interaction $interaction) use ($class, $method, $command) {
-                        $mute = $this->plan->bot->mute->isMuted($interaction->member, $interaction->channel, DiscordMute::COMMAND);
+                        $mute = $this->bot->mute->isMuted($interaction->member, $interaction->channel, DiscordMute::COMMAND);
 
                         if ($mute !== null) {
-                            $this->plan->utilities->acknowledgeCommandMessage(
+                            $this->bot->utilities->acknowledgeCommandMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent($mute->creation_reason),
                                 $command->ephemeral !== null
                             );
                         } else if ($command->required_permission !== null
-                            && !$this->plan->bot->permissions->hasPermission(
+                            && !$this->bot->permissions->hasPermission(
                                 $interaction->member,
                                 $command->required_permission
                             )) {
-                            $this->plan->utilities->acknowledgeCommandMessage(
+                            $this->bot->utilities->acknowledgeCommandMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent($command->no_permission_message),
                                 $command->ephemeral !== null
                             );
                         } else if ($command->command_reply !== null) {
-                            $this->plan->utilities->acknowledgeCommandMessage(
+                            $this->bot->utilities->acknowledgeCommandMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent($command->command_reply),
                                 $command->ephemeral !== null
@@ -149,7 +138,7 @@ class DiscordListener
                         } else {
                             call_user_func_array(
                                 array($class, $method),
-                                array($this->plan->commands->getPlan($command), $interaction, $command)
+                                array($this->bot, $interaction, $command)
                             );
                         }
                     }
@@ -165,10 +154,10 @@ class DiscordListener
                                              mixed       $objects): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_USER_TICKETS . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_USER_TICKETS . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $interaction, $objects)
+                array($this->bot, $interaction, $objects)
             );
         }
     }
@@ -179,10 +168,10 @@ class DiscordListener
                                                    mixed   $object): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_CHANNEL_COUNTING . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_CHANNEL_COUNTING . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $message, $object)
+                array($this->bot, $message, $object)
             );
         }
     }
@@ -192,10 +181,10 @@ class DiscordListener
                                                     Invite  $invite): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_INVITE_TRACKER . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_INVITE_TRACKER . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $invite)
+                array($this->bot, $invite)
             );
         }
     }
@@ -208,10 +197,10 @@ class DiscordListener
                                                  object  $newTier): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_USER_LEVELS . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_USER_LEVELS . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $channel, $configuration, $oldTier, $newTier)
+                array($this->bot, $channel, $configuration, $oldTier, $newTier)
             );
         }
     }
@@ -224,7 +213,7 @@ class DiscordListener
                                                         object   $object): string
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
                 array($guild, $channel, $name, $object)
@@ -240,10 +229,10 @@ class DiscordListener
                                                       object         $object): MessageBuilder
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_REMINDER_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_REMINDER_MESSAGE . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $channel, $messageBuilder, $object)
+                array($this->bot, $channel, $messageBuilder, $object)
             );
         }
         return $messageBuilder;
@@ -258,10 +247,10 @@ class DiscordListener
                                                     int            $case): MessageBuilder
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_STATUS_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_STATUS_MESSAGE . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $channel, $member, $messageBuilder, $object, $case)
+                array($this->bot, $channel, $member, $messageBuilder, $object, $case)
             );
         }
         return $messageBuilder;
@@ -273,10 +262,10 @@ class DiscordListener
                                                           object         $object): MessageBuilder
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_NOTIFICATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_NOTIFICATION_MESSAGE . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $message, $object)
+                array($this->bot, $message, $object)
             );
         } else {
             return $message;
@@ -285,16 +274,13 @@ class DiscordListener
 
     public function callReactionCreation(MessageReaction $reaction,
                                          ?string         $class,
-                                         ?string         $method,
-                                         int|string|null $customPlanID): void
+                                         ?string         $method): void
     {
         if ($class !== null && $method !== null) {
-            require_once(self::CREATION_REACTION
-                . ($customPlanID === null ? 0 : $this->plan->planID)
-                . "/" . $class . '.php');
+            require_once(self::CREATION_REACTION . $class . '.php');
             call_user_func_array(
                 array($class, $method),
-                array($this->plan, $reaction)
+                array($this->bot, $reaction)
             );
         }
     }
@@ -307,10 +293,10 @@ class DiscordListener
                                              ?array  $publicInstructions): array
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_AI_TEXT . $this->plan->planID . "/" . $class . '.php');
+            require_once(self::IMPLEMENTATION_AI_TEXT . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->plan, $originalMessage, $channel, $localInstructions, $publicInstructions)
+                array($this->bot, $originalMessage, $channel, $localInstructions, $publicInstructions)
             );
         } else {
             return array($localInstructions, $publicInstructions);

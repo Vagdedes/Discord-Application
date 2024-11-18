@@ -7,7 +7,7 @@ use Discord\Parts\WebSockets\VoiceStateUpdate;
 
 class DiscordTemporaryChannels
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $channels;
     public int $ignoreDeletion, $ignoreLeave;
 
@@ -25,16 +25,15 @@ class DiscordTemporaryChannels
         "connect"
     );
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
         $this->ignoreDeletion = 0;
         $this->ignoreLeave = 0;
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->channels = get_sql_query(
             BotDatabaseTable::BOT_TEMPORARY_CHANNELS,
             null,
             array(
-                array("plan_id", $plan->planID),
                 array("deletion_date", null),
                 null,
                 array("expiration_date", "IS", null, 0),
@@ -55,7 +54,7 @@ class DiscordTemporaryChannels
 
     public function trackJoin(VoiceStateUpdate $update): bool
     {
-        if ($update->member->id != $this->plan->bot->botID) {
+        if ($update->member->id != $this->bot->botID) {
             $state = $this->getChannelState($update->channel);
 
             if ($state !== null) {
@@ -98,7 +97,7 @@ class DiscordTemporaryChannels
                                         );
                                     }
                                 }
-                                $this->plan->utilities->createChannel(
+                                $this->bot->utilities->createChannel(
                                     $update->guild,
                                     Channel::TYPE_VOICE,
                                     $query->inception_channel_category_id,
@@ -109,7 +108,6 @@ class DiscordTemporaryChannels
                                     if (sql_insert(
                                         BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
                                         array(
-                                            "plan_id" => $this->plan->planID,
                                             "temporary_channel_id" => $query->id,
                                             "temporary_channel_creation_id" => $temporaryID,
                                             "server_id" => $channel->guild_id,
@@ -222,7 +220,7 @@ class DiscordTemporaryChannels
         }
 
         if ($channel instanceof Channel) {
-            $state = $this->getChannelState($channel, false);
+            $state = $this->getChannelState($channel);
 
             if ($state !== null && !$state[0]) {
                 if ($set) {
@@ -340,7 +338,7 @@ class DiscordTemporaryChannels
         $channel = $member->getVoiceChannel();
 
         if ($channel instanceof Channel) {
-            $state = $this->getChannelState($channel, false);
+            $state = $this->getChannelState($channel);
 
             if ($state !== null && !$state[0]) {
                 if ($set) {
@@ -411,12 +409,12 @@ class DiscordTemporaryChannels
         $channel = $member->getVoiceChannel();
 
         if ($channel instanceof Channel) {
-            $state = $this->getChannelState($channel, false);
+            $state = $this->getChannelState($channel);
 
             if ($state !== null && !$state[0]) {
                 if ($set) {
                     if ($this->isBanned($user, $state[1]->temporary_channel_creation_id)) {
-                        $this->kick($this->plan->utilities->getMember($channel->guild, $user), $channel);
+                        $this->kick($this->bot->utilities->getMember($channel->guild, $user), $channel);
                         return "User is already banned from this temporary voice channel.";
                     } else {
                         $owner = $this->getOwner($member, $state[1]->temporary_channel_creation_id);
@@ -440,7 +438,7 @@ class DiscordTemporaryChannels
                                 )
                             )) {
                                 $this->setOwner($member, $user, false);
-                                $this->kick($this->plan->utilities->getMember($channel->guild, $user), $channel);
+                                $this->kick($this->bot->utilities->getMember($channel->guild, $user), $channel);
                                 return null;
                             } else {
                                 return "Failed to insert ban into the database.";
@@ -468,7 +466,7 @@ class DiscordTemporaryChannels
                         null,
                         1
                     )) {
-                        $member = $this->plan->utilities->getMember($channel->guild, $user);
+                        $member = $this->bot->utilities->getMember($channel->guild, $user);
 
                         if ($member !== null) {
                             $channel->setPermissions($member);
@@ -567,7 +565,7 @@ class DiscordTemporaryChannels
 
     // Separator
 
-    private function getChannelState(Channel $channel, bool $includePlan = true): ?array
+    private function getChannelState(Channel $channel): ?array
     {
         $channelInitiator = $this->channels[$channel->id] ?? null;
 
@@ -582,7 +580,6 @@ class DiscordTemporaryChannels
                 null,
                 array(
                     array("deletion_date", null),
-                    $includePlan ? array("plan_id", $this->plan->planID) : "",
                     array("server_id", $channel->guild_id),
                     array("channel_id", $channel->id),
                     null,
@@ -628,7 +625,6 @@ class DiscordTemporaryChannels
             BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "<", get_current_date())
@@ -653,7 +649,7 @@ class DiscordTemporaryChannels
                     null,
                     1
                 )) {
-                    $channel = $this->plan->bot->discord->getChannel($row->channel_id);
+                    $channel = $this->bot->discord->getChannel($row->channel_id);
 
                     if ($channel !== null
                         && $channel->allowVoice()
@@ -721,7 +717,7 @@ class DiscordTemporaryChannels
                 null,
                 1
             )) {
-                $channel = $this->plan->bot->discord->getChannel($query->channel_id);
+                $channel = $this->bot->discord->getChannel($query->channel_id);
 
                 if ($channel !== null
                     && $channel->allowVoice()

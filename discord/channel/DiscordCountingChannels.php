@@ -6,20 +6,19 @@ use Discord\Parts\Embed\Embed;
 
 class DiscordCountingChannels
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     private array $countingPlaces;
     public int $ignoreDeletion;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->ignoreDeletion = 0;
         $this->countingPlaces = get_sql_query(
             BotDatabaseTable::BOT_COUNTING,
             null,
             array(
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -47,7 +46,7 @@ class DiscordCountingChannels
 
     public function track(Message $message): bool
     {
-        if ($message->author->id != $this->plan->bot->botID) {
+        if ($message->author->id != $this->bot->botID) {
             $rowArray = $this->getCountingChannelObject($message);
 
             if ($rowArray !== null) {
@@ -216,10 +215,10 @@ class DiscordCountingChannels
     public function loadStoredGoalMessages(int|string $userID, array $goals): MessageBuilder
     {
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing last **" . sizeof($goals) . " counting goals** of user **" . $this->plan->utilities->getUsername($userID) . "**");
+        $messageBuilder->setContent("Showing last **" . sizeof($goals) . " counting goals** of user **" . $this->bot->utilities->getUsername($userID) . "**");
 
         foreach ($goals as $goal) {
-            $embed = new Embed($this->plan->bot->discord);
+            $embed = new Embed($this->bot->discord);
             $embed->setTitle($goal->title);
 
             if ($goal->description !== null) {
@@ -245,22 +244,22 @@ class DiscordCountingChannels
                             "creation_date" => get_current_date()
                         )
                     )) {
-                        $object = $this->plan->instructions->getObject(
+                        $object = $this->bot->instructions->getObject(
                             $message->guild,
                             $message->channel,
                             $message->member,
                             $message
                         );
                         $messageBuilder = $goal->message_name !== null
-                            ? $this->plan->persistentMessages->get($object, $goal)
+                            ? $this->bot->persistentMessages->get($object, $goal)
                             : MessageBuilder::new()->setContent(
-                                $this->plan->instructions->replace(array($goal->message_content), $object)[0]
+                                $this->bot->instructions->replace(array($goal->message_content), $object)[0]
                             );
 
                         if ($messageBuilder !== null) {
                             $message->reply($messageBuilder);
                         } else {
-                            $this->plan->listener->callCountingGoalImplementation(
+                            $this->bot->listener->callCountingGoalImplementation(
                                 $goal->listener_class,
                                 $goal->listener_method,
                                 $message,
@@ -297,13 +296,13 @@ class DiscordCountingChannels
                                       string  $title): void
     {
         if ($row->notifications_channel_id !== null) {
-            $channel = $this->plan->bot->discord->getChannel($row->notifications_channel_id);
+            $channel = $this->bot->discord->getChannel($row->notifications_channel_id);
 
             if ($channel !== null
-                && $this->plan->utilities->allowText($channel)
+                && $this->bot->utilities->allowText($channel)
                 && $channel->guild_id == $row->server_id) {
                 $messageBuilder = MessageBuilder::new();
-                $embed = new Embed($this->plan->bot->discord);
+                $embed = new Embed($this->bot->discord);
                 $embed->setAuthor($message->author->username, $message->author->avatar);
                 $embed->setTitle($title);
                 $embed->setDescription($message->content);

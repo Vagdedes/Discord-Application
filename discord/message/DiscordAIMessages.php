@@ -10,7 +10,7 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordAIMessages
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
 
@@ -23,9 +23,9 @@ class DiscordAIMessages
 
     const REACTION_COMPONENT_NAME = "general-feedback";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->model = array();
         $this->messageCounter = array();
         $this->messageReplies = array();
@@ -34,7 +34,6 @@ class DiscordAIMessages
             BotDatabaseTable::BOT_AI_CHAT_MODEL,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null)
             )
         );
@@ -43,7 +42,7 @@ class DiscordAIMessages
             foreach ($query as $row) {
                 if ($row->api_key === null) {
                     global $logger;
-                    $logger->logError("Failed to find API key for plan: " . $this->plan->planID);
+                    $logger->logError("Failed to find API key for bot: " . $this->bot->botID);
                 } else {
                     $object = new stdClass();
                     $object->implement_class = $row->implement_class;
@@ -189,14 +188,14 @@ class DiscordAIMessages
         global $logger;
         $messageContent = $originalMessage->content;
         $member = $originalMessage->member;
-        $object = $this->plan->instructions->getObject(
+        $object = $this->bot->instructions->getObject(
             $originalMessage->guild,
             $originalMessage->channel,
             $member,
             $originalMessage,
             $messageHistory
         );
-        $command = $this->plan->commands->process(
+        $command = $this->bot->commands->process(
             $originalMessage,
             $member
         );
@@ -206,44 +205,44 @@ class DiscordAIMessages
                 $originalMessage->reply($command);
             } else {
                 $originalMessage->reply(MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($command), $object)[0]
+                    $this->bot->instructions->replace(array($command), $object)[0]
                 ));
             }
             return true;
         } else {
-            $mute = $this->plan->bot->mute->isMuted($member, $originalMessage->channel, DiscordMute::TEXT);
+            $mute = $this->bot->mute->isMuted($member, $originalMessage->channel, DiscordMute::TEXT);
 
             if ($mute !== null) {
                 $originalMessage->delete();
-                $this->plan->utilities->sendMessageInPieces(
+                $this->bot->utilities->sendMessageInPieces(
                     $member,
-                    $this->plan->instructions->replace(array($mute->creation_reason), $object)[0]
+                    $this->bot->instructions->replace(array($mute->creation_reason), $object)[0]
                 );
                 return true;
             } else {
                 $channel = $object->channel;
                 $foundChannel = $channel !== null;
                 $filter = $foundChannel && $channel->filter !== null
-                    ? $this->plan->chatFilteredMessages->run($originalMessage)
+                    ? $this->bot->chatFilteredMessages->run($originalMessage)
                     : null;
 
                 if ($filter !== null) {
                     $originalMessage->delete();
 
                     if (!empty($filter)) {
-                        $this->plan->utilities->sendMessageInPieces(
+                        $this->bot->utilities->sendMessageInPieces(
                             $member,
-                            $this->plan->instructions->replace(array($filter), $object)[0]
+                            $this->bot->instructions->replace(array($filter), $object)[0]
                         );
                     }
                     return true;
                 } else {
-                    $stop = $this->plan->userTickets->track($originalMessage)
-                        || $this->plan->userTargets->track($originalMessage)
-                        || $this->plan->userQuestionnaire->track($originalMessage, $object)
-                        || $this->plan->countingChannels->track($originalMessage)
-                        || $this->plan->objectiveChannels->trackCreation($originalMessage)
-                        || $this->plan->notificationMessages->executeMessage($originalMessage);
+                    $stop = $this->bot->userTickets->track($originalMessage)
+                        || $this->bot->userTargets->track($originalMessage)
+                        || $this->bot->userQuestionnaire->track($originalMessage, $object)
+                        || $this->bot->countingChannels->track($originalMessage)
+                        || $this->bot->objectiveChannels->trackCreation($originalMessage)
+                        || $this->bot->notificationMessages->executeMessage($originalMessage);
 
                     if (!$stop
                         && $foundChannel
@@ -252,10 +251,10 @@ class DiscordAIMessages
 
                         if ($model !== null) {
                             if ($model->managerAI->exists()) {
-                                if ($member->id == $this->plan->bot->botID) {
+                                if ($member->id == $this->bot->botID) {
                                     return false;
                                 }
-                                $cooldownKey = array(__METHOD__, $this->plan->planID, $member->id);
+                                $cooldownKey = array(__METHOD__, $this->bot->botID, $member->id);
 
                                 if (get_key_value_pair($cooldownKey) === null) {
                                     set_key_value_pair($cooldownKey, true);
@@ -269,7 +268,7 @@ class DiscordAIMessages
 
                                         if (!empty($originalMessage->mentions->first())) {
                                             foreach ($originalMessage->mentions as $userObj) {
-                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                if ($userObj->id == $this->bot->botID) {
                                                     $mention = true;
 
                                                     if (!$ignoreWhenOthersMentioned) {
@@ -298,7 +297,7 @@ class DiscordAIMessages
 
                                         if (!empty($originalMessage->mentions->first())) {
                                             foreach ($originalMessage->mentions as $userObj) {
-                                                if ($userObj->id == $this->plan->bot->botID) {
+                                                if ($userObj->id == $this->bot->botID) {
                                                     $mention = false;
                                                     break;
                                                 }
@@ -310,7 +309,7 @@ class DiscordAIMessages
                                         if ($ignoreWhenOthersMentioned
                                             && !empty($originalMessage->mentions->first())) {
                                             foreach ($originalMessage->mentions as $userObj) {
-                                                if ($userObj->id != $this->plan->bot->botID
+                                                if ($userObj->id != $this->bot->botID
                                                     && $userObj->id != $member->id) {
                                                     $mention = false;
                                                     break;
@@ -352,8 +351,8 @@ class DiscordAIMessages
                                         }
                                         foreach ($members as $loopUser) {
                                             if ($loopUser != $member->id
-                                                && $loopUser != $this->plan->bot->botID
-                                                && $this->plan->bot->permissions->isStaff($loopUser, $originalMessage->guild)) {
+                                                && $loopUser != $this->bot->botID
+                                                && $this->bot->permissions->isStaff($loopUser, $originalMessage->guild)) {
                                                 $mention = false;
                                                 break;
                                             }
@@ -369,7 +368,7 @@ class DiscordAIMessages
                                             foreach ($limits as $limit) {
                                                 if ($limit->message !== null) {
                                                     $originalMessage->reply(MessageBuilder::new()->setContent(
-                                                        $this->plan->instructions->replace(array($limit->message), $object)[0]
+                                                        $this->bot->instructions->replace(array($limit->message), $object)[0]
                                                     ));
                                                     break;
                                                 }
@@ -380,7 +379,7 @@ class DiscordAIMessages
                                             $cache = get_key_value_pair($cacheKey);
 
                                             if ($channel->prompt_message !== null) {
-                                                $promptMessage = $this->plan->instructions->replace(array($channel->prompt_message), $object)[0];
+                                                $promptMessage = $this->bot->instructions->replace(array($channel->prompt_message), $object)[0];
                                             } else {
                                                 $promptMessage = "...";
                                             }
@@ -388,7 +387,7 @@ class DiscordAIMessages
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage
                                                 ))->done(function (Message $message) use ($cache) {
-                                                    $this->plan->utilities->replyMessageInPieces($message, $cache);
+                                                    $this->bot->utilities->replyMessageInPieces($message, $cache);
                                                 });
                                             } else {
                                                 if ($channel->require_starting_text !== null
@@ -403,7 +402,7 @@ class DiscordAIMessages
                                                     && strlen($messageContent) > $channel->max_message_length) {
                                                     if ($channel->failure_message !== null) {
                                                         $originalMessage->reply(MessageBuilder::new()->setContent(
-                                                            $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
+                                                            $this->bot->instructions->replace(array($channel->failure_message), $object)[0]
                                                         ));
                                                     }
                                                     return false;
@@ -412,7 +411,7 @@ class DiscordAIMessages
                                                     $promptMessage
                                                 ))->done(function (Message $message)
                                                 use ($object, $model, $cacheKey, $channel, $originalMessage) {
-                                                    $array = $this->plan->listener->callAiTextImplementation(
+                                                    $array = $this->bot->listener->callAiTextImplementation(
                                                         $model->implement_class,
                                                         $model->implement_method,
                                                         $originalMessage,
@@ -437,22 +436,22 @@ class DiscordAIMessages
 
                                                     if ($reply === null) {
                                                         if ($channel->failure_message !== null) {
-                                                            $this->plan->utilities->editMessage(
+                                                            $this->bot->utilities->editMessage(
                                                                 $message,
-                                                                $this->plan->instructions->replace(array($channel->failure_message), $object)[0]
+                                                                $this->bot->instructions->replace(array($channel->failure_message), $object)[0]
                                                             );
                                                         } else if ($channel->debug === null) {
-                                                            $this->plan->utilities->deleteMessage($message);
+                                                            $this->bot->utilities->deleteMessage($message);
                                                         }
                                                     } else {
                                                         set_key_value_pair($cacheKey, $reply);
 
                                                         if ($channel->feedback !== null) {
-                                                            $this->plan->component->addReactions($message, self::REACTION_COMPONENT_NAME);
+                                                            $this->bot->component->addReactions($message, self::REACTION_COMPONENT_NAME);
                                                         }
-                                                        $this->plan->utilities->replyMessageInPieces($message, $reply);
+                                                        $this->bot->utilities->replyMessageInPieces($message, $reply);
 
-                                                        $hash = $this->plan->utilities->hash(
+                                                        $hash = $this->bot->utilities->hash(
                                                             $message->guild_id,
                                                             $message->channel_id,
                                                             $message->thread?->id,
@@ -474,14 +473,14 @@ class DiscordAIMessages
                                 } else if ($channel->cooldown_message !== null
                                     && $channel->message_cooldown !== null) {
                                     $originalMessage->reply(MessageBuilder::new()->setContent(
-                                        $this->plan->instructions->replace(array($channel->cooldown_message), $object)[0]
+                                        $this->bot->instructions->replace(array($channel->cooldown_message), $object)[0]
                                     ));
                                 }
                             } else {
-                                $logger->logError("Failed to find an existent chat-model for plan: " . $this->plan->planID);
+                                $logger->logError("Failed to find an existent chat-model for bot: " . $this->bot->botID);
                             }
                         } else {
-                            $logger->logError("Failed to find any chat-model for plan: " . $this->plan->planID);
+                            $logger->logError("Failed to find any chat-model for bot: " . $this->bot->botID);
                         }
                     }
                 }
@@ -566,7 +565,7 @@ class DiscordAIMessages
                         if ($totalSize > $maxAttachmentsLength) {
                             break;
                         }
-                        $content .= $this->plan->instructions->manager->buildExtra(
+                        $content .= $this->bot->instructions->manager->buildExtra(
                             $attachment[0],
                             $attachment[1]
                         );
@@ -574,7 +573,7 @@ class DiscordAIMessages
                 }
             }
         }
-        $parent = $this->plan->utilities->getChannelOrThread($channel);
+        $parent = $this->bot->utilities->getChannelOrThread($channel);
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
@@ -585,7 +584,7 @@ class DiscordAIMessages
                 )
             );
             $length = strlen($content);
-            $system = $this->plan->instructions->build(
+            $system = $this->bot->instructions->build(
                 $systemInstructions[0],
                 $systemInstructions[1],
                 $systemInstructions[2],
@@ -609,7 +608,7 @@ class DiscordAIMessages
 
             if ($debug) {
                 foreach (str_split(json_encode($input), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                    $this->plan->utilities->replyMessage(
+                    $this->bot->utilities->replyMessage(
                         $self,
                         MessageBuilder::new()->setContent($split)
                     );
@@ -635,9 +634,8 @@ class DiscordAIMessages
                     sql_insert(
                         BotDatabaseTable::BOT_AI_REPLIES,
                         array(
-                            "plan_id" => $this->plan->planID,
                             "ai_hash" => $hash,
-                            "bot_id" => $this->plan->bot->botID,
+                            "bot_id" => $this->bot->botID,
                             "server_id" => $channel->guild_id,
                             "channel_id" => $parent->id,
                             "thread_id" => $thread,
@@ -647,7 +645,7 @@ class DiscordAIMessages
                             "creation_date" => $date,
                         )
                     );
-                    $this->plan->instructions->manager->autoRemoveExtra();
+                    $this->bot->instructions->manager->autoRemoveExtra();
                     return $reply;
                 } else {
                     global $logger;
@@ -670,7 +668,7 @@ class DiscordAIMessages
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
         }
-        $this->plan->instructions->manager->autoRemoveExtra();
+        $this->bot->instructions->manager->autoRemoveExtra();
         return null;
     }
 
@@ -684,7 +682,7 @@ class DiscordAIMessages
         if ($channelID === null || $userID === null) {
             return array();
         }
-        $channel = $this->plan->bot->discord->getChannel($channelID);
+        $channel = $this->bot->discord->getChannel($channelID);
 
         if ($channel !== null
             && ($serverID === null
@@ -733,7 +731,7 @@ class DiscordAIMessages
         if ($channelID === null || $userID === null) {
             return array();
         }
-        $channel = $this->plan->bot->discord->getChannel($channelID);
+        $channel = $this->bot->discord->getChannel($channelID);
 
         if ($channel !== null
             && ($serverID === null
@@ -759,7 +757,7 @@ class DiscordAIMessages
 
             if (!empty($messageHistory)) {
                 foreach ($messageHistory as $message) {
-                    if ($message->user_id == $this->plan->bot->botID
+                    if ($message->user_id == $this->bot->botID
                         && $message->referenced_message !== null
                         && $message->referenced_message->user_id == $userID) {
                         $array[] = $message->content;
@@ -784,7 +782,7 @@ class DiscordAIMessages
         if ($channelID === null || $userID === null) {
             return array();
         }
-        $channel = $this->plan->bot->discord->getChannel($channelID);
+        $channel = $this->bot->discord->getChannel($channelID);
 
         if ($channel !== null
             && ($serverID === null
@@ -816,7 +814,7 @@ class DiscordAIMessages
                         if (sizeof($array) == $limit) {
                             break;
                         }
-                    } else if ($message->user_id == $this->plan->bot->botID
+                    } else if ($message->user_id == $this->bot->botID
                         && $message->referenced_message !== null
                         && $message->referenced_message->user_id == $userID) {
                         $array[] = "bot: " . $message->content;
@@ -838,7 +836,7 @@ class DiscordAIMessages
     private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
                              int|string      $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
+        $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -872,7 +870,7 @@ class DiscordAIMessages
     private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
                                      int|string|null $userID, int|string $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $serverID, $channelID, $userID, $pastLookup);
+        $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
 
         if ($cache !== null) {
@@ -903,19 +901,19 @@ class DiscordAIMessages
     {
         $array = array();
         $serverID = $message->guild_id;
-        $channelID = $this->plan->utilities->getChannelOrThread($message->channel)->id;
+        $channelID = $this->bot->utilities->getChannelOrThread($message->channel)->id;
         $threadID = $message->thread?->id;
         $userID = $message->member->id;
         $date = get_current_date();
 
         if (!empty($model->messageLimits)
-            && !$this->plan->bot->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
+            && !$this->bot->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
             foreach ($model->messageLimits as $limit) {
                 if (($limit->server_id === null
                         || $limit->server_id === $serverID
                         && ($limit->channel_id === null || $limit->channel_id === $channelID)
                         && ($limit->thread_id === null || $limit->thread_id === $threadID))
-                    && ($limit->role_id === null || $this->plan->bot->permissions->hasRole($message->member, $limit->role_id))) {
+                    && ($limit->role_id === null || $this->bot->permissions->hasRole($message->member, $limit->role_id))) {
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {
@@ -979,12 +977,12 @@ class DiscordAIMessages
             }
         }
         if (!empty($model->costLimits)
-            && !$this->plan->bot->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
+            && !$this->bot->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
             foreach ($model->costLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)
                     && ($limit->thread_id === null || $limit->thread_id === $threadID)
-                    && ($limit->role_id === null || $this->plan->bot->permissions->hasRole($message->member, $limit->role_id))) {
+                    && ($limit->role_id === null || $this->bot->permissions->hasRole($message->member, $limit->role_id))) {
                     $hasTimeout = $limit->timeout !== null;
 
                     if ($hasTimeout) {
@@ -1040,7 +1038,7 @@ class DiscordAIMessages
     public
     function sendFeedback(MessageReaction $reaction, ?int $value): void
     {
-        $hash = $this->plan->utilities->hash(
+        $hash = $this->bot->utilities->hash(
             $reaction->guild_id,
             $reaction->channel_id,
             $reaction->message->thread?->id,
@@ -1051,7 +1049,7 @@ class DiscordAIMessages
         if ($message !== null
             && !empty($message->mentions->first())
             && !in_array($reaction->member->id, $this->messageFeedback[$hash])) {
-            $channel = $this->plan->utilities->getChannelOrThread($message->channel);
+            $channel = $this->bot->utilities->getChannelOrThread($message->channel);
 
             if (!empty(get_sql_query(
                 BotDatabaseTable::BOT_AI_FEEDBACK,
@@ -1120,8 +1118,7 @@ class DiscordAIMessages
                       bool                  $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
-        $objectChannel = $this->plan->bot->channels->getIfHasAccess(
-            $this->plan,
+        $objectChannel = $this->bot->channels->getIfHasAccess(
             $channel ?? $interaction->channel,
             $interaction->member
         );

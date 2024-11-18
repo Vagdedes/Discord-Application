@@ -10,10 +10,6 @@ use Discord\Parts\Part;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\WebSockets\Event;
-use DiscordBot;
-use DiscordInheritedLimits;
-use DiscordInviteTracker;
-use DiscordSyntax;
 
 class DiscordLogs
 {
@@ -170,10 +166,8 @@ class DiscordLogs
                 }
             }
         }
-        if ($hasGuild) {
-            foreach ($this->bot->plans as $plan) {
-                $plan->userLevels->trackVoiceChannels($guild);
-            }
+        if ($hasGuild && $this->bot !== null) {
+            $this->bot->userLevels->trackVoiceChannels($guild);
         }
         return $refresh && $this->bot !== null && $this->bot->refresh();
     }
@@ -227,26 +221,26 @@ class DiscordLogs
                 $embed->setTitle($this->beautifulText($action));
 
                 if ($object instanceof Message) {
-                    if ($this->bot->channels->isBlacklisted(null, $object->channel)) {
+                    if ($this->bot->channels->isBlacklisted($object->channel)) {
                         return null;
                     }
                     $embed->setDescription($object->link);
                 } else if ($object instanceof Member) {
                     $embed->setDescription("<@" . $object->id . ">");
                 } else if ($object instanceof Channel || $object instanceof Thread) {
-                    if ($this->bot->channels->isBlacklisted(null, $object)) {
+                    if ($this->bot->channels->isBlacklisted($object)) {
                         return null;
                     }
                     $embed->setDescription("<#" . $object->id . ">");
                 } else if ($object instanceof Invite) {
-                    if ($this->bot->channels->isBlacklisted(null, $object->channel)) {
+                    if ($this->bot->channels->isBlacklisted($object->channel)) {
                         return null;
                     }
                     $embed->setDescription($object->invite_url
                         . "\nIn: <#" . $object->channel_id . ">"
                         . "\nBy: <@" . $object->inviter->id . ">");
                 } else if (is_object($object)
-                    && $this->bot->channels->isBlacklisted(null, $object)) {
+                    && $this->bot->channels->isBlacklisted($object)) {
                     return null;
                 }
                 $embed->setTimestamp(strtotime($date));

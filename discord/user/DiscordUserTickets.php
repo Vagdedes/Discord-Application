@@ -9,14 +9,14 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordUserTickets
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
     public int $ignoreDeletion;
     private array $tickets;
     private array $abstractTickets;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
         $this->tickets = array();
         $this->ignoreDeletion = 0;
         $tickets = get_sql_query(
@@ -25,7 +25,6 @@ class DiscordUserTickets
             array(
                 array("modal_component_id", "IS NOT", null), // Attention
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -45,7 +44,6 @@ class DiscordUserTickets
             array(
                 array("modal_component_id", "IS", null), // Attention
                 array("deletion_date", null),
-                array("plan_id", $this->plan->planID),
                 null,
                 array("expiration_date", "IS", null, 0),
                 array("expiration_date", ">", get_current_date()),
@@ -67,7 +65,7 @@ class DiscordUserTickets
 
         if (!empty($query)) {
             $query = $query[0];
-            return $this->plan->component->showModal(
+            return $this->bot->component->showModal(
                 $interaction,
                 $query->modal_component_id,
                 function (Interaction $interaction, Collection $components) use ($query) {
@@ -105,7 +103,6 @@ class DiscordUserTickets
                     1
                 ))) {
                     $insert = array(
-                        "plan_id" => null,
                         "ticket_id" => null,
                         "ticket_creation_id" => $ticketID,
                         "server_id" => $interaction->guild_id,
@@ -138,7 +135,7 @@ class DiscordUserTickets
                             )
                         );
                     }
-                    $this->plan->utilities->createChannel(
+                    $this->bot->utilities->createChannel(
                         $interaction->guild,
                         Channel::TYPE_TEXT,
                         $categoryID,
@@ -179,7 +176,7 @@ class DiscordUserTickets
     {
         $date = get_current_date(); // Always first
         $this->checkExpired();
-        $object = $this->plan->instructions->getObject(
+        $object = $this->bot->instructions->getObject(
             $interaction->guild,
             $interaction->channel,
             $interaction->user,
@@ -189,10 +186,10 @@ class DiscordUserTickets
         if ($query->cooldown_time !== null
             && $this->hasCooldown($query->id, $interaction->user->id, $query->cooldown_time)) {
             if ($query->cooldown_message !== null) {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->bot->utilities->acknowledgeMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($query->cooldown_message), $object)[0]
+                        $this->bot->instructions->replace(array($query->cooldown_message), $object)[0]
                     ),
                     $query->ephemeral_user_response !== null
                 );
@@ -206,10 +203,10 @@ class DiscordUserTickets
             || $query->max_open_general !== null
             && $this->hasMaxOpen($query->id, null, $query->max_open_general)) {
             if ($query->max_open_message !== null) {
-                $this->plan->utilities->acknowledgeMessage(
+                $this->bot->utilities->acknowledgeMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
-                        $this->plan->instructions->replace(array($query->max_open_message), $object)[0]
+                        $this->bot->instructions->replace(array($query->max_open_message), $object)[0]
                     ),
                     $query->ephemeral_user_response !== null
                 );
@@ -219,15 +216,15 @@ class DiscordUserTickets
             return;
         }
         if ($query->user_response !== null) {
-            $this->plan->utilities->acknowledgeMessage(
+            $this->bot->utilities->acknowledgeMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
-                    $this->plan->instructions->replace(array($query->user_response), $object)[0]
+                    $this->bot->instructions->replace(array($query->user_response), $object)[0]
                 ),
                 $query->ephemeral_user_response !== null
             );
         } else {
-            $this->plan->listener->callTicketImplementation(
+            $this->bot->listener->callTicketImplementation(
                 $interaction,
                 $query->listener_class,
                 $query->listener_method,
@@ -244,7 +241,7 @@ class DiscordUserTickets
 
         if ($post || $create) {
             $message = MessageBuilder::new();
-            $embed = new Embed($this->plan->bot->discord);
+            $embed = new Embed($this->bot->discord);
             $embed->setAuthor($interaction->user->username, $interaction->user->getAvatarAttribute());
             $embed->setTimestamp(time());
 
@@ -270,10 +267,10 @@ class DiscordUserTickets
         }
 
         if ($post) {
-            $channel = $this->plan->bot->discord->getChannel($query->post_channel_id);
+            $channel = $this->bot->discord->getChannel($query->post_channel_id);
 
             if ($channel !== null
-                && $this->plan->utilities->allowText($channel)
+                && $this->bot->utilities->allowText($channel)
                 && $channel->guild_id == $query->post_server_id) {
                 $channel->sendMessage($message);
             }
@@ -293,7 +290,6 @@ class DiscordUserTickets
                 1
             ))) {
                 $insert = array(
-                    "plan_id" => $this->plan->planID,
                     "ticket_id" => $query->id,
                     "ticket_creation_id" => $ticketID,
                     "server_id" => $interaction->guild_id,
@@ -331,12 +327,12 @@ class DiscordUserTickets
                             "deny" => $query->deny_permission
                         )
                     );
-                    $this->plan->utilities->createChannel(
+                    $this->bot->utilities->createChannel(
                         $interaction->guild,
                         Channel::TYPE_TEXT,
                         $query->create_channel_category_id,
                         (empty($query->create_channel_name)
-                            ? $this->plan->utilities->getUsername($interaction->user->id)
+                            ? $this->bot->utilities->getUsername($interaction->user->id)
                             : $query->create_channel_name)
                         . "-" . $ticketID,
                         $query->create_channel_topic,
@@ -489,10 +485,10 @@ class DiscordUserTickets
                         null,
                         1
                     )) {
-                        $channel = $this->plan->bot->discord->getChannel($query->created_channel_id);
+                        $channel = $this->bot->discord->getChannel($query->created_channel_id);
 
                         if ($channel !== null
-                            && $this->plan->utilities->allowText($channel)
+                            && $this->bot->utilities->allowText($channel)
                             && $channel->guild_id == $query->created_channel_server_id) {
                             $this->ignoreDeletion++;
                             $channel->guild->channels->delete(
@@ -688,8 +684,8 @@ class DiscordUserTickets
         $messageBuilder = MessageBuilder::new();
         $messageBuilder->setContent("Showing ticket with ID **" . $ticket->ticket_creation_id . "**");
 
-        $embed = new Embed($this->plan->bot->discord);
-        $user = $this->plan->utilities->getUser($ticket->user_id);
+        $embed = new Embed($this->bot->discord);
+        $user = $this->bot->utilities->getUser($ticket->user_id);
 
         if ($user !== null) {
             $embed->setAuthor($user->id, $user->avatar);
@@ -718,11 +714,11 @@ class DiscordUserTickets
             $max = DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE - 1; // Minus one due to previous embed
 
             foreach (array_chunk($ticket->messages, DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) as $chunk) {
-                $embed = new Embed($this->plan->bot->discord);
+                $embed = new Embed($this->bot->discord);
 
                 foreach ($chunk as $message) {
                     $embed->addFieldValues(
-                        $this->plan->utilities->getUsername($message->user_id)
+                        $this->bot->utilities->getUsername($message->user_id)
                         . " | " . $message->creation_date,
                         DiscordSyntax::HEAVY_CODE_BLOCK . $message->message_content . DiscordSyntax::HEAVY_CODE_BLOCK
                     );
@@ -743,10 +739,10 @@ class DiscordUserTickets
         $this->checkExpired();
         $date = get_current_date();
         $messageBuilder = MessageBuilder::new();
-        $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->plan->utilities->getUsername($userID) . "**");
+        $messageBuilder->setContent("Showing last **" . sizeof($tickets) . " tickets** of user **" . $this->bot->utilities->getUsername($userID) . "**");
 
         foreach ($tickets as $ticket) {
-            $embed = new Embed($this->plan->bot->discord);
+            $embed = new Embed($this->bot->discord);
 
             if (!empty($ticket->ticket->title)) {
                 $embed->setTitle($ticket->ticket->title);
@@ -819,7 +815,6 @@ class DiscordUserTickets
             BotDatabaseTable::BOT_TICKET_CREATIONS,
             null,
             array(
-                array("plan_id", $this->plan->planID),
                 array("deletion_date", null),
                 array("expired", null),
                 array("expiration_date", "IS NOT", null),
@@ -845,10 +840,10 @@ class DiscordUserTickets
                     null,
                     1
                 )) {
-                    $channel = $this->plan->bot->discord->getChannel($row->created_channel_id);
+                    $channel = $this->bot->discord->getChannel($row->created_channel_id);
 
                     if ($channel !== null
-                        && $this->plan->utilities->allowText($channel)
+                        && $this->bot->utilities->allowText($channel)
                         && $channel->guild_id == $row->created_channel_server_id) {
                         $this->ignoreDeletion++;
                         $channel->guild->channels->delete($channel);

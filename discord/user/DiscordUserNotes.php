@@ -10,13 +10,13 @@ use Discord\Parts\Interactions\Interaction;
 
 class DiscordUserNotes
 {
-    private DiscordPlan $plan;
+    private DiscordBot $bot;
 
     private const NOT_EXISTS = "This note does not exist or is not available to you.";
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $bot)
     {
-        $this->plan = $plan;
+        $this->bot = $bot;
     }
 
     public function create(Interaction      $interaction,
@@ -26,14 +26,14 @@ class DiscordUserNotes
             return;
         }
         if ($this->get($interaction, $key, $interaction->user->id) !== null) {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     "A note with that key already exists."
                 ), true
             );
         } else {
-            $this->plan->component->createModal(
+            $this->bot->component->createModal(
                 $interaction,
                 "Connect Account",
                 array(
@@ -93,7 +93,7 @@ class DiscordUserNotes
                                         "creation_date" => $date,
                                     )
                                 )) {
-                                $this->plan->utilities->acknowledgeMessage(
+                                $this->bot->utilities->acknowledgeMessage(
                                     $interaction,
                                     MessageBuilder::new()->setContent(
                                         "Successfully created the note."
@@ -104,7 +104,7 @@ class DiscordUserNotes
                                 $logger->logError(
                                     "An database error occurred while creating a note for the user: " . $interaction->user->id
                                 );
-                                $this->plan->utilities->acknowledgeMessage(
+                                $this->bot->utilities->acknowledgeMessage(
                                     $interaction,
                                     MessageBuilder::new()->setContent(
                                         "An database error occurred while creating the note."
@@ -146,8 +146,8 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.edit")) {
-                $this->plan->component->createModal(
+                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.edit")) {
+                $this->bot->component->createModal(
                     $interaction,
                     "Connect Account",
                     array(
@@ -177,7 +177,7 @@ class DiscordUserNotes
                                 "creation_reason" => $creationReason
                             ),
                         )) {
-                            $this->plan->utilities->acknowledgeMessage(
+                            $this->bot->utilities->acknowledgeMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent(
                                     "Successfully edited the note."
@@ -188,7 +188,7 @@ class DiscordUserNotes
                             $logger->logError(
                                 "An database error occurred while editing a note with ID: " . $object->id
                             );
-                            $this->plan->utilities->acknowledgeMessage(
+                            $this->bot->utilities->acknowledgeMessage(
                                 $interaction,
                                 MessageBuilder::new()->setContent(
                                     "An database error occurred while editing the note."
@@ -198,7 +198,7 @@ class DiscordUserNotes
                     },
                 );
             } else {
-                $this->plan->utilities->acknowledgeCommandMessage(
+                $this->bot->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to edit this note."
@@ -206,7 +206,7 @@ class DiscordUserNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -242,7 +242,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.delete")) {
+                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.delete")) {
                 if (set_sql_query(
                     BotDatabaseTable::BOT_NOTES,
                     array(
@@ -254,7 +254,7 @@ class DiscordUserNotes
                         array("id", $object->id),
                     )
                 )) {
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "Successfully deleted the note."
@@ -265,7 +265,7 @@ class DiscordUserNotes
                     $logger->logError(
                         "An database error occurred while deleting a note with ID: " . $object->id
                     );
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "An database error occurred while deleting the note."
@@ -273,7 +273,7 @@ class DiscordUserNotes
                     );
                 }
             } else {
-                $this->plan->utilities->acknowledgeCommandMessage(
+                $this->bot->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to delete this note."
@@ -281,7 +281,7 @@ class DiscordUserNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -369,7 +369,7 @@ class DiscordUserNotes
                 }
 
                 if ($proceed
-                    || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.get")) {
+                    || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.get")) {
                     if ($query->settings->view_public !== null
                         || $interaction->user->id == $query->user_id) {
                         return $query;
@@ -411,10 +411,10 @@ class DiscordUserNotes
             $user = null;
 
             foreach ($query as $row) {
-                $embed = new Embed($this->plan->bot->discord);
+                $embed = new Embed($this->bot->discord);
 
                 if ($user === null) {
-                    $user = $this->plan->utilities->getUser($row->user_id);
+                    $user = $this->bot->utilities->getUser($row->user_id);
 
                     if ($user === null) {
                         $user = false;
@@ -427,13 +427,13 @@ class DiscordUserNotes
                 }
                 $message->addEmbed($embed);
             }
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 $message,
                 true
             );
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     "This user does not have any notes."
@@ -453,8 +453,8 @@ class DiscordUserNotes
 
         if ($object !== null) {
             $messageBuilder = MessageBuilder::new();
-            $embed = new Embed($this->plan->bot->discord);
-            $user = $this->plan->utilities->getUser($object->user_id);
+            $embed = new Embed($this->bot->discord);
+            $user = $this->bot->utilities->getUser($object->user_id);
 
             if ($user !== null) {
                 $embed->setAuthor($user->id, $user->avatar);
@@ -487,7 +487,7 @@ class DiscordUserNotes
                     ->setPlaceholder("Remove a Participant");
 
                 foreach ($object->participants as $participant) {
-                    $choice = Option::new($this->plan->utilities->getUsername($participant->participant_id), $participant->id)
+                    $choice = Option::new($this->bot->utilities->getUsername($participant->participant_id), $participant->id)
                         ->setDescription(
                             "Permissions: "
                             . ($participant->write_permission !== null ? "Write" : "Read")
@@ -511,7 +511,7 @@ class DiscordUserNotes
                         null,
                         1
                     )) {
-                        $this->plan->utilities->acknowledgeCommandMessage(
+                        $this->bot->utilities->acknowledgeCommandMessage(
                             $interaction,
                             MessageBuilder::new()->setContent(
                                 "Successfully deleted the note's participant."
@@ -522,23 +522,23 @@ class DiscordUserNotes
                         $logger->logError(
                             "An database error occurred while deleting a note participant with ID: " . $rowID
                         );
-                        $this->plan->utilities->acknowledgeCommandMessage(
+                        $this->bot->utilities->acknowledgeCommandMessage(
                             $interaction,
                             MessageBuilder::new()->setContent(
                                 "An database error occurred while deleting the note participant."
                             ), true
                         );
                     }
-                }, $this->plan->bot->discord, true);
+                }, $this->bot->discord, true);
                 $messageBuilder->addComponent($select);
             }
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 $messageBuilder,
                 true
             );
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -575,7 +575,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.change.setting")) {
+                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.change.setting")) {
                 if (sql_insert(
                     BotDatabaseTable::BOT_NOTE_SETTINGS,
                     array(
@@ -586,7 +586,7 @@ class DiscordUserNotes
                         "creation_date" => get_current_date()
                     )
                 )) {
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "Successfully changed the note's settings."
@@ -597,7 +597,7 @@ class DiscordUserNotes
                     $logger->logError(
                         "An database error occurred while changing the note settings for the note with ID: " . $object->id
                     );
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "An database error occurred while changing the note settings."
@@ -605,7 +605,7 @@ class DiscordUserNotes
                     );
                 }
             } else {
-                $this->plan->utilities->acknowledgeCommandMessage(
+                $this->bot->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to change this note's settings."
@@ -613,7 +613,7 @@ class DiscordUserNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -652,7 +652,7 @@ class DiscordUserNotes
             }
 
             if ($proceed
-                || $this->plan->bot->permissions->hasPermission($interaction->member, "idealistic.note.modify.participant")) {
+                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.modify.participant")) {
                 $foundParticipant = null;
 
                 if (!empty($object->participants)) {
@@ -701,7 +701,7 @@ class DiscordUserNotes
                             "creation_date" => get_current_date()
                         )
                     )) {
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "Successfully modified the note's participants."
@@ -712,7 +712,7 @@ class DiscordUserNotes
                     $logger->logError(
                         "An database error occurred while modifying a note participant for the note with ID: " . $object->id
                     );
-                    $this->plan->utilities->acknowledgeCommandMessage(
+                    $this->bot->utilities->acknowledgeCommandMessage(
                         $interaction,
                         MessageBuilder::new()->setContent(
                             "An database error occurred while modifying the note participant."
@@ -720,7 +720,7 @@ class DiscordUserNotes
                     );
                 }
             } else {
-                $this->plan->utilities->acknowledgeCommandMessage(
+                $this->bot->utilities->acknowledgeCommandMessage(
                     $interaction,
                     MessageBuilder::new()->setContent(
                         "You do not have permission to modify this note's participants."
@@ -728,7 +728,7 @@ class DiscordUserNotes
                 );
             }
         } else {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     self::NOT_EXISTS
@@ -743,7 +743,7 @@ class DiscordUserNotes
         $cacheKey = array(__METHOD__, $key, $userID);
 
         if (has_memory_cooldown($cacheKey, "3 seconds")) {
-            $this->plan->utilities->acknowledgeCommandMessage(
+            $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent(
                     "Please wait before using this command again."
