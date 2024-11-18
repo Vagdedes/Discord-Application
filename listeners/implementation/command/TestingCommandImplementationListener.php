@@ -3,7 +3,6 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
-use DiscordBot;
 
 class TestingCommandImplementationListener // Name can be changed
 {

@@ -126,7 +126,7 @@ class DiscordStatusMessages
                 $member->id,
                 $case
             ),
-            "5 minutes"
+            "1 minute"
         );
     }
 }

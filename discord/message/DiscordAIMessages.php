@@ -890,48 +890,35 @@ class DiscordAIMessages
     function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
                      int|string      $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
-        $cache = get_key_value_pair($cacheKey);
+        $cost = 0.0;
+        $array = get_sql_query(
+            BotDatabaseTable::BOT_AI_REPLIES,
+            array("cost"),
+            array(
+                $serverID !== null ? array("server_id", $serverID) : "",
+                $channelID !== null ? array("channel_id", $channelID) : "",
+                $userID !== null ? array("user_id", $userID) : "",
+                array("deletion_date", null),
+                array("creation_date", ">", get_past_date($pastLookup))
+            ),
+            array(
+                "DESC",
+                "id"
+            )
+        );
 
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $cost = 0.0;
-            $array = get_sql_query(
-                BotDatabaseTable::BOT_AI_REPLIES,
-                array("cost"),
-                array(
-                    $serverID !== null ? array("server_id", $serverID) : "",
-                    $channelID !== null ? array("channel_id", $channelID) : "",
-                    $userID !== null ? array("user_id", $userID) : "",
-                    array("deletion_date", null),
-                    array("creation_date", ">", get_past_date($pastLookup))
-                ),
-                array(
-                    "DESC",
-                    "id"
-                )
-            );
-
-            foreach ($array as $row) {
-                $cost += $row->cost;
-            }
-            set_key_value_pair($cacheKey, $cost, $pastLookup);
-            return $cost;
+        foreach ($array as $row) {
+            $cost += $row->cost;
         }
+        return $cost;
     }
 
     private
     function getMessageCount(int|string|null $serverID, int|string|null $channelID,
                              int|string|null $userID, int|string $pastLookup): float
     {
-        $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
-        $cache = get_key_value_pair($cacheKey);
-
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $array = get_sql_query(
+        return sizeof(
+            get_sql_query(
                 BotDatabaseTable::BOT_AI_REPLIES,
                 array("id"),
                 array(
@@ -945,11 +932,8 @@ class DiscordAIMessages
                     "DESC",
                     "id"
                 )
-            );
-            $amount = sizeof($array);
-            set_key_value_pair($cacheKey, $amount, $pastLookup);
-            return $amount;
-        }
+            )
+        );
     }
 
     private

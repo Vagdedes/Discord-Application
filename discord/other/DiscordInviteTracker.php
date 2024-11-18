@@ -26,15 +26,12 @@ class DiscordInviteTracker
                 null
             )
         );
+        self::$cached_invites = array();
+        self::$invite_links = 0;
+        self::$invited_users = 0;
 
-        if (!has_memory_cooldown(self::class . "-initialized")) {
-            self::$cached_invites = array();
-            self::$invite_links = 0;
-            self::$invited_users = 0;
-
-            foreach ($this->bot->discord->guilds as $guild) {
-                self::track($guild, $this);
-            }
+        foreach ($this->bot->discord->guilds as $guild) {
+            self::track($guild, $this);
         }
     }
 

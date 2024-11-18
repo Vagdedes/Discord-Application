@@ -1,7 +1,6 @@
 <?php
 
 use Discord\Parts\Channel\Message;
-use DiscordBot;
 
 class TestingCountingGoalImplementationListener // Name can be changed
 {

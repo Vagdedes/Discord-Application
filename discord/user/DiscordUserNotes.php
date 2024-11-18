@@ -22,9 +22,6 @@ class DiscordUserNotes
     public function create(Interaction      $interaction,
                            int|float|string $key, ?string $creationReason = null): void
     {
-        if ($this->hasCooldown($interaction, $key, null)) {
-            return;
-        }
         if ($this->get($interaction, $key, $interaction->user->id) !== null) {
             $this->bot->utilities->acknowledgeCommandMessage(
                 $interaction,
@@ -123,9 +120,6 @@ class DiscordUserNotes
                          int|float|string $key, int|string|null $userID,
                          ?string          $creationReason = null): void
     {
-        if ($this->hasCooldown($interaction, $key, $userID)) {
-            return;
-        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -219,9 +213,6 @@ class DiscordUserNotes
                            int|float|string $key, int|string|null $userID,
                            ?string          $deletionReason = null): void
     {
-        if ($this->hasCooldown($interaction, $key, $userID)) {
-            return;
-        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -388,9 +379,6 @@ class DiscordUserNotes
 
     public function sendAll(Interaction $interaction, int|string $userID): void
     {
-        if ($this->hasCooldown($interaction, null, $userID)) {
-            return;
-        }
         $query = get_sql_query(
             BotDatabaseTable::BOT_NOTES,
             null,
@@ -445,9 +433,6 @@ class DiscordUserNotes
     public function send(Interaction      $interaction,
                          int|float|string $key, int|string|null $userID = null): void
     {
-        if ($this->hasCooldown($interaction, $key, $userID)) {
-            return;
-        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -552,9 +537,6 @@ class DiscordUserNotes
                                   ?bool            $viewPublic,
                                   ?bool            $readHistory = null): void
     {
-        if ($this->hasCooldown($interaction, $key, $userID)) {
-            return;
-        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -629,9 +611,6 @@ class DiscordUserNotes
                                       ?bool            $deletePermission = null,
                                       ?bool            $managePermission = null): void
     {
-        if ($this->hasCooldown($interaction, $key, $userID)) {
-            return;
-        }
         $object = $this->get($interaction, $key,
             $userID !== null ? $userID : $interaction->user->id);
 
@@ -737,21 +716,4 @@ class DiscordUserNotes
         }
     }
 
-    private function hasCooldown(Interaction           $interaction,
-                                 int|float|string|null $key, int|string|null $userID): bool
-    {
-        $cacheKey = array(__METHOD__, $key, $userID);
-
-        if (has_memory_cooldown($cacheKey, "3 seconds")) {
-            $this->bot->utilities->acknowledgeCommandMessage(
-                $interaction,
-                MessageBuilder::new()->setContent(
-                    "Please wait before using this command again."
-                ), true
-            );
-            return true;
-        } else {
-            return false;
-        }
-    }
 }
