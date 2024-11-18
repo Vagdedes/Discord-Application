@@ -435,7 +435,7 @@ class DiscordUserTickets
                             BotDatabaseTable::BOT_TICKET_MESSAGES,
                             array(
                                 "ticket_creation_id" => $query->ticket_creation_id,
-                                "user_id" => $message->author->id,
+                                "user_id" => $message->user_id,
                                 "message_id" => $message->id,
                                 "message_content" => $message->content,
                                 "creation_date" => get_current_date(),

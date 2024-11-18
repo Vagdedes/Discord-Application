@@ -206,7 +206,7 @@ class DiscordPersistentMessages
             'cache' => true
         ])->done(function (Collection $messages) use ($dbMessages, $botID, $bot) {
             foreach ($messages as $message) {
-                if ($message->author->id != $botID) {
+                if ($message->user_id != $botID) {
                     continue;
                 }
                 foreach ($dbMessages as $dbMessage) {
@@ -317,8 +317,9 @@ class DiscordPersistentMessages
                                 object         $messageRow, object $oldMessageRow,
                                 array          $array, int $position): void
     {
+        $bot = $this->bot;
         $channel->sendMessage($this->build(null, $messageRow))->done(
-            function (Message $message) use ($messageRow, $oldMessageRow, $array, $position) {
+            function (Message $message) use ($messageRow, $oldMessageRow, $array, $position, $bot) {
                 $this->bot->component->addReactions($message, $messageRow->id);
                 $messageRow->message_id = $message->id;
                 set_sql_query(
@@ -332,7 +333,7 @@ class DiscordPersistentMessages
                     null,
                     1
                 );
-                $this->bot->instructions->manager->addExtra(
+                $bot->instructions->manager->addExtra(
                     "interactive-message-" . $message->id,
                     $message->getRawAttributes()
                 );
@@ -347,14 +348,13 @@ class DiscordPersistentMessages
                                  array          $array, int $position): void
     {
         try {
+            $bot = $this->bot;
             $channel->messages->fetch($oldMessageRow->message_id, true)->done(
-                function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position) {
-                    $this->bot->component->addReactions($message, $messageRow->id);
+                function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position, $bot) {
                     if ($message->user_id == $this->bot->botID) {
                         if ($custom) {
                             $messageRow->message_id = $message->id;
                         }
-                        $bot = $this->bot;
                         $message->edit($this->build(null, $messageRow))->done(
                             function (Message $message) use ($bot) {
                                 $bot->instructions->manager->addExtra(

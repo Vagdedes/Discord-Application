@@ -107,12 +107,12 @@ class DiscordTransferredMessages
                                             "start_channel_id" => $startChannel instanceof Thread ? $startChannel->parent_id : $startChannel->id,
                                             "start_thread_id" => $startChannel instanceof Thread ? $startChannel->id : null,
                                             "start_message_id" => $message->id,
-                                            "start_user_id" => $message->author->id,
+                                            "start_user_id" => $message->user_id,
                                             "end_server_id" => $channelObj->guild_id,
                                             "end_channel_id" => $channelObj instanceof Thread ? $channelObj->parent_id : $channelObj->id,
                                             "end_thread_id" => $channelObj instanceof Thread ? $channelObj->id : null,
                                             "end_message_id" => $endMessage->id,
-                                            "end_user_id" => $endMessage->author->id,
+                                            "end_user_id" => $endMessage->user_id,
                                             "creation_date" => $message->timestamp
                                         )
                                     )) {

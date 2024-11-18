@@ -216,7 +216,7 @@ class DiscordListener
             require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($guild, $channel, $name, $object)
+                array($this->bot, $guild, $channel, $name, $object)
             );
         }
         return $name;

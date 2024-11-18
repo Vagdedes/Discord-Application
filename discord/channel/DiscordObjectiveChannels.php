@@ -51,7 +51,7 @@ class DiscordObjectiveChannels
 
     public function trackCreation(Message $message): bool
     {
-        if (!empty($this->channels) && $message->author->id != $this->bot->botID) {
+        if (!empty($this->channels) && $message->user_id != $this->bot->botID) {
             foreach ($this->channels as $channel) {
                 if ($channel->start_server_id === $message->guild_id
                     && $channel->start_channel_id == $message->channel_id

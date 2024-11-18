@@ -46,7 +46,7 @@ class DiscordCountingChannels
 
     public function track(Message $message): bool
     {
-        if ($message->author->id != $this->bot->botID) {
+        if ($message->user_id != $this->bot->botID) {
             $rowArray = $this->getCountingChannelObject($message);
 
             if ($rowArray !== null) {
@@ -81,7 +81,7 @@ class DiscordCountingChannels
                                                 $count = 0;
 
                                                 foreach ($query as $single) {
-                                                    if ($single->user_id == $message->author->id) {
+                                                    if ($single->user_id == $message->user_id) {
                                                         $count++;
                                                     }
                                                 }
@@ -96,7 +96,7 @@ class DiscordCountingChannels
                                             BotDatabaseTable::BOT_COUNTING_MESSAGES,
                                             array(
                                                 "counting_id" => $row->id,
-                                                "user_id" => $message->author->id,
+                                                "user_id" => $message->user_id,
                                                 "message_id" => $message->id,
                                                 "sent_number" => $sent,
                                                 "creation_date" => get_current_date()
@@ -152,7 +152,7 @@ class DiscordCountingChannels
 
         if ($rowArray !== null) {
             $message->channel?->sendMessage(
-                (isset($message->author) ? "<@{$message->author->id}> " : "<" . $message->id . "> ")
+                (isset($message->author) ? "<@{$message->user_id}> " : "<" . $message->id . "> ")
                 . $rowArray[1]->current_number
             );
             return true;
@@ -167,7 +167,7 @@ class DiscordCountingChannels
         if ($rowArray !== null) {
             $this->ignoreDeletion++;
             $message->delete();
-            $message->channel->sendMessage("<@{$message->author->id}> " . $rowArray[1]->current_number);
+            $message->channel->sendMessage("<@{$message->user_id}> " . $rowArray[1]->current_number);
             return true;
         }
         return false;
@@ -240,7 +240,7 @@ class DiscordCountingChannels
                         array(
                             "goal_id" => $goal->id,
                             "server_id" => $message->guild_id,
-                            "user_id" => $message->author->id,
+                            "user_id" => $message->user_id,
                             "creation_date" => get_current_date()
                         )
                     )) {

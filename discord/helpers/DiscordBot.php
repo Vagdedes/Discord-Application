@@ -95,6 +95,8 @@ class DiscordBot
         $this->commands = new DiscordCommands($this);
         $this->component = new DiscordComponent($this);
         $this->aiMessages = new DiscordAIMessages($this);
+        $this->interactionRoles = new DiscordInteractionRoles($this);
+        $this->instructions = new DiscordInstructions($this);
         $this->instructions = new DiscordInstructions($this); // Dependent on exact above
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
