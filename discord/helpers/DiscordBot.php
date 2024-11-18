@@ -30,7 +30,6 @@
  * User Notes
  * User Targets
  * User Giveaways
- * User Polls
  * User Tickets
  * User Levels
  * User Questionnaires
