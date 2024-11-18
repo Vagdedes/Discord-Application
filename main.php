@@ -26,7 +26,6 @@ require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
 
 require '/root/discord_bot/discord/user/DiscordUserNotes.php';
 require '/root/discord_bot/discord/user/DiscordUserGiveaways.php';
-require '/root/discord_bot/discord/user/DiscordUserPolls.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
