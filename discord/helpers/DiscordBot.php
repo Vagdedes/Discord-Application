@@ -121,13 +121,10 @@ class DiscordBot
     {
         if ($force || get_current_date() > $this->refreshDate) {
             $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
-            $this->counter++;
             reset_all_sql_connections();
-            clear_memory(null);
-            create_sql_connection();
+            clear_memory();
 
-            if ($this->counter === 10) {
-                $this->counter = 0;
+            if (++$this->counter === 10) {
                 $this->discord->close(true);
                 initiate_discord_bot();
             } else {
