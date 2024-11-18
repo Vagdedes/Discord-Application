@@ -1,5 +1,7 @@
 <?php
 
+namespace standalone;
+
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Invite;
@@ -10,6 +12,10 @@ use Discord\Parts\Part;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\WebSockets\Event;
+use DiscordBot;
+use DiscordInheritedLimits;
+use DiscordInviteTracker;
+use DiscordSyntax;
 
 class DiscordLogs
 {
@@ -40,9 +46,6 @@ class DiscordLogs
             );
     }
 
-    /**
-     * @throws Exception
-     */
     public function logInfo(Guild|int|string|null $guild,
                             int|string|null       $userID, ?string $action,
                             mixed                 $object, mixed $oldObject = null,

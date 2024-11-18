@@ -1,9 +1,13 @@
 <?php
 
+namespace standalone;
+
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
+use DiscordBot;
+use DiscordPlan;
 
 class DiscordChannels
 {
@@ -161,59 +165,45 @@ class DiscordChannels
 
     public function getIfHasAccess(?DiscordPlan $plan, Channel|Thread $channel, Member|User $member): ?object
     {
-        $cacheKey = array(
-            __METHOD__,
-            $plan->planID ?? 0,
-            $channel->guild_id,
-            $channel->id,
-            $member->id,
-        );
-        $cache = get_key_value_pair($cacheKey);
+        $result = false;
+        $list = $this->getList($plan);
 
-        if ($cache !== null) {
-            return $cache === false ? null : $cache;
-        } else {
-            $result = false;
-            $list = $this->getList($plan);
+        if (!empty($list)) {
+            $parent = $channel instanceof Thread ? $channel->parent_id : $channel->id;
 
-            if (!empty($list)) {
-                $parent = $channel instanceof Thread ? $channel->parent_id : $channel->id;
-
-                foreach ($list as $channelRow) {
-                    if ($channelRow->server_id == $channel->guild_id
-                        && ($channelRow->category_id === null
-                            || $channelRow->category_id == $channel->parent_id)
-                        && ($channelRow->channel_id === null
-                            || $channelRow->channel_id == $parent)
-                        && ($channelRow->thread_id === null
-                            || $channelRow->thread_id == $channel->id)) {
-                        if ($channelRow->whitelist === null) {
-                            $result = $channelRow;
-                            break;
-                        } else if (!empty($this->whitelist)) {
-                            foreach ($this->whitelist as $whitelist) {
-                                if ($whitelist->user_id == $member->id
-                                    && ($whitelist->server_id === null
-                                        || $whitelist->server_id == $channel->guild_id
-                                        && ($whitelist->category_id === null
-                                            || $whitelist->category_id == $channel->parent_id)
-                                        && ($whitelist->channel_id === null
-                                            || $whitelist->channel_id == $parent)
-                                        && ($whitelist->thread_id === null
-                                            || $whitelist->thread_id == $channel->id))) {
-                                    $result = $channelRow;
-                                    break 2;
-                                }
+            foreach ($list as $channelRow) {
+                if ($channelRow->server_id == $channel->guild_id
+                    && ($channelRow->category_id === null
+                        || $channelRow->category_id == $channel->parent_id)
+                    && ($channelRow->channel_id === null
+                        || $channelRow->channel_id == $parent)
+                    && ($channelRow->thread_id === null
+                        || $channelRow->thread_id == $channel->id)) {
+                    if ($channelRow->whitelist === null) {
+                        $result = $channelRow;
+                        break;
+                    } else if (!empty($this->whitelist)) {
+                        foreach ($this->whitelist as $whitelist) {
+                            if ($whitelist->user_id == $member->id
+                                && ($whitelist->server_id === null
+                                    || $whitelist->server_id == $channel->guild_id
+                                    && ($whitelist->category_id === null
+                                        || $whitelist->category_id == $channel->parent_id)
+                                    && ($whitelist->channel_id === null
+                                        || $whitelist->channel_id == $parent)
+                                    && ($whitelist->thread_id === null
+                                        || $whitelist->thread_id == $channel->id))) {
+                                $result = $channelRow;
+                                break 2;
                             }
-                        } else {
-                            break;
                         }
+                    } else {
+                        break;
                     }
                 }
             }
-            set_key_value_pair($cacheKey, $result);
-            return $result === false ? null : $result;
         }
+        return $result === false ? null : $result;
     }
 
     public function addTemporary(?DiscordPlan $plan, Channel $channel, ?array $properties = null): bool

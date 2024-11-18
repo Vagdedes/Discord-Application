@@ -16,12 +16,10 @@ require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/communication.php';
 require '/root/discord_bot/utilities/evaluator.php';
 
-require '/root/discord_bot/discord/custom/standalone/DiscordLogs.php';
-require '/root/discord_bot/discord/custom/standalone/DiscordMute.php';
-require '/root/discord_bot/discord/custom/DiscordCommands.php';
-
+require '/root/discord_bot/discord/other/standalone/DiscordMute.php';
 require '/root/discord_bot/discord/other/standalone/DiscordFAQ.php';
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
+require '/root/discord_bot/discord/other/DiscordCommands.php';
 
 require '/root/discord_bot/discord/roles/standalone/DiscordJoinRoles.php';
 require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
@@ -46,17 +44,18 @@ require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
 require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 require '/root/discord_bot/discord/message/DiscordChatFilteredMessages.php';
-require '/root/discord_bot/discord/message/DiscordMessageNotifications.php';
+require '/root/discord_bot/discord/message/DiscordNotificationMessages.php';
 
+require '/root/discord_bot/discord/helpers/standalone/DiscordLogs.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
 require '/root/discord_bot/discord/helpers/standalone/variables.php';
 require '/root/discord_bot/discord/helpers/standalone/DiscordPermissions.php';
+require '/root/discord_bot/discord/helpers/standalone/DiscordChannels.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
 require '/root/discord_bot/discord/helpers/DiscordComponent.php';
-require '/root/discord_bot/discord/helpers/DiscordChannels.php';
 
 use Discord\Discord;
 use Discord\Helpers\Collection;
@@ -66,7 +65,6 @@ use Discord\Parts\Channel\Message;
 use Discord\Parts\Channel\StageInstance;
 use Discord\Parts\Guild\AutoModeration\Rule;
 use Discord\Parts\Guild\Ban;
-use Discord\Parts\Guild\CommandPermissions;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\Guild\Integration;
 use Discord\Parts\Guild\Role;
@@ -302,7 +300,7 @@ function initiate_discord_bot(): void
             $createdDiscordBot->statisticsChannels->refresh();
 
             foreach ($createdDiscordBot->plans as $plan) {
-                if ($plan->messageNotifications->executeThread($thread)) {
+                if ($plan->notificationMessages->executeThread($thread)) {
                     break;
                 }
             }

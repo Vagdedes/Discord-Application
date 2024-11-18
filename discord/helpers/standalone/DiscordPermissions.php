@@ -7,7 +7,6 @@ class DiscordPermissions
 {
     private DiscordBot $bot;
     private array $rolePermissions, $userPermissions;
-    private const REFRESH_TIME = "3 seconds";
 
     public function __construct(DiscordBot $bot)
     {
@@ -93,33 +92,21 @@ class DiscordPermissions
 
     public function hasPermission(Member $member, string $permission): bool
     {
-        $cacheKey = array(
-            __METHOD__,
-            $member->id,
-            $permission
-        );
-        $cache = get_key_value_pair($cacheKey);
+        $result = false;
 
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $result = false;
-
-            if ($this->userHasPermission($member->guild_id, $member->id, "*")
-                || $this->userHasPermission($member->guild_id, $member->id, $permission)) {
-                $result = true;
-            } else if (!empty($member->roles->first())) {
-                foreach ($member->roles as $role) {
-                    if ($this->roleHasPermission($role->guild_id, $role->id, "*")
-                        || $this->roleHasPermission($role->guild_id, $role->id, $permission)) {
-                        $result = true;
-                        break;
-                    }
+        if ($this->userHasPermission($member->guild_id, $member->id, "*")
+            || $this->userHasPermission($member->guild_id, $member->id, $permission)) {
+            $result = true;
+        } else if (!empty($member->roles->first())) {
+            foreach ($member->roles as $role) {
+                if ($this->roleHasPermission($role->guild_id, $role->id, "*")
+                    || $this->roleHasPermission($role->guild_id, $role->id, $permission)) {
+                    $result = true;
+                    break;
                 }
             }
-            set_key_value_pair($cacheKey, $result, self::REFRESH_TIME);
-            return $result;
         }
+        return $result;
     }
 
     public function addDiscordRole(Member $member, int|string $roleID): bool

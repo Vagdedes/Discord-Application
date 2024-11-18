@@ -2,7 +2,6 @@
 
 use Discord\Builders\Components\TextInput;
 use Discord\Builders\MessageBuilder;
-use Discord\Discord;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Invite;
 use Discord\Parts\Channel\Message;
@@ -18,11 +17,12 @@ class DiscordListener
     private ?DiscordPlan $plan;
     private const
         CREATION_MESSAGE = "/root/discord_bot/listeners/creation/message/",
-        CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
-        CREATION_REACTION = "/root/discord_bot/listeners/creation/reaction/",
-
         IMPLEMENTATION_MESSAGE = "/root/discord_bot/listeners/implementation/message/",
+
+        CREATION_MODAL = "/root/discord_bot/listeners/creation/modal/",
         IMPLEMENTATION_MODAL = "/root/discord_bot/listeners/implementation/modal/",
+
+        CREATION_REACTION = "/root/discord_bot/listeners/creation/reaction/",
         IMPLEMENTATION_COMMAND = "/root/discord_bot/listeners/implementation/command/",
 
         IMPLEMENTATION_USER_TICKETS = "/root/discord_bot/listeners/custom/user_tickets/",
@@ -32,24 +32,8 @@ class DiscordListener
         IMPLEMENTATION_CHANNEL_STATISTICS = "/root/discord_bot/listeners/custom/channel_statistics/",
         IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/custom/reminder_message/",
         IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/custom/status_message/",
-        IMPLEMENTATION_CUSTOM_MUTE = "/root/discord_bot/listeners/custom/custom_mute/",
-        IMPLEMENTATION_CUSTOM_LOGS = "/root/discord_bot/listeners/custom/custom_logs/",
         IMPLEMENTATION_NOTIFICATION_MESSAGE = "/root/discord_bot/listeners/custom/notification_message/",
-        IMPLEMENTATION_AI_TEXT = "/root/discord_bot/listeners/custom/ai_text/",
-        IMPLEMENTATION_AI_IMAGE = "/root/discord_bot/listeners/custom/ai_image/",
-        IMPLEMENTATION_SOCIAL_ALERTS = "/root/discord_bot/listeners/custom/social_alerts/",
-        IMPLEMENTATION_CHANNEL_OBJECTIVE = "/root/discord_bot/listeners/custom/user_objective/",
-        IMPLEMENTATION_USER_NOTES = "/root/discord_bot/listeners/custom/user_notes/",
-        IMPLEMENTATION_USER_TARGETS = "/root/discord_bot/listeners/custom/user_targets/",
-        IMPLEMENTATION_REACTION_ROLES = "/root/discord_bot/listeners/custom/reaction_roles/",
-        IMPLEMENTATION_CHANNEL_TEMPORARY = "/root/discord_bot/listeners/custom/channel_temporary/",
-        IMPLEMENTATION_MESSAGE_TRANSFER = "/root/discord_bot/listeners/custom/transfer_message/",
-        IMPLEMENTATION_MESSAGE_FILTER = "/root/discord_bot/listeners/custom/filter_message/",
-        IMPLEMENTATION_MESSAGE_ANTI_EXPIRATION_THREAD = "/root/discord_bot/listeners/custom/anti_expiration_thread/",
-        IMPLEMENTATION_USER_QUESTIONNAIRE = "/root/discord_bot/listeners/custom/user_questionnaires/",
-        IMPLEMENTATION_USER_GIVEAWAYS = "/root/discord_bot/listeners/custom/user_giveaways/",
-        IMPLEMENTATION_USER_POLLS = "/root/discord_bot/listeners/custom/user_polls/",
-        IMPLEMENTATION_MESSAGE_OBJECTIVE = "/root/discord_bot/listeners/custom/objective_message/";
+        IMPLEMENTATION_AI_TEXT = "/root/discord_bot/listeners/custom/ai_text/";
 
     public function __construct(DiscordBot|DiscordPlan $object)
     {
@@ -64,7 +48,8 @@ class DiscordListener
 
     public function callMessageImplementation(Interaction    $interaction,
                                               MessageBuilder $messageBuilder,
-                                              ?string        $class, ?string $method,
+                                              ?string        $class,
+                                              ?string        $method,
                                               mixed          $objects = null): void
     {
         if ($class !== null && $method !== null) {
@@ -77,7 +62,8 @@ class DiscordListener
     }
 
     public function callModalImplementation(Interaction $interaction,
-                                            ?string     $class, ?string $method,
+                                            ?string     $class,
+                                            ?string     $method,
                                             mixed       $objects = null): void
     {
         if ($class !== null && $method !== null) {
@@ -91,7 +77,8 @@ class DiscordListener
 
     public function callMessageBuilderCreation(?Interaction   $interaction,
                                                MessageBuilder $messageBuilder,
-                                               ?string        $class, ?string $method): MessageBuilder
+                                               ?string        $class,
+                                               ?string        $method): MessageBuilder
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MESSAGE . $this->plan->planID . "/" . $class . '.php');
@@ -107,7 +94,8 @@ class DiscordListener
     public function callModalCreation(Interaction $interaction,
                                       TextInput   $input,
                                       int         $position,
-                                      ?string     $class, ?string $method): TextInput
+                                      ?string     $class,
+                                      ?string     $method): TextInput
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MODAL . $this->plan->planID . "/" . $class . '.php');
@@ -121,7 +109,8 @@ class DiscordListener
     }
 
     public function callCommandImplementation(object  $command,
-                                              ?string $class, ?string $method): void
+                                              ?string $class,
+                                              ?string $method): void
     {
         if ($class !== null && $method !== null) {
             require_once(
@@ -171,7 +160,8 @@ class DiscordListener
     }
 
     public function callTicketImplementation(Interaction $interaction,
-                                             ?string     $class, ?string $method,
+                                             ?string     $class,
+                                             ?string     $method,
                                              mixed       $objects): void
     {
         if ($class !== null && $method !== null) {
@@ -183,7 +173,8 @@ class DiscordListener
         }
     }
 
-    public function callCountingGoalImplementation(?string $class, ?string $method,
+    public function callCountingGoalImplementation(?string $class,
+                                                   ?string $method,
                                                    Message $message,
                                                    mixed   $object): void
     {
@@ -196,7 +187,8 @@ class DiscordListener
         }
     }
 
-    public function callInviteTrackerImplementation(?string $class, ?string $method,
+    public function callInviteTrackerImplementation(?string $class,
+                                                    ?string $method,
                                                     Invite  $invite): void
     {
         if ($class !== null && $method !== null) {
@@ -208,7 +200,8 @@ class DiscordListener
         }
     }
 
-    public function callUserLevelsImplementation(?string $class, ?string $method,
+    public function callUserLevelsImplementation(?string $class,
+                                                 ?string $method,
                                                  Channel $channel,
                                                  object  $configuration,
                                                  object  $oldTier,
@@ -223,7 +216,8 @@ class DiscordListener
         }
     }
 
-    public function callChannelStatisticsImplementation(?string  $class, ?string $method,
+    public function callChannelStatisticsImplementation(?string  $class,
+                                                        ?string  $method,
                                                         Guild    $guild,
                                                         ?Channel $channel,
                                                         string   $name,
@@ -239,7 +233,8 @@ class DiscordListener
         return $name;
     }
 
-    public function callReminderMessageImplementation(?string        $class, ?string $method,
+    public function callReminderMessageImplementation(?string        $class,
+                                                      ?string        $method,
                                                       Channel|Thread $channel,
                                                       MessageBuilder $messageBuilder,
                                                       object         $object): MessageBuilder
@@ -254,7 +249,8 @@ class DiscordListener
         return $messageBuilder;
     }
 
-    public function callStatusMessageImplementation(?string        $class, ?string $method,
+    public function callStatusMessageImplementation(?string        $class,
+                                                    ?string        $method,
                                                     Channel        $channel,
                                                     Member         $member,
                                                     MessageBuilder $messageBuilder,
@@ -272,7 +268,8 @@ class DiscordListener
     }
 
     public function callNotificationMessageImplementation(MessageBuilder $message,
-                                                          ?string        $class, ?string $method,
+                                                          ?string        $class,
+                                                          ?string        $method,
                                                           object         $object): MessageBuilder
     {
         if ($class !== null && $method !== null) {
@@ -287,7 +284,8 @@ class DiscordListener
     }
 
     public function callReactionCreation(MessageReaction $reaction,
-                                         ?string         $class, ?string $method,
+                                         ?string         $class,
+                                         ?string         $method,
                                          int|string|null $customPlanID): void
     {
         if ($class !== null && $method !== null) {
@@ -301,7 +299,8 @@ class DiscordListener
         }
     }
 
-    public function callAiTextImplementation(?string $class, ?string $method,
+    public function callAiTextImplementation(?string $class,
+                                             ?string $method,
                                              Message $originalMessage,
                                              object  $channel,
                                              ?array  $localInstructions,

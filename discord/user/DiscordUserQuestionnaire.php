@@ -14,7 +14,6 @@ class DiscordUserQuestionnaire
 
     private const
         FAILED_QUESTION = "Failed to find question, please contact an administrator or try again later.",
-        REFRESH_TIME = "15 seconds",
         AI_HASH = 689043243;
 
     public function __construct(DiscordPlan $plan)
@@ -832,39 +831,30 @@ class DiscordUserQuestionnaire
 
     public function getSingle(int|string $questionnaireID, int $limitModification = 0): ?object
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $questionnaireID);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
+            null,
+            array(
+                array("questionnaire_creation_id", $questionnaireID),
+            ),
+            null,
+            1
+        );
 
-        if ($cache !== null) {
-            return $cache === false ? null : $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
-                null,
-                array(
-                    array("questionnaire_creation_id", $questionnaireID),
-                ),
-                null,
-                1
-            );
+        if (!empty($query)) {
+            $query = $query[0];
+            $query->questionnaire = $this->questionnaires[$query->questionnaire_id];
+            $query->answers = $this->getAnswers($query->questionnaire_id, $limitModification);
 
-            if (!empty($query)) {
-                $query = $query[0];
-                $query->questionnaire = $this->questionnaires[$query->questionnaire_id];
-                $query->answers = $this->getAnswers($query->questionnaire_id, $limitModification);
-
-                if (!empty($query->answers)) {
-                    foreach ($query->answers as $answer) {
-                        $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
-                    }
-                    rsort($query->answers);
+            if (!empty($query->answers)) {
+                foreach ($query->answers as $answer) {
+                    $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
                 }
-                set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-                return $query;
-            } else {
-                set_key_value_pair($cacheKey, false, self::REFRESH_TIME);
-                return null;
+                rsort($query->answers);
             }
+            return $query;
+        } else {
+            return null;
         }
     }
 
@@ -872,46 +862,38 @@ class DiscordUserQuestionnaire
                                 int|string|null $pastLookup = null, ?int $limit = null,
                                 bool            $messages = true, int $limitModification = 0): array
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
+            null,
+            array(
+                array("server_id", $serverID),
+                array("user_id", $userID),
+                $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            $limit
+        );
 
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING,
-                null,
-                array(
-                    array("server_id", $serverID),
-                    array("user_id", $userID),
-                    $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
-                ),
-                array(
-                    "DESC",
-                    "id"
-                ),
-                $limit
-            );
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $row->questionnaire = $this->questionnaires[$row->questionnaire_id];
 
-            if (!empty($query)) {
-                foreach ($query as $row) {
-                    $row->questionnaire = $this->questionnaires[$row->questionnaire_id];
+                if ($messages) {
+                    $row->answers = $this->getAnswers($row->questionnaire_id, $limitModification);
 
-                    if ($messages) {
-                        $row->answers = $this->getAnswers($row->questionnaire_id, $limitModification);
-
-                        if (!empty($row->answers)) {
-                            foreach ($row->answers as $answer) {
-                                $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
-                            }
-                            rsort($row->answers);
+                    if (!empty($row->answers)) {
+                        foreach ($row->answers as $answer) {
+                            $answer->question = $row->questionnaire->questions[$answer->question_id] ?? null;
                         }
+                        rsort($row->answers);
                     }
                 }
             }
-            set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-            return $query;
         }
+        return $query;
     }
 
     // Separator

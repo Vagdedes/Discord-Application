@@ -11,9 +11,7 @@ class DiscordUserTargets
     private DiscordPlan $plan;
     private array $targets;
     public int $ignoreChannelDeletion, $ignoreThreadDeletion;
-
-    private const REFRESH_TIME = "15 seconds";
-
+    
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -565,38 +563,29 @@ class DiscordUserTargets
 
     public function getSingle(int|string $targetID): ?object
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $targetID);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+            null,
+            array(
+                array("target_creation_id", $targetID),
+            ),
+            null,
+            1
+        );
 
-        if ($cache !== null) {
-            return $cache === false ? null : $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                null,
-                array(
-                    array("target_creation_id", $targetID),
-                ),
-                null,
-                1
+        if (!empty($query)) {
+            $query = $query[0];
+            $query->target = $this->targets[$query->target_id];
+            $query->messages = $this->plan->aiMessages->getConversation(
+                $query->server_id,
+                $query->created_thread_id === null ? $query->channel_id : null,
+                $query->created_thread_id === null ? null : $query->created_thread_id,
+                $query->user_id
             );
-
-            if (!empty($query)) {
-                $query = $query[0];
-                $query->target = $this->targets[$query->target_id];
-                $query->messages = $this->plan->aiMessages->getConversation(
-                    $query->server_id,
-                    $query->created_thread_id === null ? $query->channel_id : null,
-                    $query->created_thread_id === null ? null : $query->created_thread_id,
-                    $query->user_id
-                );
-                rsort($query->messages);
-                set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-                return $query;
-            } else {
-                set_key_value_pair($cacheKey, false, self::REFRESH_TIME);
-                return null;
-            }
+            rsort($query->messages);
+            return $query;
+        } else {
+            return null;
         }
     }
 
@@ -604,45 +593,37 @@ class DiscordUserTargets
                                 int|string|null $pastLookup = null, ?int $limit = null,
                                 bool            $messages = true): array
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
+            null,
+            array(
+                array("server_id", $serverID),
+                array("user_id", $userID),
+                $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            $limit
+        );
 
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS,
-                null,
-                array(
-                    array("server_id", $serverID),
-                    array("user_id", $userID),
-                    $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
-                ),
-                array(
-                    "DESC",
-                    "id"
-                ),
-                $limit
-            );
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $row->target = $this->targets[$row->target_id];
 
-            if (!empty($query)) {
-                foreach ($query as $row) {
-                    $row->target = $this->targets[$row->target_id];
-
-                    if ($messages) {
-                        $row->messages = $this->plan->aiMessages->getConversation(
-                            $row->server_id,
-                            $row->created_thread_id === null ? $row->channel_id : null,
-                            $row->created_thread_id === null ? null : $row->created_thread_id,
-                            $row->user_id
-                        );
-                        rsort($row->messages);
-                    }
+                if ($messages) {
+                    $row->messages = $this->plan->aiMessages->getConversation(
+                        $row->server_id,
+                        $row->created_thread_id === null ? $row->channel_id : null,
+                        $row->created_thread_id === null ? null : $row->created_thread_id,
+                        $row->user_id
+                    );
+                    rsort($row->messages);
                 }
             }
-            set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-            return $query;
         }
+        return $query;
     }
 
     // Separator

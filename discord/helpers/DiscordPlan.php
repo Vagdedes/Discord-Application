@@ -15,7 +15,6 @@ class DiscordPlan
     public DiscordBot $bot;
     public DiscordUserTargets $userTargets;
     public DiscordCountingChannels $countingChannels;
-    public DiscordUserPolls $userPolls;
     public DiscordUserLevels $userLevels;
     public DiscordInviteTracker $inviteTracker;
     public DiscordInteractionRoles $interactionRoles;
@@ -28,7 +27,7 @@ class DiscordPlan
     public DiscordUserGiveaways $userGiveaways;
     public DiscordChatFilteredMessages $chatFilteredMessages;
     public DiscordObjectiveChannels $objectiveChannels;
-    public DiscordMessageNotifications $messageNotifications;
+    public DiscordNotificationMessages $notificationMessages;
 
     public function __construct(DiscordBot $bot, int|string $planID)
     {
@@ -63,7 +62,6 @@ class DiscordPlan
         $this->persistentMessages = new DiscordPersistentMessages($this);
         $this->userTickets = new DiscordUserTickets($this);
         $this->countingChannels = new DiscordCountingChannels($this);
-        $this->userPolls = new DiscordUserPolls($this);
         $this->userLevels = new DiscordUserLevels($this);
         $this->temporaryChannels = new DiscordTemporaryChannels($this);
         $this->reminderMessages = new DiscordReminderMessages($this);
@@ -75,7 +73,7 @@ class DiscordPlan
         $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
-        $this->messageNotifications = new DiscordMessageNotifications($this);
+        $this->notificationMessages = new DiscordNotificationMessages($this);
         $this->interactionRoles = new DiscordInteractionRoles($this);
     }
 

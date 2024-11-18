@@ -4,6 +4,7 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Thread\Thread;
 use Discord\Parts\User\Member;
 use Discord\Parts\User\User;
+use DiscordBot;
 
 class DiscordMute
 {

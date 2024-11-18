@@ -5,6 +5,8 @@ use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Command\Option;
 use Discord\Parts\User\Member;
+use DiscordMute;
+use DiscordPlan;
 
 class DiscordCommands
 {

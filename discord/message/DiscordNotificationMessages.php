@@ -5,7 +5,7 @@ use Discord\Helpers\Collection;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Thread\Thread;
 
-class DiscordMessageNotifications
+class DiscordNotificationMessages
 {
     private DiscordPlan $plan;
     private array $notifications;

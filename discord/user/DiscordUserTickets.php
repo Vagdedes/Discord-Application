@@ -13,7 +13,6 @@ class DiscordUserTickets
     public int $ignoreDeletion;
     private array $tickets;
     private array $abstractTickets;
-    private const REFRESH_TIME = "15 seconds";
 
     public function __construct(DiscordPlan $plan)
     {
@@ -580,59 +579,50 @@ class DiscordUserTickets
 
     public function getSingle(int|string $ticketID): ?object
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $ticketID);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            null,
+            array(
+                array("ticket_creation_id", $ticketID),
+            ),
+            null,
+            1
+        );
 
-        if ($cache !== null) {
-            return $cache === false ? null : $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_TICKET_CREATIONS,
+        if (!empty($query)) {
+            $query = $query[0];
+            $query->ticket = get_sql_query(
+                BotDatabaseTable::BOT_TICKETS,
                 null,
                 array(
-                    array("ticket_creation_id", $ticketID),
+                    array("id", $query->ticket_id),
                 ),
                 null,
                 1
+            )[0];
+            $query->key_value_pairs = get_sql_query(
+                BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                null,
+                array(
+                    array("ticket_creation_id", $ticketID),
+                )
             );
-
-            if (!empty($query)) {
-                $query = $query[0];
-                $query->ticket = get_sql_query(
-                    BotDatabaseTable::BOT_TICKETS,
-                    null,
-                    array(
-                        array("id", $query->ticket_id),
-                    ),
-                    null,
-                    1
-                )[0];
-                $query->key_value_pairs = get_sql_query(
-                    BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
-                    null,
-                    array(
-                        array("ticket_creation_id", $ticketID),
-                    )
-                );
-                $query->messages = get_sql_query(
-                    BotDatabaseTable::BOT_TICKET_MESSAGES,
-                    null,
-                    array(
-                        array("ticket_creation_id", $ticketID),
-                        array("deletion_date", null)
-                    ),
-                    array(
-                        "DESC",
-                        "id"
-                    )
-                );
-                rsort($query->messages);
-                set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-                return $query;
-            } else {
-                set_key_value_pair($cacheKey, false, self::REFRESH_TIME);
-                return null;
-            }
+            $query->messages = get_sql_query(
+                BotDatabaseTable::BOT_TICKET_MESSAGES,
+                null,
+                array(
+                    array("ticket_creation_id", $ticketID),
+                    array("deletion_date", null)
+                ),
+                array(
+                    "DESC",
+                    "id"
+                )
+            );
+            rsort($query->messages);
+            return $query;
+        } else {
+            return null;
         }
     }
 
@@ -640,65 +630,57 @@ class DiscordUserTickets
                                 int|string|null $pastLookup = null, ?int $limit = null,
                                 bool            $messages = true): array
     {
-        $cacheKey = array(__METHOD__, $this->plan->planID, $userID, $pastLookup, $limit, $messages);
-        $cache = get_key_value_pair($cacheKey);
+        $query = get_sql_query(
+            BotDatabaseTable::BOT_TICKET_CREATIONS,
+            null,
+            array(
+                array("server_id", $serverID),
+                array("user_id", $userID),
+                $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
+            ),
+            array(
+                "DESC",
+                "id"
+            ),
+            $limit
+        );
 
-        if ($cache !== null) {
-            return $cache;
-        } else {
-            $query = get_sql_query(
-                BotDatabaseTable::BOT_TICKET_CREATIONS,
-                null,
-                array(
-                    array("server_id", $serverID),
-                    array("user_id", $userID),
-                    $pastLookup === null ? "" : array("creation_date", ">", get_past_date($pastLookup)),
-                ),
-                array(
-                    "DESC",
-                    "id"
-                ),
-                $limit
-            );
-
-            if (!empty($query)) {
-                foreach ($query as $row) {
-                    $row->ticket = get_sql_query(
-                        BotDatabaseTable::BOT_TICKETS,
-                        null,
-                        array(
-                            array("id", $row->ticket_id),
-                        ),
-                        null,
-                        1
-                    )[0];
-                    $row->key_value_pairs = get_sql_query(
-                        BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+        if (!empty($query)) {
+            foreach ($query as $row) {
+                $row->ticket = get_sql_query(
+                    BotDatabaseTable::BOT_TICKETS,
+                    null,
+                    array(
+                        array("id", $row->ticket_id),
+                    ),
+                    null,
+                    1
+                )[0];
+                $row->key_value_pairs = get_sql_query(
+                    BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                    null,
+                    array(
+                        array("ticket_creation_id", $row->ticket_creation_id),
+                    )
+                );
+                if ($messages) {
+                    $row->messages = get_sql_query(
+                        BotDatabaseTable::BOT_TICKET_MESSAGES,
                         null,
                         array(
                             array("ticket_creation_id", $row->ticket_creation_id),
+                            array("deletion_date", null)
+                        ),
+                        array(
+                            "DESC",
+                            "id"
                         )
                     );
-                    if ($messages) {
-                        $row->messages = get_sql_query(
-                            BotDatabaseTable::BOT_TICKET_MESSAGES,
-                            null,
-                            array(
-                                array("ticket_creation_id", $row->ticket_creation_id),
-                                array("deletion_date", null)
-                            ),
-                            array(
-                                "DESC",
-                                "id"
-                            )
-                        );
-                        rsort($row->messages);
-                    }
+                    rsort($row->messages);
                 }
             }
-            set_key_value_pair($cacheKey, $query, self::REFRESH_TIME);
-            return $query;
         }
+        return $query;
     }
 
     // Separator

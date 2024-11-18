@@ -243,7 +243,7 @@ class DiscordAIMessages
                         || $this->plan->userQuestionnaire->track($originalMessage, $object)
                         || $this->plan->countingChannels->track($originalMessage)
                         || $this->plan->objectiveChannels->trackCreation($originalMessage)
-                        || $this->plan->messageNotifications->executeMessage($originalMessage);
+                        || $this->plan->notificationMessages->executeMessage($originalMessage);
 
                     if (!$stop
                         && $foundChannel
