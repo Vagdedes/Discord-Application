@@ -577,12 +577,59 @@ class DiscordAIMessages
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
-            $messages = array(
-                array(
-                    "role" => "user",
-                    "content" => $content
-                )
-            );
+            if (false && $source instanceof Message) {
+                if (empty($source->attachments->first())) {
+                    $messages = array(
+                        array(
+                            "role" => "user",
+                            "content" => $content
+                        )
+                    );
+                } else {
+                    $found = false;
+
+                    foreach ($source->attachments as $attachment) {
+                        if ($attachment->height !== null
+                            && $attachment->width !== null
+                            && $attachment->url !== null) {
+                            $object1 = new stdClass();
+                            $object1->type = "text";
+                            $object1->content = $content;
+
+                            $object2 = new stdClass();
+                            $object2->type = "image_url";
+                            $object2->content = $attachment->url;
+                            $messages = array(
+                                array(
+                                    "role" => "user",
+                                    "content" => array(
+                                        $object1,
+                                        $object2
+                                    )
+                                )
+                            );
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    if (!$found) {
+                        $messages = array(
+                            array(
+                                "role" => "user",
+                                "content" => $content
+                            )
+                        );
+                    }
+                }
+            } else {
+                $messages = array(
+                    array(
+                        "role" => "user",
+                        "content" => $content
+                    )
+                );
+            }
             $length = strlen($content);
             $system = $this->bot->instructions->build(
                 $systemInstructions[0],
@@ -674,10 +721,11 @@ class DiscordAIMessages
 
     // Separator
 
-    public function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                int|string|null $userID,
-                                array           $messageHistory = [],
-                                int|string      $limit = 100): array
+    public
+    function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                         int|string|null $userID,
+                         array           $messageHistory = [],
+                         int|string      $limit = 100): array
     {
         if ($channelID === null || $userID === null) {
             return array();
@@ -723,10 +771,11 @@ class DiscordAIMessages
         }
     }
 
-    public function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                               int|string|null $userID,
-                               array           $messageHistory = [],
-                               int|string      $limit = 100): array
+    public
+    function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                        int|string|null $userID,
+                        array           $messageHistory = [],
+                        int|string      $limit = 100): array
     {
         if ($channelID === null || $userID === null) {
             return array();
@@ -774,10 +823,11 @@ class DiscordAIMessages
         }
     }
 
-    public function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                                    int|string|null $userID,
-                                    array           $messageHistory = [],
-                                    int|string      $limit = 100): array
+    public
+    function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
+                             int|string|null $userID,
+                             array           $messageHistory = [],
+                             int|string      $limit = 100): array
     {
         if ($channelID === null || $userID === null) {
             return array();
@@ -833,8 +883,9 @@ class DiscordAIMessages
 
     // Separator
 
-    private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
-                             int|string      $pastLookup): float
+    private
+    function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+                     int|string      $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -867,8 +918,9 @@ class DiscordAIMessages
         }
     }
 
-    private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
-                                     int|string|null $userID, int|string $pastLookup): float
+    private
+    function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+                             int|string|null $userID, int|string $pastLookup): float
     {
         $cacheKey = array(__METHOD__, $this->bot->botID, $serverID, $channelID, $userID, $pastLookup);
         $cache = get_key_value_pair($cacheKey);
@@ -897,7 +949,8 @@ class DiscordAIMessages
         }
     }
 
-    private function isLimited(object $model, Message $message): array
+    private
+    function isLimited(object $model, Message $message): array
     {
         $array = array();
         $serverID = $message->guild_id;

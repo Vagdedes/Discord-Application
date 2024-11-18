@@ -74,7 +74,7 @@ class DiscordInstructions
                     },
                     "threadMessages" => function () use ($object) {
                         if ($object->channelID !== null) {
-                            $channel = $this->bot->bot->discord->getChannel($object->channelID);
+                            $channel = $this->bot->discord->getChannel($object->channelID);
 
                             if ($channel !== null) {
                                 return DiscordChannels::getAsyncThreadHistory(
