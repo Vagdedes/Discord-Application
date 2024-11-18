@@ -68,7 +68,6 @@ class DiscordStatisticsChannels
             if ($guild === null) {
                 global $logger;
                 $logger->logError(
-                    null,
                     "Failed to find guild with ID '" . $row->server_id . "' for statistics channel with ID '" . $row->id
                 );
                 return;
@@ -130,7 +129,6 @@ class DiscordStatisticsChannels
                 } else {
                     global $logger;
                     $logger->logError(
-                        null,
                         "Failed to find statistics channel with ID '{$row->channel_id}' in guild with ID:" . $row->server_id
                     );
                 }

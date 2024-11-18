@@ -43,7 +43,7 @@ class DiscordAIMessages
             foreach ($query as $row) {
                 if ($row->api_key === null) {
                     global $logger;
-                    $logger->logError($this->plan->planID, "Failed to find API key for plan: " . $this->plan->planID);
+                    $logger->logError("Failed to find API key for plan: " . $this->plan->planID);
                 } else {
                     $object = new stdClass();
                     $object->implement_class = $row->implement_class;
@@ -478,10 +478,10 @@ class DiscordAIMessages
                                     ));
                                 }
                             } else {
-                                $logger->logError($this->plan->planID, "Failed to find an existent chat-model for plan: " . $this->plan->planID);
+                                $logger->logError("Failed to find an existent chat-model for plan: " . $this->plan->planID);
                             }
                         } else {
-                            $logger->logError($this->plan->planID, "Failed to find any chat-model for plan: " . $this->plan->planID);
+                            $logger->logError("Failed to find any chat-model for plan: " . $this->plan->planID);
                         }
                     }
                 }
@@ -652,7 +652,6 @@ class DiscordAIMessages
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "Failed to get length on text from chat-model for channel/thread with ID: " . $channel->id
                         . "\n" . @json_encode($model)
                         . "\n" . @json_encode($replyObject)
@@ -661,7 +660,6 @@ class DiscordAIMessages
             } else {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
                     "Failed to get text from chat-model for channel/thread with ID: " . $channel->id
                     . "\n" . @json_encode($outcome)
                 );
@@ -669,7 +667,6 @@ class DiscordAIMessages
         } else {
             global $logger;
             $logger->logError(
-                $this->plan->planID,
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
         }

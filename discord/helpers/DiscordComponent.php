@@ -138,7 +138,6 @@ class DiscordComponent
             } else {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
                     "Invalid modal with ID: " . $key,
                 );
                 return false;
@@ -257,7 +256,6 @@ class DiscordComponent
 
                     if (count($rows[$buttonObject->row_id]) > DiscordInheritedLimits::MAX_BUTTONS_PER_ACTION_ROW) {
                         $logger->logError(
-                            $this->plan->planID,
                             "More than allowed buttons per row in button with ID: " . $buttonObject->id,
                         );
                         break;
@@ -317,7 +315,6 @@ class DiscordComponent
                             } else {
                                 $button = null;
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "Invalid button with ID: " . $buttonObject->id,
                                 );
                             }
@@ -455,7 +452,6 @@ class DiscordComponent
             } else {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
                     "Invalid selection with ID: " . $componentID,
                 );
             }

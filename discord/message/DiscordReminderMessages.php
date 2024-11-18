@@ -134,7 +134,6 @@ class DiscordReminderMessages
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "Incorrect reminder message with ID: " . $row->id
                     );
                 }

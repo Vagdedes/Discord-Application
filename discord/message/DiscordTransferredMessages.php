@@ -1,9 +1,14 @@
 <?php
 
+namespace message;
+
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\Thread\Thread;
+use DiscordBot;
+use DiscordInviteTracker;
+use DiscordSyntax;
 
 class DiscordTransferredMessages
 {
@@ -86,7 +91,6 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        null,
                                         "Failed to find message-transferrer thread for creation with ID: " . $sentChannel->thread_id
                                     );
                                     continue;
@@ -119,7 +123,6 @@ class DiscordTransferredMessages
                                     )) {
                                         global $logger;
                                         $logger->logError(
-                                            null,
                                             "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
                                         );
                                     }
@@ -170,7 +173,6 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        null,
                                         "Failed to find message-transferrer thread for modification with ID: " . $sentMessage->end_thread_id
                                     );
                                     continue;
@@ -194,7 +196,6 @@ class DiscordTransferredMessages
                                 )) {
                                     global $logger;
                                     $logger->logError(
-                                        null,
                                         "Failed to update message-transferrer message-modification with ID: " . $sentMessage->id
                                     );
                                 }
@@ -245,7 +246,6 @@ class DiscordTransferredMessages
                                 if (!$found) {
                                     global $logger;
                                     $logger->logError(
-                                        null,
                                         "Failed to find message-transferrer thread for deletion with ID: " . $sentMessage->end_thread_id
                                     );
                                     continue;
@@ -268,7 +268,6 @@ class DiscordTransferredMessages
                                 } else {
                                     global $logger;
                                     $logger->logError(
-                                        null,
                                         "Failed to update message-transferrer message-deletion with ID: " . $sentMessage->id
                                     );
                                 }

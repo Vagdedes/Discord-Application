@@ -102,7 +102,6 @@ class DiscordUserNotes
                             } else {
                                 global $logger;
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "An database error occurred while creating a note for the user: " . $interaction->user->id
                                 );
                                 $this->plan->utilities->acknowledgeMessage(
@@ -187,7 +186,6 @@ class DiscordUserNotes
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "An database error occurred while editing a note with ID: " . $object->id
                             );
                             $this->plan->utilities->acknowledgeMessage(
@@ -265,7 +263,6 @@ class DiscordUserNotes
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "An database error occurred while deleting a note with ID: " . $object->id
                     );
                     $this->plan->utilities->acknowledgeCommandMessage(
@@ -523,7 +520,6 @@ class DiscordUserNotes
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "An database error occurred while deleting a note participant with ID: " . $rowID
                         );
                         $this->plan->utilities->acknowledgeCommandMessage(
@@ -599,7 +595,6 @@ class DiscordUserNotes
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "An database error occurred while changing the note settings for the note with ID: " . $object->id
                     );
                     $this->plan->utilities->acknowledgeCommandMessage(
@@ -715,7 +710,6 @@ class DiscordUserNotes
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "An database error occurred while modifying a note participant for the note with ID: " . $object->id
                     );
                     $this->plan->utilities->acknowledgeCommandMessage(

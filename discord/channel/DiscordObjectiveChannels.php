@@ -79,7 +79,7 @@ class DiscordObjectiveChannels
                             $message->id)] = array($channel, $message);
                     } else {
                         global $logger;
-                        $logger->logError($this->plan->planID, "Failed to insert objective-channel message-creation with ID: " . $channel->id);
+                        $logger->logError("Failed to insert objective-channel message-creation with ID: " . $channel->id);
                     }
                     return true;
                 }
@@ -126,12 +126,11 @@ class DiscordObjectiveChannels
                     $this->messages[$hash] = $data;
                 } else {
                     global $logger;
-                    $logger->logError($this->plan->planID, "Failed to update objective-channel message-modification with ID: " . $message->id);
+                    $logger->logError("Failed to update objective-channel message-modification with ID: " . $message->id);
                 }
             } else {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
                     "Failed to get channel for objective-channel message-modification with ID: " . $message->id
                 );
             }
@@ -193,13 +192,12 @@ class DiscordObjectiveChannels
                         1
                     )) {
                         global $logger;
-                        $logger->logError($this->plan->planID, "Failed to update objective-channel message-deletion with ID: " . $message->id);
+                        $logger->logError("Failed to update objective-channel message-deletion with ID: " . $message->id);
                     }
                 });
             } else {
                 global $logger;
                 $logger->logError(
-                    $this->plan->planID,
                     "Failed to get channel for objective-channel message-deletion with ID: " . $message->id
                 );
             }
@@ -262,7 +260,7 @@ class DiscordObjectiveChannels
                 }
             } else {
                 global $logger;
-                $logger->logError($this->plan->planID, "Failed to update objective-channel channel with ID: " . $channel->id);
+                $logger->logError("Failed to update objective-channel channel with ID: " . $channel->id);
             }
         });
     }
@@ -286,7 +284,7 @@ class DiscordObjectiveChannels
                 1
             )) {
                 global $logger;
-                $logger->logError($this->plan->planID, "Failed to update objective-channel thread with ID: " . $channel->id);
+                $logger->logError("Failed to update objective-channel thread with ID: " . $channel->id);
             }
         });
     }

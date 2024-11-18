@@ -293,7 +293,6 @@ class DiscordPersistentMessages
 
                             if ($messageRow === null) {
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "Message {$oldMessageRow->id} is a copy of {$oldMessageRow->copy_of} but it does not exist."
                                 );
                                 $this->processDatabase($array, $position + 1);

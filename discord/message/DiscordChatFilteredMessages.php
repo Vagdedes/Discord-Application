@@ -254,7 +254,6 @@ class DiscordChatFilteredMessages
             )) {
                 global $logger;
                 $logger->logError(
-                    $this->plan,
                     "Failed to insert message-filter tracking with analyzed"
                     . ($constantID !== null ? " constant " : " ") . "ID: " . $row->id
                 );

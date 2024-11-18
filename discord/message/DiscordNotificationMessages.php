@@ -198,7 +198,6 @@ class DiscordNotificationMessages
                 if ($notificationMessage === null) {
                     global $logger;
                     $logger->logError(
-                        $this->plan,
                         "Failed to get AI message for message notification with ID: " . $notification->id
                     );
                     $notificationMessage = $this->plan->instructions->replace(array($notification->notification), $object)[0];
@@ -262,7 +261,6 @@ class DiscordNotificationMessages
                     )) {
                         global $logger;
                         $logger->logError(
-                            $this->plan,
                             "Failed to insert channel notification with ID: " . $notification->id
                         );
                     }

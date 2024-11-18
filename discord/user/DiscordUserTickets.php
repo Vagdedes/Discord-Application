@@ -76,7 +76,7 @@ class DiscordUserTickets
             );
         } else {
             global $logger;
-            $logger->logError($this->plan->planID, "Ticket not found with key: " . $key);
+            $logger->logError("Ticket not found with key: " . $key);
             return false;
         }
     }
@@ -159,7 +159,6 @@ class DiscordUserTickets
                             } else {
                                 global $logger;
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "Failed to insert abstract ticket."
                                 );
                             }
@@ -362,7 +361,6 @@ class DiscordUserTickets
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "(1) Failed to insert ticket creation with ID: " . $query->id
                             );
                         }
@@ -381,7 +379,6 @@ class DiscordUserTickets
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "(2) Failed to insert ticket creation with ID: " . $query->id
                         );
                     }
@@ -434,7 +431,6 @@ class DiscordUserTickets
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "(1) Failed to close expired ticket with ID: " . $query->id
                             );
                         }
@@ -510,7 +506,7 @@ class DiscordUserTickets
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -568,7 +564,7 @@ class DiscordUserTickets
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -860,7 +856,6 @@ class DiscordUserTickets
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "(2) Failed to close expired ticket with ID: " . $row->id
                     );
                 }

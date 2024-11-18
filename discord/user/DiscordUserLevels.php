@@ -85,7 +85,6 @@ class DiscordUserLevels
                     }
                 } else {
                     $logger->logError(
-                        $this->plan->planID,
                         "No channels found for level with ID: " . $row->id
                     );
                 }
@@ -209,7 +208,6 @@ class DiscordUserLevels
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "Incorrect notification message with configuration ID: " . $configuration->id
                         );
                     }

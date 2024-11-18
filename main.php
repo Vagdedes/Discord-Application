@@ -16,29 +16,29 @@ require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/communication.php';
 require '/root/discord_bot/utilities/evaluator.php';
 
-require '/root/discord_bot/discord/other/standalone/DiscordMute.php';
-require '/root/discord_bot/discord/other/standalone/DiscordFAQ.php';
+require '/root/discord_bot/discord/other/DiscordMute.php';
+require '/root/discord_bot/discord/other/DiscordFAQ.php';
 require '/root/discord_bot/discord/other/DiscordInviteTracker.php';
 require '/root/discord_bot/discord/other/DiscordCommands.php';
 
-require '/root/discord_bot/discord/roles/standalone/DiscordJoinRoles.php';
+require '/root/discord_bot/discord/roles/DiscordJoinRoles.php';
 require '/root/discord_bot/discord/roles/DiscordInteractionRoles.php';
 
-require '/root/discord_bot/discord/user/standalone/DiscordUserNotes.php';
-require '/root/discord_bot/discord/user/standalone/DiscordUserGiveaways.php';
-require '/root/discord_bot/discord/user/standalone/DiscordUserPolls.php';
+require '/root/discord_bot/discord/user/DiscordUserNotes.php';
+require '/root/discord_bot/discord/user/DiscordUserGiveaways.php';
+require '/root/discord_bot/discord/user/DiscordUserPolls.php';
 require '/root/discord_bot/discord/user/DiscordUserTickets.php';
 require '/root/discord_bot/discord/user/DiscordUserTargets.php';
 require '/root/discord_bot/discord/user/DiscordUserLevels.php';
 require '/root/discord_bot/discord/user/DiscordUserQuestionnaire.php';
 
-require '/root/discord_bot/discord/channel/standalone/DiscordAntiExpirationThreads.php';
-require '/root/discord_bot/discord/channel/standalone/DiscordStatisticsChannels.php';
+require '/root/discord_bot/discord/channel/DiscordAntiExpirationThreads.php';
+require '/root/discord_bot/discord/channel/DiscordStatisticsChannels.php';
 require '/root/discord_bot/discord/channel/DiscordCountingChannels.php';
 require '/root/discord_bot/discord/channel/DiscordTemporaryChannels.php';
 require '/root/discord_bot/discord/channel/DiscordObjectiveChannels.php';
 
-require '/root/discord_bot/discord/message/standalone/DiscordTransferredMessages.php';
+require '/root/discord_bot/discord/message/DiscordTransferredMessages.php';
 require '/root/discord_bot/discord/message/DiscordPersistentMessages.php';
 require '/root/discord_bot/discord/message/DiscordAIMessages.php';
 require '/root/discord_bot/discord/message/DiscordStatusMessages.php';
@@ -46,12 +46,12 @@ require '/root/discord_bot/discord/message/DiscordReminderMessages.php';
 require '/root/discord_bot/discord/message/DiscordChatFilteredMessages.php';
 require '/root/discord_bot/discord/message/DiscordNotificationMessages.php';
 
-require '/root/discord_bot/discord/helpers/standalone/DiscordLogs.php';
-require '/root/discord_bot/discord/helpers/standalone/DiscordUtilities.php';
-require '/root/discord_bot/discord/helpers/standalone/DiscordBot.php';
-require '/root/discord_bot/discord/helpers/standalone/variables.php';
-require '/root/discord_bot/discord/helpers/standalone/DiscordPermissions.php';
-require '/root/discord_bot/discord/helpers/standalone/DiscordChannels.php';
+require '/root/discord_bot/discord/helpers/DiscordLogs.php';
+require '/root/discord_bot/discord/helpers/DiscordUtilities.php';
+require '/root/discord_bot/discord/helpers/DiscordBot.php';
+require '/root/discord_bot/discord/helpers/variables.php';
+require '/root/discord_bot/discord/helpers/DiscordPermissions.php';
+require '/root/discord_bot/discord/helpers/DiscordChannels.php';
 require '/root/discord_bot/discord/helpers/DiscordPlan.php';
 require '/root/discord_bot/discord/helpers/DiscordInstructions.php';
 require '/root/discord_bot/discord/helpers/DiscordListener.php';
@@ -117,7 +117,7 @@ function initiate_discord_bot(): void
                     if ($member instanceof Member) {
                         if (empty($member->roles->toArray())) {
                             //$guild->leave();
-                            $logger->logError(null, "Bot ignored guild " . $guild->id . " because it has no roles and therefore no permissions.");
+                            $logger->logError("Bot ignored guild " . $guild->id . " because it has no roles and therefore no permissions.");
                         } else {
                             $valid = false;
 
@@ -145,7 +145,7 @@ function initiate_discord_bot(): void
 
                             if (!$valid) {
                                 //$guild->leave();
-                                $logger->logError(null, "Bot ignored guild " . $guild->id . " because it has no administrator permissions.");
+                                $logger->logError("Bot ignored guild " . $guild->id . " because it has no administrator permissions.");
                             }
                         }
                     }

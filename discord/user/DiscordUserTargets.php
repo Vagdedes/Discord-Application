@@ -11,7 +11,7 @@ class DiscordUserTargets
     private DiscordPlan $plan;
     private array $targets;
     public int $ignoreChannelDeletion, $ignoreThreadDeletion;
-    
+
     public function __construct(DiscordPlan $plan)
     {
         $this->plan = $plan;
@@ -233,7 +233,6 @@ class DiscordUserTargets
                             } else {
                                 global $logger;
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "(1) Failed to insert target creation with ID: " . $query->id
                                 );
                             }
@@ -265,7 +264,6 @@ class DiscordUserTargets
                                 } else {
                                     global $logger;
                                     $logger->logError(
-                                        $this->plan->planID,
                                         "(2) Failed to insert target creation with ID: " . $query->id
                                     );
                                 }
@@ -273,14 +271,12 @@ class DiscordUserTargets
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "Failed to find target channel with ID: " . $query->id
                             );
                         }
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "(2) Invalid target with ID: " . $query->id
                         );
                     }
@@ -352,7 +348,6 @@ class DiscordUserTargets
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "(1) Failed to close expired target with ID: " . $query->id
                             );
                         }
@@ -428,7 +423,7 @@ class DiscordUserTargets
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -496,7 +491,7 @@ class DiscordUserTargets
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -553,7 +548,7 @@ class DiscordUserTargets
                 return true;
             } else {
                 global $logger;
-                $logger->logError($this->plan->planID, "Failed to close oldest target with ID: " . $query->id);
+                $logger->logError("Failed to close oldest target with ID: " . $query->id);
             }
         }
         return false;
@@ -774,7 +769,6 @@ class DiscordUserTargets
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "(2) Failed to close expired target with ID: " . $row->id
                     );
                 }

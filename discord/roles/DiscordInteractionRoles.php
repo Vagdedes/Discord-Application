@@ -13,7 +13,7 @@ class DiscordInteractionRoles
     private DiscordPlan $plan;
     private array $interactions;
 
-    public function __construct(DiscordPlan $plan)
+    public function __construct(DiscordBot $plan)
     {
         $this->plan = $plan;
         $this->interactions = array();
@@ -61,7 +61,6 @@ class DiscordInteractionRoles
                     $this->interactions[$row->controlled_message_id] = $row;
                 } else {
                     $logger->logError(
-                        $this->plan->planID,
                         "Found no choices in interaction role with ID: " . $row->id
                     );
                 }
@@ -107,7 +106,6 @@ class DiscordInteractionRoles
                                     break;
                                 default:
                                     $logger->logError(
-                                        $this->plan->planID,
                                         "Unknown interaction role choice color with ID: " . $choice->id
                                     );
                                     return $originalMessageBuilder;
@@ -149,7 +147,6 @@ class DiscordInteractionRoles
                 default:
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "Unknown interaction role type with ID: " . $object->id
                     );
                     break;

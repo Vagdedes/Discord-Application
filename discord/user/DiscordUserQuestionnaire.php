@@ -101,7 +101,7 @@ class DiscordUserQuestionnaire
                     $this->questionnaires[$questionnaire->id] = $questionnaire;
                     $this->initiate($questionnaire);
                 } else {
-                    $logger->logError($plan->planID, "Questionnaire without questions with ID: " . $questionnaire->id);
+                    $logger->logError("Questionnaire without questions with ID: " . $questionnaire->id);
                 }
             }
         }
@@ -272,7 +272,6 @@ class DiscordUserQuestionnaire
                             } else {
                                 global $logger;
                                 $logger->logError(
-                                    $this->plan->planID,
                                     "(1) Failed to insert questionnaire creation with ID: " . $query->id
                                 );
                             }
@@ -320,7 +319,6 @@ class DiscordUserQuestionnaire
                                     } else {
                                         global $logger;
                                         $logger->logError(
-                                            $this->plan->planID,
                                             "(2) Failed to insert questionnaire creation with ID: " . $query->id
                                         );
                                     }
@@ -329,14 +327,12 @@ class DiscordUserQuestionnaire
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "Failed to find questionnaire channel with ID: " . $query->id
                             );
                         }
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "(2) Invalid questionnaire with ID: " . $query->id
                         );
                     }
@@ -407,7 +403,6 @@ class DiscordUserQuestionnaire
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "(1) Failed to close expired questionnaire with ID: " . $query->id
                             );
                         }
@@ -460,7 +455,6 @@ class DiscordUserQuestionnaire
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "Failed to insert questionnaire answer with ID: " . $query->id
                             );
                             $message->reply(MessageBuilder::new()->setContent(
@@ -486,7 +480,6 @@ class DiscordUserQuestionnaire
         if ($answerCount === 0) {
             global $logger;
             $logger->logError(
-                $this->plan->planID,
                 "Failed to find questionnaire answers with ID: " . $query->id
             );
             $message->reply(MessageBuilder::new()->setContent(
@@ -552,7 +545,6 @@ class DiscordUserQuestionnaire
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "Failed to find questionnaire outcome channel with ID: " . $query->id
                         );
                     }
@@ -600,14 +592,12 @@ class DiscordUserQuestionnaire
                         } else {
                             global $logger;
                             $logger->logError(
-                                $this->plan->planID,
                                 "Failed to find questionnaire outcome channel with ID: " . $query->id
                             );
                         }
                     } else {
                         global $logger;
                         $logger->logError(
-                            $this->plan->planID,
                             "Failed to insert questionnaire completion with ID: " . $query->id
                         );
                         $message->author->sendMessage(MessageBuilder::new()->setContent(
@@ -688,7 +678,7 @@ class DiscordUserQuestionnaire
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -763,7 +753,7 @@ class DiscordUserQuestionnaire
                     }
                 } catch (Throwable $exception) {
                     global $logger;
-                    $logger->logError($this->plan->planID, $exception->getMessage());
+                    $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -821,7 +811,7 @@ class DiscordUserQuestionnaire
                 return true;
             } else {
                 global $logger;
-                $logger->logError($this->plan->planID, "Failed to close oldest questionnaire with ID: " . $query->id);
+                $logger->logError("Failed to close oldest questionnaire with ID: " . $query->id);
             }
         }
         return false;
@@ -1145,7 +1135,6 @@ class DiscordUserQuestionnaire
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "(2) Failed to close expired questionnaire with ID: " . $row->id
                     );
                 }

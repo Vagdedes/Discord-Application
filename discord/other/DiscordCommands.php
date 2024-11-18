@@ -135,7 +135,6 @@ class DiscordCommands
                                 break;
                             default:
                                 $logger->logError(
-                                    $planCopy->planID,
                                     "Invalid argument '" . $argument->id . "' in command with ID: " . $command->id
                                 );
                                 break;

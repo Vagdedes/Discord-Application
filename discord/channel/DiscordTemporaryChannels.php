@@ -123,14 +123,13 @@ class DiscordTemporaryChannels
 
                                             if ($outcome !== null) {
                                                 global $logger;
-                                                $logger->logError($this->plan->planID, $outcome);
+                                                $logger->logError($outcome);
                                                 $this->closeByChannel($channel);
                                             }
                                         });
                                     } else {
                                         global $logger;
                                         $logger->logError(
-                                            $this->plan->planID,
                                             "Failed to insert temporary channel into the database with ID: " . $query->id
                                         );
                                         $this->closeByChannel($channel);
@@ -197,7 +196,7 @@ class DiscordTemporaryChannels
 
                             if ($outcome !== null) {
                                 global $logger;
-                                $logger->logError($this->plan->planID, $outcome);
+                                $logger->logError($outcome);
                                 $this->closeByChannel($channel);
                             }
                         }
@@ -532,7 +531,7 @@ class DiscordTemporaryChannels
                 }
             } catch (Throwable $exception) {
                 global $logger;
-                $logger->logError($this->plan->planID, $exception->getMessage());
+                $logger->logError($exception->getMessage());
             }
         }
     }
@@ -665,7 +664,6 @@ class DiscordTemporaryChannels
                 } else {
                     global $logger;
                     $logger->logError(
-                        $this->plan->planID,
                         "Failed to close expired temporary channel with ID: " . $row->id
                     );
                 }
@@ -734,7 +732,7 @@ class DiscordTemporaryChannels
                 return true;
             } else {
                 global $logger;
-                $logger->logError($this->plan->planID, "Failed to close oldest target with ID: " . $query->id);
+                $logger->logError("Failed to close oldest target with ID: " . $query->id);
             }
         }
         return false;
