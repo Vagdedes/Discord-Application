@@ -44,20 +44,23 @@ class DiscordAIMessages
                     global $logger;
                     $logger->logError("Failed to find API key for bot: " . $this->bot->botID);
                 } else {
+                    if ($row->parameters !== null) {
+                        $parameters = @json_decode($row->parameters, true);
+
+                        if (!is_array($parameters)) {
+                            $parameters = array();
+                        }
+                    } else {
+                        $parameters = array();
+                    }
+                    $parameters["max_completion_tokens"] = AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
                     $object = new stdClass();
                     $object->implement_class = $row->implement_class;
                     $object->implement_method = $row->implement_method;
                     $object->managerAI = new AIManager(
                         $row->model_family,
                         $row->api_key,
-                        array(
-                            "temperature" => $row->temperature !== null ? (float)$row->temperature : null,
-                            "top_p" => $row->top_p !== null ? (float)$row->top_p : null,
-                            "frequency_penalty" => $row->frequency_penalty !== null ? (float)$row->frequency_penalty : null,
-                            "presence_penalty" => $row->presence_penalty !== null ? (float)$row->presence_penalty : null,
-                            "n" => (int)$row->completions,
-                            "max_tokens" => AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH)
-                        )
+                        $parameters
                     );
                     $object->mentions = get_sql_query(
                         BotDatabaseTable::BOT_AI_MENTIONS,
