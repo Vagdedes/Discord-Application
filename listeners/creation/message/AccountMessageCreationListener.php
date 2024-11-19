@@ -315,7 +315,9 @@ class AccountMessageCreationListener
                 . ($product->latest_version?->version !== null
                     ? " " . $product->latest_version->version
                     : "")
-                . " " . strip_tags($product->latest_version->suffix));
+                . ($product->latest_version?->suffix !== null
+                    ? " " . strip_tags($product->latest_version->suffix)
+                    : ""));
         }
         $embed->setImage($product->image);
         //$activeCustomers = $isFree ? null : ($product->registered_buyers === 0 ? null : $product->registered_buyers);
