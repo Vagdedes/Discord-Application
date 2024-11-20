@@ -865,7 +865,7 @@ class DiscordAIMessages
     function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
                         int|string|null $userID,
                         array           $messageHistory = [],
-                        int|string      $limit = 100): array
+                        int|string      $limit = 0): array
     {
         if ($channelID === null || $userID === null) {
             return array();
@@ -901,7 +901,7 @@ class DiscordAIMessages
                         && $message->referenced_message->user_id == $userID) {
                         $array[] = $message->content;
 
-                        if (sizeof($array) == $limit) {
+                        if ($limit > 0 && sizeof($array) == $limit) {
                             break;
                         }
                     }
