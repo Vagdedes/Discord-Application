@@ -210,7 +210,9 @@ class DiscordUtilities
         $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
         $this->editMessage(
             $message,
-            array_shift($pieces)
+            array_shift($pieces),
+            $default,
+            $embeds
         );
 
         if (!empty($pieces)) {
@@ -218,7 +220,7 @@ class DiscordUtilities
                 $builder = clone $default;
                 $this->replyMessage(
                     $message,
-                    $builder->setContent($split)->setEmbeds($embeds)
+                    $builder->setContent($split)
                 );
             }
         }
@@ -231,12 +233,12 @@ class DiscordUtilities
             $default = MessageBuilder::new();
         }
         $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
-        $member->sendMessage(MessageBuilder::new()->setContent(array_shift($pieces)));
+        $member->sendMessage(MessageBuilder::new()->setContent(array_shift($pieces))->setEmbeds($embeds));
 
         if (!empty($pieces)) {
             foreach (str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                 $builder = clone $default;
-                $member->sendMessage($builder->setEmbeds($embeds)->setContent($split));
+                $member->sendMessage($builder->setContent($split));
             }
         }
     }
