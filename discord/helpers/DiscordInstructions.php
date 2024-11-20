@@ -109,7 +109,7 @@ class DiscordInstructions
                     $userInput,
                     true,
                     true
-                );
+                )[0];
             }
             return @json_encode($local);
         } else {
