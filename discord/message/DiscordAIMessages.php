@@ -53,7 +53,6 @@ class DiscordAIMessages
                     } else {
                         $parameters = array();
                     }
-                    $parameters["max_completion_tokens"] = AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
                     $object = new stdClass();
                     $object->implement_class = $row->implement_class;
                     $object->implement_method = $row->implement_method;
@@ -378,7 +377,13 @@ class DiscordAIMessages
                                             }
                                             return true;
                                         } else {
-                                            $cacheKey = array(__METHOD__, $channel->ai_model_id, $member->id, $messageContent);
+                                            $cacheKey = array(
+                                                __METHOD__,
+                                                $originalMessage->channel->guild_id,
+                                                $channel->ai_model_id, // generalized cooldown due to this
+                                                $member->id,
+                                                string_to_integer($messageContent)
+                                            );
                                             $cache = get_key_value_pair($cacheKey);
 
                                             if ($channel->prompt_message !== null) {
@@ -580,46 +585,117 @@ class DiscordAIMessages
         $managerAI = $this->getManagerAI($aiModelID);
 
         if ($managerAI !== null) {
-            if ($source instanceof Message) {
-                if (empty($source->attachments->first())) {
-                    $messages = array(
-                        array(
-                            "role" => "user",
-                            "content" => $content
-                        )
-                    );
-                } else {
-                    $found = false;
+            $input = null;
+            $length = 0;
+            $familyID = $managerAI->getFamilyID();
 
-                    foreach ($source->attachments as $attachment) {
-                        if ($attachment->height !== null
-                            && $attachment->width !== null
-                            && $attachment->url !== null) {
-                            $object1 = new stdClass();
-                            $object1->type = "text";
-                            $object1->text = $content;
+            switch ($familyID) {
+                case AIModelFamily::DALL_E_3:
+                case AIModelFamily::DALL_E_2:
+                    if ($source instanceof Message) {
+                        if (empty($source->attachments->first())) {
+                            $input = array(
+                                "n" => 1,
+                                "prompt" => $content
+                            );
+                        } else {
+                            $found = false;
 
-                            $object3 = new stdClass();
-                            $object3->url = $attachment->url;
+                            foreach ($source->attachments as $attachment) {
+                                if ($attachment->height !== null
+                                    && $attachment->width !== null
+                                    && $attachment->url !== null) {
+                                    $object1 = new stdClass();
+                                    $object1->type = "text";
+                                    $object1->text = $content;
 
-                            $object2 = new stdClass();
-                            $object2->type = "image_url";
-                            $object2->image_url = $object3;
+                                    $object3 = new stdClass();
+                                    $object3->url = $attachment->url;
+
+                                    $object2 = new stdClass();
+                                    $object2->type = "image_url";
+                                    $object2->image_url = $object3;
+                                    $input = array(
+                                        "n" => 1,
+                                        "prompt" => $content
+                                    ); // todo add image reference if supported by model
+                                    $found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!$found) {
+                                $input = array(
+                                    "n" => 1,
+                                    "prompt" => $content
+                                );
+                            }
+                        }
+                    } else {
+                        $input = array(
+                            "n" => 1,
+                            "prompt" => $content
+                        );
+                    }
+                    //$input = array_merge($input, $systemInstructions);
+                    $length = strlen($content);
+                    break;
+                case AIModelFamily::CHAT_GPT:
+                case AIModelFamily::CHAT_GPT_PRO:
+                case AIModelFamily::OPENAI_O1:
+                case AIModelFamily::OPENAI_O1_MINI:
+                case AIModelFamily::OPENAI_VISION:
+                case AIModelFamily::OPENAI_VISION_PRO:
+                case AIModelFamily::OPENAI_SOUND:
+                    if ($source instanceof Message) {
+                        if (empty($source->attachments->first())) {
                             $messages = array(
                                 array(
                                     "role" => "user",
-                                    "content" => array(
-                                        $object1,
-                                        $object2
-                                    )
+                                    "content" => $content
                                 )
                             );
-                            $found = true;
-                            break;
-                        }
-                    }
+                        } else {
+                            $found = false;
 
-                    if (!$found) {
+                            foreach ($source->attachments as $attachment) {
+                                if ($attachment->height !== null
+                                    && $attachment->width !== null
+                                    && $attachment->url !== null) {
+                                    $object1 = new stdClass();
+                                    $object1->type = "text";
+                                    $object1->text = $content;
+
+                                    $object3 = new stdClass();
+                                    $object3->url = $attachment->url;
+
+                                    $object2 = new stdClass();
+                                    $object2->type = "image_url";
+                                    $object2->image_url = $object3;
+                                    $messages = array(
+                                        array(
+                                            "role" => "user",
+                                            "content" => array(
+                                                $object1,
+                                                $object2
+                                            )
+                                        )
+                                    );
+                                    $found = true;
+                                    break;
+                                }
+                            }
+
+                            if (!$found) {
+                                $messages = array(
+                                    array(
+                                        "role" => "user",
+                                        "content" => $content
+                                    )
+                                );
+                            }
+                        }
+                    } else {
                         $messages = array(
                             array(
                                 "role" => "user",
@@ -627,31 +703,34 @@ class DiscordAIMessages
                             )
                         );
                     }
-                }
-            } else {
-                $messages = array(
-                    array(
-                        "role" => "user",
-                        "content" => $content
-                    )
-                );
-            }
-            $length = strlen($content);
-            $system = $this->bot->instructions->build(
-                $systemInstructions[0],
-                $systemInstructions[1],
-                $systemInstructions[2],
-                $content
-            );
+                    $length = strlen($content);
+                    $system = $this->bot->instructions->build(
+                        $systemInstructions[0],
+                        $systemInstructions[1],
+                        $systemInstructions[2],
+                        $content
+                    );
 
-            if (!empty($system)) {
-                $messages[] = array(
-                    "role" => "system",
-                    "content" => $system
-                );
-                $length += strlen($system);
+                    if (!empty($system)) {
+                        $messages[] = array(
+                            "role" => "system",
+                            "content" => $system
+                        );
+                        $length += strlen($system);
+                    }
+                    $input = array(
+                        "messages" => $messages,
+                        "max_completion_tokens" => AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH)
+                    );
+                    break;
+                default:
+                    break;
             }
-            $input = array("messages" => $messages);
+            if ($input === null) {
+                global $logger;
+                $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for bot: " . $this->bot->botID);
+                return null;
+            }
             $outcome = $managerAI->getResult(
                 $hash,
                 $input,
@@ -671,7 +750,7 @@ class DiscordAIMessages
             if (array_shift($outcome)) { // Success
                 $model = array_shift($outcome);
                 $replyObject = array_shift($outcome);
-                $reply = $model->getText($replyObject);
+                $reply = $model->getRightAiInformation($replyObject);
 
                 if (!empty($reply)) {
                     if (!empty($systemInstructions[3])) {

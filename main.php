@@ -158,19 +158,16 @@ function initiate_discord_bot(): void
                 $createdDiscordBot->tranferredMessages->trackCreation($message);
                 $message->channel->getMessageHistory(
                     [
-                        'limit' => 100,
+                        'limit' =>(int)round(DiscordAIMessages::PAST_MESSAGES * 2.0), // twice due to the app covering half
                         'cache' => true
                     ]
                 )->done(function ($messageHistory)
                 use ($createdDiscordBot, $message) {
-                    $ai = true;
+                    $createdDiscordBot->aiMessages->textAssistance(
+                        $message,
+                        $messageHistory->toArray()
+                    );
 
-                    if ($ai && $createdDiscordBot->aiMessages->textAssistance(
-                            $message,
-                            $messageHistory->toArray()
-                        )) {
-                        $ai = false;
-                    }
                     foreach (array(
                                  DiscordUserLevels::CHAT_CHARACTER_POINTS,
                                  DiscordUserLevels::ATTACHMENT_POINTS

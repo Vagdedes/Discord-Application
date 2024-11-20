@@ -726,7 +726,7 @@ function string_to_integer(?string $string, bool $long = false): int
     return $result;
 }
 
-function array_to_integer(?array $array, bool $long = false): int
+function array_to_integer(array|object|null $array, bool $long = false): int
 {
     if (empty($array)) {
         return 0;

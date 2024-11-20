@@ -162,49 +162,28 @@ class DiscordCommands
     {
         if ($user->id !== $this->bot->botID) {
             if (!empty($this->staticCommands)) {
-                $cacheKey = array(
-                    __METHOD__,
-                    $message->guild_id,
-                    $message->channel_id,
-                    $user->id,
-                    $message->content
-                );
-                $cache = get_key_value_pair($cacheKey);
+                foreach ($this->staticCommands as $command) {
+                    if (($command->server_id === null || $command->server_id == $message->guild_id)
+                        && ($command->channel_id === null || $command->channel_id == $message->channel_id)
+                        && $message->content == ($command->command_placeholder . $command->command_identification)) {
+                        $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
-                if ($cache !== null) {
-                    $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
-
-                    if ($mute !== null) {
-                        return $mute->creation_reason;
-                    } else {
-                        $cooldown = $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $cache[0]);
-
-                        if ($cooldown[0]) {
-                            return $cooldown[1];
+                        if ($mute !== null) {
+                            return $mute->creation_reason;
+                        } else if ($command->required_permission !== null
+                            && !$this->bot->permissions->hasPermission(
+                                $user,
+                                $command->required_permission
+                            )) {
+                            return $command->no_permission_message;
                         } else {
-                            return $cache[1];
-                        }
-                    }
-                } else {
-                    foreach ($this->staticCommands as $command) {
-                        if (($command->server_id === null || $command->server_id == $message->guild_id)
-                            && ($command->channel_id === null || $command->channel_id == $message->channel_id)
-                            && $message->content == ($command->command_placeholder . $command->command_identification)) {
-                            $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
+                            $cooldown = $this->getCooldown($message->guild_id, $user->id, $command);
 
-                            if ($mute !== null) {
-                                return $mute->creation_reason;
-                            } else if ($command->required_permission !== null
-                                && !$this->bot->permissions->hasPermission(
-                                    $user,
-                                    $command->required_permission
-                                )) {
-                                return $command->no_permission_message;
+                            if ($cooldown[0]) {
+                                return $cooldown[1];
                             } else {
-                                $reply = $command->command_reply;
-                                set_key_value_pair($cacheKey, array($command, $reply));
-                                $this->getCooldown($message->guild_id, $message->channel_id, $user->id, $command);
-                                return $reply;
+                                $this->getCooldown($message->guild_id, $user->id, $command);
+                                return $command->command_reply;
                             }
                         }
                     }
@@ -238,16 +217,14 @@ class DiscordCommands
         return null;
     }
 
-    private function getCooldown(int|string $serverID, int|string $channelID, int|string $userID,
-                                 object     $command): array
+    private function getCooldown(int|string $serverID, int|string $userID, object $command): array
     {
         if ($command->cooldown_duration !== null) {
             $cacheKey = array(
                 __METHOD__,
-                $this->bot->botID,
-                $serverID, $channelID,
+                $serverID,
                 $userID,
-                $command->command_placeholder . $command->command_identification
+                string_to_integer($command->command_placeholder . $command->command_identification)
             );
             $cache = get_key_value_pair($cacheKey);
 

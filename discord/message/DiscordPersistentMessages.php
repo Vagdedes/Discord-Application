@@ -199,12 +199,10 @@ class DiscordPersistentMessages
     {
         $dbMessages = $this->messages;
         $botID = $this->bot->botID;
-        $bot = $this->bot;
-
         $channel->getMessageHistory([
             'limit' => 100,
             'cache' => true
-        ])->done(function (Collection $messages) use ($dbMessages, $botID, $bot) {
+        ])->done(function (Collection $messages) use ($dbMessages, $botID) {
             foreach ($messages as $message) {
                 if ($message->user_id != $botID) {
                     continue;

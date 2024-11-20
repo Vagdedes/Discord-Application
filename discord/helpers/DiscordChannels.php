@@ -240,6 +240,12 @@ class DiscordChannels
         $array = DiscordChannels::$threadHistory[$hash][$channel->id] ?? array();
 
         if (!empty($channel->threads->first())) {
+            $limit = $maxThreads * $maxMessagesPerThread;
+
+            if ($channel->threads->count() < $maxThreads) {
+                // adjust limit based on the number of threads
+                $maxMessagesPerThread = ceil($limit / $channel->threads->count());
+            }
             foreach ($channel->threads as $thread) {
                 $thread->getMessageHistory(
                     [
