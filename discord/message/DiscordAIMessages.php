@@ -451,7 +451,7 @@ class DiscordAIMessages
                                                             $this->bot->utilities->deleteMessage($message);
                                                         }
                                                     } else {
-                                                        set_key_value_pair($cacheKey, $reply);
+                                                        set_key_value_pair($cacheKey, $reply, $channel->message_retention ?? 0);
 
                                                         if ($channel->feedback !== null) {
                                                             $this->bot->component->addReactions($message, self::REACTION_COMPONENT_NAME);
