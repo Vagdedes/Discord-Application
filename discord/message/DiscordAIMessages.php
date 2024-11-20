@@ -396,7 +396,7 @@ class DiscordAIMessages
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage
                                                 ))->done(function (Message $message) use ($cache) {
-                                                    $this->bot->utilities->replyMessageInPieces($message, $cache[0], $cache[1]);
+                                                    $this->bot->utilities->replyMessageInPieces($message, $cache[0], $cache[1], $cache[2]);
                                                 });
                                             } else {
                                                 if ($channel->require_starting_text !== null
