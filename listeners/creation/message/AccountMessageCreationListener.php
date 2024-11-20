@@ -613,14 +613,10 @@ class AccountMessageCreationListener
         if ($account !== null) {
             $name = $account->getDetail("name");
             $embed = new Embed($bot->discord);
-            try {
-                $embed->setAuthor(
-                    $name,
-                    get_minecraft_head_image($name, 64)
-                );
-            } catch (Throwable $e) {
-                var_dump($e->getTraceAsString());
-            }
+            $embed->setAuthor(
+                $name,
+                get_minecraft_head_image($name, 64)
+            );
             $embed->setTitle(
                 "Welcome back!"
                 . "\n\nDon't forget to connect any accounts you have so we can provide you with your purchases."

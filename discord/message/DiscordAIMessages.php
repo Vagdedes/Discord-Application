@@ -249,17 +249,15 @@ class DiscordAIMessages
 
                     if (!$stop
                         && $foundChannel
-                        && $channel->ai_model_id !== null) {
+                        && $channel->ai_model_id !== null
+                        && $member->id != $this->bot->botID) {
                         $model = $this->getModel($channel->ai_model_id);
 
                         if ($model !== null) {
                             if ($model->managerAI->exists()) {
-                                if ($member->id == $this->bot->botID) {
-                                    return false;
-                                }
                                 $cooldownKey = array(__METHOD__, $this->bot->botID, $member->id);
 
-                                if (get_key_value_pair($cooldownKey) === null) {
+                                if (get_key_value_pair($cooldownKey) !== true) {
                                     set_key_value_pair($cooldownKey, true);
                                     $requireMention = $channel->require_mention !== null
                                         && ($channel->not_require_mention_time === null
@@ -477,7 +475,7 @@ class DiscordAIMessages
                                     if ($channel->message_cooldown !== null) {
                                         set_key_value_pair($cooldownKey, true, $channel->message_cooldown);
                                     } else {
-                                        clear_memory(array($cooldownKey));
+                                        set_key_value_pair($cooldownKey, false, $channel->message_cooldown);
                                     }
                                 } else if ($channel->cooldown_message !== null
                                     && $channel->message_cooldown !== null) {
