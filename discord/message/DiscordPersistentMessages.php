@@ -235,14 +235,7 @@ class DiscordPersistentMessages
                             && $dbMessage->embed_author_icon_url == $embed->author?->icon_url
                             && $dbMessage->embed_author_name == $embed->author?->name
                             && $dbMessage->embed_timestamp == $embed->timestamp) {
-                            $message->edit($this->build(null, $dbMessage)->setContent($message->content))->done(
-                                function (Message $message) use ($dbMessage, $bot) {
-                                    $bot->instructions->manager->addExtra(
-                                        "interactive-message-" . $message->id,
-                                        $message->getRawAttributes()
-                                    );
-                                }
-                            );
+                            $message->edit($this->build(null, $dbMessage)->setContent($message->content));
                             break 2;
                         }
                     }
@@ -335,7 +328,9 @@ class DiscordPersistentMessages
                 );
                 $bot->instructions->manager->addExtra(
                     "interactive-message-" . $message->id,
-                    $message->getRawAttributes()
+                    $message->getRawAttributes(),
+                    false,
+                    true
                 );
                 $this->processDatabase($array, $position + 1);
             }
@@ -359,7 +354,9 @@ class DiscordPersistentMessages
                             function (Message $message) use ($bot) {
                                 $bot->instructions->manager->addExtra(
                                     "interactive-message-" . $message->id,
-                                    $message->getRawAttributes()
+                                    $message->getRawAttributes(),
+                                    false,
+                                    true
                                 );
                             }
                         );

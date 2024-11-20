@@ -698,7 +698,6 @@ class DiscordAIMessages
                             "creation_date" => $date,
                         )
                     );
-                    $this->bot->instructions->manager->autoRemoveExtra();
                     return $reply;
                 } else {
                     global $logger;
@@ -721,7 +720,6 @@ class DiscordAIMessages
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
         }
-        $this->bot->instructions->manager->autoRemoveExtra();
         return null;
     }
 
