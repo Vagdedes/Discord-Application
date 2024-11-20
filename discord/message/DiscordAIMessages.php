@@ -3,6 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
+use Discord\Parts\Embed\Embed;
 use Discord\Parts\Guild\Role;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Thread\Thread;
@@ -395,7 +396,7 @@ class DiscordAIMessages
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage
                                                 ))->done(function (Message $message) use ($cache) {
-                                                    $this->bot->utilities->replyMessageInPieces($message, $cache);
+                                                    $this->bot->utilities->replyMessageInPieces($message, $cache[0], $cache[1]);
                                                 });
                                             } else {
                                                 if ($channel->require_starting_text !== null
@@ -457,7 +458,7 @@ class DiscordAIMessages
                                                         if ($channel->feedback !== null) {
                                                             $this->bot->component->addReactions($message, self::REACTION_COMPONENT_NAME);
                                                         }
-                                                        $this->bot->utilities->replyMessageInPieces($message, $reply);
+                                                        $this->bot->utilities->replyMessageInPieces($message, $reply[0], $reply[1], $reply[2]);
 
                                                         $hash = $this->bot->utilities->hash(
                                                             $message->guild_id,
@@ -503,7 +504,7 @@ class DiscordAIMessages
                                       array         $systemInstructions,
                                       int           $hash,
                                       bool          $debug = false,
-                                      ?int          $maxAttachmentsLength = 0): ?string
+                                      ?int          $maxAttachmentsLength = 0): ?array
     {
         if (is_array($source)) {
             $debug = false;
@@ -586,8 +587,9 @@ class DiscordAIMessages
 
         if ($managerAI !== null) {
             $input = null;
-            $length = 0;
             $familyID = $managerAI->getFamilyID();
+            $builder = MessageBuilder::new();
+            $embeds = array();
 
             switch ($familyID) {
                 case AIModelFamily::DALL_E_3:
@@ -724,12 +726,9 @@ class DiscordAIMessages
                     );
                     break;
                 default:
-                    break;
-            }
-            if ($input === null) {
-                global $logger;
-                $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for bot: " . $this->bot->botID);
-                return null;
+                    global $logger;
+                    $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for bot: " . $this->bot->botID);
+                    return null;
             }
             $outcome = $managerAI->getResult(
                 $hash,
@@ -777,7 +776,17 @@ class DiscordAIMessages
                             "creation_date" => $date,
                         )
                     );
-                    return $reply;
+
+                    switch ($familyID) {
+                        case AIModelFamily::DALL_E_3:
+                        case AIModelFamily::DALL_E_2:
+                            $embed = new Embed($this->bot->discord);
+                            $embed->setImage($reply);
+                            $embeds[] = $embed;
+                            return array($content, $builder, $embeds);
+                        default:
+                            return array($reply, $builder, $embeds);
+                    }
                 } else {
                     global $logger;
                     $logger->logError(

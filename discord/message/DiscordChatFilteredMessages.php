@@ -192,7 +192,7 @@ class DiscordChatFilteredMessages
 
                         if ($reply !== null) {
                             foreach ($filter->constants as $constant) {
-                                if ($reply == $constant->constant_key) {
+                                if ($reply[0] == $constant->constant_key) {
                                     $blockMessage = $this->getBlockMessage(
                                         $message,
                                         $object,

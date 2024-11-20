@@ -561,7 +561,7 @@ class DiscordUserQuestionnaire
                     );
 
                     if ($reply !== null) {
-                        $this->bot->utilities->sendMessageInPieces($message->member, $reply);
+                        $this->bot->utilities->sendMessageInPieces($message->member, $reply[0], $reply[1], $reply[2]);
                     } else {
                         $reply = $this->bot->instructions->replace(array($questionnaire->failure_message), $object)[0];
                         $message->author->sendMessage($reply);

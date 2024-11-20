@@ -178,21 +178,35 @@ class DiscordUtilities
 
     // Separator
 
-    public function replyMessage(Message|int|string $message, MessageBuilder|string $messageBuilder): void
+    public function replyMessage(Message|int|string $message, MessageBuilder|string $messageBuilder,
+                                 ?MessageBuilder    $default = null, array $embeds = []): void
     {
+        if ($default === null) {
+            $default = MessageBuilder::new();
+        }
         try {
             $message->channel?->messages->fetch(
                 $message instanceof Message ? $message->id : $message,
                 true
-            )->done(function (Message $message) use ($messageBuilder) {
-                $message->reply($messageBuilder);
+            )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
+                if ($messageBuilder instanceof MessageBuilder) {
+                    $builder = $messageBuilder;
+                } else {
+                    $builder = clone $default;
+                    $builder->setEmbeds($embeds)->setContent($messageBuilder);
+                }
+                $message->reply($builder);
             });
         } catch (Throwable $ignored) {
         }
     }
 
-    public function replyMessageInPieces(Message $message, string $reply): void
+    public function replyMessageInPieces(Message         $message, string $reply,
+                                         ?MessageBuilder $default = null, array $embeds = []): void
     {
+        if ($default === null) {
+            $default = MessageBuilder::new();
+        }
         $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
         $this->editMessage(
             $message,
@@ -201,37 +215,49 @@ class DiscordUtilities
 
         if (!empty($pieces)) {
             foreach ($pieces as $split) {
+                $builder = clone $default;
                 $this->replyMessage(
                     $message,
-                    MessageBuilder::new()->setContent($split)
+                    $builder->setContent($split)->setEmbeds($embeds)
                 );
             }
         }
     }
 
-    public function sendMessageInPieces(Member|User $member, string $reply): void
+    public function sendMessageInPieces(Member|User     $member, string $reply,
+                                        ?MessageBuilder $default = null, array $embeds = []): void
     {
+        if ($default === null) {
+            $default = MessageBuilder::new();
+        }
         $pieces = str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH);
         $member->sendMessage(MessageBuilder::new()->setContent(array_shift($pieces)));
 
         if (!empty($pieces)) {
             foreach (str_split($reply, DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
-                $member->sendMessage(MessageBuilder::new()->setContent($split));
+                $builder = clone $default;
+                $member->sendMessage($builder->setEmbeds($embeds)->setContent($split));
             }
         }
     }
 
-    public function editMessage(Message|int|string $message, MessageBuilder|string $messageBuilder): void
+    public function editMessage(Message|int|string $message, MessageBuilder|string $messageBuilder,
+                                ?MessageBuilder    $default = null, array $embeds = []): void
     {
+        if ($default === null) {
+            $default = MessageBuilder::new();
+        }
         try {
             $message->channel?->messages->fetch(
                 $message instanceof Message ? $message->id : $message,
                 true
-            )->done(function (Message $message) use ($messageBuilder) {
-                $message->edit(
-                    $messageBuilder instanceof MessageBuilder ? $messageBuilder
-                        : MessageBuilder::new()->setContent($messageBuilder)
-                );
+            )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
+                if ($messageBuilder instanceof MessageBuilder) {
+                    $message->edit($messageBuilder);
+                } else {
+                    $builder = clone $default;
+                    $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
+                }
             });
         } catch (Throwable $ignored) {
         }

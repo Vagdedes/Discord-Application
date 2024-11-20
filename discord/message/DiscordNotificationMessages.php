@@ -199,10 +199,16 @@ class DiscordNotificationMessages
                     $logger->logError(
                         "Failed to get AI message for message notification with ID: " . $notification->id
                     );
-                    $notificationMessage = $this->bot->instructions->replace(array($notification->notification), $object)[0];
+                    $notificationMessage = MessageBuilder::new()->setContent(
+                        $this->bot->instructions->replace(array($notification->notification), $object)[0]
+                    );
+                } else if ($notification->message_name !== null) {
+                    $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name)
+                        ->setContent($notificationMessage[0]);
+                } else {
+                    $notificationMessage = $notificationMessage[1]->setContent($notificationMessage[0]);
+                    $notificationMessage->setEmbeds($notificationMessage[2]);
                 }
-                $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name)
-                    ->setContent($notificationMessage);
             } else if ($notification->message_name !== null) {
                 $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name);
 
