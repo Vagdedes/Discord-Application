@@ -5,7 +5,9 @@ use Discord\Parts\Channel\Message;
 class AITextImplementationListener // Name can be changed
 {
 
-    private const AVAILABLE_PRODUCTS = "available-products";
+    private const
+        AVAILABLE_PRODUCTS = "available-products",
+        OWNED_PRODUCTS = "owned-products/purchases";
 
     public static function method(DiscordBot $bot,
                                   Message    $originalMessage,
@@ -38,8 +40,14 @@ class AITextImplementationListener // Name can be changed
 
         if ($account !== null) {
             $bot->instructions->manager->addExtra(
-                "owned-products",
+                self::OWNED_PRODUCTS,
                 $account->getPurchases()->getCurrent(),
+                true
+            );
+        } else {
+            $bot->instructions->manager->addExtra(
+                self::OWNED_PRODUCTS,
+                "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information.",
                 true
             );
         }
