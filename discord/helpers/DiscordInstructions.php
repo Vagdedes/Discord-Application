@@ -28,73 +28,69 @@ class DiscordInstructions
                             bool    $callables = false,
                             bool    $extra = false): array
     {
-        if ($object !== null) {
-            return $this->manager->replace(
-                $messages,
-                $object,
-                !$callables
-                    ? null
-                    : array(
-                    "publicInstructions" => function () use ($specificPublic, $userInput) {
-                        return $this->manager->getPublic(
-                            $specificPublic,
-                            $userInput,
-                            false
-                        );
-                    },
-                    "botReplies" => function () use ($object) {
-                        return $this->bot->aiMessages->getReplies(
-                            $object->serverID,
-                            $object->channelID,
-                            $object->threadID,
-                            $object->userID,
-                            $object->messageHistory,
-                            DiscordAIMessages::PAST_MESSAGES
-                        );
-                    },
-                    "botMessages" => function () use ($object) {
-                        return $this->bot->aiMessages->getMessages(
-                            $object->serverID,
-                            $object->channelID,
-                            $object->threadID,
-                            $object->userID,
-                            $object->messageHistory,
-                            DiscordAIMessages::PAST_MESSAGES
-                        );
-                    },
-                    "allMessages" => function () use ($object) {
-                        return $this->bot->aiMessages->getConversation(
-                            $object->serverID,
-                            $object->channelID,
-                            $object->threadID,
-                            $object->userID,
-                            $object->messageHistory,
-                            DiscordAIMessages::PAST_MESSAGES
-                        );
-                    },
-                    "threadMessages" => function () use ($object) {
-                        if ($object->channelID !== null) {
-                            $channel = $this->bot->discord->getChannel($object->channelID);
+        return $this->manager->replace(
+            $messages,
+            $object,
+            !$callables
+                ? null
+                : array(
+                "publicInstructions" => function () use ($specificPublic, $userInput) {
+                    return $this->manager->getPublic(
+                        $specificPublic,
+                        $userInput,
+                        false
+                    );
+                },
+                "botReplies" => function () use ($object) {
+                    return $this->bot->aiMessages->getReplies(
+                        $object->serverID,
+                        $object->channelID,
+                        $object->threadID,
+                        $object->userID,
+                        $object->messageHistory,
+                        DiscordAIMessages::PAST_MESSAGES
+                    );
+                },
+                "botMessages" => function () use ($object) {
+                    return $this->bot->aiMessages->getMessages(
+                        $object->serverID,
+                        $object->channelID,
+                        $object->threadID,
+                        $object->userID,
+                        $object->messageHistory,
+                        DiscordAIMessages::PAST_MESSAGES
+                    );
+                },
+                "allMessages" => function () use ($object) {
+                    return $this->bot->aiMessages->getConversation(
+                        $object->serverID,
+                        $object->channelID,
+                        $object->threadID,
+                        $object->userID,
+                        $object->messageHistory,
+                        DiscordAIMessages::PAST_MESSAGES
+                    );
+                },
+                "threadMessages" => function () use ($object) {
+                    if ($object->channelID !== null) {
+                        $channel = $this->bot->discord->getChannel($object->channelID);
 
-                            if ($channel !== null) {
-                                return DiscordChannels::getAsyncThreadHistory(
-                                    $channel,
-                                    DiscordAIMessages::THREADS_ANALYZED,
-                                    DiscordAIMessages::THREAD_ANALYZED_MESSAGES
-                                );
-                            } else {
-                                return array();
-                            }
+                        if ($channel !== null) {
+                            return DiscordChannels::getAsyncThreadHistory(
+                                $channel,
+                                DiscordAIMessages::THREADS_ANALYZED,
+                                DiscordAIMessages::THREAD_ANALYZED_MESSAGES
+                            );
                         } else {
                             return array();
                         }
+                    } else {
+                        return array();
                     }
-                ),
-                $extra
-            );
-        } else {
-            return $messages;
-        }
+                }
+            ),
+            $extra
+        );
     }
 
     public function build(object  $object,
