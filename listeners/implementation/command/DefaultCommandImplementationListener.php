@@ -10,6 +10,127 @@ class DefaultCommandImplementationListener
 
     private const AI_IMAGE_HASH = 978323941;
 
+    public static function generate_image_from_image(DiscordBot          $bot,
+                                                     Interaction|Message $interaction,
+                                                     object              $command): void
+    {
+        $prompt = $interaction->data->resolved->attachments->first();
+
+        if (empty($prompt)) {
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("No image found."),
+                true
+            );
+            return;
+        } else if ($prompt->width === null
+            || $prompt->height === null
+            || $prompt->url === null) {
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Invalid image."),
+                true
+            );
+            return;
+        }
+        $arguments = $interaction->data->options->toArray();
+        $xResolution = $arguments["x-resolution"]["value"] ?? null;
+        $yResolution = $arguments["y-resolution"]["value"] ?? null;
+        $hd = $arguments["hd"]["value"] ?? false;
+        $private = $arguments["private"]["value"] ?? false;
+
+        $bot->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent(DiscordAIMessages::INITIAL_PROMPT),
+            $private
+        )->done(function ()
+        use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd) {
+            $object2 = new stdClass();
+            $object2->url = $prompt->url;
+
+            $object1 = new stdClass();
+            $object1->type = "image_url";
+            $object1->image_url = $object2;
+            $system = "Describe the image at the best of your ability with a maximum character length of 2000.";
+            $messages = array(
+                array(
+                    "role" => "system",
+                    "content" => $system
+                ),
+                array(
+                    "role" => "user",
+                    "content" => array(
+                        $object1
+                    )
+                )
+            );
+            $input = array(
+                "messages" => $messages
+            );
+            $managerAI = new AIManager(
+                AIModelFamily::OPENAI_VISION_PRO,
+                AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                $input
+            );
+            $outcome = $managerAI->getResult(
+                self::AI_IMAGE_HASH,
+                [],
+                strlen($system)
+            );
+
+            if (array_shift($outcome)) {
+                $model = array_shift($outcome);
+                $data = array_shift($outcome);
+                $originalPrompt = $prompt;
+                $prompt = $model->getText($data);
+
+                if (!empty($prompt)) {
+                    $input = array(
+                        "n" => 1,
+                        "prompt" => $prompt,
+                        "size" => $xResolution . "x" . $yResolution,
+                    );
+                    if ($hd) {
+                        $input["quality"] = "hd";
+                    }
+                    $managerAI = new AIManager(
+                        AIModelFamily::DALL_E_3,
+                        AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                        $input
+                    );
+                    $outcome = $managerAI->getResult(
+                        self::AI_IMAGE_HASH
+                    );
+
+                    if (array_shift($outcome)) {
+                        $image = $outcome[0]->getImage($outcome[1]);
+                        $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                        $embed = new Embed($bot->discord);
+                        $embed->setImage($originalPrompt->url);
+                        $messageBuilder->addEmbed($embed);
+
+                        $embed = new Embed($bot->discord);
+                        $embed->setImage($image);
+                        $messageBuilder->addEmbed($embed);
+                        $interaction->updateOriginalResponse($messageBuilder);
+                    } else {
+                        $interaction->updateOriginalResponse(
+                            MessageBuilder::new()->setContent("Failed to generate image description: " . json_encode($outcome[1]))
+                        );
+                    }
+                } else {
+                    $interaction->updateOriginalResponse(
+                        MessageBuilder::new()->setContent("Failed to generate image initial description: " . json_encode($data)),
+                    );
+                }
+            } else {
+                $interaction->updateOriginalResponse(
+                    MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1])),
+                );
+            }
+        });
+    }
+
     public static function generate_image(DiscordBot          $bot,
                                           Interaction|Message $interaction,
                                           object              $command): void
@@ -21,22 +142,21 @@ class DefaultCommandImplementationListener
         $hd = $arguments["hd"]["value"] ?? false;
         $private = $arguments["private"]["value"] ?? false;
         $pastMessages = $arguments["past-messages"]["value"] ?? 0;
-        $initialPrompt = "Please wait...";
         $interaction->channel->getMessageHistory(
             [
                 'limit' => max(min($pastMessages, 100), 1),
                 'cache' => true
             ]
         )->done(function ($messageHistory)
-        use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $initialPrompt, $private) {
+        use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $private) {
             $messageHistory = $messageHistory->toArray();
 
             $bot->utilities->acknowledgeCommandMessage(
                 $interaction,
-                MessageBuilder::new()->setContent($initialPrompt),
+                MessageBuilder::new()->setContent(DiscordAIMessages::INITIAL_PROMPT),
                 $private
             )->done(function ()
-            use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $initialPrompt, $messageHistory) {
+            use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $messageHistory) {
                 $promptLimit = 4000;
                 $arguments = array(
                     "n" => 1,
@@ -52,7 +172,7 @@ class DefaultCommandImplementationListener
                         $newPrompt = array_shift($messageHistory)->content;
 
                         if (empty($newPrompt)
-                            || $newPrompt === $initialPrompt) {
+                            || $newPrompt === DiscordAIMessages::INITIAL_PROMPT) {
                             continue;
                         }
                         $newPrompt .= "\n\n";
@@ -69,7 +189,7 @@ class DefaultCommandImplementationListener
                     $arguments["quality"] = "hd";
                 }
                 $managerAI = new AIManager(
-                    AIModelFamily::DALLE_3,
+                    AIModelFamily::DALL_E_3,
                     AIHelper::getAuthorization(AIAuthorization::OPENAI),
                     $arguments
                 );

@@ -11,6 +11,7 @@ use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordAIMessages
 {
+
     private DiscordBot $bot;
     public ?array $model;
     private array $messageCounter, $messageReplies, $messageFeedback;
@@ -21,7 +22,7 @@ class DiscordAIMessages
         THREAD_ANALYZED_MESSAGES = 10;
 
     private const AI_HASH = 192840142;
-
+    public const INITIAL_PROMPT = "...";
     const REACTION_COMPONENT_NAME = "general-feedback";
 
     public function __construct(DiscordBot $bot)
@@ -388,7 +389,7 @@ class DiscordAIMessages
                                             if ($channel->prompt_message !== null) {
                                                 $promptMessage = $this->bot->instructions->replace(array($channel->prompt_message), $object)[0];
                                             } else {
-                                                $promptMessage = "...";
+                                                $promptMessage = self::INITIAL_PROMPT;
                                             }
                                             if ($cache !== null) {
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(

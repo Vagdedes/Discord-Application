@@ -492,7 +492,7 @@ class DiscordUserQuestionnaire
             if ($questionnaire->prompt_message !== null) {
                 $promptMessage = $this->bot->instructions->replace(array($questionnaire->prompt_message), $object)[0];
             } else {
-                $promptMessage = "...";
+                $promptMessage = DiscordAIMessages::INITIAL_PROMPT;
             }
             $message->reply(MessageBuilder::new()->setContent(
                 $promptMessage
