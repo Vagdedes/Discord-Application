@@ -82,13 +82,13 @@ class DiscordUtilities
                                   int              $type, int|string|null $parent,
                                   int|string|float $name, int|string|float|null $topic,
                                   array            $rolePermissions = null,
-                                  array            $memberPermissions = null): bool|\React\Promise\ExtendedPromiseInterface
+                                  array            $memberPermissions = null): ?\React\Promise\ExtendedPromiseInterface
     {
         if (!($guild instanceof Guild)) {
             $guild = $this->getGuild($guild);
 
             if ($guild === null) {
-                return false;
+                return null;
             }
         }
         $permissions = array();

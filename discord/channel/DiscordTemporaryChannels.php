@@ -104,7 +104,7 @@ class DiscordTemporaryChannels
                                     ($query->inception_channel_prefix ?? "") . $update->member->username . ($query->inception_channel_suffix ?? ""),
                                     $query->inception_channel_topic,
                                     $rolePermissions,
-                                )->done(function (Channel $channel) use ($update, $query, $temporaryID, $date) {
+                                )?->done(function (Channel $channel) use ($update, $query, $temporaryID, $date) {
                                     if (sql_insert(
                                         BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
                                         array(

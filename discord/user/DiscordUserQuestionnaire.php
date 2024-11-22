@@ -233,7 +233,7 @@ class DiscordUserQuestionnaire
                             $query->create_channel_topic,
                             $rolePermissions,
                             $memberPermissions
-                        )->done(function (Channel $channel) use ($questionnaireID, $insert, $member, $query) {
+                        )?->done(function (Channel $channel) use ($questionnaireID, $insert, $member, $query) {
                             $insert["channel_id"] = $channel->id;
 
                             if (sql_insert(BotDatabaseTable::BOT_QUESTIONNAIRE_TRACKING, $insert)) {

@@ -199,7 +199,7 @@ class DiscordUserTargets
                             $query->create_channel_topic,
                             $rolePermissions,
                             $memberPermissions
-                        )->done(function (Channel $channel)
+                        )?->done(function (Channel $channel)
                         use ($targetID, $insert, $member, $query) {
                             $insert["channel_id"] = $channel->id;
 

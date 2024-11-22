@@ -142,7 +142,7 @@ class DiscordUserTickets
                     $channelTopic,
                     $rolePermissions,
                     $memberPermissions
-                )->done(function (Channel $channel)
+                )?->done(function (Channel $channel)
                 use ($ticketID, $insert, $interaction, $message) {
                     $insert["created_channel_id"] = $channel->id;
                     $insert["created_channel_server_id"] = $channel->guild_id;
@@ -330,7 +330,7 @@ class DiscordUserTickets
                         $query->create_channel_topic,
                         $rolePermissions,
                         $memberPermissions
-                    )->done(function (Channel $channel)
+                    )?->done(function (Channel $channel)
                     use ($components, $ticketID, $insert, $interaction, $message, $query) {
                         $insert["created_channel_id"] = $channel->id;
                         $insert["created_channel_server_id"] = $channel->guild_id;

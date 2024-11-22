@@ -93,7 +93,7 @@ class DiscordStatisticsChannels
                             "deny" => self::PERMISSIONS
                         )
                     )
-                )->done(function (Channel $channel) use ($position, $row, $guild) {
+                )?->done(function (Channel $channel) use ($position, $row, $guild) {
                     if (set_sql_query(
                         BotDatabaseTable::BOT_STATISTICS_CHANNELS,
                         array(

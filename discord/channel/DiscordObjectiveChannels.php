@@ -241,7 +241,7 @@ class DiscordObjectiveChannels
             "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id,
             null,
             $rolePermissions
-        )->done(function (Channel $channelObj) use ($channel, $thread, $creation) {
+        )?->done(function (Channel $channelObj) use ($channel, $thread, $creation) {
             if (set_sql_query(
                 BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
                 array(
