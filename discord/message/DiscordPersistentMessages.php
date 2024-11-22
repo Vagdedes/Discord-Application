@@ -19,6 +19,7 @@ class DiscordPersistentMessages
     public function __construct(DiscordBot $bot)
     {
         $this->bot = $bot;
+        $this->messages = array();
         $query = get_sql_query(
             BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
             null,
@@ -37,7 +38,6 @@ class DiscordPersistentMessages
 
         if (!empty($query)) {
             $this->processDatabase($query, 0);
-            $this->processDiscord();
         }
     }
 
@@ -301,6 +301,8 @@ class DiscordPersistentMessages
                 $this->messages[$messageRow->name] = $messageRow;
                 $this->processDatabase($array, $position + 1);
             }
+        } else {
+            $this->processDiscord();
         }
     }
 
