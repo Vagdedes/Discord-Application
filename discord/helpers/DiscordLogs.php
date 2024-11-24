@@ -37,7 +37,8 @@ class DiscordLogs
         "nick",
         "bot",
         "premium_since",
-        "communication_disabled_until"
+        "communication_disabled_until",
+        "embeds"
     );
 
     public function __construct(?DiscordBot $bot)
