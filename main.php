@@ -158,7 +158,7 @@ function initiate_discord_bot(): void
                 $createdDiscordBot->tranferredMessages->trackCreation($message);
                 $message->channel->getMessageHistory(
                     [
-                        'limit' =>(int)round(DiscordAIMessages::PAST_MESSAGES * 2.0), // twice due to the app covering half
+                        'limit' => DiscordAIMessages::PAST_MESSAGES_COUNT,
                         'cache' => true
                     ]
                 )->done(function ($messageHistory)

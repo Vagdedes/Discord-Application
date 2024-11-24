@@ -17,7 +17,8 @@ class DiscordAIMessages
     private array $messageCounter, $messageReplies, $messageFeedback;
 
     public const
-        PAST_MESSAGES = 50,
+        PAST_MESSAGES_COUNT = 100,
+        PAST_MESSAGES_LENGTH = 10_000,
         THREADS_ANALYZED = 20,
         THREAD_ANALYZED_MESSAGES = 10;
 
@@ -44,7 +45,7 @@ class DiscordAIMessages
             foreach ($query as $row) {
                 if ($row->api_key === null) {
                     global $logger;
-                    $logger->logError("Failed to find API key for bot: " . $this->bot->botID);
+                    $logger->logError("Failed to find API key for app: " . $this->bot->botID);
                 } else {
                     if ($row->parameters !== null) {
                         $parameters = @json_decode($row->parameters, true);
@@ -485,10 +486,10 @@ class DiscordAIMessages
                                     ));
                                 }
                             } else {
-                                $logger->logError("Failed to find an existent chat-model for bot: " . $this->bot->botID);
+                                $logger->logError("Failed to find an existent chat-model for app: " . $this->bot->botID);
                             }
                         } else {
-                            $logger->logError("Failed to find any chat-model for bot: " . $this->bot->botID);
+                            $logger->logError("Failed to find any chat-model for app: " . $this->bot->botID);
                         }
                     }
                 }
@@ -726,7 +727,7 @@ class DiscordAIMessages
                     break;
                 default:
                     global $logger;
-                    $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for bot: " . $this->bot->botID);
+                    $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for app: " . $this->bot->botID);
                     return null;
             }
             $outcome = $managerAI->getResult(
@@ -812,11 +813,13 @@ class DiscordAIMessages
 
     // Separator
 
-    public
-    function getMessages(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                         int|string|null $userID,
-                         array           $messageHistory = [],
-                         int|string      $limit = 100): array
+    public function getReplies(int|string|null $serverID,
+                               int|string|null $channelID,
+                               int|string|null $threadID,
+                               int|string|null $userID,
+                               array           $messageHistory = [],
+                               int             $limit = 0,
+                               int             $length = 0): array
     {
         if ($channelID === null || $userID === null) {
             return array();
@@ -844,124 +847,35 @@ class DiscordAIMessages
                 }
             }
             $array = array();
-
-            if (!empty($messageHistory)) {
-                foreach ($messageHistory as $message) {
-                    if ($message->user_id == $userID) {
-                        $array[] = $message->content;
-
-                        if (sizeof($array) == $limit) {
-                            break;
-                        }
-                    }
-                }
-            }
-            return $array;
-        } else {
-            return array();
-        }
-    }
-
-    public
-    function getReplies(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                        int|string|null $userID,
-                        array           $messageHistory = [],
-                        int|string      $limit = 0): array
-    {
-        if ($channelID === null || $userID === null) {
-            return array();
-        }
-        $channel = $this->bot->discord->getChannel($channelID);
-
-        if ($channel !== null
-            && ($serverID === null
-                || $channel->guild_id == $serverID)) {
-            if ($threadID !== null) {
-                $found = false;
-
-                if (!empty($channel->threads->first())) {
-                    foreach ($channel->threads as $thread) {
-                        if ($thread->id == $threadID) {
-                            $channel = $thread;
-                            $found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!$found) {
-                    return array();
-                }
-            }
-            $array = array();
+            $lengthCount = 0;
 
             if (!empty($messageHistory)) {
                 foreach ($messageHistory as $message) {
                     if ($message->user_id == $this->bot->botID
                         && $message->referenced_message !== null
                         && $message->referenced_message->user_id == $userID) {
-                        $array[] = $message->content;
+                        $message1 = "user '" . $userID . "': " . $message->referenced_message->content;
+                        $message2 = "bot/app: " . $message->content;
 
-                        if ($limit > 0 && sizeof($array) == $limit) {
-                            break;
-                        }
-                    }
-                }
-            }
-            return $array;
-        } else {
-            return array();
-        }
-    }
+                        if ($length > 0) {
+                            $lengthCount += strlen($message1) + strlen($message2);
 
-    public
-    function getConversation(int|string|null $serverID, int|string|null $channelID, int|string|null $threadID,
-                             int|string|null $userID,
-                             array           $messageHistory = [],
-                             int|string      $limit = 100): array
-    {
-        if ($channelID === null || $userID === null) {
-            return array();
-        }
-        $channel = $this->bot->discord->getChannel($channelID);
+                            if ($lengthCount > $length) {
+                                break;
+                            } else {
+                                $array[] = $message1;
+                                $array[] = $message2;
 
-        if ($channel !== null
-            && ($serverID === null
-                || $channel->guild_id == $serverID)) {
-            if ($threadID !== null) {
-                $found = false;
+                                if ($limit > 0 && sizeof($array) >= $limit) {
+                                    break;
+                                }
+                            }
+                        } else {
+                            $array[] = $message->content;
 
-                if (!empty($channel->threads->first())) {
-                    foreach ($channel->threads as $thread) {
-                        if ($thread->id == $threadID) {
-                            $channel = $thread;
-                            $found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!$found) {
-                    return array();
-                }
-            }
-            $array = array();
-
-            if (!empty($messageHistory)) {
-                foreach ($messageHistory as $message) {
-                    if ($message->user_id == $userID) {
-                        $array[] = "user: " . $message->content;
-
-                        if (sizeof($array) == $limit) {
-                            break;
-                        }
-                    } else if ($message->user_id == $this->bot->botID
-                        && $message->referenced_message !== null
-                        && $message->referenced_message->user_id == $userID) {
-                        $array[] = "bot: " . $message->content;
-
-                        if (sizeof($array) == $limit) {
-                            break;
+                            if ($limit > 0 && sizeof($array) == $limit) {
+                                break;
+                            }
                         }
                     }
                 }

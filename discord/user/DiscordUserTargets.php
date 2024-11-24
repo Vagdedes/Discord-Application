@@ -568,7 +568,7 @@ class DiscordUserTargets
         if (!empty($query)) {
             $query = $query[0];
             $query->target = $this->targets[$query->target_id];
-            $query->messages = $this->bot->aiMessages->getConversation(
+            $query->messages = $this->bot->aiMessages->getReplies(
                 $query->server_id,
                 $query->created_thread_id === null ? $query->channel_id : null,
                 $query->created_thread_id === null ? null : $query->created_thread_id,
@@ -605,7 +605,7 @@ class DiscordUserTargets
                 $row->target = $this->targets[$row->target_id];
 
                 if ($messages) {
-                    $row->messages = $this->bot->aiMessages->getConversation(
+                    $row->messages = $this->bot->aiMessages->getReplies(
                         $row->server_id,
                         $row->created_thread_id === null ? $row->channel_id : null,
                         $row->created_thread_id === null ? null : $row->created_thread_id,

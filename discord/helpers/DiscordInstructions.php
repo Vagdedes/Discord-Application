@@ -48,27 +48,8 @@ class DiscordInstructions
                         $object->threadID,
                         $object->userID,
                         $object->messageHistory,
-                        DiscordAIMessages::PAST_MESSAGES
-                    );
-                },
-                "botMessages" => function () use ($object) {
-                    return $this->bot->aiMessages->getMessages(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        $object->messageHistory,
-                        DiscordAIMessages::PAST_MESSAGES
-                    );
-                },
-                "allMessages" => function () use ($object) {
-                    return $this->bot->aiMessages->getConversation(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        $object->messageHistory,
-                        DiscordAIMessages::PAST_MESSAGES
+                        DiscordAIMessages::PAST_MESSAGES_COUNT,
+                        DiscordAIMessages::PAST_MESSAGES_LENGTH
                     );
                 },
                 "threadMessages" => function () use ($object) {
@@ -79,7 +60,8 @@ class DiscordInstructions
                             return DiscordChannels::getAsyncThreadHistory(
                                 $channel,
                                 DiscordAIMessages::THREADS_ANALYZED,
-                                DiscordAIMessages::THREAD_ANALYZED_MESSAGES
+                                DiscordAIMessages::THREAD_ANALYZED_MESSAGES,
+                                DiscordAIMessages::PAST_MESSAGES_LENGTH
                             );
                         } else {
                             return array();

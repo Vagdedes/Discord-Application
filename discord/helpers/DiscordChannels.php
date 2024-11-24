@@ -226,9 +226,10 @@ class DiscordChannels
         }
     }
 
-    public static function getAsyncThreadHistory(Channel    $channel,
-                                                 int|string $maxThreads,
-                                                 int|string $maxMessagesPerThread): array
+    public static function getAsyncThreadHistory(Channel $channel,
+                                                 int     $maxThreads,
+                                                 int     $maxMessagesPerThread,
+                                                 int     $messagesLength): array
     {
         $hash = array_to_integer(
             array(
@@ -241,6 +242,7 @@ class DiscordChannels
 
         if (!empty($channel->threads->first())) {
             $limit = $maxThreads * $maxMessagesPerThread;
+            $lengthCount = 0;
 
             if ($channel->threads->count() < $maxThreads) {
                 // adjust limit based on the number of threads
@@ -252,7 +254,8 @@ class DiscordChannels
                         'limit' => (int)$maxMessagesPerThread,
                         'cache' => true
                     ]
-                )->done(function ($messageHistory) use ($channel, $thread, $maxMessagesPerThread, $hash) {
+                )->done(function ($messageHistory)
+                use ($channel, $thread, $maxMessagesPerThread, $hash, &$lengthCount, $messagesLength) {
                     foreach ($messageHistory as $message) {
                         $threadName = $thread->name ?? $thread->id;
                         $message = "'" . $message->author->username
@@ -270,15 +273,28 @@ class DiscordChannels
                             if (sizeof(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]) == $maxMessagesPerThread) {
                                 array_shift(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]);
                             }
-                            DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id][] = $message;
+                            $lengthCount += strlen($message);
+
+                            if ($lengthCount <= $messagesLength) {
+                                DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id][] = $message;
+                            } else {
+                                break;
+                            }
                         } else {
-                            DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id] = array($message);
+                            $lengthCount += strlen($message);
+
+                            if ($lengthCount <= $messagesLength) {
+                                DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id] = array($message);
+                            } else {
+                                break;
+                            }
                         }
                     }
                 });
                 $maxThreads--;
 
-                if ($maxThreads == 0) {
+                if ($maxThreads == 0
+                    || $lengthCount > $limit) {
                     break;
                 }
             }
