@@ -20,13 +20,11 @@ class DiscordStatusMessages
 
     public function run(Member $member, int $type): void
     {
-        $serverID = $member->guild_id;
-        $userID = $member->id;
-
         if (!$this->hasCooldown($member, $type)) {
             $list = $this->bot->channels->getList();
 
             if (!empty($list)) {
+                $serverID = $member->guild_id;
                 $messageColumn = $type === self::WELCOME ? "welcome_message" : "goodbye_message";
 
                 foreach ($list as $channel) {
@@ -55,6 +53,8 @@ class DiscordStatusMessages
                             $whitelist = $this->bot->channels->getWhitelist();
 
                             if (!empty($whitelist)) {
+                                $userID = $member->id;
+
                                 foreach ($whitelist as $whitelisted) {
                                     if ($whitelisted->user_id == $userID
                                         && ($whitelisted->server_id === null
@@ -129,4 +129,5 @@ class DiscordStatusMessages
             "1 minute"
         );
     }
+
 }

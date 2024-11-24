@@ -19,6 +19,26 @@ class DiscordLogs
     private int $ignoreAction;
 
     public const GUILD_MEMBER_ADD_VIA_INVITE = 'GUILD_MEMBER_ADD_VIA_INVITE';
+    private const KEY_BLACKLIST = array(
+        "avatar",
+        "avatar_decoration_data",
+        "discriminator",
+        "timestamp",
+        "edited_timestamp",
+        "pending",
+        "deaf",
+        "mute",
+        "flags",
+        "nonce",
+        "public_flags",
+        "username",
+        "global_name",
+        "joined_at",
+        "nick",
+        "bot",
+        "premium_since",
+        "communication_disabled_until"
+    );
 
     public function __construct(?DiscordBot $bot)
     {
@@ -180,7 +200,6 @@ class DiscordLogs
     {
         $syntaxExtra = strlen(DiscordSyntax::HEAVY_CODE_BLOCK) * 2;
         $this->ignoreAction++;
-        $counter = 0;
         $loopObject = is_object($object)
             ? (method_exists($object, "getRawAttributes") ? $object->getRawAttributes() : json_decode(@json_encode($object), true))
             : (is_array($object) ? $object : array());
@@ -194,13 +213,14 @@ class DiscordLogs
             $chunksRemaining,
             true
         );
+        $finalArray = array();
+        $embeds = array();
 
         foreach ($chunks as $chunk) {
             unset($chunk["guild_id"]);
             unset($chunk["guild"]);
 
             if (!empty($chunk)) {
-                $counter++;
                 $embed = new Embed($this->bot->discord);
 
                 if ($userID !== null) {
@@ -246,7 +266,11 @@ class DiscordLogs
                 $embed->setTimestamp(strtotime($date));
 
                 foreach ($chunk as $arrayKey => $arrayValue) {
-                    if (!empty($arrayValue)) {
+                    if (!empty($arrayValue)
+                        && !$this->isBlacklisted($arrayKey)) {
+                        $modified = array();
+                        $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
+
                         if (is_object($arrayValue)) {
                             $arrayValue = json_decode(@json_encode($arrayValue), true);
                         }
@@ -255,15 +279,23 @@ class DiscordLogs
                             unset($arrayValue["guild"]);
 
                             foreach ($arrayValue as $key => $value) {
-                                if ($value === null) {
+                                if ($value === null || $this->isBlacklisted($key)) {
                                     unset($arrayValue[$key]);
+                                } else if (is_array($value) || is_object($value)) {
+                                    $value = @json_encode($value);
+
+                                    if (strlen($value) > 100) {
+                                        unset($arrayValue[$key]);
+                                    } else {
+                                        $modified[] = $key;
+                                        $arrayValue[$key] = $value;
+                                    }
                                 }
                             }
                             $arrayValue = implode("\n", array_map(
-                                function ($key, $value) {
-                                    if (is_array($value) || is_object($value)) {
-                                        $show = @json_encode($value);
-                                        return $this->beautifulText($key) . ": " . (strlen($show) > 100 ? "(REDACTED)" : $show);
+                                function ($key, $value) use ($modified) {
+                                    if (in_array($key, $modified)) {
+                                        return $this->beautifulText($key) . ": " . $value;
                                     } else {
                                         return $this->beautifulText($key) . ": "
                                             . (is_bool($value)
@@ -274,10 +306,11 @@ class DiscordLogs
                                 array_keys($arrayValue),
                                 $arrayValue
                             ));
-                        }
-                        if ($arrayValue !== null) {
-                            $arrayKey = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayKey);
-                            $arrayValue = str_replace(DiscordSyntax::HEAVY_CODE_BLOCK, "", $arrayValue);
+                            $arrayValue = str_replace(
+                                DiscordSyntax::HEAVY_CODE_BLOCK,
+                                "",
+                                $arrayValue
+                            );
                             $embed->addFieldValues(
                                 substr($this->beautifulText($arrayKey), 0,
                                     DiscordInheritedLimits::MAX_FIELD_KEY_LENGTH),
@@ -286,15 +319,54 @@ class DiscordLogs
                                     DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
                                 . DiscordSyntax::HEAVY_CODE_BLOCK
                             );
+
+                            if (sizeof($embeds) === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                                break;
+                            }
+                        } else {
+                            $finalArray[$arrayKey] = str_replace(
+                                DiscordSyntax::HEAVY_CODE_BLOCK,
+                                "",
+                                $arrayValue
+                            );
                         }
                     }
                 }
-                $message->addEmbed($embed);
-
-                if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
-                    return $message;
+                if (!empty($embed->fields->first())) {
+                    $embeds[] = $embed;
                 }
             }
+        }
+        if (!empty($finalArray)) {
+            $embed = empty($embeds)
+                ? new Embed($this->bot->discord)
+                : array_pop($embeds);
+            $finalArray = implode(
+                "\n",
+                array_map(
+                    function ($key, $value) {
+                        return $this->beautifulText($key) . ": " . $value;
+                    },
+                    array_keys($finalArray),
+                    $finalArray
+                )
+            );
+            $embed->addFieldValues(
+                "Object",
+                DiscordSyntax::HEAVY_CODE_BLOCK
+                . substr($finalArray, 0,
+                    DiscordInheritedLimits::MAX_FIELD_VALUE_LENGTH - $syntaxExtra)
+                . DiscordSyntax::HEAVY_CODE_BLOCK
+            );
+            $message->addEmbed($embed);
+        }
+        if (!empty($embeds)) {
+            foreach ($embeds as $embed) {
+                $message->addEmbed($embed);
+            }
+        }
+        if (sizeof($embeds) === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+            return $message;
         }
         return $oldObject !== null
             ? $this->prepareLogMessage(
@@ -307,6 +379,11 @@ class DiscordLogs
                 $message,
                 $chunksProcessed + sizeof($chunks))
             : $message;
+    }
+
+    private function isBlacklisted(string $key): bool
+    {
+        return in_array($key, self::KEY_BLACKLIST);
     }
 
     private function beautifulText(string $string): string
