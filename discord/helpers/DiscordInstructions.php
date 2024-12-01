@@ -84,14 +84,19 @@ class DiscordInstructions
 
         if (!empty($local)) {
             foreach ($local as $key => $value) {
-                $local[$key] = $this->replace(
+                $value = $this->replace(
                     array($value),
                     $object,
                     $specificPublic,
                     $userInput,
                     true,
                     true
-                )[0];
+                );
+                if (sizeof($value) > 1) {
+                    $local[$key] = $value;
+                } else {
+                    $local[$key] = $value[0];
+                }
             }
             return @json_encode($local);
         } else {

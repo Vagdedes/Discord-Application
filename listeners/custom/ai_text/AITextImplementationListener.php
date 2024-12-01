@@ -16,40 +16,49 @@ class AITextImplementationListener // Name can be changed
                                   ?array     $publicInstructions): array // Name can be changed
     {
         $account = new Account();
+        $validProducts = $account->getProduct()->find(null, true, false);
 
-        if (!$bot->instructions->manager->hasExtra(self::AVAILABLE_PRODUCTS)) {
-            $validProducts = $account->getProduct()->find(null, true, false);
+        if ($validProducts->isPositiveOutcome()) {
+            $validProducts = $validProducts->getObject();
 
-            if ($validProducts->isPositiveOutcome()) {
-                $array = array();
-                $validProducts = $validProducts->getObject();
+            // Separator
 
-                foreach ($validProducts as $arrayKey => $product) {
-                    $array[$arrayKey] = $account->getProduct()->clearObjectDetails($product);
+            $account = AccountMessageCreationListener::findAccountFromSession($originalMessage);
+
+            if ($account !== null) {
+                $purchases = $account->getPurchases()->getCurrent();
+
+                if (empty($purchases)) {
+                    $bot->instructions->manager->addExtra(
+                        self::OWNED_PRODUCTS,
+                        "You haven't made any purchases yet or they haven't been processed yet.",
+                        true
+                    );
+                } else {
+                    foreach ($purchases as $arrayKey => $value) {
+                        $value = clear_object_null_keys($value);
+
+                        foreach ($validProducts as $product) {
+                            if ($value->product_id == $product->id) {
+                                $value->product_name = $product->name;
+                                $purchases[$arrayKey] = $value;
+                                break;
+                            }
+                        }
+                    }
+                    $bot->instructions->manager->addExtra(
+                        self::OWNED_PRODUCTS,
+                        $purchases,
+                        true
+                    );
                 }
+            } else {
                 $bot->instructions->manager->addExtra(
-                    self::AVAILABLE_PRODUCTS,
-                    $array
+                    self::OWNED_PRODUCTS,
+                    "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information.",
+                    true
                 );
             }
-        }
-
-        // Separator
-
-        $account = AccountMessageCreationListener::findAccountFromSession($originalMessage);
-
-        if ($account !== null) {
-            $bot->instructions->manager->addExtra(
-                self::OWNED_PRODUCTS,
-                $account->getPurchases()->getCurrent(),
-                true
-            );
-        } else {
-            $bot->instructions->manager->addExtra(
-                self::OWNED_PRODUCTS,
-                "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information.",
-                true
-            );
         }
         return array($localInstructions, $publicInstructions);
     }
