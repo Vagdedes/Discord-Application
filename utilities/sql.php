@@ -244,13 +244,15 @@ function sql_delete_outdated_cache(int $time = 60 * 60): bool
     $trackerTable = "memory.queryCacheTracker";
     $query = sql_query(
         "DELETE FROM $retrieverTable "
-        . "WHERE last_access_time < '" . (time() - $time) . "';"
+        . "WHERE last_access_time < '" . (time() - $time) . "';",
+        false
     );
 
     if ($query) {
         $query = sql_query(
             "DELETE FROM $trackerTable "
-            . "WHERE last_access_time < '" . (time() - $time) . "';"
+            . "WHERE last_access_time < '" . (time() - $time) . "';",
+            false
         );
         return (bool)$query;
     } else {
@@ -269,7 +271,8 @@ function sql_clear_cache(string $table, array $columns): bool
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $query = sql_query(
         "SELECT id, hash FROM " . $trackerTable
-        . " WHERE table_name = '$table' AND column_name IN ('" . implode("', '", $columns) . "');"
+        . " WHERE table_name = '$table' AND column_name IN ('" . implode("', '", $columns) . "');",
+        false
     );
 
     if (($query->num_rows ?? 0) > 0) {
@@ -285,13 +288,15 @@ function sql_clear_cache(string $table, array $columns): bool
         }
         $query = sql_query(
             "DELETE FROM " . $trackerTable
-            . " WHERE id IN ('" . implode("', '", $ids) . "');"
+            . " WHERE id IN ('" . implode("', '", $ids) . "');",
+            false
         );
 
         if ($query) {
             $query = sql_query(
                 "DELETE FROM " . $retrieverTable
-                . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');"
+                . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');",
+                false
             );
 
         }
@@ -335,14 +340,16 @@ function sql_store_cache(string           $table,
             if ($query) {
                 $query = sql_query(
                     "DELETE FROM " . $trackerTable
-                    . " WHERE table_name = '$table' AND hash = '$hash';"
+                    . " WHERE table_name = '$table' AND hash = '$hash';",
+                    false
                 );
             }
         } else {
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
                 . " (table_name, hash, results, last_access_time) "
-                . "VALUES ('$table', '$hash', '$store', '$time');"
+                . "VALUES ('$table', '$hash', '$store', '$time');",
+                false
             );
         }
         if ($query) {
@@ -354,7 +361,8 @@ function sql_store_cache(string           $table,
             $query = sql_query(
                 "INSERT INTO " . $trackerTable
                 . " (table_name, column_name, hash, last_access_time) "
-                . "VALUES " . implode(", ", $columnsString) . ";"
+                . "VALUES " . implode(", ", $columnsString) . ";",
+                false
             );
         }
         load_previous_sql_database();
@@ -394,6 +402,7 @@ function sql_debug(): void
 
 function get_sql_query(string $table, ?array $select = null, ?array $where = null, string|array|null $order = null, int $limit = 0): array
 {
+    global $debug;
     $hasWhere = $where !== null;
     $columns = $select ?? array();
 
@@ -432,11 +441,12 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     $cache = sql_query(
         "SELECT results FROM memory.queryCacheRetriever "
         . "WHERE table_name = '$table' AND hash = '$hash' "
-        . "LIMIT 1;"
+        . "LIMIT 1;",
+        false
     );
     load_previous_sql_database();
 
-    if (($cache->num_rows ?? 0) > 0) {
+    if (!$debug && ($cache->num_rows ?? 0) > 0) {
         $row = $cache->fetch_assoc();
         $results = json_decode($row["results"], false);
 
@@ -467,14 +477,18 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 /**
  * @throws Exception
  */
-function sql_query(string $command): mixed
+function sql_query(string $command, bool $localDebug = true): mixed
 {
     $sqlConnection = create_sql_connection();
-    global $is_sql_usable, $debug;
+    global $is_sql_usable;
 
-    if ($debug) {
-        $debug = false;
-        var_dump($command);
+    if ($localDebug) {
+        global $debug;
+
+        if ($debug) {
+            $debug = false;
+            var_dump($command);
+        }
     }
     if ($is_sql_usable) {
         global $sql_credentials;

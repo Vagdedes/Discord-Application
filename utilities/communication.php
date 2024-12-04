@@ -35,7 +35,7 @@ function load_previous_sql_database(): void
     }
 }
 
-function load_sql_database($file = SqlDatabaseCredentials::STORAGE): void
+function load_sql_database(string $file = SqlDatabaseCredentials::STORAGE): void
 {
     global $current_sql_database, $previous_sql_database;
     $previous_sql_database = $current_sql_database;
@@ -60,7 +60,7 @@ function load_sql_database($file = SqlDatabaseCredentials::STORAGE): void
     }
 }
 
-function private_file_get_contents($url, $createAndClose = false): bool|string
+function private_file_get_contents(string $url, int $timeout = 0): bool|string
 {
     global $memory_private_connections_table;
     $code = random_string(512);
@@ -81,13 +81,13 @@ function private_file_get_contents($url, $createAndClose = false): bool|string
         ),
         false,
         $_SERVER['HTTP_USER_AGENT'] ?? "",
-        $createAndClose ? 1 : 0
+        $timeout
     );
 }
 
 // Separator
 
-function is_private_connection($checkClientIP = false): bool
+function is_private_connection(): bool
 {
     global $private_connection_access;
 
@@ -121,43 +121,46 @@ function is_private_connection($checkClientIP = false): bool
                         )
                     );
                     load_previous_sql_database();
+                    $localAddress = get_local_ip_address();
+                    $queryArgs = array(
+                        array("deletion_date", null),
+                        null,
+                        array("expiration_date", "IS", null, 0),
+                        array("expiration_date", ">", get_current_date()),
+                        null,
+                        null
+                    );
+                    $explode = explode(".", $localAddress);
+                    $size = sizeof($explode);
+                    $last = (1 << $size);
+
+                    for ($i = 0; $i < $last; $i++) {
+                        $loopLocalAddress = [];
+
+                        for ($j = 0; $j < $size; $j++) {
+                            if ($i & (1 << $j)) {
+                                $loopLocalAddress[] = "X";
+                            } else {
+                                $loopLocalAddress[] = $explode[$j];
+                            }
+                        }
+                        if ($i === $last - 1) {
+                            $queryArgs[] = array("ip_address", "=", implode(".", $loopLocalAddress));
+                        } else {
+                            $queryArgs[] = array("ip_address", "=", implode(".", $loopLocalAddress), 0);
+                        }
+                    }
+                    $queryArgs[] = null;
 
                     if (!empty(get_sql_query(
                         $administrator_local_server_ip_addresses_table,
                         array("id"),
-                        array(
-                            array("ip_address", get_local_ip_address()),
-                            array("deletion_date", null),
-                            null,
-                            array("expiration_date", "IS", null, 0),
-                            array("expiration_date", ">", get_current_date()),
-                            null,
-                        ),
+                        $queryArgs,
                         null,
                         1
                     ))) {
-                        if ($checkClientIP) {
-                            if (!empty(get_sql_query(
-                                $administrator_local_server_ip_addresses_table,
-                                array("id"),
-                                array(
-                                    array("ip_address", get_raw_client_ip_address()),
-                                    array("deletion_date", null),
-                                    null,
-                                    array("expiration_date", "IS", null, 0),
-                                    array("expiration_date", ">", get_current_date()),
-                                    null,
-                                ),
-                                null,
-                                1
-                            ))) {
-                                $private_connection_access = true;
-                                return true;
-                            }
-                        } else {
-                            $private_connection_access = true;
-                            return true;
-                        }
+                        $private_connection_access = true;
+                        return true;
                     }
                 }
             } else {
@@ -178,17 +181,12 @@ function get_private_ip_address(): ?string
 
 // Separator
 
-function get_session_account_id()
+function set_communication_key(string $key, mixed $value): void
 {
-    return is_private_connection() ? ($_POST['session_account_id'] ?? null) : null;
+    $_POST[$key] = $value;
 }
 
-function set_session_account_id($id): void
+function get_communication_key(string $key): mixed
 {
-    $_POST['session_account_id'] = $id;
-}
-
-function has_session_account_id(): bool
-{
-    return !empty(get_session_account_id());
+    return is_private_connection() ? ($_POST[$key] ?? null) : null;
 }

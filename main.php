@@ -15,6 +15,7 @@ require '/root/discord_bot/utilities/memory/init.php';
 require '/root/discord_bot/utilities/sql.php';
 require '/root/discord_bot/utilities/communication.php';
 require '/root/discord_bot/utilities/evaluator.php';
+require '/root/discord_bot/utilities/AbstractMethodReply.php';
 
 require '/root/discord_bot/discord/other/DiscordMute.php';
 require '/root/discord_bot/discord/other/DiscordFAQ.php';
