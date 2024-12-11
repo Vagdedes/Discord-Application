@@ -266,7 +266,7 @@ class AccountMessageImplementationListener
                                             },
                                             true
                                         );
-                                    }, $bot->bot->discord);
+                                    }, $bot->discord);
                                     $messageBuilder->addComponent($select);
                                     return $messageBuilder;
                                 }
