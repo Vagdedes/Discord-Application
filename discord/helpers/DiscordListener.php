@@ -32,7 +32,7 @@ class DiscordListener
         IMPLEMENTATION_REMINDER_MESSAGE = "/root/discord_bot/listeners/custom/reminder_message/",
         IMPLEMENTATION_STATUS_MESSAGE = "/root/discord_bot/listeners/custom/status_message/",
         IMPLEMENTATION_NOTIFICATION_MESSAGE = "/root/discord_bot/listeners/custom/notification_message/",
-        IMPLEMENTATION_AI_TEXT = "/root/discord_bot/listeners/custom/ai_text/";
+        IMPLEMENTATION_AI = "/root/discord_bot/listeners/custom/artificial_intelligence/";
 
     public function __construct(DiscordBot $bot)
     {
@@ -287,16 +287,17 @@ class DiscordListener
 
     public function callAiTextImplementation(?string $class,
                                              ?string $method,
+                                             object  $model,
                                              Message $originalMessage,
                                              object  $channel,
                                              ?array  $localInstructions,
                                              ?array  $publicInstructions): array
     {
         if ($class !== null && $method !== null) {
-            require_once(self::IMPLEMENTATION_AI_TEXT . $class . '.php');
+            require_once(self::IMPLEMENTATION_AI . $class . '.php');
             return call_user_func_array(
                 array($class, $method),
-                array($this->bot, $originalMessage, $channel, $localInstructions, $publicInstructions)
+                array($model, $this->bot, $originalMessage, $channel, $localInstructions, $publicInstructions)
             );
         } else {
             return array($localInstructions, $publicInstructions);

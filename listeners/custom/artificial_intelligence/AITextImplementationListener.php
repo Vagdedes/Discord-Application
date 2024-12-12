@@ -6,10 +6,10 @@ class AITextImplementationListener // Name can be changed
 {
 
     private const
-        AVAILABLE_PRODUCTS = "available-products",
         OWNED_PRODUCTS = "owned-products/purchases";
 
-    public static function method(DiscordBot $bot,
+    public static function method(object     $model,
+                                  DiscordBot $bot,
                                   Message    $originalMessage,
                                   object     $channel,
                                   ?array     $localInstructions,
@@ -29,7 +29,7 @@ class AITextImplementationListener // Name can be changed
                 $purchases = $account->getPurchases()->getCurrent();
 
                 if (empty($purchases)) {
-                    $bot->instructions->manager->addExtra(
+                    $bot->instructions->get($originalMessage->guild_id, $model->managerAI)->addExtra(
                         self::OWNED_PRODUCTS,
                         "You haven't made any purchases yet or they haven't been processed yet.",
                         true
@@ -46,14 +46,14 @@ class AITextImplementationListener // Name can be changed
                             }
                         }
                     }
-                    $bot->instructions->manager->addExtra(
+                    $bot->instructions->get($originalMessage->guild_id, $model->managerAI)->addExtra(
                         self::OWNED_PRODUCTS,
                         $purchases,
                         true
                     );
                 }
             } else {
-                $bot->instructions->manager->addExtra(
+                $bot->instructions->get($originalMessage->guild_id, $model->managerAI)->addExtra(
                     self::OWNED_PRODUCTS,
                     "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information.",
                     true

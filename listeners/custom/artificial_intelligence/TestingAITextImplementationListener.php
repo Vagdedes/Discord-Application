@@ -5,7 +5,8 @@ use Discord\Parts\Channel\Message;
 class TestingAITextImplementationListener // Name can be changed
 {
 
-    public static function test_method(DiscordBot $bot,
+    public static function test_method(object     $model,
+                                       DiscordBot $bot,
                                        Message    $originalMessage,
                                        object     $channel,
                                        ?array     $localInstructions,

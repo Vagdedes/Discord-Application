@@ -312,7 +312,7 @@ class DiscordPersistentMessages
     {
         $bot = $this->bot;
         $channel->sendMessage($this->build(null, $messageRow))->done(
-            function (Message $message) use ($messageRow, $oldMessageRow, $array, $position, $bot) {
+            function (Message $message) use ($channel, $messageRow, $oldMessageRow, $array, $position, $bot) {
                 $this->bot->component->addReactions($message, $messageRow->id);
                 $messageRow->message_id = $message->id;
                 set_sql_query(
@@ -326,7 +326,7 @@ class DiscordPersistentMessages
                     null,
                     1
                 );
-                $bot->instructions->manager->addExtra(
+                $bot->instructions->get($channel->guild_id)->addExtra(
                     "interactive-message-" . $message->id,
                     $message->getRawAttributes(),
                     false,
@@ -351,8 +351,8 @@ class DiscordPersistentMessages
                             $messageRow->message_id = $message->id;
                         }
                         $message->edit($this->build(null, $messageRow))->done(
-                            function (Message $message) use ($bot) {
-                                $bot->instructions->manager->addExtra(
+                            function (Message $message) use ($bot, $channel) {
+                                $bot->instructions->get($channel->guild_id)->addExtra(
                                     "interactive-message-" . $message->id,
                                     $message->getRawAttributes(),
                                     false,

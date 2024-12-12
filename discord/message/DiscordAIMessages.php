@@ -42,6 +42,7 @@ class DiscordAIMessages
         );
 
         if (!empty($query)) {
+
             foreach ($query as $row) {
                 if ($row->api_key === null) {
                     global $logger;
@@ -172,7 +173,7 @@ class DiscordAIMessages
         }
     }
 
-    public function getModel(int|string|null $aiModelID = null): mixed
+    private function getModel(int|string|null $aiModelID = null): mixed
     {
         if ($aiModelID === null) {
             $array = $this->model;
@@ -180,12 +181,6 @@ class DiscordAIMessages
         } else {
             return $this->model[$aiModelID] ?? null;
         }
-    }
-
-    public function getManagerAI(int|string|null $aiModelID = null): mixed
-    {
-        $model = $this->getModel($aiModelID);
-        return $model?->managerAI;
     }
 
     public function textAssistance(Message $originalMessage, mixed $messageHistory): bool
@@ -423,6 +418,7 @@ class DiscordAIMessages
                                                     $array = $this->bot->listener->callAiTextImplementation(
                                                         $model->implement_class,
                                                         $model->implement_method,
+                                                        $model,
                                                         $originalMessage,
                                                         $channel,
                                                         $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
@@ -498,96 +494,105 @@ class DiscordAIMessages
         return false;
     }
 
-    public function rawTextAssistance(int|string    $aiModelID,
-                                      Message|array $source,
-                                      ?Message      $self,
-                                      array         $systemInstructions,
-                                      int           $hash,
-                                      bool          $debug = false,
-                                      ?int          $maxAttachmentsLength = 0): ?array
+    public function rawTextAssistance(int|string|object $aiModel,
+                                      Message|array     $source,
+                                      ?Message          $self,
+                                      array             $systemInstructions,
+                                      int               $hash,
+                                      bool              $debug = false,
+                                      ?int              $maxAttachmentsLength = 0): ?array
     {
-        if (is_array($source)) {
-            $debug = false;
+        if (!is_object($aiModel)) {
+            $aiModel = $this->getModel($aiModel);
+        }
+        $isArray = is_array($source);
+
+        if ($isArray) {
             $channel = array_shift($source);
-            $user = array_shift($source);
-            $content = array_shift($source);
         } else {
-            $debug &= $self !== null;
             $channel = $source->channel;
-            $user = $source->member;
-            $content = $source->content;
-            $reference = $source->message_reference;
+        }
+        if ($aiModel !== null) {
+            if ($isArray) {
+                $debug = false;
+                $user = array_shift($source);
+                $content = array_shift($source);
+            } else {
+                $debug &= $self !== null;
+                $user = $source->member;
+                $content = $source->content;
+                $reference = $source->message_reference;
+                $serverID = $source->guild_id;
 
-            if ($reference instanceof Message) {
-                $content .= DiscordProperties::NEW_LINE
-                    . DiscordProperties::NEW_LINE
-                    . "Referenced Message by '" . $reference->author->username . "':"
-                    . DiscordProperties::NEW_LINE
-                    . $reference->content;
-            }
-            if ($maxAttachmentsLength !== null
-                && $maxAttachmentsLength > 0
-                && !empty($source->attachments->first())) {
-                $totalSize = 0;
-                $attachments = array();
+                if ($reference instanceof Message) {
+                    $content .= DiscordProperties::NEW_LINE
+                        . DiscordProperties::NEW_LINE
+                        . "Referenced Message by '" . $reference->author->username . "':"
+                        . DiscordProperties::NEW_LINE
+                        . $reference->content;
+                }
+                if ($maxAttachmentsLength !== null
+                    && $maxAttachmentsLength > 0
+                    && !empty($source->attachments->first())) {
+                    $totalSize = 0;
+                    $attachments = array();
 
-                foreach ($source->attachments as $attachment) {
-                    $size = $attachment->size;
+                    foreach ($source->attachments as $attachment) {
+                        $size = $attachment->size;
 
-                    if ($size <= $maxAttachmentsLength) {
-                        $contents = timed_file_get_contents($attachment->url, 5);
+                        if ($size <= $maxAttachmentsLength) {
+                            $contents = timed_file_get_contents($attachment->url, 5);
 
-                        if ($contents !== false) {
-                            $attachment = $attachment->jsonSerialize();
-                            unset($attachment["id"]);
-                            unset($attachment["url"]);
-                            unset($attachment["proxy_url"]);
-                            unset($attachment["ephemeral"]);
-                            unset($attachment["size"]);
+                            if ($contents !== false) {
+                                $attachment = $attachment->jsonSerialize();
+                                unset($attachment["id"]);
+                                unset($attachment["url"]);
+                                unset($attachment["proxy_url"]);
+                                unset($attachment["ephemeral"]);
+                                unset($attachment["size"]);
 
-                            foreach ($attachment as $attachmentKey => $attachmentValue) {
-                                if ($attachmentValue === null) {
-                                    unset($attachment[$attachmentKey]);
+                                foreach ($attachment as $attachmentKey => $attachmentValue) {
+                                    if ($attachmentValue === null) {
+                                        unset($attachment[$attachmentKey]);
+                                    }
+                                }
+                                $attachment["contents"] = $contents;
+                                $contentType = $attachment["content_type"];
+                                unset($attachment["content_type"]);
+                                $attachment = json_encode($attachment);
+                                $size = strlen($attachment);
+
+                                if ($size <= $maxAttachmentsLength) {
+                                    $attachments[$size] = array(
+                                        $contentType,
+                                        $attachment
+                                    );
                                 }
                             }
-                            $attachment["contents"] = $contents;
-                            $contentType = $attachment["content_type"];
-                            unset($attachment["content_type"]);
-                            $attachment = json_encode($attachment);
-                            $size = strlen($attachment);
+                        }
+                    }
+                    if (!empty($attachments)) {
+                        ksort($attachments);
 
-                            if ($size <= $maxAttachmentsLength) {
-                                $attachments[$size] = array(
-                                    $contentType,
-                                    $attachment
+                        foreach ($attachments as $size => $attachment) {
+                            $totalSize += $size;
+
+                            if ($totalSize > $maxAttachmentsLength) {
+                                break;
+                            }
+                            if ($serverID !== null) {
+                                $content .= $this->bot->instructions->get($serverID, $aiModel->managerAI)->buildExtra(
+                                    $attachment[0],
+                                    $attachment[1]
                                 );
                             }
                         }
                     }
                 }
-                if (!empty($attachments)) {
-                    ksort($attachments);
-
-                    foreach ($attachments as $size => $attachment) {
-                        $totalSize += $size;
-
-                        if ($totalSize > $maxAttachmentsLength) {
-                            break;
-                        }
-                        $content .= $this->bot->instructions->manager->buildExtra(
-                            $attachment[0],
-                            $attachment[1]
-                        );
-                    }
-                }
             }
-        }
-        $parent = $this->bot->utilities->getChannelOrThread($channel);
-        $managerAI = $this->getManagerAI($aiModelID);
-
-        if ($managerAI !== null) {
+            $parent = $this->bot->utilities->getChannelOrThread($channel);
             $input = null;
-            $familyID = $managerAI->getFamilyID();
+            $familyID = $aiModel->managerAI->getFamilyID();
             $builder = MessageBuilder::new();
             $embeds = array();
 
@@ -706,7 +711,8 @@ class DiscordAIMessages
                         );
                     }
                     $length = strlen($content);
-                    $system = $this->bot->instructions->build(
+                    $system = $this->buildSystemInstructions(
+                        $aiModel,
                         $systemInstructions[0],
                         $systemInstructions[1],
                         $systemInstructions[2],
@@ -730,7 +736,7 @@ class DiscordAIMessages
                     $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for app: " . $this->bot->botID);
                     return null;
             }
-            $outcome = $managerAI->getResult(
+            $outcome = $aiModel->managerAI->getResult(
                 $hash,
                 $input,
                 $length,
@@ -811,6 +817,36 @@ class DiscordAIMessages
         return null;
     }
 
+    private function buildSystemInstructions(object  $model,
+                                             object  $object,
+                                             ?array  $specificLocal = null,
+                                             ?array  $specificPublic = null,
+                                             ?string $userInput = null): string
+    {
+        $local = $this->bot->instructions->get($object->serverID, $model->managerAI)->getLocal($specificLocal, $userInput);
+
+        if (!empty($local)) {
+            foreach ($local as $key => $value) {
+                $value = $this->bot->instructions->replace(
+                    array($value),
+                    $object,
+                    $specificPublic,
+                    $userInput,
+                    true,
+                    true
+                );
+                if (sizeof($value) > 1) {
+                    $local[$key] = $value;
+                } else {
+                    $local[$key] = $value[0];
+                }
+            }
+            return @json_encode($local);
+        } else {
+            return "";
+        }
+    }
+
     // Separator
 
     public function getReplies(int|string|null $serverID,
@@ -888,9 +924,8 @@ class DiscordAIMessages
 
     // Separator
 
-    private
-    function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
-                     int|string      $pastLookup): float
+    private function getCost(int|string|null $serverID, int|string|null $channelID, int|string|null $userID,
+                             int|string      $pastLookup): float
     {
         $cost = 0.0;
         $array = get_sql_query(
@@ -915,9 +950,8 @@ class DiscordAIMessages
         return $cost;
     }
 
-    private
-    function getMessageCount(int|string|null $serverID, int|string|null $channelID,
-                             int|string|null $userID, int|string $pastLookup): float
+    private function getMessageCount(int|string|null $serverID, int|string|null $channelID,
+                                     int|string|null $userID, int|string $pastLookup): float
     {
         return sizeof(
             get_sql_query(
@@ -938,8 +972,7 @@ class DiscordAIMessages
         );
     }
 
-    private
-    function isLimited(object $model, Message $message): array
+    private function isLimited(object $model, Message $message): array
     {
         $array = array();
         $serverID = $message->guild_id;
@@ -1077,8 +1110,7 @@ class DiscordAIMessages
 
     // Separator
 
-    public
-    function sendFeedback(MessageReaction $reaction, ?int $value): void
+    public function sendFeedback(MessageReaction $reaction, ?int $value): void
     {
         $hash = $this->bot->utilities->hash(
             $reaction->guild_id,
@@ -1150,14 +1182,13 @@ class DiscordAIMessages
         }
     }
 
-    public
-    function setLimit(Interaction           $interaction,
-                      bool                  $cost,
-                      int|float|string|null $limit, string $timePeriod,
-                      bool                  $perUser, ?bool $timeOut,
-                      ?string               $message,
-                      ?Role                 $role, ?Channel $channel,
-                      bool                  $set = true): ?string
+    public function setLimit(Interaction           $interaction,
+                             bool                  $cost,
+                             int|float|string|null $limit, string $timePeriod,
+                             bool                  $perUser, ?bool $timeOut,
+                             ?string               $message,
+                             ?Role                 $role, ?Channel $channel,
+                             bool                  $set = true): ?string
     {
         $table = $cost ? BotDatabaseTable::BOT_AI_COST_LIMITS : BotDatabaseTable::BOT_AI_MESSAGE_LIMITS;
         $objectChannel = $this->bot->channels->getIfHasAccess(

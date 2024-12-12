@@ -11,14 +11,27 @@ class DiscordInstructions
 {
 
     private DiscordBot $bot;
-    public mixed $manager;
+    private array $managers;
 
     public function __construct(DiscordBot $bot)
     {
-        $account = new Account();
         $this->bot = $bot;
-        $this->manager = $account->getInstructions();
-        $this->manager->setAI($bot->aiMessages->getManagerAI());
+        $this->managers = array();
+    }
+
+    public function get(int|string|Guild $serverID, mixed $managerAI = null): mixed
+    {
+        if ($serverID instanceof Guild) {
+            $serverID = $serverID->id;
+        }
+        if (!array_key_exists($serverID, $this->managers)) {
+            $account = new Account();
+            $this->managers[$serverID] = $account->getInstructions();
+        }
+        if ($managerAI !== null) {
+            $this->managers[$serverID]->setAI($managerAI);
+        }
+        return $this->managers[$serverID];
     }
 
     public function replace(array   $messages,
@@ -26,16 +39,22 @@ class DiscordInstructions
                             ?array  $specificPublic = null,
                             ?string $userInput = null,
                             bool    $callables = false,
-                            bool    $extra = false): array
+                            bool    $extra = false,): array
     {
-        return $this->manager->replace(
+        if ($object === null) {
+            $account = new Account();
+            $manager = $account->getInstructions();
+        } else {
+            $manager = $this->get($object->serverID);
+        }
+        return $manager->replace(
             $messages,
             $object,
             !$callables
                 ? null
                 : array(
-                "publicInstructions" => function () use ($specificPublic, $userInput) {
-                    return $this->manager->getPublic(
+                "publicInstructions" => function () use ($manager, $specificPublic, $userInput) {
+                    return $manager->getPublic(
                         $specificPublic,
                         $userInput,
                         false
@@ -75,35 +94,6 @@ class DiscordInstructions
         );
     }
 
-    public function build(object  $object,
-                          ?array  $specificLocal = null,
-                          ?array  $specificPublic = null,
-                          ?string $userInput = null): string
-    {
-        $local = $this->manager->getLocal($specificLocal, $userInput);
-
-        if (!empty($local)) {
-            foreach ($local as $key => $value) {
-                $value = $this->replace(
-                    array($value),
-                    $object,
-                    $specificPublic,
-                    $userInput,
-                    true,
-                    true
-                );
-                if (sizeof($value) > 1) {
-                    $local[$key] = $value;
-                } else {
-                    $local[$key] = $value[0];
-                }
-            }
-            return @json_encode($local);
-        } else {
-            return "";
-        }
-    }
-
     public function getObject(?Guild              $server = null,
                               Channel|Thread|null $channel = null,
                               Member|User|null    $user = null,
@@ -112,9 +102,24 @@ class DiscordInstructions
     {
         $object = new stdClass();
         $object->messageHistory = $messageHistory;
-        $object->serverID = $server?->id;
-        $object->serverName = $server?->name;
 
+        if ($server === null) {
+            if ($channel === null) {
+                if ($user instanceof Member) {
+                    $object->serverID = $user->guild_id;
+                    $object->serverName = $user->guild->name;
+                } else {
+                    $object->serverID = null;
+                    $object->serverName = null;
+                }
+            } else {
+                $object->serverID = $channel->guild_id;
+                $object->serverName = $channel->guild->name;
+            }
+        } else {
+            $object->serverID = $server?->id;
+            $object->serverName = $server?->name;
+        }
         if ($channel instanceof Thread) {
             $object->channelID = $channel->parent->id;
             $object->channelName = $channel->parent->name;
@@ -148,4 +153,5 @@ class DiscordInstructions
         $object->newLine = DiscordProperties::NEW_LINE;
         return $object;
     }
+
 }
