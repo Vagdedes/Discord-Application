@@ -107,18 +107,23 @@ class DiscordInstructions
             if ($channel === null) {
                 if ($user instanceof Member) {
                     $object->serverID = $user->guild_id;
-                    $object->serverName = $user->guild->name;
+                    $object->serverName = $user->guild?->name;
                 } else {
-                    $object->serverID = null;
-                    $object->serverName = null;
+                    if ($message === null) {
+                        $object->serverID = null;
+                        $object->serverName = null;
+                    } else {
+                        $object->serverID = $message->guild_id;
+                        $object->serverName = $message->guild?->name;
+                    }
                 }
             } else {
                 $object->serverID = $channel->guild_id;
-                $object->serverName = $channel->guild->name;
+                $object->serverName = $channel->guild?->name;
             }
         } else {
-            $object->serverID = $server?->id;
-            $object->serverName = $server?->name;
+            $object->serverID = $server->id;
+            $object->serverName = $server->name;
         }
         if ($channel instanceof Thread) {
             $object->channelID = $channel->parent->id;

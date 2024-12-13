@@ -527,7 +527,7 @@ class DiscordAIMessages
                 if ($reference instanceof Message) {
                     $content .= DiscordProperties::NEW_LINE
                         . DiscordProperties::NEW_LINE
-                        . "Referenced Message by '" . $reference->author->username . "':"
+                        . "Referenced Message by '" . $reference->author?->username . "':"
                         . DiscordProperties::NEW_LINE
                         . $reference->content;
                 }
