@@ -800,6 +800,7 @@ class DiscordAIMessages
                         . "\n" . @json_encode($model)
                         . "\n" . @json_encode($replyObject)
                     );
+                    return null;
                 }
             } else {
                 global $logger;
@@ -807,14 +808,15 @@ class DiscordAIMessages
                     "Failed to get text from chat-model for channel/thread with ID: " . $channel->id
                     . "\n" . @json_encode($outcome)
                 );
+                return null;
             }
         } else {
             global $logger;
             $logger->logError(
                 "Failed to find an existent chat-model for channel/thread with ID: " . $channel->id
             );
+            return null;
         }
-        return null;
     }
 
     private function buildSystemInstructions(object  $model,
