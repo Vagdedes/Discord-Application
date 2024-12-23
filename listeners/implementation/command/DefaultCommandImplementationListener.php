@@ -1529,8 +1529,9 @@ class DefaultCommandImplementationListener
         $user = $interaction->data?->resolved?->users?->first();
 
         if ($user !== null) {
+            DiscordInviteTracker::track($interaction->guild);
             $object = $bot->inviteTracker->getUserStats(
-                $interaction->guild_id,
+                $interaction->guild,
                 $user->id
             );
             $messageBuilder = MessageBuilder::new();
@@ -1566,30 +1567,33 @@ class DefaultCommandImplementationListener
                 true
             );
         } else {
+            DiscordInviteTracker::track($interaction->guild);
             $array = $bot->inviteTracker->getServerStats(
-                $interaction->guild_id,
+                $interaction->guild,
             );
             $size = sizeof($array);
 
             if ($size > 0) {
                 $messageBuilder = MessageBuilder::new();
                 $counter = 0;
+                $unknown = new stdClass();
+                $unknown->username = "Unknown";
+                $unknown->avatar = null;
 
                 foreach ($array as $object) {
-                    $user = $bot->utilities->getUser($object->user_id);
+                    $user = $object->user_id === null
+                        ? clone $unknown
+                        : $bot->utilities->getUser($object->user_id);
+                    $counter++;
+                    $embed = new Embed($bot->discord);
+                    $embed->setAuthor($counter . ". " . $user->username, $user->avatar);
+                    $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
+                    $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
+                    $embed->addFieldValues("Users Invited", $object->users_invited);
+                    $messageBuilder->addEmbed($embed);
 
-                    if ($user !== null) {
-                        $counter++;
-                        $embed = new Embed($bot->discord);
-                        $embed->setAuthor($counter . ". " . $user->username, $user->avatar);
-                        $embed->addFieldValues("Total Invite Links", $object->total_invite_links);
-                        $embed->addFieldValues("Active Invite Links", $object->active_invite_links);
-                        $embed->addFieldValues("Users Invited", $object->users_invited);
-                        $messageBuilder->addEmbed($embed);
-
-                        if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
-                            break;
-                        }
+                    if ($counter === DiscordInheritedLimits::MAX_EMBEDS_PER_MESSAGE) {
+                        break;
                     }
                 }
 

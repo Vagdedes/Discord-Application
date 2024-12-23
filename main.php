@@ -386,6 +386,7 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $createdDiscordBot) {
+            DiscordInviteTracker::track($member->guild);
             $createdDiscordBot->joinRoles->run($member);
             $createdDiscordBot->statisticsChannels->refresh();
             $createdDiscordBot->statusMessages->run($member, DiscordStatusMessages::WELCOME);

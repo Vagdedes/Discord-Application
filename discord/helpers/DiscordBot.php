@@ -107,11 +107,11 @@ class DiscordBot
         $this->statusMessages = new DiscordStatusMessages($this);
         $this->userTargets = new DiscordUserTargets($this);
         $this->userNotes = new DiscordUserNotes($this);
-        $this->inviteTracker = new DiscordInviteTracker($this);
         $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
         $this->notificationMessages = new DiscordNotificationMessages($this);
+        $this->inviteTracker = new DiscordInviteTracker($this);
 
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
     }
