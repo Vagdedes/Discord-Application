@@ -84,7 +84,7 @@ class DiscordInviteTracker
             foreach ($query as $invite) {
                 if (!array_key_exists($invite->inviter?->id, $array)) {
                     $object = new stdClass();
-                    $object->user_id = $invite->inviter;
+                    $object->user_id = $invite->inviter?->id;
                     $object->total_invite_links = 1;
                     $object->active_invite_links = $invite->expires_at === null || $invite->expires_at > $date ? 1 : 0;
                     $object->users_invited = $invite->uses;
