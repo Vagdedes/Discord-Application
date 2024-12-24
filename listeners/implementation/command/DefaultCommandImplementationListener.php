@@ -42,7 +42,7 @@ class DefaultCommandImplementationListener
                                 MessageBuilder::new()->setContent(
                                     DiscordSyntax::LIGHT_CODE_BLOCK .
                                     substr(
-                                        "<@" . implode(">\n<@", array_keys($users)),
+                                        "<@" . implode(">\n<@", array_keys($users)) . ">",
                                         0,
                                         DiscordInheritedLimits::MESSAGE_MAX_LENGTH
                                         - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
@@ -98,7 +98,7 @@ class DefaultCommandImplementationListener
                                 MessageBuilder::new()->setContent(
                                     DiscordSyntax::LIGHT_CODE_BLOCK .
                                     substr(
-                                        "<@" . implode(">\n<@", $winners),
+                                        "<@" . implode(">\n<@", $winners) . ">",
                                         0,
                                         DiscordInheritedLimits::MESSAGE_MAX_LENGTH
                                         - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
