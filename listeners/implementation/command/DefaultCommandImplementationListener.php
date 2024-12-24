@@ -16,13 +16,15 @@ class DefaultCommandImplementationListener
     {
         $arguments = $interaction->data->options->toArray();
         $messages = explode(",", $arguments["messages"]["value"] ?? null);
+        $amount = $arguments["amount"]["value"] ?? null;
+        $inviteProbabilityDivisor = $arguments["invite-probability-divisor"]["value"] ?? null;
 
         if (!empty($messages)) {
             $bot->utilities->acknowledgeCommandMessage(
                 $interaction,
                 MessageBuilder::new()->setContent("Please wait..."),
                 true
-            )->done(function () use ($interaction, $messages, $arguments) {
+            )->done(function () use ($interaction, $messages, $arguments, $bot, $inviteProbabilityDivisor, $amount) {
                 foreach ($messages as $key => $messageID) {
                     if (!is_numeric($messageID)) {
                         unset($messages[$key]);
@@ -34,18 +36,93 @@ class DefaultCommandImplementationListener
                     $messageFinish = 0;
                     $reactionFinish = 0;
                     $users = array();
+                    $callable = function () use (&$users, $bot, $interaction, $inviteProbabilityDivisor, $amount) {
+                        if (sizeof($users) <= $amount) {
+                            $interaction->updateOriginalResponse(
+                                MessageBuilder::new()->setContent(
+                                    DiscordSyntax::LIGHT_CODE_BLOCK .
+                                    substr(
+                                        "<@" . implode(">\n<@", array_keys($users)),
+                                        0,
+                                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH
+                                        - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
+                                    )
+                                    . DiscordSyntax::LIGHT_CODE_BLOCK
+                                )
+                            );
+                        } else {
+                            $winners = array();
+                            $multiplier = array();
+                            $probability = array();
+
+                            if ($inviteProbabilityDivisor !== null) {
+                                $invites = array();
+                                $totalInvites = 0;
+
+                                foreach ($users as $user) {
+                                    $count = $bot->inviteTracker->getUserStats(
+                                        $interaction->guild,
+                                        $user->id
+                                    )->users_invited;
+                                    $invites[$user->id] = $count;
+                                    $totalInvites += $count;
+                                    $probability[$user->id] = rand(0, 10_000) / 10_000.0;
+                                }
+                                foreach ($invites as $userID => $count) {
+                                    $multiplier[$userID] = 1.0 + ($count / (float)$totalInvites / (float)$inviteProbabilityDivisor);
+                                }
+                            } else {
+                                foreach ($users as $user) {
+                                    $multiplier[$user->id] = 1.0;
+                                    $probability[$user->id] = rand(0, 10_000) / 10_000.0;
+                                }
+                            }
+
+                            while (true) {
+                                $currentProbability = rand(0, 100) / 100.0;
+
+                                foreach ($users as $arrayKey => $user) {
+                                    if ($probability[$user->id] * $multiplier[$user->id] >= $currentProbability) {
+                                        $winners[] = $user->id;
+                                        unset($users[$arrayKey]);
+                                        $amount--;
+
+                                        if ($amount === 0) {
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+
+                            $interaction->updateOriginalResponse(
+                                MessageBuilder::new()->setContent(
+                                    DiscordSyntax::LIGHT_CODE_BLOCK .
+                                    substr(
+                                        "<@" . implode(">\n<@", $winners),
+                                        0,
+                                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH
+                                        - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
+                                    )
+                                    . DiscordSyntax::LIGHT_CODE_BLOCK
+                                )
+                            );
+                        }
+                    };
 
                     foreach ($messages as $messageID) {
                         $interaction->channel->messages->fetch((int)$messageID, true)->done(
                             function (Message $message)
-                            use ($interaction, &$reactionFinish, &$messageFinish, &$users, &$messageCount) {
+                            use ($interaction, &$reactionFinish, &$messageFinish, &$users, &$messageCount, $callable) {
                                 $reactionCount = $message->reactions->count();
 
                                 if ($reactionCount > 0) {
                                     foreach ($message->reactions as $reaction) {
                                         $reaction->getAllUsers()->done(
                                             function ($reactionUsers)
-                                            use ($interaction, &$users, $reactionCount, &$reactionFinish, &$messageFinish, $messageCount) {
+                                            use (
+                                                $interaction, &$users, $reactionCount, &$reactionFinish,
+                                                &$messageFinish, $messageCount, $callable
+                                            ) {
                                                 foreach ($reactionUsers as $user) {
                                                     if (!array_key_exists($user->id, $users)) {
                                                         $users[$user->id] = $user;
@@ -57,9 +134,7 @@ class DefaultCommandImplementationListener
                                                     $messageFinish++;
 
                                                     if ($messageFinish === $messageCount) {
-                                                        $interaction->updateOriginalResponse(
-                                                            MessageBuilder::new()->setContent(sizeof($users) . " users have reacted to the message/s."),
-                                                        );
+                                                        $callable();
                                                     }
                                                 }
                                             }
