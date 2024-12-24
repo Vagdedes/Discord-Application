@@ -10,6 +10,82 @@ class DefaultCommandImplementationListener
 
     private const AI_IMAGE_HASH = 978323941;
 
+    public static function reaction_giveaway(DiscordBot          $bot,
+                                             Interaction|Message $interaction,
+                                             object              $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $messages = explode(",", $arguments["messages"]["value"] ?? null);
+
+        if (!empty($messages)) {
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Please wait..."),
+                true
+            )->done(function () use ($interaction, $messages, $arguments) {
+                foreach ($messages as $key => $messageID) {
+                    if (!is_numeric($messageID)) {
+                        unset($messages[$key]);
+                    }
+                }
+                $messageCount = sizeof($messages);
+
+                if ($messageCount > 0) {
+                    $messageFinish = 0;
+                    $reactionFinish = 0;
+                    $users = array();
+
+                    foreach ($messages as $messageID) {
+                        $interaction->channel->messages->fetch((int)$messageID, true)->done(
+                            function (Message $message)
+                            use ($interaction, &$reactionFinish, &$messageFinish, &$users, &$messageCount) {
+                                $reactionCount = $message->reactions->count();
+
+                                if ($reactionCount > 0) {
+                                    foreach ($message->reactions as $reaction) {
+                                        $reaction->getAllUsers()->done(
+                                            function ($reactionUsers)
+                                            use ($interaction, &$users, $reactionCount, &$reactionFinish, &$messageFinish, $messageCount) {
+                                                foreach ($reactionUsers as $user) {
+                                                    if (!array_key_exists($user->id, $users)) {
+                                                        $users[$user->id] = $user;
+                                                    }
+                                                }
+                                                $reactionFinish++;
+
+                                                if ($reactionFinish === $reactionCount) {
+                                                    $messageFinish++;
+
+                                                    if ($messageFinish === $messageCount) {
+                                                        $interaction->updateOriginalResponse(
+                                                            MessageBuilder::new()->setContent(sizeof($users) . " users have reacted to the message/s."),
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                        );
+                                    }
+                                } else {
+                                    $messageCount--;
+
+                                    if ($messageCount === 0) {
+                                        $interaction->updateOriginalResponse(
+                                            MessageBuilder::new()->setContent("No reactions found."),
+                                        );
+                                    }
+                                }
+                            }
+                        );
+                    }
+                } else {
+                    $interaction->updateOriginalResponse(
+                        MessageBuilder::new()->setContent("Invalid message IDs."),
+                    );
+                }
+            });
+        }
+    }
+
     public static function generate_image_from_image(DiscordBot          $bot,
                                                      Interaction|Message $interaction,
                                                      object              $command): void
