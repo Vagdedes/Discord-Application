@@ -23,7 +23,7 @@ https://bit.ly/42e8kRH
 
 
 Supported Versions:
-1.7 up to the latest Minecraft version. Do not specify the latest as a number.
+1.7 up to the latest Minecraft version publicly known and available.
 
 
 Versions and their cost:
