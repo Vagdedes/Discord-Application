@@ -94,14 +94,6 @@ Cheaper Purchase:
 On the BuiltByBit platform you can purchase both “Spartan AntiCheat: Java Edition” and “Spartan AntiCheat: Bedrock Edition” for 50% OFF via the URL https://builtbybit.com/resources/bundle/730/. For the Polymart platform you can purchase both “Spartan AntiCheat: Java Edition” and “Spartan AntiCheat: Bedrock Edition” for 50% OFF via the URL https://polymart.org/bundle/368.
 
 
-Free “Spartan AntiCheat: Java Edition”:
-If you leave a review on “Spartan AntiCheat: Bedrock Edition” on any platform you get the “Spartan AntiCheat: Java Edition” for free via the #my-account Discord text-channel by opening a thread in the #support forum-channel with title “REVIEW FOR JAVA”. Make sure to create or have an account via the #my-account Discord-text channel.
-
-
-Free “Spartan AntiCheat: Bedrock Edition”:
-If you leave a review on “Spartan AntiCheat: Java Edition” on any platform you get the “Spartan AntiCheat: Bedrock Edition” for free via the #my-account Discord text-channel by opening a thread in the #support forum-channel with title “REVIEW FOR BEDROCK”. Make sure to create or have an account via the #my-account Discord-text channel.
-
-
 Disabling the NPC:
 Go to your server’s folder, click plugins, click Spartan and open the settings.yml file. In the settings.yml file set “enable_npc” to “false” under the “Important” category and finish editing the file. Finally, run the command “/spartan reload” to refresh the contents of the memory.
 
