@@ -73,9 +73,7 @@ Visit the URL https://bit.ly/3S6WTI6 to find out about Spartan's features and wh
 
 
 Test the AntiCheat:
-minecraft.vagdedes.com
-ANYTIME OF THE DAY
-SUPPORTS JAVA & BEDROCK
+IP/Address: minecraft.vagdedes.com
 
 
 For Developers:
