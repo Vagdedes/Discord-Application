@@ -6,7 +6,7 @@ class AITextImplementationListener // Name can be changed
 {
 
     private const
-        OWNED_PRODUCTS = "owned-products/purchases";
+        OWNED_PRODUCTS = "owned products / purchases";
 
     public static function method(object     $model,
                                   DiscordBot $bot,
@@ -55,11 +55,16 @@ class AITextImplementationListener // Name can be changed
             } else {
                 $bot->instructions->get($originalMessage->guild_id, $model->managerAI)->addExtra(
                     self::OWNED_PRODUCTS,
-                    "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information.",
+                    "You must log in to your Idealistic account for your potential " . self::OWNED_PRODUCTS . " to appear as information."
+                    . " You current are known to have no purchases.",
                     true
                 );
             }
         }
+        $bot->instructions->get($originalMessage->guild_id, $model->managerAI)->addExtra(
+            "time in year-month-day hours-minutes-seconds format",
+            get_current_date()
+        );
         return array($localInstructions, $publicInstructions);
     }
 }
