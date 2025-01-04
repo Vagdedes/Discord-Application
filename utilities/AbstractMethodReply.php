@@ -5,7 +5,7 @@ abstract class AbstractMethodReply
 
     private bool $success;
 
-    public final function __construct(bool $success)
+    public function __construct(bool $success)
     {
         $this->success = $success;
     }
