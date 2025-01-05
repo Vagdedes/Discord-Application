@@ -364,11 +364,4 @@ class AccountMessageImplementationListener
         }
     }
 
-    public static function download_plugins(DiscordBot     $bot,
-                                            Interaction    $interaction,
-                                            MessageBuilder $messageBuilder,
-                                            mixed          $objects): void
-    {
-        $bot->persistentMessages->send($interaction, "0-download_plugins", true);
-    }
 }
