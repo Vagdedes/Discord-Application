@@ -226,7 +226,7 @@ class DefaultCommandImplementationListener
             $outcome = $managerAI->getResult(
                 self::AI_IMAGE_HASH,
                 [],
-                strlen($system)
+                $system
             );
 
             if (array_shift($outcome)) {

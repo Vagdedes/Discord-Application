@@ -591,7 +591,7 @@ class DiscordAIMessages
                 }
             }
             $parent = $this->bot->utilities->getChannelOrThread($channel);
-            $input = null;
+            $inputParameters = null;
             $familyID = $aiModel->managerAI->getFamilyID();
             $builder = MessageBuilder::new();
             $embeds = array();
@@ -601,7 +601,7 @@ class DiscordAIMessages
                 case AIModelFamily::DALL_E_2:
                     if ($source instanceof Message) {
                         if (empty($source->attachments->first())) {
-                            $input = array(
+                            $inputParameters = array(
                                 "n" => 1,
                                 "prompt" => $content
                             );
@@ -622,7 +622,7 @@ class DiscordAIMessages
                                     $object2 = new stdClass();
                                     $object2->type = "image_url";
                                     $object2->image_url = $object3;
-                                    $input = array(
+                                    $inputParameters = array(
                                         "n" => 1,
                                         "prompt" => $content
                                     ); // todo add image reference if supported by model
@@ -632,20 +632,20 @@ class DiscordAIMessages
                             }
 
                             if (!$found) {
-                                $input = array(
+                                $inputParameters = array(
                                     "n" => 1,
                                     "prompt" => $content
                                 );
                             }
                         }
                     } else {
-                        $input = array(
+                        $inputParameters = array(
                             "n" => 1,
                             "prompt" => $content
                         );
                     }
-                    //$input = array_merge($input, $systemInstructions);
-                    $length = strlen($content);
+                    //$inputParameters = array_merge($input, $systemInstructions);
+                    $input = $content;
                     break;
                 case AIModelFamily::CHAT_GPT:
                 case AIModelFamily::CHAT_GPT_PRO:
@@ -710,7 +710,7 @@ class DiscordAIMessages
                             )
                         );
                     }
-                    $length = strlen($content);
+                    $input = array($content);
                     $system = $this->buildSystemInstructions(
                         $aiModel,
                         $systemInstructions[0],
@@ -724,11 +724,10 @@ class DiscordAIMessages
                             "role" => "system",
                             "content" => $system
                         );
-                        $length += strlen($system);
+                        $input[] = $system;
                     }
-                    $input = array(
+                    $inputParameters = array(
                         "messages" => $messages,
-                        "max_completion_tokens" => AIHelper::wordToToken(DiscordInheritedLimits::MESSAGE_MAX_LENGTH)
                     );
                     break;
                 default:
@@ -738,13 +737,13 @@ class DiscordAIMessages
             }
             $outcome = $aiModel->managerAI->getResult(
                 $hash,
+                $inputParameters,
                 $input,
-                $length,
                 60
             );
 
             if ($debug) {
-                foreach (str_split(json_encode($input), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
+                foreach (str_split(json_encode($inputParameters), DiscordInheritedLimits::MESSAGE_MAX_LENGTH) as $split) {
                     $this->bot->utilities->replyMessage(
                         $self,
                         MessageBuilder::new()->setContent($split)
