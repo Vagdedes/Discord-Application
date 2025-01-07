@@ -37,6 +37,15 @@ class DefaultCommandImplementationListener
                     $reactionFinish = 0;
                     $users = array();
                     $callable = function () use (&$users, $bot, $interaction, $inviteProbabilityDivisor, $amount) {
+                        $members = $interaction->guild->members->toArray();
+
+                        foreach ($users as $arrayKey => $user) {
+                            if (!array_key_exists($user->id, $members)) {
+                                unset($users[$arrayKey]);
+                            }
+                        }
+                        shuffle($users);
+
                         if (sizeof($users) <= $amount) {
                             $interaction->updateOriginalResponse(
                                 MessageBuilder::new()->setContent(
@@ -54,13 +63,7 @@ class DefaultCommandImplementationListener
                             $winners = array();
                             $multiplier = array();
                             $probability = array();
-                            $memberIDs = $interaction->guild->members->keys();
 
-                            foreach ($users as $arrayKey => $user) {
-                                if (in_array($user->id, $memberIDs)) {
-                                    unset($users[$arrayKey]);
-                                }
-                            }
                             if ($inviteProbabilityDivisor !== null) {
                                 $invites = array();
                                 $totalInvites = 0;
