@@ -54,7 +54,13 @@ class DefaultCommandImplementationListener
                             $winners = array();
                             $multiplier = array();
                             $probability = array();
+                            $memberIDs = $interaction->guild->members->keys();
 
+                            foreach ($users as $arrayKey => $user) {
+                                if (in_array($user->id, $memberIDs)) {
+                                    unset($users[$arrayKey]);
+                                }
+                            }
                             if ($inviteProbabilityDivisor !== null) {
                                 $invites = array();
                                 $totalInvites = 0;
