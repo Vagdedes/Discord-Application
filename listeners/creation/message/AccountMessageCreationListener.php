@@ -332,33 +332,31 @@ class AccountMessageCreationListener
                     $select->addOption($option);
                 }
                 $messageBuilder->addComponent($select);
-                $select->setListener($bot->utilities->functionWithException(
-                    function (Interaction $interaction, Collection $options)
-                    use ($bot, $productDivisions) {
-                        $bot->utilities->acknowledgeMessage(
-                            $interaction,
-                            $bot->utilities->functionWithException(
-                                function () use ($bot, $productDivisions, $options) {
-                                    $reply = MessageBuilder::new();
-                                    $embed = new Embed($bot->discord);
-                                    $division = $productDivisions[$options[0]->getValue()];
+                $select->setListener(function (Interaction $interaction, Collection $options)
+                use ($bot, $productDivisions) {
+                    $bot->utilities->acknowledgeMessage(
+                        $interaction,
+                        function () use ($bot, $productDivisions, $options) {
+                            $reply = MessageBuilder::new();
+                            $embed = new Embed($bot->discord);
+                            $division = $productDivisions[$options[0]->getValue()];
 
-                                    if ($division->has_title) {
-                                        $embed->setTitle(strip_tags($division->title));
-                                    }
+                            if ($division->has_title) {
+                                $embed->setTitle(strip_tags($division->title));
+                            }
 
-                                    foreach ($division->contents as $division) {
-                                        $embed->addFieldValues(
-                                            "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
-                                            DiscordSyntax::htmlToDiscord($division->description),
-                                        );
-                                    }
-                                    $reply->addEmbed($embed);
-                                    return $reply;
-                                }),
-                            true
-                        );
-                    }), $bot->discord);
+                            foreach ($division->contents as $division) {
+                                $embed->addFieldValues(
+                                    "__" . DiscordSyntax::htmlToDiscord($division->name) . "__",
+                                    DiscordSyntax::htmlToDiscord($division->description),
+                                );
+                            }
+                            $reply->addEmbed($embed);
+                            return $reply;
+                        },
+                        true
+                    );
+                }, $bot->discord);
             }
         }
 
@@ -404,19 +402,16 @@ class AccountMessageCreationListener
                     }
 
                     if ($button !== null) {
-                        $button->setListener(
-                            $bot->utilities->functionWithException(function (Interaction $interaction)
-                            use ($bot, $actionRow, $buttonObj) {
-                                $bot->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    $bot->utilities->functionWithException(
-                                        function () use ($buttonObj) {
-                                            return MessageBuilder::new()->setContent($buttonObj->url);
-                                        }
-                                    ),
-                                    true
-                                );
-                            }), $bot->discord);
+                        $button->setListener(function (Interaction $interaction)
+                        use ($bot, $actionRow, $buttonObj) {
+                            $bot->utilities->acknowledgeMessage(
+                                $interaction,
+                                function () use ($buttonObj) {
+                                    return MessageBuilder::new()->setContent($buttonObj->url);
+                                },
+                                true
+                            );
+                        }, $bot->discord);
                         $actionRow->addComponent($button);
                     }
                 }
@@ -587,50 +582,46 @@ class AccountMessageCreationListener
                             $i
                         ));
                     }
-                    $select->setListener($bot->utilities->functionWithException(
-                        function (Interaction $interaction, Collection $options)
-                        use ($size, $bot, $select, $history, $limit) {
-                            $bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                $bot->utilities->functionWithException(
-                                    function () use ($size, $bot, $interaction, $options, $history, $limit) {
-                                        $account = self::findAccountFromSession($interaction);
+                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    use ($size, $bot, $select, $history, $limit) {
+                        $bot->utilities->acknowledgeMessage(
+                            $interaction,
+                            function () use ($size, $bot, $interaction, $options, $history, $limit) {
+                                $account = self::findAccountFromSession($interaction);
 
-                                        if ($account !== null) {
-                                            $count = $options[0]->getValue();
-                                            $messageBuilder = MessageBuilder::new();
+                                if ($account !== null) {
+                                    $count = $options[0]->getValue();
+                                    $messageBuilder = MessageBuilder::new();
 
-                                            $counter = $count * $limit;
-                                            $max = min($counter + $limit, $size);
-                                            $divisor = 0;
-                                            $embed = new Embed($bot->discord);
-                                            $embed->setTitle("Account History");
-                                            $embed->setDescription(
-                                                get_full_date($history[$max - 1]->creation_date)
-                                                . " - "
-                                                . get_full_date($history[$counter]->creation_date)
-                                            );
+                                    $counter = $count * $limit;
+                                    $max = min($counter + $limit, $size);
+                                    $divisor = 0;
+                                    $embed = new Embed($bot->discord);
+                                    $embed->setTitle("Account History");
+                                    $embed->setDescription(
+                                        get_full_date($history[$max - 1]->creation_date)
+                                        . " - "
+                                        . get_full_date($history[$counter]->creation_date)
+                                    );
 
-                                            for ($x = $counter; $x < $max; $x++) {
-                                                $row = $history[$x];
-                                                $embed->addFieldValues(
-                                                    "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
-                                                    "```" . get_full_date($row->creation_date) . "```",
-                                                    $divisor % 3 !== 0
-                                                );
-                                                $divisor++;
-                                            }
-                                            $messageBuilder->addEmbed($embed);
-                                            return $messageBuilder;
-                                        } else {
-                                            return $bot->persistentMessages->get($interaction, "0-register_or_log_in");
-                                        }
+                                    for ($x = $counter; $x < $max; $x++) {
+                                        $row = $history[$x];
+                                        $embed->addFieldValues(
+                                            "__" . ($x + 1) . "__ " . str_replace("_", "-", $row->action_id),
+                                            "```" . get_full_date($row->creation_date) . "```",
+                                            $divisor % 3 !== 0
+                                        );
+                                        $divisor++;
                                     }
-                                ),
-                                true
-                            );
-                        }
-                    ), $bot->discord);
+                                    $messageBuilder->addEmbed($embed);
+                                    return $messageBuilder;
+                                } else {
+                                    return $bot->persistentMessages->get($interaction, "0-register_or_log_in");
+                                }
+                            },
+                            true
+                        );
+                    }, $bot->discord);
                     $messageBuilder->addComponent($select);
                 }
             }
