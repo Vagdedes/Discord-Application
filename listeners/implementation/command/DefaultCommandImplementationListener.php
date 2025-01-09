@@ -1689,7 +1689,7 @@ class DefaultCommandImplementationListener
         $user = $interaction->data?->resolved?->users?->first();
 
         if ($user !== null) {
-            DiscordInviteTracker::track($interaction->guild);
+            DiscordInviteTracker::track($bot, $interaction->guild);
             $object = $bot->inviteTracker->getUserStats(
                 $interaction->guild,
                 $user->id

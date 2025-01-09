@@ -53,42 +53,49 @@ class DiscordInstructions
             !$callables
                 ? null
                 : array(
-                "publicInstructions" => function () use ($manager, $specificPublic, $userInput) {
-                    return $manager->getPublic(
-                        $specificPublic,
-                        $userInput,
-                        false
-                    );
-                },
-                "botReplies" => function () use ($object) {
-                    return $this->bot->aiMessages->getReplies(
-                        $object->serverID,
-                        $object->channelID,
-                        $object->threadID,
-                        $object->userID,
-                        $object->messageHistory,
-                        DiscordAIMessages::PAST_MESSAGES_COUNT,
-                        DiscordAIMessages::PAST_MESSAGES_LENGTH
-                    );
-                },
-                "threadMessages" => function () use ($object) {
-                    if ($object->channelID !== null) {
-                        $channel = $this->bot->discord->getChannel($object->channelID);
+                "publicInstructions" => $this->bot->utilities->functionWithException(
+                    function () use ($manager, $specificPublic, $userInput) {
+                        return $manager->getPublic(
+                            $specificPublic,
+                            $userInput,
+                            false
+                        );
+                    }
+                ),
+                "botReplies" => $this->bot->utilities->functionWithException(
+                    function () use ($object) {
+                        return $this->bot->aiMessages->getReplies(
+                            $object->serverID,
+                            $object->channelID,
+                            $object->threadID,
+                            $object->userID,
+                            $object->messageHistory,
+                            DiscordAIMessages::PAST_MESSAGES_COUNT,
+                            DiscordAIMessages::PAST_MESSAGES_LENGTH
+                        );
+                    }
+                ),
+                "threadMessages" => $this->bot->utilities->functionWithException(
+                    function () use ($object) {
+                        if ($object->channelID !== null) {
+                            $channel = $this->bot->discord->getChannel($object->channelID);
 
-                        if ($channel !== null) {
-                            return DiscordChannels::getAsyncThreadHistory(
-                                $channel,
-                                DiscordAIMessages::THREADS_ANALYZED,
-                                DiscordAIMessages::THREAD_ANALYZED_MESSAGES,
-                                DiscordAIMessages::PAST_MESSAGES_LENGTH
-                            );
+                            if ($channel !== null) {
+                                return DiscordChannels::getAsyncThreadHistory(
+                                    $this->bot,
+                                    $channel,
+                                    DiscordAIMessages::THREADS_ANALYZED,
+                                    DiscordAIMessages::THREAD_ANALYZED_MESSAGES,
+                                    DiscordAIMessages::PAST_MESSAGES_LENGTH
+                                );
+                            } else {
+                                return array();
+                            }
                         } else {
                             return array();
                         }
-                    } else {
-                        return array();
                     }
-                }
+                )
             ),
             $extra
         );

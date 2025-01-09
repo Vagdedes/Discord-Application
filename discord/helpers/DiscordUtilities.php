@@ -160,13 +160,15 @@ class DiscordUtilities
                                        MessageBuilder|callable $messageBuilder,
                                        bool                    $ephemeral): void
     {
-        $interaction->acknowledge()->done(function () use ($interaction, $messageBuilder, $ephemeral) {
-            if ($messageBuilder instanceof MessageBuilder) {
-                $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
-            } else {
-                $interaction->sendFollowUpMessage($messageBuilder(), $ephemeral);
+        $interaction->acknowledge()->done($this->bot->utilities->functionWithException(
+            function () use ($interaction, $messageBuilder, $ephemeral) {
+                if ($messageBuilder instanceof MessageBuilder) {
+                    $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
+                } else {
+                    $interaction->sendFollowUpMessage($messageBuilder(), $ephemeral);
+                }
             }
-        });
+        ));
     }
 
     public function acknowledgeCommandMessage(Interaction    $interaction,
@@ -184,11 +186,11 @@ class DiscordUtilities
         if ($default === null) {
             $default = MessageBuilder::new();
         }
-        try {
-            $message->channel?->messages->fetch(
-                $message instanceof Message ? $message->id : $message,
-                true
-            )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
+        $message->channel?->messages->fetch(
+            $message instanceof Message ? $message->id : $message,
+            true
+        )->done($this->bot->utilities->functionWithException(
+            function (Message $message) use ($messageBuilder, $default, $embeds) {
                 if ($messageBuilder instanceof MessageBuilder) {
                     $builder = $messageBuilder;
                 } else {
@@ -196,9 +198,8 @@ class DiscordUtilities
                     $builder->setEmbeds($embeds)->setContent($messageBuilder);
                 }
                 $message->reply($builder);
-            });
-        } catch (Throwable $ignored) {
-        }
+            }
+        ));
     }
 
     public function replyMessageInPieces(Message         $message, string $reply,
@@ -249,33 +250,31 @@ class DiscordUtilities
         if ($default === null) {
             $default = MessageBuilder::new();
         }
-        try {
-            $message->channel?->messages->fetch(
-                $message instanceof Message ? $message->id : $message,
-                true
-            )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
-                if ($messageBuilder instanceof MessageBuilder) {
-                    $message->edit($messageBuilder);
-                } else {
-                    $builder = clone $default;
-                    $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
-                }
-            });
-        } catch (Throwable $ignored) {
+        $message->channel?->messages->fetch(
+            $message instanceof Message ? $message->id : $message,
+            true
+        )->done($this->bot->utilities->functionWithException(
+            function (Message $message) use ($messageBuilder, $default, $embeds) {
+            if ($messageBuilder instanceof MessageBuilder) {
+                $message->edit($messageBuilder);
+            } else {
+                $builder = clone $default;
+                $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
+            }
         }
+        ));
     }
 
     public function deleteMessage(Message|int|string $message): void
     {
-        try {
-            $message->channel->messages->fetch(
-                $message instanceof Message ? $message->id : $message,
-                true
-            )->done(function (Message $message) {
+        $message->channel->messages->fetch(
+            $message instanceof Message ? $message->id : $message,
+            true
+        )->done($this->bot->utilities->functionWithException(
+            function (Message $message) {
                 $message->delete();
-            });
-        } catch (Throwable $ignored) {
-        }
+            }
+        ));
     }
 
     public function buildMessageFromObject(object $row, $object = null): ?MessageBuilder
@@ -350,5 +349,17 @@ class DiscordUtilities
             $array[] = null;
         }
         return $array;
+    }
+
+    public function functionWithException(callable $function): callable
+    {
+        try {
+            return $function();
+        } catch (Throwable $exception) {
+            global $logger;
+            $logger->logError($exception);
+            return function () {
+            };
+        }
     }
 }

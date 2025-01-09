@@ -109,24 +109,26 @@ class DiscordComponent
                     $query->custom_id = rand($min_59bit_Integer, $max_59bit_Integer);
                 }
                 if ($customListener === null) {
-                    $customListener = function (Interaction $interaction, Collection $components) use ($query, $object) {
-                        if ($query->response !== null) {
-                            $embed = new Embed($this->bot->discord);
-                            $embed->setDescription($this->bot->instructions->replace(array($query->response), $object)[0]);
-                            $this->bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                MessageBuilder::new()->addEmbed($embed),
-                                $query->ephemeral !== null
-                            );
-                        } else {
-                            $this->bot->listener->callModalImplementation(
-                                $interaction,
-                                $query->implement_listener_class,
-                                $query->implement_listener_method,
-                                $components
-                            );
+                    $customListener = $this->bot->utilities->functionWithException(
+                        function (Interaction $interaction, Collection $components) use ($query, $object) {
+                            if ($query->response !== null) {
+                                $embed = new Embed($this->bot->discord);
+                                $embed->setDescription($this->bot->instructions->replace(array($query->response), $object)[0]);
+                                $this->bot->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    MessageBuilder::new()->addEmbed($embed),
+                                    $query->ephemeral !== null
+                                );
+                            } else {
+                                $this->bot->listener->callModalImplementation(
+                                    $interaction,
+                                    $query->implement_listener_class,
+                                    $query->implement_listener_method,
+                                    $components
+                                );
+                            }
                         }
-                    };
+                    );
                 }
                 $interaction->showModal(
                     $query->title,
@@ -329,10 +331,11 @@ class DiscordComponent
                         $actionRow->addComponent($button);
 
                         if (!$button->isDisabled() && $button->getStyle() !== Button::STYLE_LINK) {
-                            $button->setListener(function (Interaction $interaction)
-                            use ($actionRow, $button, $buttonObject, $messageBuilder) {
-                                $this->extract($interaction, $messageBuilder, $buttonObject, $button);
-                            }, $this->bot->discord);
+                            $button->setListener($this->bot->utilities->functionWithException(
+                                function (Interaction $interaction)
+                                use ($actionRow, $button, $buttonObject, $messageBuilder) {
+                                    $this->extract($interaction, $messageBuilder, $buttonObject, $button);
+                                }), $this->bot->discord);
                         }
                     }
                     if ($listener) {
@@ -358,9 +361,10 @@ class DiscordComponent
             $actionRow->addComponent($button);
 
             if ($listener !== null && !$button->isDisabled()) {
-                $button->setListener(function (Interaction $interaction) use ($listener, $actionRow, $button) {
-                    $listener($interaction, $button);
-                }, $this->bot->discord);
+                $button->setListener($this->bot->utilities->functionWithException(
+                    function (Interaction $interaction) use ($listener, $actionRow, $button) {
+                        $listener($interaction, $button);
+                    }), $this->bot->discord);
             }
         }
         return $actionRow;
@@ -433,7 +437,7 @@ class DiscordComponent
                     $select->addOption($choice);
                 }
                 $messageBuilder->addComponent($select);
-                
+
                 if ($listener) {
                     $messageBuilder = $this->bot->listener->callMessageBuilderCreation(
                         $interaction,
@@ -443,10 +447,10 @@ class DiscordComponent
                     );
                 }
                 if (!$select->isDisabled()) {
-                    $select->setListener(function (Interaction $interaction, Collection $options)
+                    $select->setListener($this->bot->utilities->functionWithException(function (Interaction $interaction, Collection $options)
                     use ($query, $select, $messageBuilder) {
                         $this->extract($interaction, $messageBuilder, $query, $options);
-                    }, $this->bot->discord);
+                    }), $this->bot->discord);
                 }
             } else {
                 global $logger;
@@ -480,9 +484,9 @@ class DiscordComponent
             $select->addOption($choice);
         }
         if ($listener !== null && !$select->isDisabled()) {
-            $select->setListener(function (Interaction $interaction, Collection $options) use ($listener, $select) {
+            $select->setListener($this->bot->utilities->functionWithException(function (Interaction $interaction, Collection $options) use ($listener, $select) {
                 $listener($interaction, $options);
-            }, $this->bot->discord);
+            }), $this->bot->discord);
         }
         return $select;
     }

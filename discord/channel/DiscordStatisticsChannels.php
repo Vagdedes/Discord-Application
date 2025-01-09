@@ -93,21 +93,23 @@ class DiscordStatisticsChannels
                             "deny" => self::PERMISSIONS
                         )
                     )
-                )?->done(function (Channel $channel) use ($position, $row, $guild) {
-                    if (set_sql_query(
-                        BotDatabaseTable::BOT_STATISTICS_CHANNELS,
-                        array(
-                            "channel_id" => $channel->id
-                        ),
-                        array(
-                            array("id", $row->id)
-                        ),
-                        null,
-                        1
-                    )) {
-                        $this->process($position + 1);
+                )?->done($this->bot->utilities->functionWithException(
+                    function (Channel $channel) use ($position, $row, $guild) {
+                        if (set_sql_query(
+                            BotDatabaseTable::BOT_STATISTICS_CHANNELS,
+                            array(
+                                "channel_id" => $channel->id
+                            ),
+                            array(
+                                array("id", $row->id)
+                            ),
+                            null,
+                            1
+                        )) {
+                            $this->process($position + 1);
+                        }
                     }
-                });
+                ));
             } else {
                 $channel = $this->bot->discord->getChannel($row->channel_id);
 
@@ -123,9 +125,11 @@ class DiscordStatisticsChannels
                         $this->getName($guild, $row),
                         $row
                     );
-                    $guild->channels->save($channel)->done(function () use ($position) {
-                        $this->process($position + 1);
-                    });
+                    $guild->channels->save($channel)->done($this->bot->utilities->functionWithException(
+                        function () use ($position) {
+                            $this->process($position + 1);
+                        }
+                    ));
                 } else {
                     global $logger;
                     $logger->logError(

@@ -226,10 +226,11 @@ class DiscordChannels
         }
     }
 
-    public static function getAsyncThreadHistory(Channel $channel,
-                                                 int     $maxThreads,
-                                                 int     $maxMessagesPerThread,
-                                                 int     $messagesLength): array
+    public static function getAsyncThreadHistory(DiscordBot $bot,
+                                                 Channel    $channel,
+                                                 int        $maxThreads,
+                                                 int        $maxMessagesPerThread,
+                                                 int        $messagesLength): array
     {
         $hash = array_to_integer(
             array(
@@ -254,43 +255,45 @@ class DiscordChannels
                         'limit' => (int)$maxMessagesPerThread,
                         'cache' => true
                     ]
-                )->done(function ($messageHistory)
-                use ($channel, $thread, $maxMessagesPerThread, $hash, &$lengthCount, $messagesLength) {
-                    foreach ($messageHistory as $message) {
-                        $threadName = $thread->name ?? $thread->id;
-                        $message = "'" . $message->author->username
-                            . "' in thread '" . $threadName
-                            . "' at '" . $message->timestamp->toDateTimeString()
-                            . "': " . $message->content;
+                )->done($bot->utilities->functionWithException(
+                    function ($messageHistory)
+                    use ($channel, $thread, $maxMessagesPerThread, $hash, &$lengthCount, $messagesLength) {
+                        foreach ($messageHistory as $message) {
+                            $threadName = $thread->name ?? $thread->id;
+                            $message = "'" . $message->author->username
+                                . "' in thread '" . $threadName
+                                . "' at '" . $message->timestamp->toDateTimeString()
+                                . "': " . $message->content;
 
-                        if (!array_key_exists($hash, DiscordChannels::$threadHistory)) {
-                            DiscordChannels::$threadHistory[$hash] = array();
-                        }
-                        if (!array_key_exists($channel->id, DiscordChannels::$threadHistory[$hash])) {
-                            DiscordChannels::$threadHistory[$hash][$channel->id] = array();
-                        }
-                        if (array_key_exists($thread->id, DiscordChannels::$threadHistory[$hash][$channel->id])) {
-                            if (sizeof(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]) == $maxMessagesPerThread) {
-                                array_shift(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]);
+                            if (!array_key_exists($hash, DiscordChannels::$threadHistory)) {
+                                DiscordChannels::$threadHistory[$hash] = array();
                             }
-                            $lengthCount += strlen($message);
-
-                            if ($lengthCount <= $messagesLength) {
-                                DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id][] = $message;
-                            } else {
-                                break;
+                            if (!array_key_exists($channel->id, DiscordChannels::$threadHistory[$hash])) {
+                                DiscordChannels::$threadHistory[$hash][$channel->id] = array();
                             }
-                        } else {
-                            $lengthCount += strlen($message);
+                            if (array_key_exists($thread->id, DiscordChannels::$threadHistory[$hash][$channel->id])) {
+                                if (sizeof(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]) == $maxMessagesPerThread) {
+                                    array_shift(DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id]);
+                                }
+                                $lengthCount += strlen($message);
 
-                            if ($lengthCount <= $messagesLength) {
-                                DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id] = array($message);
+                                if ($lengthCount <= $messagesLength) {
+                                    DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id][] = $message;
+                                } else {
+                                    break;
+                                }
                             } else {
-                                break;
+                                $lengthCount += strlen($message);
+
+                                if ($lengthCount <= $messagesLength) {
+                                    DiscordChannels::$threadHistory[$hash][$channel->id][$thread->id] = array($message);
+                                } else {
+                                    break;
+                                }
                             }
                         }
                     }
-                });
+                ));
                 $maxThreads--;
 
                 if ($maxThreads == 0

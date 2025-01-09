@@ -94,34 +94,36 @@ class DiscordTransferredMessages
                             $builtMessage = $this->buildMessage($message, true);
 
                             if ($builtMessage !== null) {
-                                $channelObj->sendMessage($builtMessage)->done(function (Message $endMessage)
-                                use ($message, $receiveChannel, $channelObj) {
-                                    $startChannel = $message->channel;
+                                $channelObj->sendMessage($builtMessage)->done($this->bot->utilities->functionWithException(
+                                    function (Message $endMessage)
+                                    use ($message, $receiveChannel, $channelObj) {
+                                        $startChannel = $message->channel;
 
-                                    if (!sql_insert(
-                                        BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
-                                        array(
-                                            "message_transferrer_id" => $receiveChannel->id,
-                                            "message_content" => $message->content,
-                                            "start_server_id" => $message->guild_id,
-                                            "start_channel_id" => $startChannel instanceof Thread ? $startChannel->parent_id : $startChannel->id,
-                                            "start_thread_id" => $startChannel instanceof Thread ? $startChannel->id : null,
-                                            "start_message_id" => $message->id,
-                                            "start_user_id" => $message->user_id,
-                                            "end_server_id" => $channelObj->guild_id,
-                                            "end_channel_id" => $channelObj instanceof Thread ? $channelObj->parent_id : $channelObj->id,
-                                            "end_thread_id" => $channelObj instanceof Thread ? $channelObj->id : null,
-                                            "end_message_id" => $endMessage->id,
-                                            "end_user_id" => $endMessage->user_id,
-                                            "creation_date" => $message->timestamp
-                                        )
-                                    )) {
-                                        global $logger;
-                                        $logger->logError(
-                                            "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
-                                        );
-                                    }
-                                });
+                                        if (!sql_insert(
+                                            BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
+                                            array(
+                                                "message_transferrer_id" => $receiveChannel->id,
+                                                "message_content" => $message->content,
+                                                "start_server_id" => $message->guild_id,
+                                                "start_channel_id" => $startChannel instanceof Thread ? $startChannel->parent_id : $startChannel->id,
+                                                "start_thread_id" => $startChannel instanceof Thread ? $startChannel->id : null,
+                                                "start_message_id" => $message->id,
+                                                "start_user_id" => $message->user_id,
+                                                "end_server_id" => $channelObj->guild_id,
+                                                "end_channel_id" => $channelObj instanceof Thread ? $channelObj->parent_id : $channelObj->id,
+                                                "end_thread_id" => $channelObj instanceof Thread ? $channelObj->id : null,
+                                                "end_message_id" => $endMessage->id,
+                                                "end_user_id" => $endMessage->user_id,
+                                                "creation_date" => $message->timestamp
+                                            )
+                                        )) {
+                                            global $logger;
+                                            $logger->logError(
+                                                "Failed to insert message-transferrer message-creation with ID: " . $receiveChannel->id
+                                            );
+                                        }
+                                    })
+                                );
                             }
                         }
                     }
@@ -173,28 +175,30 @@ class DiscordTransferredMessages
                                     continue;
                                 }
                             }
-                            $channel->messages->fetch($sentMessage->end_message_id, true)->done(function (Message $message)
-                            use ($sentMessage, $editedMessage) {
-                                $message->edit($this->buildMessage($editedMessage, false));
+                            $channel->messages->fetch($sentMessage->end_message_id, true)->done($this->bot->utilities->functionWithException(
+                                function (Message $message)
+                                use ($sentMessage, $editedMessage) {
+                                    $message->edit($this->buildMessage($editedMessage, false));
 
-                                if (!set_sql_query(
-                                    BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
-                                    array(
-                                        "message_content" => $editedMessage->content,
-                                        "edited" => true
-                                    ),
-                                    array(
-                                        array("id", $sentMessage->id)
-                                    ),
-                                    null,
-                                    1
-                                )) {
-                                    global $logger;
-                                    $logger->logError(
-                                        "Failed to update message-transferrer message-modification with ID: " . $sentMessage->id
-                                    );
+                                    if (!set_sql_query(
+                                        BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
+                                        array(
+                                            "message_content" => $editedMessage->content,
+                                            "edited" => true
+                                        ),
+                                        array(
+                                            array("id", $sentMessage->id)
+                                        ),
+                                        null,
+                                        1
+                                    )) {
+                                        global $logger;
+                                        $logger->logError(
+                                            "Failed to update message-transferrer message-modification with ID: " . $sentMessage->id
+                                        );
+                                    }
                                 }
-                            });
+                            ));
                         }
                     }
                 }
@@ -246,27 +250,29 @@ class DiscordTransferredMessages
                                     continue;
                                 }
                             }
-                            $channel->messages->fetch($sentMessage->end_message_id, true)->done(function (Message $message)
-                            use ($sentMessage, $date) {
-                                if (set_sql_query(
-                                    BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
-                                    array(
-                                        "deletion_date" => $date
-                                    ),
-                                    array(
-                                        array("id", $sentMessage->id)
-                                    ),
-                                    null,
-                                    1
-                                )) {
-                                    $message->delete();
-                                } else {
-                                    global $logger;
-                                    $logger->logError(
-                                        "Failed to update message-transferrer message-deletion with ID: " . $sentMessage->id
-                                    );
+                            $channel->messages->fetch($sentMessage->end_message_id, true)->done($this->bot->utilities->functionWithException(
+                                function (Message $message)
+                                use ($sentMessage, $date) {
+                                    if (set_sql_query(
+                                        BotDatabaseTable::BOT_MESSAGE_TRANSFERRER_TRACKING,
+                                        array(
+                                            "deletion_date" => $date
+                                        ),
+                                        array(
+                                            array("id", $sentMessage->id)
+                                        ),
+                                        null,
+                                        1
+                                    )) {
+                                        $message->delete();
+                                    } else {
+                                        global $logger;
+                                        $logger->logError(
+                                            "Failed to update message-transferrer message-deletion with ID: " . $sentMessage->id
+                                        );
+                                    }
                                 }
-                            });
+                            ));
                         }
                     }
                 }

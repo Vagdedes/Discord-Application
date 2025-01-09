@@ -172,113 +172,119 @@ class DiscordNotificationMessages
         $lockThread = $notification->lock_thread !== null;
         $deleteMessage = $notification->delete_message !== null;
         $original = $isThread ? $originalMessage : $originalMessage->channel;
-        $callable = function (Message $originalMessage, ?Thread $thread = null)
-        use ($notification, $isThread, $original, $user, $date, $lockThread, $deleteMessage) {
-            $object = $this->bot->instructions->getObject(
-                $originalMessage->guild,
-                $original,
-                $user,
-                $originalMessage
-            );
-            if ($notification->ai_model_id !== null) {
-                $notificationMessage = $this->bot->aiMessages->rawTextAssistance(
-                    $notification->ai_model_id,
-                    $originalMessage,
-                    null,
-                    array(
-                        $object,
-                        empty($notification->localInstructions) ? null : $notification->localInstructions,
-                        empty($notification->publicInstructions) ? null : $notification->publicInstructions,
-                        null
-                    ),
-                    self::AI_HASH
+        $callable = $this->bot->utilities->functionWithException(
+            function (Message $originalMessage, ?Thread $thread = null)
+            use ($notification, $isThread, $original, $user, $date, $lockThread, $deleteMessage) {
+                $object = $this->bot->instructions->getObject(
+                    $originalMessage->guild,
+                    $original,
+                    $user,
+                    $originalMessage
                 );
-
-                if ($notificationMessage === null) {
-                    global $logger;
-                    $logger->logError(
-                        "Failed to get AI message for message notification with ID: " . $notification->id
+                if ($notification->ai_model_id !== null) {
+                    $notificationMessage = $this->bot->aiMessages->rawTextAssistance(
+                        $notification->ai_model_id,
+                        $originalMessage,
+                        null,
+                        array(
+                            $object,
+                            empty($notification->localInstructions) ? null : $notification->localInstructions,
+                            empty($notification->publicInstructions) ? null : $notification->publicInstructions,
+                            null
+                        ),
+                        self::AI_HASH
                     );
+
+                    if ($notificationMessage === null) {
+                        global $logger;
+                        $logger->logError(
+                            "Failed to get AI message for message notification with ID: " . $notification->id
+                        );
+                        $notificationMessage = MessageBuilder::new()->setContent(
+                            $this->bot->instructions->replace(array($notification->notification), $object)[0]
+                        );
+                    } else if ($notification->message_name !== null) {
+                        $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name)
+                            ->setContent($notificationMessage[0]);
+                    } else {
+                        $notificationMessage = $notificationMessage[1]->setContent($notificationMessage[0]);
+                        $notificationMessage->setEmbeds($notificationMessage[2]);
+                    }
+                } else if ($notification->message_name !== null) {
+                    $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name);
+
+                    if ($notification->notification !== null) {
+                        $notificationMessage->setContent(
+                            $this->bot->instructions->replace(array($notification->notification), $object)[0]
+                        );
+                    }
+                } else {
                     $notificationMessage = MessageBuilder::new()->setContent(
                         $this->bot->instructions->replace(array($notification->notification), $object)[0]
                     );
-                } else if ($notification->message_name !== null) {
-                    $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name)
-                        ->setContent($notificationMessage[0]);
-                } else {
-                    $notificationMessage = $notificationMessage[1]->setContent($notificationMessage[0]);
-                    $notificationMessage->setEmbeds($notificationMessage[2]);
                 }
-            } else if ($notification->message_name !== null) {
-                $notificationMessage = $this->bot->persistentMessages->get($object, $notification->message_name);
+                $builder = $this->bot->listener->callNotificationMessageImplementation(
+                    $notificationMessage,
+                    $notification->listener_class,
+                    $notification->listener_method,
+                    $notification
+                );
 
-                if ($notification->notification !== null) {
-                    $notificationMessage->setContent(
-                        $this->bot->instructions->replace(array($notification->notification), $object)[0]
-                    );
-                }
-            } else {
-                $notificationMessage = MessageBuilder::new()->setContent(
-                    $this->bot->instructions->replace(array($notification->notification), $object)[0]
+                $original->sendMessage($builder)->done(
+                    $this->bot->utilities->functionWithException(
+                        function (Message $message)
+                        use (
+                            $original, $thread, $notification, $isThread,
+                            $originalMessage, $date, $user, $lockThread, $deleteMessage
+                        ) {
+                            $channel = $isThread ? $thread->parent : $this->bot->utilities->getChannelOrThread($original);
+
+                            if ($isThread) {
+                                if ($lockThread) {
+                                    $original->locked = true;
+                                    $channel->threads->save($original);
+                                }
+                            }
+                            if ($deleteMessage) {
+                                $originalMessage->delete();
+                            }
+                            if ($notification->feedback !== null) {
+                                $this->bot->component->addReactions($message, DiscordAIMessages::REACTION_COMPONENT_NAME);
+                            }
+                            if (!sql_insert(
+                                BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,
+                                array(
+                                    "notification_id" => $notification->id,
+                                    "message_id" => $message->id,
+                                    "user_id" => $user->id,
+                                    "server_id" => $originalMessage->guild_id,
+                                    "category_id" => $channel->parent_id,
+                                    "channel_id" => $channel->id,
+                                    "thread_id" => $isThread || $original instanceof Thread ? $original->id : null,
+                                    "notification" => $message->content,
+                                    "creation_date" => $date,
+                                    "expiration_date" => $notification->duration !== null ? get_future_date($notification->duration) : null
+                                )
+                            )) {
+                                global $logger;
+                                $logger->logError(
+                                    "Failed to insert channel notification with ID: " . $notification->id
+                                );
+                            }
+                        }
+                    )
                 );
             }
-            $builder = $this->bot->listener->callNotificationMessageImplementation(
-                $notificationMessage,
-                $notification->listener_class,
-                $notification->listener_method,
-                $notification
-            );
-
-            $original->sendMessage($builder)->done(
-                function (Message $message)
-                use (
-                    $original, $thread, $notification, $isThread,
-                    $originalMessage, $date, $user, $lockThread, $deleteMessage
-                ) {
-                    $channel = $isThread ? $thread->parent : $this->bot->utilities->getChannelOrThread($original);
-
-                    if ($isThread) {
-                        if ($lockThread) {
-                            $original->locked = true;
-                            $channel->threads->save($original);
-                        }
-                    }
-                    if ($deleteMessage) {
-                        $originalMessage->delete();
-                    }
-                    if ($notification->feedback !== null) {
-                        $this->bot->component->addReactions($message, DiscordAIMessages::REACTION_COMPONENT_NAME);
-                    }
-                    if (!sql_insert(
-                        BotDatabaseTable::BOT_MESSAGE_NOTIFICATION_TRACKING,
-                        array(
-                            "notification_id" => $notification->id,
-                            "message_id" => $message->id,
-                            "user_id" => $user->id,
-                            "server_id" => $originalMessage->guild_id,
-                            "category_id" => $channel->parent_id,
-                            "channel_id" => $channel->id,
-                            "thread_id" => $isThread || $original instanceof Thread ? $original->id : null,
-                            "notification" => $message->content,
-                            "creation_date" => $date,
-                            "expiration_date" => $notification->duration !== null ? get_future_date($notification->duration) : null
-                        )
-                    )) {
-                        global $logger;
-                        $logger->logError(
-                            "Failed to insert channel notification with ID: " . $notification->id
-                        );
-                    }
-                }
-            );
-        };
+        );
 
         if ($isThread) {
-            $originalMessage->getMessageHistory(['limit' => 1])->done(function (Collection $messages) use ($callable, $originalMessage) {
-                foreach ($messages as $message) {
-                    $callable($message, $originalMessage);
+            $originalMessage->getMessageHistory(['limit' => 1])->done($this->bot->utilities->functionWithException(
+                function (Collection $messages) use ($callable, $originalMessage) {
+                    foreach ($messages as $message) {
+                        $callable($message, $originalMessage);
+                    }
                 }
-            });
+            ));
             return true;
         } else {
             $callable($originalMessage);

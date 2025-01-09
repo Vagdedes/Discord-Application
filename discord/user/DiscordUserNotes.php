@@ -42,77 +42,78 @@ class DiscordUserNotes
                         ->setPlaceholder("Give your note a description.")
                 ),
                 null,
-                function (Interaction $interaction, Collection $components) use ($key, $creationReason) {
-                    $components = $components->toArray();
-                    $title = array_shift($components)["value"];
-                    $description = array_shift($components)["value"];
-                    $date = get_current_date();
+                $this->bot->utilities->functionWithException(
+                    function (Interaction $interaction, Collection $components) use ($key, $creationReason) {
+                        $components = $components->toArray();
+                        $title = array_shift($components)["value"];
+                        $description = array_shift($components)["value"];
+                        $date = get_current_date();
 
-                    while (true) {
-                        $noteID = random_number(19);
+                        while (true) {
+                            $noteID = random_number(19);
 
-                        if (empty(get_sql_query(
-                            BotDatabaseTable::BOT_NOTES,
-                            array("note_id"),
-                            array(
-                                array("note_id", $noteID)
-                            ),
-                            null,
-                            1
-                        ))) {
-                            if (sql_insert(
-                                    BotDatabaseTable::BOT_NOTES,
-                                    array(
-                                        "note_id" => $noteID,
-                                        "note_key" => $key,
-                                        "server_id" => $interaction->guild_id,
-                                        "user_id" => $interaction->user->id,
-                                        "creation_date" => $date,
-                                        "creation_reason" => $creationReason
+                            if (empty(get_sql_query(
+                                BotDatabaseTable::BOT_NOTES,
+                                array("note_id"),
+                                array(
+                                    array("note_id", $noteID)
+                                ),
+                                null,
+                                1
+                            ))) {
+                                if (sql_insert(
+                                        BotDatabaseTable::BOT_NOTES,
+                                        array(
+                                            "note_id" => $noteID,
+                                            "note_key" => $key,
+                                            "server_id" => $interaction->guild_id,
+                                            "user_id" => $interaction->user->id,
+                                            "creation_date" => $date,
+                                            "creation_reason" => $creationReason
+                                        )
                                     )
-                                )
-                                && sql_insert(
-                                    BotDatabaseTable::BOT_NOTE_CHANGES,
-                                    array(
-                                        "note_id" => $noteID,
-                                        "user_id" => $interaction->user->id,
-                                        "title" => $title,
-                                        "description" => $description,
-                                        "creation_date" => $date,
-                                        "creation_reason" => $creationReason
+                                    && sql_insert(
+                                        BotDatabaseTable::BOT_NOTE_CHANGES,
+                                        array(
+                                            "note_id" => $noteID,
+                                            "user_id" => $interaction->user->id,
+                                            "title" => $title,
+                                            "description" => $description,
+                                            "creation_date" => $date,
+                                            "creation_reason" => $creationReason
+                                        )
                                     )
-                                )
-                                && sql_insert(
-                                    BotDatabaseTable::BOT_NOTE_SETTINGS,
-                                    array(
-                                        "note_id" => $noteID,
-                                        "user_id" => $interaction->user->id,
-                                        "creation_date" => $date,
-                                    )
-                                )) {
-                                $this->bot->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent(
-                                        "Successfully created the note."
-                                    ), true
-                                );
-                            } else {
-                                global $logger;
-                                $logger->logError(
-                                    "An database error occurred while creating a note for the user: " . $interaction->user->id
-                                );
-                                $this->bot->utilities->acknowledgeMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent(
-                                        "An database error occurred while creating the note."
-                                    ), true
-                                );
+                                    && sql_insert(
+                                        BotDatabaseTable::BOT_NOTE_SETTINGS,
+                                        array(
+                                            "note_id" => $noteID,
+                                            "user_id" => $interaction->user->id,
+                                            "creation_date" => $date,
+                                        )
+                                    )) {
+                                    $this->bot->utilities->acknowledgeMessage(
+                                        $interaction,
+                                        MessageBuilder::new()->setContent(
+                                            "Successfully created the note."
+                                        ), true
+                                    );
+                                } else {
+                                    global $logger;
+                                    $logger->logError(
+                                        "An database error occurred while creating a note for the user: " . $interaction->user->id
+                                    );
+                                    $this->bot->utilities->acknowledgeMessage(
+                                        $interaction,
+                                        MessageBuilder::new()->setContent(
+                                            "An database error occurred while creating the note."
+                                        ), true
+                                    );
+                                }
+                                break;
                             }
-                            break;
                         }
-                    }
-                },
-            );
+                    },
+                ));
         }
     }
 
@@ -155,41 +156,43 @@ class DiscordUserNotes
                             ->setValue($object->changes->description)
                     ),
                     null,
-                    function (Interaction $interaction, Collection $components) use ($key, $creationReason, $object) {
-                        $components = $components->toArray();
-                        $title = array_shift($components)["value"];
-                        $description = array_shift($components)["value"];
+                    $this->bot->utilities->functionWithException(
+                        function (Interaction $interaction, Collection $components) use ($key, $creationReason, $object) {
+                            $components = $components->toArray();
+                            $title = array_shift($components)["value"];
+                            $description = array_shift($components)["value"];
 
-                        if (sql_insert(
-                            BotDatabaseTable::BOT_NOTE_CHANGES,
-                            array(
-                                "note_id" => $object->note_id,
-                                "user_id" => $interaction->user->id,
-                                "title" => $title,
-                                "description" => $description,
-                                "creation_date" => get_current_date(),
-                                "creation_reason" => $creationReason
-                            ),
-                        )) {
-                            $this->bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                MessageBuilder::new()->setContent(
-                                    "Successfully edited the note."
-                                ), true
-                            );
-                        } else {
-                            global $logger;
-                            $logger->logError(
-                                "An database error occurred while editing a note with ID: " . $object->id
-                            );
-                            $this->bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                MessageBuilder::new()->setContent(
-                                    "An database error occurred while editing the note."
-                                ), true
-                            );
-                        }
-                    },
+                            if (sql_insert(
+                                BotDatabaseTable::BOT_NOTE_CHANGES,
+                                array(
+                                    "note_id" => $object->note_id,
+                                    "user_id" => $interaction->user->id,
+                                    "title" => $title,
+                                    "description" => $description,
+                                    "creation_date" => get_current_date(),
+                                    "creation_reason" => $creationReason
+                                ),
+                            )) {
+                                $this->bot->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    MessageBuilder::new()->setContent(
+                                        "Successfully edited the note."
+                                    ), true
+                                );
+                            } else {
+                                global $logger;
+                                $logger->logError(
+                                    "An database error occurred while editing a note with ID: " . $object->id
+                                );
+                                $this->bot->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    MessageBuilder::new()->setContent(
+                                        "An database error occurred while editing the note."
+                                    ), true
+                                );
+                            }
+                        },
+                    )
                 );
             } else {
                 $this->bot->utilities->acknowledgeCommandMessage(
@@ -481,7 +484,7 @@ class DiscordUserNotes
                         );
                     $select->addOption($choice);
                 }
-                $select->setListener(function (Interaction $interaction, Collection $options) use ($select, $object) {
+                $select->setListener($this->bot->utilities->functionWithException(function (Interaction $interaction, Collection $options) use ($select, $object) {
                     $rowID = $options[0]->getValue();
 
                     if (set_sql_query(
@@ -514,7 +517,7 @@ class DiscordUserNotes
                             ), true
                         );
                     }
-                }, $this->bot->discord, true);
+                }), $this->bot->discord, true);
                 $messageBuilder->addComponent($select);
             }
             $this->bot->utilities->acknowledgeCommandMessage(
