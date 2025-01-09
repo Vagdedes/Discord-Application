@@ -109,12 +109,14 @@ class DiscordInteractionRoles
                                     );
                                     return $originalMessageBuilder;
                             }
-                            $button->setListener(function (Interaction $interaction) use ($choice, $button) {
-                                $this->toggleRole(
-                                    $interaction,
-                                    $choice
-                                );
-                            }, $this->bot->discord);
+                            $button->setListener($this->bot->utilities->oneArgumentFunction(
+                                function (Interaction $interaction) use ($choice, $button) {
+                                    $this->toggleRole(
+                                        $interaction,
+                                        $choice
+                                    );
+                                }
+                            ), $this->bot->discord);
                             $actionRow->addComponent($button);
                         }
                         $messageBuilder->addComponent($actionRow);
@@ -133,14 +135,16 @@ class DiscordInteractionRoles
                             $choice->description
                         ));
                     }
-                    $select->setListener(function (Interaction $interaction, Collection $options)
-                    use ($select, $object) {
-                        $choice = $object->choices[$options[0]->getValue()];
-                        $this->toggleRole(
-                            $interaction,
-                            $choice
-                        );
-                    }, $this->bot->discord);
+                    $select->setListener($this->bot->utilities->twoArgumentsFunction(
+                        function (Interaction $interaction, Collection $options)
+                        use ($select, $object) {
+                            $choice = $object->choices[$options[0]->getValue()];
+                            $this->toggleRole(
+                                $interaction,
+                                $choice
+                            );
+                        }
+                    ), $this->bot->discord);
                     $messageBuilder->addComponent($select);
                     break;
                 default:
@@ -156,42 +160,46 @@ class DiscordInteractionRoles
 
     private function toggleRole(Interaction $interaction, object $choice): void
     {
-        $interaction->acknowledge()->done(function () use ($interaction, $choice) {
-            $role = $interaction->guild->roles->toArray();
-            $role = $role[$choice->role_id] ?? null;
+        $interaction->acknowledge()->done($this->bot->utilities->zeroArgumentFunction(
+            function () use ($interaction, $choice) {
+                $role = $interaction->guild->roles->toArray();
+                $role = $role[$choice->role_id] ?? null;
 
-            if ($role !== null) {
-                $add = !$this->bot->permissions->hasRole($interaction->member, $choice->role_id);
-                $promise = $add
-                    ? $interaction->member->addRole($role)
-                    : $interaction->member->removeRole($role);
+                if ($role !== null) {
+                    $add = !$this->bot->permissions->hasRole($interaction->member, $choice->role_id);
+                    $promise = $add
+                        ? $interaction->member->addRole($role)
+                        : $interaction->member->removeRole($role);
 
-                $promise->done(function () use ($interaction, $add, $choice) {
+                    $promise->done($this->bot->utilities->zeroArgumentFunction(
+                        function () use ($interaction, $add, $choice) {
+                            $interaction->sendFollowUpMessage(
+                                MessageBuilder::new()->setContent(
+                                    $choice->reply_success
+                                ),
+                                true
+                            );
+                            sql_insert(
+                                BotDatabaseTable::BOT_INTERACTION_ROLE_TRACKING,
+                                array(
+                                    "choice_id" => $choice->id,
+                                    "user_id" => $interaction->member->id,
+                                    "role_id" => $choice->role_id,
+                                    "add" => $add,
+                                    "creation_date" => get_current_date()
+                                )
+                            );
+                        }
+                    ));
+                } else {
                     $interaction->sendFollowUpMessage(
                         MessageBuilder::new()->setContent(
-                            $choice->reply_success
+                            $choice->reply_failure
                         ),
                         true
                     );
-                    sql_insert(
-                        BotDatabaseTable::BOT_INTERACTION_ROLE_TRACKING,
-                        array(
-                            "choice_id" => $choice->id,
-                            "user_id" => $interaction->member->id,
-                            "role_id" => $choice->role_id,
-                            "add" => $add,
-                            "creation_date" => get_current_date()
-                        )
-                    );
-                });
-            } else {
-                $interaction->sendFollowUpMessage(
-                    MessageBuilder::new()->setContent(
-                        $choice->reply_failure
-                    ),
-                    true
-                );
-            }
-        });
+                }
+            })
+        );
     }
 }

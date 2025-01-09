@@ -104,35 +104,39 @@ class DiscordTemporaryChannels
                                     ($query->inception_channel_prefix ?? "") . $update->member->username . ($query->inception_channel_suffix ?? ""),
                                     $query->inception_channel_topic,
                                     $rolePermissions,
-                                )?->done(function (Channel $channel) use ($update, $query, $temporaryID, $date) {
-                                    if (sql_insert(
-                                        BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
-                                        array(
-                                            "temporary_channel_id" => $query->id,
-                                            "temporary_channel_creation_id" => $temporaryID,
-                                            "server_id" => $channel->guild_id,
-                                            "channel_id" => $channel->id,
-                                            "creation_date" => $date,
-                                            "expiration_date" => $query->duration !== null ? get_future_date($query->duration) : null,
-                                        )
-                                    )) {
-                                        $update->member->moveMember($channel)->done(function () use ($update, $channel) {
-                                            $outcome = $this->setOwner($update->member, $update->user, true, null, $channel, true);
+                                )?->done($this->bot->utilities->oneArgumentFunction(
+                                    function (Channel $channel) use ($update, $query, $temporaryID, $date) {
+                                        if (sql_insert(
+                                            BotDatabaseTable::BOT_TEMPORARY_CHANNEL_TRACKING,
+                                            array(
+                                                "temporary_channel_id" => $query->id,
+                                                "temporary_channel_creation_id" => $temporaryID,
+                                                "server_id" => $channel->guild_id,
+                                                "channel_id" => $channel->id,
+                                                "creation_date" => $date,
+                                                "expiration_date" => $query->duration !== null ? get_future_date($query->duration) : null,
+                                            )
+                                        )) {
+                                            $update->member->moveMember($channel)->done($this->bot->utilities->zeroArgumentFunction(
+                                                function () use ($update, $channel) {
+                                                    $outcome = $this->setOwner($update->member, $update->user, true, null, $channel, true);
 
-                                            if ($outcome !== null) {
-                                                global $logger;
-                                                $logger->logError($outcome);
-                                                $this->closeByChannel($channel);
-                                            }
-                                        });
-                                    } else {
-                                        global $logger;
-                                        $logger->logError(
-                                            "Failed to insert temporary channel into the database with ID: " . $query->id
-                                        );
-                                        $this->closeByChannel($channel);
+                                                    if ($outcome !== null) {
+                                                        global $logger;
+                                                        $logger->logError($outcome);
+                                                        $this->closeByChannel($channel);
+                                                    }
+                                                }
+                                            ));
+                                        } else {
+                                            global $logger;
+                                            $logger->logError(
+                                                "Failed to insert temporary channel into the database with ID: " . $query->id
+                                            );
+                                            $this->closeByChannel($channel);
+                                        }
                                     }
-                                });
+                                ));
                                 break;
                             }
                         }

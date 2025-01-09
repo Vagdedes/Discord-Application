@@ -193,17 +193,19 @@ class AccountMessageImplementationListener
                             ->setPlaceholder("Insert the credential here.")
                     ),
                     null,
-                    function (Interaction $interaction, Collection $components)
-                    use ($bot, $account, $selectedAccountID) {
-                        $components = $components->toArray();
-                        $credential = array_shift($components)["value"];
-                        $bot->utilities->acknowledgeMessage(
-                            $interaction,
-                            MessageBuilder::new()->setContent(
-                                $account->getAccounts()->add($selectedAccountID, $credential, 0, true)->getMessage()
-                            ), true
-                        );
-                    },
+                    $bot->utilities->twoArgumentsFunction(
+                        function (Interaction $interaction, Collection $components)
+                        use ($bot, $account, $selectedAccountID) {
+                            $components = $components->toArray();
+                            $credential = array_shift($components)["value"];
+                            $bot->utilities->acknowledgeMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent(
+                                    $account->getAccounts()->add($selectedAccountID, $credential, 0, true)->getMessage()
+                                ), true
+                            );
+                        }
+                    ),
                 );
             } else {
                 $bot->utilities->acknowledgeMessage(
@@ -255,18 +257,20 @@ class AccountMessageImplementationListener
                                         $option = Option::new(substr($row->credential, 0, 100), $row->id);
                                         $select->addOption($option);
                                     }
-                                    $select->setListener(function (Interaction $interaction, Collection $options)
-                                    use ($bot, $account, $selectedAccountID) {
-                                        $bot->utilities->acknowledgeMessage(
-                                            $interaction,
-                                            function () use ($account, $selectedAccountID, $options) {
-                                                return MessageBuilder::new()->setContent(
-                                                    $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
-                                                );
-                                            },
-                                            true
-                                        );
-                                    }, $bot->discord);
+                                    $select->setListener($bot->utilities->twoArgumentsFunction(
+                                        function (Interaction $interaction, Collection $options)
+                                        use ($bot, $account, $selectedAccountID) {
+                                            $bot->utilities->acknowledgeMessage(
+                                                $interaction,
+                                                function () use ($account, $selectedAccountID, $options) {
+                                                    return MessageBuilder::new()->setContent(
+                                                        $account->getAccounts()->remove($selectedAccountID, $options[0]->getValue(), 1)->getMessage()
+                                                    );
+                                                },
+                                                true
+                                            );
+                                        }
+                                    ), $bot->discord);
                                     $messageBuilder->addComponent($select);
                                     return $messageBuilder;
                                 }

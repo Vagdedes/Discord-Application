@@ -24,149 +24,157 @@ class DefaultCommandImplementationListener
                 $interaction,
                 MessageBuilder::new()->setContent("Please wait..."),
                 true
-            )->done(function () use ($interaction, $messages, $arguments, $bot, $inviteProbabilityDivisor, $amount) {
-                foreach ($messages as $key => $messageID) {
-                    if (!is_numeric($messageID)) {
-                        unset($messages[$key]);
-                    }
-                }
-                $messageCount = sizeof($messages);
-
-                if ($messageCount > 0) {
-                    $messageFinish = 0;
-                    $reactionFinish = 0;
-                    $users = array();
-                    $callable = function () use (&$users, $bot, $interaction, $inviteProbabilityDivisor, $amount) {
-                        $members = $interaction->guild->members->toArray();
-
-                        foreach ($users as $arrayKey => $user) {
-                            if (!array_key_exists($user->id, $members)) {
-                                unset($users[$arrayKey]);
-                            }
+            )->done($bot->utilities->zeroArgumentFunction(
+                function () use ($interaction, $messages, $arguments, $bot, $inviteProbabilityDivisor, $amount) {
+                    foreach ($messages as $key => $messageID) {
+                        if (!is_numeric($messageID)) {
+                            unset($messages[$key]);
                         }
-                        shuffle($users);
+                    }
+                    $messageCount = sizeof($messages);
 
-                        if (sizeof($users) <= $amount) {
-                            $interaction->updateOriginalResponse(
-                                MessageBuilder::new()->setContent(
-                                    DiscordSyntax::LIGHT_CODE_BLOCK .
-                                    substr(
-                                        "<@" . implode(">\n<@", array_keys($users)) . ">",
-                                        0,
-                                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH
-                                        - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
-                                    )
-                                    . DiscordSyntax::LIGHT_CODE_BLOCK
-                                )
-                            );
-                        } else {
-                            $winners = array();
-                            $multiplier = array();
-                            $probability = array();
-
-                            if ($inviteProbabilityDivisor !== null) {
-                                $invites = array();
-                                $totalInvites = 0;
-
-                                foreach ($users as $user) {
-                                    $count = $bot->inviteTracker->getUserStats(
-                                        $interaction->guild,
-                                        $user->id
-                                    )->users_invited;
-                                    $invites[$user->id] = $count;
-                                    $totalInvites += $count;
-                                    $probability[$user->id] = rand(0, 10_000) / 10_000.0;
-                                }
-                                foreach ($invites as $userID => $count) {
-                                    $multiplier[$userID] = 1.0 + ($count / (float)$totalInvites / (float)$inviteProbabilityDivisor);
-                                }
-                            } else {
-                                foreach ($users as $user) {
-                                    $multiplier[$user->id] = 1.0;
-                                    $probability[$user->id] = rand(0, 10_000) / 10_000.0;
-                                }
-                            }
-
-                            while (true) {
-                                $currentProbability = rand(0, 100) / 100.0;
+                    if ($messageCount > 0) {
+                        $messageFinish = 0;
+                        $reactionFinish = 0;
+                        $users = array();
+                        $callable = $bot->utilities->zeroArgumentFunction(
+                            function () use (&$users, $bot, $interaction, $inviteProbabilityDivisor, $amount) {
+                                $members = $interaction->guild->members->toArray();
 
                                 foreach ($users as $arrayKey => $user) {
-                                    if ($probability[$user->id] * $multiplier[$user->id] >= $currentProbability) {
-                                        $winners[] = $user->id;
+                                    if (!array_key_exists($user->id, $members)) {
                                         unset($users[$arrayKey]);
-                                        $amount--;
-
-                                        if ($amount === 0) {
-                                            break 2;
-                                        }
                                     }
                                 }
-                            }
+                                shuffle($users);
 
-                            $interaction->updateOriginalResponse(
-                                MessageBuilder::new()->setContent(
-                                    DiscordSyntax::LIGHT_CODE_BLOCK .
-                                    substr(
-                                        "<@" . implode(">\n<@", $winners) . ">",
-                                        0,
-                                        DiscordInheritedLimits::MESSAGE_MAX_LENGTH
-                                        - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
-                                    )
-                                    . DiscordSyntax::LIGHT_CODE_BLOCK
-                                )
-                            );
-                        }
-                    };
+                                if (sizeof($users) <= $amount) {
+                                    $interaction->updateOriginalResponse(
+                                        MessageBuilder::new()->setContent(
+                                            DiscordSyntax::LIGHT_CODE_BLOCK .
+                                            substr(
+                                                "<@" . implode(">\n<@", array_keys($users)) . ">",
+                                                0,
+                                                DiscordInheritedLimits::MESSAGE_MAX_LENGTH
+                                                - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
+                                            )
+                                            . DiscordSyntax::LIGHT_CODE_BLOCK
+                                        )
+                                    );
+                                } else {
+                                    $winners = array();
+                                    $multiplier = array();
+                                    $probability = array();
 
-                    foreach ($messages as $messageID) {
-                        $interaction->channel->messages->fetch((int)$messageID, true)->done(
-                            function (Message $message)
-                            use ($interaction, &$reactionFinish, &$messageFinish, &$users, &$messageCount, $callable) {
-                                $reactionCount = $message->reactions->count();
+                                    if ($inviteProbabilityDivisor !== null) {
+                                        $invites = array();
+                                        $totalInvites = 0;
 
-                                if ($reactionCount > 0) {
-                                    foreach ($message->reactions as $reaction) {
-                                        $reaction->getAllUsers()->done(
-                                            function ($reactionUsers)
-                                            use (
-                                                $interaction, &$users, $reactionCount, &$reactionFinish,
-                                                &$messageFinish, $messageCount, $callable
-                                            ) {
-                                                foreach ($reactionUsers as $user) {
-                                                    if (!array_key_exists($user->id, $users)) {
-                                                        $users[$user->id] = $user;
-                                                    }
-                                                }
-                                                $reactionFinish++;
+                                        foreach ($users as $user) {
+                                            $count = $bot->inviteTracker->getUserStats(
+                                                $interaction->guild,
+                                                $user->id
+                                            )->users_invited;
+                                            $invites[$user->id] = $count;
+                                            $totalInvites += $count;
+                                            $probability[$user->id] = rand(0, 10_000) / 10_000.0;
+                                        }
+                                        foreach ($invites as $userID => $count) {
+                                            $multiplier[$userID] = 1.0 + ($count / (float)$totalInvites / (float)$inviteProbabilityDivisor);
+                                        }
+                                    } else {
+                                        foreach ($users as $user) {
+                                            $multiplier[$user->id] = 1.0;
+                                            $probability[$user->id] = rand(0, 10_000) / 10_000.0;
+                                        }
+                                    }
 
-                                                if ($reactionFinish === $reactionCount) {
-                                                    $messageFinish++;
+                                    while (true) {
+                                        $currentProbability = rand(0, 100) / 100.0;
 
-                                                    if ($messageFinish === $messageCount) {
-                                                        $callable();
-                                                    }
+                                        foreach ($users as $arrayKey => $user) {
+                                            if ($probability[$user->id] * $multiplier[$user->id] >= $currentProbability) {
+                                                $winners[] = $user->id;
+                                                unset($users[$arrayKey]);
+                                                $amount--;
+
+                                                if ($amount === 0) {
+                                                    break 2;
                                                 }
                                             }
-                                        );
+                                        }
                                     }
-                                } else {
-                                    $messageCount--;
 
-                                    if ($messageCount === 0) {
-                                        $interaction->updateOriginalResponse(
-                                            MessageBuilder::new()->setContent("No reactions found."),
-                                        );
-                                    }
+                                    $interaction->updateOriginalResponse(
+                                        MessageBuilder::new()->setContent(
+                                            DiscordSyntax::LIGHT_CODE_BLOCK .
+                                            substr(
+                                                "<@" . implode(">\n<@", $winners) . ">",
+                                                0,
+                                                DiscordInheritedLimits::MESSAGE_MAX_LENGTH
+                                                - strlen(DiscordSyntax::LIGHT_CODE_BLOCK) * 2
+                                            )
+                                            . DiscordSyntax::LIGHT_CODE_BLOCK
+                                        )
+                                    );
                                 }
                             }
                         );
+
+                        foreach ($messages as $messageID) {
+                            $interaction->channel->messages->fetch((int)$messageID, true)->done(
+                                $bot->utilities->oneArgumentFunction(
+                                    function (Message $message)
+                                    use ($interaction, &$reactionFinish, &$messageFinish, &$users, &$messageCount, $callable, $bot) {
+                                        $reactionCount = $message->reactions->count();
+
+                                        if ($reactionCount > 0) {
+                                            foreach ($message->reactions as $reaction) {
+                                                $reaction->getAllUsers()->done(
+                                                    $bot->utilities->oneArgumentFunction(
+                                                        function (mixed $reactionUsers)
+                                                        use (
+                                                            $interaction, &$users, $reactionCount, &$reactionFinish,
+                                                            &$messageFinish, $messageCount, $callable
+                                                        ) {
+                                                            foreach ($reactionUsers as $user) {
+                                                                if (!array_key_exists($user->id, $users)) {
+                                                                    $users[$user->id] = $user;
+                                                                }
+                                                            }
+                                                            $reactionFinish++;
+
+                                                            if ($reactionFinish === $reactionCount) {
+                                                                $messageFinish++;
+
+                                                                if ($messageFinish === $messageCount) {
+                                                                    $callable();
+                                                                }
+                                                            }
+                                                        }
+                                                    )
+                                                );
+                                            }
+                                        } else {
+                                            $messageCount--;
+
+                                            if ($messageCount === 0) {
+                                                $interaction->updateOriginalResponse(
+                                                    MessageBuilder::new()->setContent("No reactions found."),
+                                                );
+                                            }
+                                        }
+                                    }
+                                )
+                            );
+                        }
+                    } else {
+                        $interaction->updateOriginalResponse(
+                            MessageBuilder::new()->setContent("Invalid message IDs."),
+                        );
                     }
-                } else {
-                    $interaction->updateOriginalResponse(
-                        MessageBuilder::new()->setContent("Invalid message IDs."),
-                    );
                 }
-            });
+            ));
         }
     }
 
@@ -203,92 +211,93 @@ class DefaultCommandImplementationListener
             $interaction,
             MessageBuilder::new()->setContent(DiscordAIMessages::INITIAL_PROMPT),
             $private
-        )->done(function ()
-        use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd) {
-            $object2 = new stdClass();
-            $object2->url = $prompt->url;
+        )->done($bot->utilities->zeroArgumentFunction(
+            function () use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd) {
+                $object2 = new stdClass();
+                $object2->url = $prompt->url;
 
-            $object1 = new stdClass();
-            $object1->type = "image_url";
-            $object1->image_url = $object2;
-            $system = "Describe the image at the best of your ability with a maximum character length of 2000.";
-            $messages = array(
-                array(
-                    "role" => "system",
-                    "content" => $system
-                ),
-                array(
-                    "role" => "user",
-                    "content" => array(
-                        $object1
+                $object1 = new stdClass();
+                $object1->type = "image_url";
+                $object1->image_url = $object2;
+                $system = "Describe the image at the best of your ability with a maximum character length of 2000.";
+                $messages = array(
+                    array(
+                        "role" => "system",
+                        "content" => $system
+                    ),
+                    array(
+                        "role" => "user",
+                        "content" => array(
+                            $object1
+                        )
                     )
-                )
-            );
-            $input = array(
-                "messages" => $messages
-            );
-            $managerAI = new AIManager(
-                AIModelFamily::OPENAI_VISION_PRO,
-                AIHelper::getAuthorization(AIAuthorization::OPENAI),
-                $input
-            );
-            $outcome = $managerAI->getResult(
-                self::AI_IMAGE_HASH,
-                [],
-                $system
-            );
+                );
+                $input = array(
+                    "messages" => $messages
+                );
+                $managerAI = new AIManager(
+                    AIModelFamily::OPENAI_VISION_PRO,
+                    AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                    $input
+                );
+                $outcome = $managerAI->getResult(
+                    self::AI_IMAGE_HASH,
+                    [],
+                    $system
+                );
 
-            if (array_shift($outcome)) {
-                $model = array_shift($outcome);
-                $data = array_shift($outcome);
-                $originalPrompt = $prompt;
-                $prompt = $model->getText($data);
+                if (array_shift($outcome)) {
+                    $model = array_shift($outcome);
+                    $data = array_shift($outcome);
+                    $originalPrompt = $prompt;
+                    $prompt = $model->getText($data);
 
-                if (!empty($prompt)) {
-                    $input = array(
-                        "n" => 1,
-                        "prompt" => $prompt,
-                        "size" => $xResolution . "x" . $yResolution,
-                    );
-                    if ($hd) {
-                        $input["quality"] = "hd";
-                    }
-                    $managerAI = new AIManager(
-                        AIModelFamily::DALL_E_3,
-                        AIHelper::getAuthorization(AIAuthorization::OPENAI),
-                        $input
-                    );
-                    $outcome = $managerAI->getResult(
-                        self::AI_IMAGE_HASH
-                    );
+                    if (!empty($prompt)) {
+                        $input = array(
+                            "n" => 1,
+                            "prompt" => $prompt,
+                            "size" => $xResolution . "x" . $yResolution,
+                        );
+                        if ($hd) {
+                            $input["quality"] = "hd";
+                        }
+                        $managerAI = new AIManager(
+                            AIModelFamily::DALL_E_3,
+                            AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                            $input
+                        );
+                        $outcome = $managerAI->getResult(
+                            self::AI_IMAGE_HASH
+                        );
 
-                    if (array_shift($outcome)) {
-                        $image = $outcome[0]->getImage($outcome[1]);
-                        $messageBuilder = MessageBuilder::new()->setContent($prompt);
-                        $embed = new Embed($bot->discord);
-                        $embed->setImage($originalPrompt->url);
-                        $messageBuilder->addEmbed($embed);
+                        if (array_shift($outcome)) {
+                            $image = $outcome[0]->getImage($outcome[1]);
+                            $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                            $embed = new Embed($bot->discord);
+                            $embed->setImage($originalPrompt->url);
+                            $messageBuilder->addEmbed($embed);
 
-                        $embed = new Embed($bot->discord);
-                        $embed->setImage($image);
-                        $messageBuilder->addEmbed($embed);
-                        $interaction->updateOriginalResponse($messageBuilder);
+                            $embed = new Embed($bot->discord);
+                            $embed->setImage($image);
+                            $messageBuilder->addEmbed($embed);
+                            $interaction->updateOriginalResponse($messageBuilder);
+                        } else {
+                            $interaction->updateOriginalResponse(
+                                MessageBuilder::new()->setContent("Failed to generate image description: " . json_encode($outcome[1]))
+                            );
+                        }
                     } else {
                         $interaction->updateOriginalResponse(
-                            MessageBuilder::new()->setContent("Failed to generate image description: " . json_encode($outcome[1]))
+                            MessageBuilder::new()->setContent("Failed to generate image initial description: " . json_encode($data)),
                         );
                     }
                 } else {
                     $interaction->updateOriginalResponse(
-                        MessageBuilder::new()->setContent("Failed to generate image initial description: " . json_encode($data)),
+                        MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1])),
                     );
                 }
-            } else {
-                $interaction->updateOriginalResponse(
-                    MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1])),
-                );
             }
-        });
+        ));
     }
 
     public static function generate_image(DiscordBot          $bot,
@@ -307,74 +316,78 @@ class DefaultCommandImplementationListener
                 'limit' => max(min($pastMessages, 100), 1),
                 'cache' => true
             ]
-        )->done(function ($messageHistory)
-        use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $private) {
-            $messageHistory = $messageHistory->toArray();
+        )->done($bot->utilities->oneArgumentFunction(
+            function (mixed $messageHistory)
+            use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $private) {
+                $messageHistory = $messageHistory->toArray();
 
-            $bot->utilities->acknowledgeCommandMessage(
-                $interaction,
-                MessageBuilder::new()->setContent(DiscordAIMessages::INITIAL_PROMPT),
-                $private
-            )->done(function ()
-            use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $messageHistory) {
-                $promptLimit = 4000;
-                $arguments = array(
-                    "n" => 1,
-                    "prompt" => $prompt,
-                    "size" => $xResolution . "x" . $yResolution,
-                );
-                $addedPrompts = false;
+                $bot->utilities->acknowledgeCommandMessage(
+                    $interaction,
+                    MessageBuilder::new()->setContent(DiscordAIMessages::INITIAL_PROMPT),
+                    $private
+                )->done($bot->utilities->zeroArgumentFunction(
+                    function ()
+                    use ($interaction, $bot, $prompt, $xResolution, $yResolution, $hd, $pastMessages, $messageHistory) {
+                        $promptLimit = 4000;
+                        $arguments = array(
+                            "n" => 1,
+                            "prompt" => $prompt,
+                            "size" => $xResolution . "x" . $yResolution,
+                        );
+                        $addedPrompts = false;
 
-                if ($pastMessages > 0) {
-                    while (strlen($arguments["prompt"]) < $promptLimit
-                        && !empty($messageHistory)
-                        && $pastMessages > 0) {
-                        $newPrompt = array_shift($messageHistory)->content;
+                        if ($pastMessages > 0) {
+                            while (strlen($arguments["prompt"]) < $promptLimit
+                                && !empty($messageHistory)
+                                && $pastMessages > 0) {
+                                $newPrompt = array_shift($messageHistory)->content;
 
-                        if (empty($newPrompt)
-                            || $newPrompt === DiscordAIMessages::INITIAL_PROMPT) {
-                            continue;
+                                if (empty($newPrompt)
+                                    || $newPrompt === DiscordAIMessages::INITIAL_PROMPT) {
+                                    continue;
+                                }
+                                $newPrompt .= "\n\n";
+
+                                if (strlen($arguments["prompt"]) + strlen($newPrompt) > $promptLimit) {
+                                    break;
+                                }
+                                $arguments["prompt"] = $newPrompt . $arguments["prompt"];
+                                $pastMessages--;
+                                $addedPrompts = true;
+                            }
                         }
-                        $newPrompt .= "\n\n";
-
-                        if (strlen($arguments["prompt"]) + strlen($newPrompt) > $promptLimit) {
-                            break;
+                        if ($hd) {
+                            $arguments["quality"] = "hd";
                         }
-                        $arguments["prompt"] = $newPrompt . $arguments["prompt"];
-                        $pastMessages--;
-                        $addedPrompts = true;
-                    }
-                }
-                if ($hd) {
-                    $arguments["quality"] = "hd";
-                }
-                $managerAI = new AIManager(
-                    AIModelFamily::DALL_E_3,
-                    AIHelper::getAuthorization(AIAuthorization::OPENAI),
-                    $arguments
-                );
-                $outcome = $managerAI->getResult(
-                    self::AI_IMAGE_HASH
-                );
+                        $managerAI = new AIManager(
+                            AIModelFamily::DALL_E_3,
+                            AIHelper::getAuthorization(AIAuthorization::OPENAI),
+                            $arguments
+                        );
+                        $outcome = $managerAI->getResult(
+                            self::AI_IMAGE_HASH
+                        );
 
-                if (array_shift($outcome)) {
-                    $image = $outcome[0]->getImage($outcome[1]);
-                    $messageBuilder = MessageBuilder::new()->setContent($prompt);
-                    $embed = new Embed($bot->discord);
-                    $embed->setImage($image);
+                        if (array_shift($outcome)) {
+                            $image = $outcome[0]->getImage($outcome[1]);
+                            $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                            $embed = new Embed($bot->discord);
+                            $embed->setImage($image);
 
-                    if ($addedPrompts) {
-                        $embed->setDescription($arguments["prompt"]);
+                            if ($addedPrompts) {
+                                $embed->setDescription($arguments["prompt"]);
+                            }
+                            $messageBuilder->addEmbed($embed);
+                            $interaction->updateOriginalResponse($messageBuilder);
+                        } else {
+                            $interaction->updateOriginalResponse(
+                                MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
+                            );
+                        }
                     }
-                    $messageBuilder->addEmbed($embed);
-                    $interaction->updateOriginalResponse($messageBuilder);
-                } else {
-                    $interaction->updateOriginalResponse(
-                        MessageBuilder::new()->setContent("Failed to generate image: " . json_encode($outcome[1]))
-                    );
-                }
-            });
-        });
+                ));
+            }
+        ));
     }
 
     public static function find_message_reference(DiscordBot          $bot,
@@ -1689,7 +1702,7 @@ class DefaultCommandImplementationListener
         $user = $interaction->data?->resolved?->users?->first();
 
         if ($user !== null) {
-            DiscordInviteTracker::track($interaction->guild);
+            DiscordInviteTracker::track($bot, $interaction->guild);
             $object = $bot->inviteTracker->getUserStats(
                 $interaction->guild,
                 $user->id

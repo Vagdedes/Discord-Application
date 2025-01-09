@@ -77,18 +77,20 @@ class DiscordReminderMessages
 
                 if (!empty($query)) {
                     $channel->getMessageHistory(array("limit" => (int)$row->check_previous))->done(
-                        function (Collection $messages) use ($channel, $row, $query) {
-                            if (!empty($messages)) {
-                                $query = $query[0];
+                        $this->bot->utilities->oneArgumentFunction(
+                            function (Collection $messages) use ($channel, $row, $query) {
+                                if (!empty($messages)) {
+                                    $query = $query[0];
 
-                                foreach ($messages as $message) {
-                                    if ($message->id == $query->message_id) {
-                                        return;
+                                    foreach ($messages as $message) {
+                                        if ($message->id == $query->message_id) {
+                                            return;
+                                        }
                                     }
                                 }
+                                $this->execute($channel, $row, false);
                             }
-                            $this->execute($channel, $row, false);
-                        }
+                        )
                     );
                 }
             } else {
@@ -112,23 +114,25 @@ class DiscordReminderMessages
                     );
 
                     $channel->sendMessage($messageBuilder)->done(
-                        function (Message $message) use ($row) {
-                            if (sql_insert(
-                                BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
-                                array(
-                                    "server_id" => $message->guild_id,
-                                    "channel_id" => $message->channel_id,
-                                    "thread_id" => $message->thread?->id,
-                                    "message_id" => $message->id,
-                                    "message_object" => @json_encode($message->getRawAttributes()),
-                                    "creation_date" => get_current_date()
-                                ),
-                            )) {
-                                if ($row->milliseconds_retention !== null) {
-                                    $message->delayedDelete($row->milliseconds_retention);
+                        $this->bot->utilities->oneArgumentFunction(
+                            function (Message $message) use ($row) {
+                                if (sql_insert(
+                                    BotDatabaseTable::BOT_MESSAGE_REMINDER_TRACKING,
+                                    array(
+                                        "server_id" => $message->guild_id,
+                                        "channel_id" => $message->channel_id,
+                                        "thread_id" => $message->thread?->id,
+                                        "message_id" => $message->id,
+                                        "message_object" => @json_encode($message->getRawAttributes()),
+                                        "creation_date" => get_current_date()
+                                    ),
+                                )) {
+                                    if ($row->milliseconds_retention !== null) {
+                                        $message->delayedDelete($row->milliseconds_retention);
+                                    }
                                 }
                             }
-                        }
+                        )
                     );
                 } else {
                     global $logger;

@@ -199,41 +199,43 @@ class DiscordUserTargets
                             $query->create_channel_topic,
                             $rolePermissions,
                             $memberPermissions
-                        )?->done(function (Channel $channel)
-                        use ($targetID, $insert, $member, $query) {
-                            $insert["channel_id"] = $channel->id;
+                        )?->done($this->bot->utilities->oneArgumentFunction(
+                            function (Channel $channel)
+                            use ($targetID, $insert, $member, $query) {
+                                $insert["channel_id"] = $channel->id;
 
-                            if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                                $this->bot->channels->addTemporary(
-                                    $channel,
-                                    array(
-                                        "message_retention" => "1 minute",
-                                        "message_cooldown" => 1,
-                                        "assistance" => 1,
-                                        "failure_message" => $query->failure_message,
-                                        "cooldown_message" => $query->cooldown_message,
-                                        "prompt_message" => $query->prompt_message,
-                                        "local_instructions" => $query->localInstructions,
-                                        "public_instructions" => $query->publicInstructions,
-                                    ));
-                                $message = MessageBuilder::new()->setContent(
-                                    $this->bot->instructions->replace(
-                                        array($query->create_message),
-                                        $this->bot->instructions->getObject(
-                                            $member->guild,
-                                            $channel,
-                                            $member
-                                        )
-                                    )[0]
-                                );
-                                $channel->sendMessage($message);
-                            } else {
-                                global $logger;
-                                $logger->logError(
-                                    "(1) Failed to insert target creation with ID: " . $query->id
-                                );
+                                if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                    $this->bot->channels->addTemporary(
+                                        $channel,
+                                        array(
+                                            "message_retention" => "1 minute",
+                                            "message_cooldown" => 1,
+                                            "assistance" => 1,
+                                            "failure_message" => $query->failure_message,
+                                            "cooldown_message" => $query->cooldown_message,
+                                            "prompt_message" => $query->prompt_message,
+                                            "local_instructions" => $query->localInstructions,
+                                            "public_instructions" => $query->publicInstructions,
+                                        ));
+                                    $message = MessageBuilder::new()->setContent(
+                                        $this->bot->instructions->replace(
+                                            array($query->create_message),
+                                            $this->bot->instructions->getObject(
+                                                $member->guild,
+                                                $channel,
+                                                $member
+                                            )
+                                        )[0]
+                                    );
+                                    $channel->sendMessage($message);
+                                } else {
+                                    global $logger;
+                                    $logger->logError(
+                                        "(1) Failed to insert target creation with ID: " . $query->id
+                                    );
+                                }
                             }
-                        });
+                        ));
                     } else if ($query->create_channel_id !== null) {
                         $channel = $this->bot->discord->getChannel($query->create_channel_id);
 
@@ -251,20 +253,22 @@ class DiscordUserTargets
                                 )[0]
                             );
 
-                            $channel->startThread($message, $targetID)->done(function (Thread $thread)
-                            use ($insert, $member, $channel, $message, $query) {
-                                $insert["channel_id"] = $channel->id;
-                                $insert["created_thread_id"] = $thread->id;
+                            $channel->startThread($message, $targetID)->done($this->bot->utilities->oneArgumentFunction(
+                                function (Thread $thread)
+                                use ($insert, $member, $channel, $message, $query) {
+                                    $insert["channel_id"] = $channel->id;
+                                    $insert["created_thread_id"] = $thread->id;
 
-                                if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
-                                    $channel->sendMessage($message);
-                                } else {
-                                    global $logger;
-                                    $logger->logError(
-                                        "(2) Failed to insert target creation with ID: " . $query->id
-                                    );
+                                    if (sql_insert(BotDatabaseTable::BOT_TARGETED_MESSAGE_CREATIONS, $insert)) {
+                                        $channel->sendMessage($message);
+                                    } else {
+                                        global $logger;
+                                        $logger->logError(
+                                            "(2) Failed to insert target creation with ID: " . $query->id
+                                        );
+                                    }
                                 }
-                            });
+                            ));
                         } else {
                             global $logger;
                             $logger->logError(

@@ -357,4 +357,43 @@ class DiscordUtilities
         return $array;
     }
 
+    public function zeroArgumentFunction(callable $function): ?callable
+    {
+        return function () use ($function) {
+            try {
+                $function();
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception);
+                $logger->logError($exception->getMessage());
+            }
+        };
+    }
+
+    public function oneArgumentFunction(callable $function): ?callable
+    {
+        return function ($object) use ($function) {
+            try {
+                $function($object);
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception);
+                $logger->logError($exception->getMessage());
+            }
+        };
+    }
+
+    public function twoArgumentsFunction(callable $function): ?callable
+    {
+        return function ($object1, $object2) use ($function) {
+            try {
+                $function($object1, $object2);
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception);
+                $logger->logError($exception->getMessage());
+            }
+        };
+    }
+
 }

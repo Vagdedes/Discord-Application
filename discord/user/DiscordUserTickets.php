@@ -68,9 +68,11 @@ class DiscordUserTickets
             return $this->bot->component->showModal(
                 $interaction,
                 $query->modal_component_id,
-                function (Interaction $interaction, Collection $components) use ($query) {
-                    $this->store($interaction, $components, $query);
-                }
+                $this->bot->utilities->twoArgumentsFunction(
+                    function (Interaction $interaction, Collection $components) use ($query) {
+                        $this->store($interaction, $components, $query);
+                    }
+                )
             );
         } else {
             global $logger;
@@ -142,22 +144,24 @@ class DiscordUserTickets
                     $channelTopic,
                     $rolePermissions,
                     $memberPermissions
-                )?->done(function (Channel $channel)
-                use ($ticketID, $insert, $interaction, $message) {
-                    $insert["created_channel_id"] = $channel->id;
-                    $insert["created_channel_server_id"] = $channel->guild_id;
+                )?->done($this->bot->utilities->oneArgumentFunction(
+                    function (Channel $channel)
+                    use ($ticketID, $insert, $interaction, $message) {
+                        $insert["created_channel_id"] = $channel->id;
+                        $insert["created_channel_server_id"] = $channel->guild_id;
 
-                    if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
-                        if ($message !== null) {
-                            $channel->sendMessage($message);
+                        if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                            if ($message !== null) {
+                                $channel->sendMessage($message);
+                            }
+                        } else {
+                            global $logger;
+                            $logger->logError(
+                                "Failed to insert abstract ticket."
+                            );
                         }
-                    } else {
-                        global $logger;
-                        $logger->logError(
-                            "Failed to insert abstract ticket."
-                        );
                     }
-                });
+                ));
                 break;
             }
         }
@@ -330,29 +334,31 @@ class DiscordUserTickets
                         $query->create_channel_topic,
                         $rolePermissions,
                         $memberPermissions
-                    )?->done(function (Channel $channel)
-                    use ($components, $ticketID, $insert, $interaction, $message, $query) {
-                        $insert["created_channel_id"] = $channel->id;
-                        $insert["created_channel_server_id"] = $channel->guild_id;
+                    )?->done($this->bot->utilities->oneArgumentFunction(
+                        function (Channel $channel)
+                        use ($components, $ticketID, $insert, $interaction, $message, $query) {
+                            $insert["created_channel_id"] = $channel->id;
+                            $insert["created_channel_server_id"] = $channel->guild_id;
 
-                        if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
-                            foreach ($components as $component) {
-                                sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
-                                    array(
-                                        "ticket_creation_id" => $ticketID,
-                                        "input_key" => $component["custom_id"],
-                                        "input_value" => $component["value"]
-                                    )
+                            if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
+                                foreach ($components as $component) {
+                                    sql_insert(BotDatabaseTable::BOT_TICKET_SUB_CREATIONS,
+                                        array(
+                                            "ticket_creation_id" => $ticketID,
+                                            "input_key" => $component["custom_id"],
+                                            "input_value" => $component["value"]
+                                        )
+                                    );
+                                }
+                                $channel->sendMessage($message);
+                            } else {
+                                global $logger;
+                                $logger->logError(
+                                    "(1) Failed to insert ticket creation with ID: " . $query->id
                                 );
                             }
-                            $channel->sendMessage($message);
-                        } else {
-                            global $logger;
-                            $logger->logError(
-                                "(1) Failed to insert ticket creation with ID: " . $query->id
-                            );
                         }
-                    });
+                    ));
                 } else {
                     if (sql_insert(BotDatabaseTable::BOT_TICKET_CREATIONS, $insert)) {
                         foreach ($components as $component) {

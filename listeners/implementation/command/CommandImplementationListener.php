@@ -410,32 +410,36 @@ class CommandImplementationListener
                             $select->addOption($option);
                         }
 
-                        $select->setListener(function (Interaction|Message $interaction, Collection $options)
-                        use ($block, $reason, $duration, $bot, $account, $staffAccount) {
-                            $bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                function () use ($block, $reason, $duration, $account, $staffAccount, $options) {
-                                    $functionality = $options[0]->getValue();
+                        $select->setListener($bot->utilities->twoArgumentsFunction(
+                            function (Interaction|Message $interaction, Collection $options)
+                            use ($block, $reason, $duration, $bot, $account, $staffAccount) {
+                                $bot->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    $bot->utilities->zeroArgumentFunction(
+                                        function () use ($block, $reason, $duration, $account, $staffAccount, $options) {
+                                            $functionality = $options[0]->getValue();
 
-                                    if ($block) {
-                                        $reply = $staffAccount->getFunctionality()->executeAction(
-                                            $account->getDetail("id"),
-                                            $functionality,
-                                            $reason,
-                                            !empty($duration) ? $duration : null,
-                                        );
-                                    } else {
-                                        $reply = $staffAccount->getFunctionality()->cancelAction(
-                                            $account->getDetail("id"),
-                                            $functionality,
-                                            $reason
-                                        );
-                                    }
-                                    return MessageBuilder::new()->setContent(self::printResult($reply));
-                                },
-                                true
-                            );
-                        }, $bot->discord, true);
+                                            if ($block) {
+                                                $reply = $staffAccount->getFunctionality()->executeAction(
+                                                    $account->getDetail("id"),
+                                                    $functionality,
+                                                    $reason,
+                                                    !empty($duration) ? $duration : null,
+                                                );
+                                            } else {
+                                                $reply = $staffAccount->getFunctionality()->cancelAction(
+                                                    $account->getDetail("id"),
+                                                    $functionality,
+                                                    $reason
+                                                );
+                                            }
+                                            return MessageBuilder::new()->setContent(self::printResult($reply));
+                                        }
+                                    ),
+                                    true
+                                );
+                            }
+                        ), $bot->discord, true);
                         $message->addComponent($select);
                     }
                 } else {
@@ -491,32 +495,36 @@ class CommandImplementationListener
                             $select->addOption($option);
                         }
 
-                        $select->setListener(function (Interaction|Message $interaction, Collection $options)
-                        use ($punish, $reason, $duration, $bot, $account, $staffAccount) {
-                            $bot->utilities->acknowledgeMessage(
-                                $interaction,
-                                function () use ($punish, $reason, $duration, $account, $staffAccount, $options) {
-                                    $functionality = $options[0]->getValue();
+                        $select->setListener($bot->utilities->twoArgumentsFunction(
+                            function (Interaction|Message $interaction, Collection $options)
+                            use ($punish, $reason, $duration, $bot, $account, $staffAccount) {
+                                $bot->utilities->acknowledgeMessage(
+                                    $interaction,
+                                    $bot->utilities->zeroArgumentFunction(
+                                        function () use ($punish, $reason, $duration, $account, $staffAccount, $options) {
+                                            $functionality = $options[0]->getValue();
 
-                                    if ($punish) {
-                                        $reply = $staffAccount->getModerations()->executeAction(
-                                            $account->getDetail("id"),
-                                            $functionality,
-                                            $reason,
-                                            !empty($duration) ? $duration : null,
-                                        );
-                                    } else {
-                                        $reply = $staffAccount->getModerations()->cancelAction(
-                                            $account->getDetail("id"),
-                                            $functionality,
-                                            $reason
-                                        );
-                                    }
-                                    return MessageBuilder::new()->setContent(self::printResult($reply));
-                                },
-                                true
-                            );
-                        }, $bot->discord, true);
+                                            if ($punish) {
+                                                $reply = $staffAccount->getModerations()->executeAction(
+                                                    $account->getDetail("id"),
+                                                    $functionality,
+                                                    $reason,
+                                                    !empty($duration) ? $duration : null,
+                                                );
+                                            } else {
+                                                $reply = $staffAccount->getModerations()->cancelAction(
+                                                    $account->getDetail("id"),
+                                                    $functionality,
+                                                    $reason
+                                                );
+                                            }
+                                            return MessageBuilder::new()->setContent(self::printResult($reply));
+                                        }
+                                    ),
+                                    true
+                                );
+                            }
+                        ), $bot->discord, true);
                         $message->addComponent($select);
                     }
                 } else {

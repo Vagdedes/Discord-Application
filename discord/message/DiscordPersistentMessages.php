@@ -47,12 +47,14 @@ class DiscordPersistentMessages
         $message = $this->messages[$key] ?? null;
 
         if ($message !== null) {
-            $interaction->acknowledge()->done(function () use ($interaction, $ephemeral, $message) {
-                $interaction->sendFollowUpMessage(
-                    $this->build($interaction, $message),
-                    $ephemeral
-                );
-            });
+            $interaction->acknowledge()->done($this->bot->utilities->zeroArgumentFunction(
+                function () use ($interaction, $ephemeral, $message) {
+                    $interaction->sendFollowUpMessage(
+                        $this->build($interaction, $message),
+                        $ephemeral
+                    );
+                }
+            ));
             return true;
         } else {
             return false;
@@ -202,44 +204,46 @@ class DiscordPersistentMessages
         $channel->getMessageHistory([
             'limit' => 100,
             'cache' => true
-        ])->done(function (Collection $messages) use ($dbMessages, $botID) {
-            foreach ($messages as $message) {
-                if ($message->user_id != $botID) {
-                    continue;
-                }
-                foreach ($dbMessages as $dbMessage) {
-                    if ($dbMessage->embed_title === null
-                        && $dbMessage->embed_description === null
-                        && $dbMessage->embed_image === null
-                        && $dbMessage->embed_url === null
-                        && $dbMessage->embed_footer === null
-                        && $dbMessage->embed_author_url === null
-                        && $dbMessage->embed_author_icon_url === null
-                        && $dbMessage->embed_author_name === null
-                        && $dbMessage->embed_timestamp === null) {
+        ])->done($this->bot->utilities->oneArgumentFunction(
+            function (Collection $messages) use ($dbMessages, $botID) {
+                foreach ($messages as $message) {
+                    if ($message->user_id != $botID) {
                         continue;
                     }
-                    if (empty($message->embeds->first())
-                        || $message->embeds->count() > 1) {
-                        continue;
-                    }
-                    foreach ($message->embeds as $embed) {
-                        if ($dbMessage->embed_title == $embed->title
-                            && $dbMessage->embed_description == $embed->description
-                            && $dbMessage->embed_image == $embed->image?->url
-                            && $dbMessage->embed_url == $embed->url
-                            && $dbMessage->embed_footer == $embed->footer?->text
-                            && $dbMessage->embed_author_url == $embed->author?->url
-                            && $dbMessage->embed_author_icon_url == $embed->author?->icon_url
-                            && $dbMessage->embed_author_name == $embed->author?->name
-                            && $dbMessage->embed_timestamp == $embed->timestamp) {
-                            $message->edit($this->build(null, $dbMessage)->setContent($message->content));
-                            break 2;
+                    foreach ($dbMessages as $dbMessage) {
+                        if ($dbMessage->embed_title === null
+                            && $dbMessage->embed_description === null
+                            && $dbMessage->embed_image === null
+                            && $dbMessage->embed_url === null
+                            && $dbMessage->embed_footer === null
+                            && $dbMessage->embed_author_url === null
+                            && $dbMessage->embed_author_icon_url === null
+                            && $dbMessage->embed_author_name === null
+                            && $dbMessage->embed_timestamp === null) {
+                            continue;
+                        }
+                        if (empty($message->embeds->first())
+                            || $message->embeds->count() > 1) {
+                            continue;
+                        }
+                        foreach ($message->embeds as $embed) {
+                            if ($dbMessage->embed_title == $embed->title
+                                && $dbMessage->embed_description == $embed->description
+                                && $dbMessage->embed_image == $embed->image?->url
+                                && $dbMessage->embed_url == $embed->url
+                                && $dbMessage->embed_footer == $embed->footer?->text
+                                && $dbMessage->embed_author_url == $embed->author?->url
+                                && $dbMessage->embed_author_icon_url == $embed->author?->icon_url
+                                && $dbMessage->embed_author_name == $embed->author?->name
+                                && $dbMessage->embed_timestamp == $embed->timestamp) {
+                                $message->edit($this->build(null, $dbMessage)->setContent($message->content));
+                                break 2;
+                            }
                         }
                     }
                 }
             }
-        });
+        ));
     }
 
     private function processDatabase(array $array, int $position): void
@@ -312,28 +316,30 @@ class DiscordPersistentMessages
     {
         $bot = $this->bot;
         $channel->sendMessage($this->build(null, $messageRow))->done(
-            function (Message $message) use ($channel, $messageRow, $oldMessageRow, $array, $position, $bot) {
-                $this->bot->component->addReactions($message, $messageRow->id);
-                $messageRow->message_id = $message->id;
-                set_sql_query(
-                    BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
-                    array(
-                        "message_id" => $message->id
-                    ),
-                    array(
-                        array("id", $oldMessageRow->id)
-                    ),
-                    null,
-                    1
-                );
-                $bot->instructions->get($channel->guild_id)->addExtra(
-                    "interactive-message-" . $message->id,
-                    $message->getRawAttributes(),
-                    false,
-                    true
-                );
-                $this->processDatabase($array, $position + 1);
-            }
+            $this->bot->utilities->oneArgumentFunction(
+                function (Message $message) use ($channel, $messageRow, $oldMessageRow, $array, $position, $bot) {
+                    $this->bot->component->addReactions($message, $messageRow->id);
+                    $messageRow->message_id = $message->id;
+                    set_sql_query(
+                        BotDatabaseTable::BOT_CONTROLLED_MESSAGES,
+                        array(
+                            "message_id" => $message->id
+                        ),
+                        array(
+                            array("id", $oldMessageRow->id)
+                        ),
+                        null,
+                        1
+                    );
+                    $bot->instructions->get($channel->guild_id)->addExtra(
+                        "interactive-message-" . $message->id,
+                        $message->getRawAttributes(),
+                        false,
+                        true
+                    );
+                    $this->processDatabase($array, $position + 1);
+                }
+            )
         );
     }
 
@@ -345,27 +351,31 @@ class DiscordPersistentMessages
         try {
             $bot = $this->bot;
             $channel->messages->fetch($oldMessageRow->message_id, true)->done(
-                function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position, $bot) {
-                    if ($message->user_id == $this->bot->botID) {
-                        if ($custom) {
-                            $messageRow->message_id = $message->id;
-                        }
-                        $message->edit($this->build(null, $messageRow))->done(
-                            function (Message $message) use ($bot, $channel) {
-                                $bot->instructions->get($channel->guild_id)->addExtra(
-                                    "interactive-message-" . $message->id,
-                                    $message->getRawAttributes(),
-                                    false,
-                                    true
-                                );
+                $this->bot->utilities->oneArgumentFunction(
+                    function (Message $message) use ($channel, $custom, $messageRow, $oldMessageRow, $array, $position, $bot) {
+                        if ($message->user_id == $this->bot->botID) {
+                            if ($custom) {
+                                $messageRow->message_id = $message->id;
                             }
-                        );
-                    } else {
-                        $message->delete();
-                        $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
+                            $message->edit($this->build(null, $messageRow))->done(
+                                $this->bot->utilities->oneArgumentFunction(
+                                    function (Message $message) use ($bot, $channel) {
+                                        $bot->instructions->get($channel->guild_id)->addExtra(
+                                            "interactive-message-" . $message->id,
+                                            $message->getRawAttributes(),
+                                            false,
+                                            true
+                                        );
+                                    }
+                                )
+                            );
+                        } else {
+                            $message->delete();
+                            $this->newMessage($channel, $messageRow, $oldMessageRow, $array, $position);
+                        }
+                        $this->processDatabase($array, $position + 1);
                     }
-                    $this->processDatabase($array, $position + 1);
-                }
+                )
             );
         } catch (Throwable $ignored) {
             $this->processDatabase($array, $position + 1);

@@ -334,35 +334,39 @@ class DiscordUserGiveaways
             $channel = $this->bot->discord->getChannel($running->channel_id);
 
             if ($running->thread_id === null) {
-                $channel->sendMessage($builder)->done(function (Message $message) use ($running) {
-                    set_sql_query(
-                        BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
-                        array(
-                            "message_id" => $message->id
-                        ),
-                        array(
-                            array("id", $running->id)
-                        ),
-                        null,
-                        1
-                    );
-                });
+                $channel->sendMessage($builder)->done($this->bot->utilities->oneArgumentFunction(
+                    function (Message $message) use ($running) {
+                        set_sql_query(
+                            BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
+                            array(
+                                "message_id" => $message->id
+                            ),
+                            array(
+                                array("id", $running->id)
+                            ),
+                            null,
+                            1
+                        );
+                    }
+                ));
             } else if (!empty($channel->threads->first())) {
                 foreach ($channel->threads as $thread) {
                     if ($thread->id == $running->thread_id) {
-                        $thread->sendMessage($builder)->done(function (Message $message) use ($running) {
-                            set_sql_query(
-                                BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
-                                array(
-                                    "message_id" => $message->id
-                                ),
-                                array(
-                                    array("id", $running->id)
-                                ),
-                                null,
-                                1
-                            );
-                        });
+                        $thread->sendMessage($builder)->done($this->bot->utilities->oneArgumentFunction(
+                            function (Message $message) use ($running) {
+                                set_sql_query(
+                                    BotDatabaseTable::BOT_GIVEAWAY_TRACKING,
+                                    array(
+                                        "message_id" => $message->id
+                                    ),
+                                    array(
+                                        array("id", $running->id)
+                                    ),
+                                    null,
+                                    1
+                                );
+                            }
+                        ));
                         break;
                     }
                 }
@@ -383,9 +387,11 @@ class DiscordUserGiveaways
                 }
             }
             try {
-                $channel->messages->fetch($running->message_id, true)->done(function (Message $message) use ($builder) {
-                    $message->edit($builder);
-                });
+                $channel->messages->fetch($running->message_id, true)->done($this->bot->utilities->oneArgumentFunction(
+                    function (Message $message) use ($builder) {
+                        $message->edit($builder);
+                    })
+                );
             } catch (Throwable $ignored) {
             }
         }

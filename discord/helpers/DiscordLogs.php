@@ -152,32 +152,34 @@ class DiscordLogs
 
                             if ($action === self::GUILD_MEMBER_ADD_VIA_INVITE) {
                                 $oldInvites = DiscordInviteTracker::getInvites($guild);
-                                $callable = function () use ($oldInvites, $guild, $messagesToSendCallable, $oldObject) {
-                                    $newInvites = DiscordInviteTracker::getInvites($guild);
+                                $callable = $this->bot->utilities->oneArgumentFunction(
+                                    function () use ($oldInvites, $guild, $messagesToSendCallable, $oldObject) {
+                                        $newInvites = DiscordInviteTracker::getInvites($guild);
 
-                                    if (empty($oldInvites)) {
-                                        if (!empty($newInvites)) {
+                                        if (empty($oldInvites)) {
+                                            if (!empty($newInvites)) {
+                                                foreach ($newInvites as $invite) {
+                                                    $oldObject = $invite;
+                                                    break;
+                                                }
+                                            }
+                                        } else if (!empty($newInvites)) {
                                             foreach ($newInvites as $invite) {
-                                                $oldObject = $invite;
-                                                break;
-                                            }
-                                        }
-                                    } else if (!empty($newInvites)) {
-                                        foreach ($newInvites as $invite) {
-                                            $comparisonInvite = $oldInvites[$invite->code] ?? null;
+                                                $comparisonInvite = $oldInvites[$invite->code] ?? null;
 
-                                            if ($comparisonInvite === null) {
-                                                $oldObject = $invite;
-                                                break;
-                                            } else if ($comparisonInvite->uses < $invite->uses) {
-                                                $oldObject = $invite;
-                                                break;
+                                                if ($comparisonInvite === null) {
+                                                    $oldObject = $invite;
+                                                    break;
+                                                } else if ($comparisonInvite->uses < $invite->uses) {
+                                                    $oldObject = $invite;
+                                                    break;
+                                                }
                                             }
                                         }
+                                        $messagesToSendCallable($oldObject);
                                     }
-                                    $messagesToSendCallable($oldObject);
-                                };
-                                DiscordInviteTracker::track($guild, null, $callable);
+                                );
+                                DiscordInviteTracker::track($this->bot, $guild, null, $callable);
                             } else {
                                 $messagesToSendCallable($oldObject);
                             }
