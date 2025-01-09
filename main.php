@@ -386,7 +386,7 @@ function initiate_discord_bot(): void
         });
 
         $discord->on(Event::GUILD_MEMBER_ADD, function (Member $member, Discord $discord) use ($logger, $createdDiscordBot) {
-            DiscordInviteTracker::track($createdDiscordBot, $member->guild);
+            DiscordInviteTracker::track($member->guild);
             $createdDiscordBot->joinRoles->run($member);
             $createdDiscordBot->statisticsChannels->refresh();
             $createdDiscordBot->statusMessages->run($member, DiscordStatusMessages::WELCOME);
@@ -467,13 +467,13 @@ function initiate_discord_bot(): void
 
         $discord->on(Event::INVITE_CREATE, function (Invite $invite, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
-            DiscordInviteTracker::track($createdDiscordBot, $invite->guild);
+            DiscordInviteTracker::track($invite->guild);
             $logger->logInfo($invite->guild, $invite->inviter->id, Event::INVITE_CREATE, $invite);
         });
 
         $discord->on(Event::INVITE_DELETE, function (object $invite, Discord $discord) use ($logger, $createdDiscordBot) {
             $createdDiscordBot->statisticsChannels->refresh();
-            DiscordInviteTracker::track($createdDiscordBot, $invite->guild);
+            DiscordInviteTracker::track($invite->guild);
 
             if ($invite instanceof Invite) {
                 $logger->logInfo($invite->guild, $invite->inviter?->id, Event::INVITE_DELETE, $invite);

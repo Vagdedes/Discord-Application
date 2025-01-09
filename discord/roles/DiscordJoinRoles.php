@@ -28,19 +28,17 @@ class DiscordJoinRoles
         if (!empty($this->roles)) {
             foreach ($this->roles as $role) {
                 if ($role->server_id == $member->guild_id) {
-                    $member->addRole($role->role_id)->done($this->bot->utilities->functionWithException(
-                        function () use ($role, $member) {
-                            sql_insert(
-                                BotDatabaseTable::BOT_JOIN_ROLE_TRACKING,
-                                array(
-                                    "role_id" => $role->role_id,
-                                    "user_id" => $member->id,
-                                    "server_id" => $member->guild_id,
-                                    "creation_date" => get_current_date()
-                                )
-                            );
-                        }
-                    ));
+                    $member->addRole($role->role_id)->done(function () use ($role, $member) {
+                        sql_insert(
+                            BotDatabaseTable::BOT_JOIN_ROLE_TRACKING,
+                            array(
+                                "role_id" => $role->role_id,
+                                "user_id" => $member->id,
+                                "server_id" => $member->guild_id,
+                                "creation_date" => get_current_date()
+                            )
+                        );
+                    });
                 }
             }
         }

@@ -390,11 +390,9 @@ class DiscordAIMessages
                                             if ($cache !== null) {
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage
-                                                ))->done($this->bot->utilities->functionWithException(
-                                                    function (Message $message) use ($cache) {
-                                                        $this->bot->utilities->replyMessageInPieces($message, $cache[0], $cache[1], $cache[2]);
-                                                    }
-                                                ));
+                                                ))->done(function (Message $message) use ($cache) {
+                                                    $this->bot->utilities->replyMessageInPieces($message, $cache[0], $cache[1], $cache[2]);
+                                                });
                                             } else {
                                                 if ($channel->require_starting_text !== null
                                                     && !starts_with($messageContent, $channel->require_starting_text)
@@ -415,61 +413,59 @@ class DiscordAIMessages
                                                 }
                                                 $originalMessage->reply(MessageBuilder::new()->setContent(
                                                     $promptMessage
-                                                ))->done($this->bot->utilities->functionWithException(
-                                                    function (Message $message)
-                                                    use ($object, $model, $cacheKey, $channel, $originalMessage) {
-                                                        $array = $this->bot->listener->callAiTextImplementation(
-                                                            $model->implement_class,
-                                                            $model->implement_method,
-                                                            $model,
-                                                            $originalMessage,
-                                                            $channel,
-                                                            $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
-                                                            $channel->public_instructions ?? (empty($model->publicInstructions) ? null : $model->publicInstructions)
-                                                        );
-                                                        $reply = $this->rawTextAssistance(
-                                                            $channel->ai_model_id,
-                                                            $originalMessage,
-                                                            $message,
-                                                            array(
-                                                                $object,
-                                                                $array[0],
-                                                                $array[1],
-                                                                $channel->ai_disclaimer
-                                                            ),
-                                                            self::AI_HASH,
-                                                            $channel->debug !== null,
-                                                            $channel->max_attachments_length
-                                                        );
+                                                ))->done(function (Message $message)
+                                                use ($object, $model, $cacheKey, $channel, $originalMessage) {
+                                                    $array = $this->bot->listener->callAiTextImplementation(
+                                                        $model->implement_class,
+                                                        $model->implement_method,
+                                                        $model,
+                                                        $originalMessage,
+                                                        $channel,
+                                                        $channel->local_instructions ?? (empty($model->localInstructions) ? null : $model->localInstructions),
+                                                        $channel->public_instructions ?? (empty($model->publicInstructions) ? null : $model->publicInstructions)
+                                                    );
+                                                    $reply = $this->rawTextAssistance(
+                                                        $channel->ai_model_id,
+                                                        $originalMessage,
+                                                        $message,
+                                                        array(
+                                                            $object,
+                                                            $array[0],
+                                                            $array[1],
+                                                            $channel->ai_disclaimer
+                                                        ),
+                                                        self::AI_HASH,
+                                                        $channel->debug !== null,
+                                                        $channel->max_attachments_length
+                                                    );
 
-                                                        if ($reply === null) {
-                                                            if ($channel->failure_message !== null) {
-                                                                $this->bot->utilities->editMessage(
-                                                                    $message,
-                                                                    $this->bot->instructions->replace(array($channel->failure_message), $object)[0]
-                                                                );
-                                                            } else if ($channel->debug === null) {
-                                                                $this->bot->utilities->deleteMessage($message);
-                                                            }
-                                                        } else {
-                                                            set_key_value_pair($cacheKey, $reply, $channel->message_retention ?? 0);
-
-                                                            if ($channel->feedback !== null) {
-                                                                $this->bot->component->addReactions($message, self::REACTION_COMPONENT_NAME);
-                                                            }
-                                                            $this->bot->utilities->replyMessageInPieces($message, $reply[0], $reply[1], $reply[2]);
-
-                                                            $hash = $this->bot->utilities->hash(
-                                                                $message->guild_id,
-                                                                $message->channel_id,
-                                                                $message->thread?->id,
-                                                                $message->id
+                                                    if ($reply === null) {
+                                                        if ($channel->failure_message !== null) {
+                                                            $this->bot->utilities->editMessage(
+                                                                $message,
+                                                                $this->bot->instructions->replace(array($channel->failure_message), $object)[0]
                                                             );
-                                                            $this->messageReplies[$hash] = $message;
-                                                            $this->messageFeedback[$hash] = array();
+                                                        } else if ($channel->debug === null) {
+                                                            $this->bot->utilities->deleteMessage($message);
                                                         }
+                                                    } else {
+                                                        set_key_value_pair($cacheKey, $reply, $channel->message_retention ?? 0);
+
+                                                        if ($channel->feedback !== null) {
+                                                            $this->bot->component->addReactions($message, self::REACTION_COMPONENT_NAME);
+                                                        }
+                                                        $this->bot->utilities->replyMessageInPieces($message, $reply[0], $reply[1], $reply[2]);
+
+                                                        $hash = $this->bot->utilities->hash(
+                                                            $message->guild_id,
+                                                            $message->channel_id,
+                                                            $message->thread?->id,
+                                                            $message->id
+                                                        );
+                                                        $this->messageReplies[$hash] = $message;
+                                                        $this->messageFeedback[$hash] = array();
                                                     }
-                                                ));
+                                                });
                                             }
                                         }
                                     }

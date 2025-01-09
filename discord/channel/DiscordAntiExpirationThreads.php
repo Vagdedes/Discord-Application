@@ -48,15 +48,13 @@ class DiscordAntiExpirationThreads
     private function execute(Channel|Thread $channel, object $row): void
     {
         $channel->sendMessage(MessageBuilder::new()->setContent($row->message_content))->done(
-            $this->bot->utilities->functionWithException(
-                function (Message $message) use ($row) {
-                    if ($row->milliseconds_retention === null) {
-                        $message->delete();
-                    } else {
-                        $message->delayedDelete($row->milliseconds_retention);
-                    }
+            function (Message $message) use ($row) {
+                if ($row->milliseconds_retention === null) {
+                    $message->delete();
+                } else {
+                    $message->delayedDelete($row->milliseconds_retention);
                 }
-            )
+            }
         );
     }
 

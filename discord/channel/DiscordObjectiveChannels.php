@@ -164,38 +164,36 @@ class DiscordObjectiveChannels
                 );
                 $messageBuilder->addEmbed($embed);
 
-                $channel->sendMessage($messageBuilder)->done($this->bot->utilities->functionWithException(
-                    function (Message $endMessage)
-                    use ($message, $date) {
-                        $channelObj = $this->bot->utilities->getChannelOrThread($endMessage->channel);
+                $channel->sendMessage($messageBuilder)->done(function (Message $endMessage)
+                use ($message, $date) {
+                    $channelObj = $this->bot->utilities->getChannelOrThread($endMessage->channel);
 
-                        if (!set_sql_query(
-                            BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
-                            array(
-                                "end_server_id" => $endMessage->guild_id,
-                                "end_category_id" => $channelObj->parent_id,
-                                "end_channel_id" => $channelObj->id,
-                                "end_thread_id" => $endMessage->thread?->id,
-                                "end_message_id" => $endMessage->id,
-                                "end_user_id" => $endMessage->user_id,
-                                "transfer_date" => $date
-                            ),
-                            array(
-                                array("start_server_id", $message->guild_id),
-                                array("start_category_id", $message->channel->parent_id),
-                                array("start_channel_id", $message->channel_id),
-                                array("start_thread_id", $message->thread?->id),
-                                array("start_message_id", $message->id),
-                                array("start_user_id", $message->user_id)
-                            ),
-                            null,
-                            1
-                        )) {
-                            global $logger;
-                            $logger->logError("Failed to update objective-channel message-deletion with ID: " . $message->id);
-                        }
+                    if (!set_sql_query(
+                        BotDatabaseTable::BOT_OBJECTIVE_CHANNEL_TRACKING,
+                        array(
+                            "end_server_id" => $endMessage->guild_id,
+                            "end_category_id" => $channelObj->parent_id,
+                            "end_channel_id" => $channelObj->id,
+                            "end_thread_id" => $endMessage->thread?->id,
+                            "end_message_id" => $endMessage->id,
+                            "end_user_id" => $endMessage->user_id,
+                            "transfer_date" => $date
+                        ),
+                        array(
+                            array("start_server_id", $message->guild_id),
+                            array("start_category_id", $message->channel->parent_id),
+                            array("start_channel_id", $message->channel_id),
+                            array("start_thread_id", $message->thread?->id),
+                            array("start_message_id", $message->id),
+                            array("start_user_id", $message->user_id)
+                        ),
+                        null,
+                        1
+                    )) {
+                        global $logger;
+                        $logger->logError("Failed to update objective-channel message-deletion with ID: " . $message->id);
                     }
-                ));
+                });
             } else {
                 global $logger;
                 $logger->logError(
@@ -243,29 +241,27 @@ class DiscordObjectiveChannels
             "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id,
             null,
             $rolePermissions
-        )?->done($this->bot->utilities->functionWithException(
-            function (Channel $channelObj) use ($channel, $thread, $creation) {
-                if (set_sql_query(
-                    BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
-                    array(
-                        ($creation ? "start" : "end") . "_category_id" => $channelObj->parent_id,
-                        ($creation ? "start" : "end") . "_channel_id" => $channelObj->id
-                    ),
-                    array(
-                        array("id", $channel->id)
-                    ),
-                    null,
-                    1
-                )) {
-                    if ($thread) {
-                        $this->createThread($channel, $channelObj, $creation);
-                    }
-                } else {
-                    global $logger;
-                    $logger->logError("Failed to update objective-channel channel with ID: " . $channel->id);
+        )?->done(function (Channel $channelObj) use ($channel, $thread, $creation) {
+            if (set_sql_query(
+                BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
+                array(
+                    ($creation ? "start" : "end") . "_category_id" => $channelObj->parent_id,
+                    ($creation ? "start" : "end") . "_channel_id" => $channelObj->id
+                ),
+                array(
+                    array("id", $channel->id)
+                ),
+                null,
+                1
+            )) {
+                if ($thread) {
+                    $this->createThread($channel, $channelObj, $creation);
                 }
+            } else {
+                global $logger;
+                $logger->logError("Failed to update objective-channel channel with ID: " . $channel->id);
             }
-        ));
+        });
     }
 
     private function createThread(object $channel, Channel $channelObj, bool $creation): void
@@ -274,24 +270,22 @@ class DiscordObjectiveChannels
             MessageBuilder::new()->setContent(
                 "objectives-" . ($creation ? "queued" : "completed") . "-" . $channel->id
             )
-        )->done($this->bot->utilities->functionWithException(
-            function (Thread $thread) use ($channel, $creation) {
-                if (!set_sql_query(
-                    BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
-                    array(
-                        ($creation ? "start" : "end") . "_thread_id" => $thread->id
-                    ),
-                    array(
-                        array("id", $channel->id)
-                    ),
-                    null,
-                    1
-                )) {
-                    global $logger;
-                    $logger->logError("Failed to update objective-channel thread with ID: " . $channel->id);
-                }
+        )->done(function (Thread $thread) use ($channel, $creation) {
+            if (!set_sql_query(
+                BotDatabaseTable::BOT_OBJECTIVE_CHANNELS,
+                array(
+                    ($creation ? "start" : "end") . "_thread_id" => $thread->id
+                ),
+                array(
+                    array("id", $channel->id)
+                ),
+                null,
+                1
+            )) {
+                global $logger;
+                $logger->logError("Failed to update objective-channel thread with ID: " . $channel->id);
             }
-        ));
+        });
     }
 
     private function getChannel(object $channel, bool $creation): Channel|Thread|null
@@ -316,16 +310,14 @@ class DiscordObjectiveChannels
                                     : $channel->end_thread_id) == $thread->id) {
                                 $thread->getMessageHistory([
                                     'limit' => 100,
-                                ])->done($this->bot->utilities->functionWithException(
-                                    function (Collection $messages) use ($channel, $channelObj) {
-                                        foreach ($messages as $message) {
-                                            $this->messages[$this->bot->utilities->hash(
-                                                $channelObj->guild_id,
-                                                $channelObj->id,
-                                                $message->id)] = array($channel, $message);
-                                        }
+                                ])->done(function (Collection $messages) use ($channel, $channelObj) {
+                                    foreach ($messages as $message) {
+                                        $this->messages[$this->bot->utilities->hash(
+                                            $channelObj->guild_id,
+                                            $channelObj->id,
+                                            $message->id)] = array($channel, $message);
                                     }
-                                ));
+                                });
                                 return $thread;
                             }
                         }
@@ -337,16 +329,14 @@ class DiscordObjectiveChannels
                             'limit' => 100,
                             'cache' => true
                         ]
-                    )->done($this->bot->utilities->functionWithException(
-                        function (Collection $messages) use ($channel, $channelObj) {
-                            foreach ($messages as $message) {
-                                $this->messages[$this->bot->utilities->hash(
-                                    $channelObj->guild_id,
-                                    $channelObj->id,
-                                    $message->id)] = array($channel, $message);
-                            }
+                    )->done(function (Collection $messages) use ($channel, $channelObj) {
+                        foreach ($messages as $message) {
+                            $this->messages[$this->bot->utilities->hash(
+                                $channelObj->guild_id,
+                                $channelObj->id,
+                                $message->id)] = array($channel, $message);
                         }
-                    ));
+                    });
                     return $channelObj;
                 }
             } else {

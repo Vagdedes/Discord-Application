@@ -110,40 +110,38 @@ class DiscordListener
             try {
                 $this->bot->discord->listenCommand(
                     $command->command_identification,
-                    $this->bot->utilities->functionWithException(
-                        function (Interaction $interaction) use ($class, $method, $command) {
-                            $mute = $this->bot->mute->isMuted($interaction->member, $interaction->channel, DiscordMute::COMMAND);
+                    function (Interaction $interaction) use ($class, $method, $command) {
+                        $mute = $this->bot->mute->isMuted($interaction->member, $interaction->channel, DiscordMute::COMMAND);
 
-                            if ($mute !== null) {
-                                $this->bot->utilities->acknowledgeCommandMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent($mute->creation_reason),
-                                    $command->ephemeral !== null
-                                );
-                            } else if ($command->required_permission !== null
-                                && !$this->bot->permissions->hasPermission(
-                                    $interaction->member,
-                                    $command->required_permission
-                                )) {
-                                $this->bot->utilities->acknowledgeCommandMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent($command->no_permission_message),
-                                    $command->ephemeral !== null
-                                );
-                            } else if ($command->command_reply !== null) {
-                                $this->bot->utilities->acknowledgeCommandMessage(
-                                    $interaction,
-                                    MessageBuilder::new()->setContent($command->command_reply),
-                                    $command->ephemeral !== null
-                                );
-                            } else {
-                                call_user_func_array(
-                                    array($class, $method),
-                                    array($this->bot, $interaction, $command)
-                                );
-                            }
+                        if ($mute !== null) {
+                            $this->bot->utilities->acknowledgeCommandMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($mute->creation_reason),
+                                $command->ephemeral !== null
+                            );
+                        } else if ($command->required_permission !== null
+                            && !$this->bot->permissions->hasPermission(
+                                $interaction->member,
+                                $command->required_permission
+                            )) {
+                            $this->bot->utilities->acknowledgeCommandMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($command->no_permission_message),
+                                $command->ephemeral !== null
+                            );
+                        } else if ($command->command_reply !== null) {
+                            $this->bot->utilities->acknowledgeCommandMessage(
+                                $interaction,
+                                MessageBuilder::new()->setContent($command->command_reply),
+                                $command->ephemeral !== null
+                            );
+                        } else {
+                            call_user_func_array(
+                                array($class, $method),
+                                array($this->bot, $interaction, $command)
+                            );
                         }
-                    )
+                    }
                 );
             } catch (Throwable $ignored) {
             }

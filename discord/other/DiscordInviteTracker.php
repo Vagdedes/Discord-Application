@@ -31,7 +31,7 @@ class DiscordInviteTracker
         self::$invited_users = 0;
 
         foreach ($this->bot->discord->guilds as $guild) {
-            self::track($this->bot, $guild, $this);
+            self::track($guild, $this);
         }
     }
 
@@ -130,103 +130,101 @@ class DiscordInviteTracker
         return self::$cached_invites[$guild->id] ?? array();
     }
 
-    public static function track(DiscordBot $bot, ?Guild $guild, ?DiscordInviteTracker $inviteTracker = null, ?callable $callable = null): void
+    public static function track(?Guild $guild, ?DiscordInviteTracker $inviteTracker = null, ?callable $callable = null): void
     {
         if ($guild === null) {
             return;
         }
-        $guild->getInvites()->done($bot->utilities->functionWithException(
-            function (mixed $invites) use ($guild, $callable, $inviteTracker) {
-                $cached = array();
+        $guild->getInvites()->done(function (mixed $invites) use ($guild, $callable, $inviteTracker) {
+            $cached = array();
 
-                foreach ($invites as $invite) {
-                    $code = $invite->code;
-                    $cached[$code] = $invite;
-                    $totalUses = $invite->uses ?? 0;
-                    $serverID = $guild->id;
-                    $userID = $invite->inviter?->id ?? null;
-                    self::$invite_links++;
-                    self::$invited_users += $totalUses;
-                    $query = get_sql_query(
-                        BotDatabaseTable::BOT_INVITE_TRACKER,
-                        array("id", "uses"),
-                        array(
-                            array("server_id", $serverID),
-                            array("invite_code", $code),
-                            array("deletion_date", null)
-                        ),
-                        array(
-                            "DESC",
-                            "id"
-                        ),
-                        1
-                    );
+            foreach ($invites as $invite) {
+                $code = $invite->code;
+                $cached[$code] = $invite;
+                $totalUses = $invite->uses ?? 0;
+                $serverID = $guild->id;
+                $userID = $invite->inviter?->id ?? null;
+                self::$invite_links++;
+                self::$invited_users += $totalUses;
+                $query = get_sql_query(
+                    BotDatabaseTable::BOT_INVITE_TRACKER,
+                    array("id", "uses"),
+                    array(
+                        array("server_id", $serverID),
+                        array("invite_code", $code),
+                        array("deletion_date", null)
+                    ),
+                    array(
+                        "DESC",
+                        "id"
+                    ),
+                    1
+                );
 
-                    if (empty($query)) {
-                        if ($userID !== null) {
-                            sql_insert(
-                                BotDatabaseTable::BOT_INVITE_TRACKER,
-                                array(
-                                    "server_id" => $serverID,
-                                    "user_id" => $userID,
-                                    "invite_code" => $code,
-                                    "uses" => $totalUses,
-                                    "creation_date" => $invite->created_at,
-                                    "expiration_date" => $invite->expires_at
-                                )
-                            );
+                if (empty($query)) {
+                    if ($userID !== null) {
+                        sql_insert(
+                            BotDatabaseTable::BOT_INVITE_TRACKER,
+                            array(
+                                "server_id" => $serverID,
+                                "user_id" => $userID,
+                                "invite_code" => $code,
+                                "uses" => $totalUses,
+                                "creation_date" => $invite->created_at,
+                                "expiration_date" => $invite->expires_at
+                            )
+                        );
 
-                            if (!empty($inviteTracker?->goals)) {
-                                for ($target = 1; $target <= $totalUses; $target++) {
-                                    self::triggerGoal($invite, $inviteTracker, $serverID, $userID, $target);
-                                }
+                        if (!empty($inviteTracker?->goals)) {
+                            for ($target = 1; $target <= $totalUses; $target++) {
+                                self::triggerGoal($invite, $inviteTracker, $serverID, $userID, $target);
                             }
                         }
-                    } else {
-                        $query = $query[0];
-                        $difference = $totalUses - $query->uses;
+                    }
+                } else {
+                    $query = $query[0];
+                    $difference = $totalUses - $query->uses;
 
-                        if ($difference > 0) {
-                            $channelID = $invite?->channel_id;
+                    if ($difference > 0) {
+                        $channelID = $invite?->channel_id;
 
-                            if ($channelID !== null) {
-                                if ($inviteTracker !== null) {
-                                    $inviteTracker->bot->userLevels->runLevel(
-                                        $serverID,
-                                        $invite->channel,
-                                        $invite->inviter,
-                                        DiscordUserLevels::INVITE_USE_POINTS,
-                                        $difference
-                                    );
-                                }
+                        if ($channelID !== null) {
+                            if ($inviteTracker !== null) {
+                                $inviteTracker->bot->userLevels->runLevel(
+                                    $serverID,
+                                    $invite->channel,
+                                    $invite->inviter,
+                                    DiscordUserLevels::INVITE_USE_POINTS,
+                                    $difference
+                                );
                             }
-                            if (set_sql_query(
-                                    BotDatabaseTable::BOT_INVITE_TRACKER,
-                                    array(
-                                        "uses" => $totalUses,
-                                    ),
-                                    array(
-                                        array("id", $query->id)
-                                    ),
-                                    null,
-                                    1
-                                )
-                                && !empty($inviteTracker?->goals)
-                                && $userID !== null) {
-                                for ($target = $query->uses + 1; $target <= $totalUses; $target++) {
-                                    self::triggerGoal($invite, $inviteTracker, $serverID, $userID, $target);
-                                }
+                        }
+                        if (set_sql_query(
+                                BotDatabaseTable::BOT_INVITE_TRACKER,
+                                array(
+                                    "uses" => $totalUses,
+                                ),
+                                array(
+                                    array("id", $query->id)
+                                ),
+                                null,
+                                1
+                            )
+                            && !empty($inviteTracker?->goals)
+                            && $userID !== null) {
+                            for ($target = $query->uses + 1; $target <= $totalUses; $target++) {
+                                self::triggerGoal($invite, $inviteTracker, $serverID, $userID, $target);
                             }
                         }
                     }
                 }
-                self::$cached_invites[$guild->id] = $cached;
-
-                if ($callable !== null) {
-                    $callable();
-                }
             }
-        ));
+            self::$cached_invites[$guild->id] = $cached;
+
+            if ($callable !== null) {
+                $callable();
+            }
+        });
     }
 
     private static function triggerGoal(Invite               $invite,
