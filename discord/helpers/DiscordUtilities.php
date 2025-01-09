@@ -165,7 +165,19 @@ class DiscordUtilities
                 if ($messageBuilder instanceof MessageBuilder) {
                     $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
                 } else {
-                    $interaction->sendFollowUpMessage($messageBuilder(), $ephemeral);
+                    $callable = function () use ($messageBuilder) {
+                        try {
+                            return $messageBuilder();
+                        } catch (Throwable $exception) {
+                            global $logger;
+                            $logger->logError($exception->getMessage());
+                            return MessageBuilder::new()->setContent($exception->getMessage());
+                        }
+                    };
+                    $interaction->sendFollowUpMessage(
+                        $callable(),
+                        $ephemeral
+                    );
                 }
             }
         );
@@ -189,17 +201,15 @@ class DiscordUtilities
         $message->channel?->messages->fetch(
             $message instanceof Message ? $message->id : $message,
             true
-        )->done($this->bot->utilities->functionWithException(
-            function (Message $message) use ($messageBuilder, $default, $embeds) {
-                if ($messageBuilder instanceof MessageBuilder) {
-                    $builder = $messageBuilder;
-                } else {
-                    $builder = clone $default;
-                    $builder->setEmbeds($embeds)->setContent($messageBuilder);
-                }
-                $message->reply($builder);
+        )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
+            if ($messageBuilder instanceof MessageBuilder) {
+                $builder = $messageBuilder;
+            } else {
+                $builder = clone $default;
+                $builder->setEmbeds($embeds)->setContent($messageBuilder);
             }
-        ));
+            $message->reply($builder);
+        });
     }
 
     public function replyMessageInPieces(Message         $message, string $reply,
@@ -253,16 +263,14 @@ class DiscordUtilities
         $message->channel?->messages->fetch(
             $message instanceof Message ? $message->id : $message,
             true
-        )->done($this->bot->utilities->functionWithException(
-            function (Message $message) use ($messageBuilder, $default, $embeds) {
-                if ($messageBuilder instanceof MessageBuilder) {
-                    $message->edit($messageBuilder);
-                } else {
-                    $builder = clone $default;
-                    $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
-                }
+        )->done(function (Message $message) use ($messageBuilder, $default, $embeds) {
+            if ($messageBuilder instanceof MessageBuilder) {
+                $message->edit($messageBuilder);
+            } else {
+                $builder = clone $default;
+                $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
             }
-        ));
+        });
     }
 
     public function deleteMessage(Message|int|string $message): void
@@ -270,11 +278,9 @@ class DiscordUtilities
         $message->channel->messages->fetch(
             $message instanceof Message ? $message->id : $message,
             true
-        )->done($this->bot->utilities->functionWithException(
-            function (Message $message) {
-                $message->delete();
-            }
-        ));
+        )->done(function (Message $message) {
+            $message->delete();
+        });
     }
 
     public function buildMessageFromObject(object $row, $object = null): ?MessageBuilder
@@ -351,15 +357,4 @@ class DiscordUtilities
         return $array;
     }
 
-    public function functionWithException(callable $function, array $arguments): callable
-    {
-        try {
-            return call_user_func_array($function, $arguments);
-        } catch (Throwable $exception) {
-            global $logger;
-            $logger->logError($exception->getMessage());
-            return function () {
-            };
-        }
-    }
 }

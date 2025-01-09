@@ -47,10 +47,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_MESSAGE . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $interaction, $messageBuilder, $objects)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $interaction, $messageBuilder, $objects)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -61,10 +67,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_MODAL . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $interaction, $objects)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $interaction, $objects)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -75,10 +87,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MESSAGE . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $interaction, $messageBuilder)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $interaction, $messageBuilder)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return MessageBuilder::new()->setContent($exception->getMessage());
+            }
         } else {
             return $messageBuilder;
         }
@@ -92,10 +111,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_MODAL . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $interaction, $input, $position)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $interaction, $input, $position)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return $input;
+            }
         } else {
             return $input;
         }
@@ -136,10 +162,15 @@ class DiscordListener
                                 $command->ephemeral !== null
                             );
                         } else {
-                            call_user_func_array(
-                                array($class, $method),
-                                array($this->bot, $interaction, $command)
-                            );
+                            try {
+                                call_user_func_array(
+                                    array($class, $method),
+                                    array($this->bot, $interaction, $command)
+                                );
+                            } catch (Throwable $exception) {
+                                global $logger;
+                                $logger->logError($exception->getMessage());
+                            }
                         }
                     }
                 );
@@ -155,10 +186,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_USER_TICKETS . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $interaction, $objects)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $interaction, $objects)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -169,10 +206,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_CHANNEL_COUNTING . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $message, $object)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $message, $object)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -182,10 +225,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_INVITE_TRACKER . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $invite)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $invite)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -198,10 +247,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_USER_LEVELS . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $channel, $configuration, $oldTier, $newTier)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $channel, $configuration, $oldTier, $newTier)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -214,10 +269,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_CHANNEL_STATISTICS . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $guild, $channel, $name, $object)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $guild, $channel, $name, $object)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return $name;
+            }
         }
         return $name;
     }
@@ -230,10 +292,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_REMINDER_MESSAGE . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $channel, $messageBuilder, $object)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $channel, $messageBuilder, $object)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return MessageBuilder::new()->setContent($exception->getMessage());
+            }
         }
         return $messageBuilder;
     }
@@ -248,10 +317,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_STATUS_MESSAGE . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $channel, $member, $messageBuilder, $object, $case)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $channel, $member, $messageBuilder, $object, $case)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return MessageBuilder::new()->setContent($exception->getMessage());
+            }
         }
         return $messageBuilder;
     }
@@ -263,10 +339,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_NOTIFICATION_MESSAGE . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($this->bot, $message, $object)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $message, $object)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return MessageBuilder::new()->setContent($exception->getMessage());
+            }
         } else {
             return $message;
         }
@@ -278,10 +361,16 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::CREATION_REACTION . $class . '.php');
-            call_user_func_array(
-                array($class, $method),
-                array($this->bot, $reaction)
-            );
+
+            try {
+                call_user_func_array(
+                    array($class, $method),
+                    array($this->bot, $reaction)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+            }
         }
     }
 
@@ -295,10 +384,17 @@ class DiscordListener
     {
         if ($class !== null && $method !== null) {
             require_once(self::IMPLEMENTATION_AI . $class . '.php');
-            return call_user_func_array(
-                array($class, $method),
-                array($model, $this->bot, $originalMessage, $channel, $localInstructions, $publicInstructions)
-            );
+
+            try {
+                return call_user_func_array(
+                    array($class, $method),
+                    array($model, $this->bot, $originalMessage, $channel, $localInstructions, $publicInstructions)
+                );
+            } catch (Throwable $exception) {
+                global $logger;
+                $logger->logError($exception->getMessage());
+                return array($localInstructions, $publicInstructions);
+            }
         } else {
             return array($localInstructions, $publicInstructions);
         }
