@@ -160,7 +160,7 @@ class DiscordUtilities
                                        MessageBuilder|callable $messageBuilder,
                                        bool                    $ephemeral): void
     {
-        $interaction->acknowledge()->done($this->bot->utilities->functionWithException(
+        $interaction->acknowledge()->done(
             function () use ($interaction, $messageBuilder, $ephemeral) {
                 if ($messageBuilder instanceof MessageBuilder) {
                     $interaction->sendFollowUpMessage($messageBuilder, $ephemeral);
@@ -168,7 +168,7 @@ class DiscordUtilities
                     $interaction->sendFollowUpMessage($messageBuilder(), $ephemeral);
                 }
             }
-        ));
+        );
     }
 
     public function acknowledgeCommandMessage(Interaction    $interaction,
@@ -255,13 +255,13 @@ class DiscordUtilities
             true
         )->done($this->bot->utilities->functionWithException(
             function (Message $message) use ($messageBuilder, $default, $embeds) {
-            if ($messageBuilder instanceof MessageBuilder) {
-                $message->edit($messageBuilder);
-            } else {
-                $builder = clone $default;
-                $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
+                if ($messageBuilder instanceof MessageBuilder) {
+                    $message->edit($messageBuilder);
+                } else {
+                    $builder = clone $default;
+                    $message->edit($builder->setEmbeds($embeds)->setContent($messageBuilder));
+                }
             }
-        }
         ));
     }
 
@@ -351,13 +351,13 @@ class DiscordUtilities
         return $array;
     }
 
-    public function functionWithException(callable $function): callable
+    public function functionWithException(callable $function, array $arguments): callable
     {
         try {
-            return $function();
+            return call_user_func_array($function, $arguments);
         } catch (Throwable $exception) {
             global $logger;
-            $logger->logError($exception);
+            $logger->logError($exception->getMessage());
             return function () {
             };
         }
