@@ -5,6 +5,7 @@ use Discord\Parts\Channel\Channel;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Guild\Guild;
 use Discord\Parts\User\Member;
+use Discord\Parts\User\User;
 use Discord\Parts\WebSockets\MessageReaction;
 
 class DiscordUserLevels
@@ -109,9 +110,10 @@ class DiscordUserLevels
         }
     }
 
-    public function runLevel(int|string $serverID, Channel $channel,
-                             Member     $user,
-                             string     $type, mixed $reference): void
+    public function runLevel(int|string  $serverID,
+                             Channel     $channel,
+                             Member|User $user,
+                             string      $type, mixed $reference): void
     {
         if (!$this->hasCooldown($serverID, $channel->id, $user->id)) {
             $configuration = $this->configurations[$this->bot->utilities->hash($serverID, $channel->id)];
