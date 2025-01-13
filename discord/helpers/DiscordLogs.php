@@ -152,7 +152,7 @@ class DiscordLogs
 
                             if ($action === self::GUILD_MEMBER_ADD_VIA_INVITE) {
                                 $oldInvites = DiscordInviteTracker::getInvites($guild);
-                                $callable = $this->bot->utilities->oneArgumentFunction(
+                                $callable = $this->bot->utilities->zeroArgumentFunction(
                                     function () use ($oldInvites, $guild, $messagesToSendCallable, $oldObject) {
                                         $newInvites = DiscordInviteTracker::getInvites($guild);
 

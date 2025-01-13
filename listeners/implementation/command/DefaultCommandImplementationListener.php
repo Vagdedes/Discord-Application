@@ -1740,7 +1740,7 @@ class DefaultCommandImplementationListener
                 true
             );
         } else {
-            DiscordInviteTracker::track($interaction->guild);
+            DiscordInviteTracker::track($bot, $interaction->guild);
             $array = $bot->inviteTracker->getServerStats(
                 $interaction->guild,
             );
