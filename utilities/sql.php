@@ -316,12 +316,8 @@ function sql_store_cache(string           $table,
 {
     $time = time();
 
-    if (empty($columns)) {
-        $columns[] = array($table, "*", $hash);
-    } else {
-        foreach ($columns as $key => $column) {
-            $columns[$key] = array($table, $column, $hash, $time);
-        }
+    foreach ($columns as $key => $column) {
+        $columns[$key] = array($table, $column, $hash, $time);
     }
     $store = json_encode($query);
 
@@ -404,16 +400,25 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 {
     global $debug;
     $hasWhere = $where !== null;
-    $columns = $select ?? array();
 
-    if ($hasWhere) {
-        foreach ($where as $single) {
-            if (is_array($single)
-                && !in_array($single[0], $columns)) {
-                $columns[] = $single[0];
-            }
+    if ($select === null) {
+        $columns = get_sql_database_columns($table);
+
+        if ($hasWhere) {
+            $where = sql_build_where($where, true);
         }
-        $where = sql_build_where($where, true);
+    } else {
+        $columns = $select;
+
+        if ($hasWhere) {
+            foreach ($where as $single) {
+                if (is_array($single)
+                    && !in_array($single[0], $columns)) {
+                    $columns[] = $single[0];
+                }
+            }
+            $where = sql_build_where($where, true);
+        }
     }
     $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
 
@@ -663,6 +668,19 @@ function get_sql_database_schemas(): array
             if ($row["SCHEMA_NAME"] !== "information_schema") {
                 $array[] = $row["SCHEMA_NAME"];
             }
+        }
+    }
+    return $array;
+}
+
+function get_sql_database_columns(string $table): array
+{
+    $array = array();
+    $query = sql_query("SHOW COLUMNS FROM " . $table . ";");
+
+    if ($query instanceof mysqli_result) {
+        while ($row = $query->fetch_assoc()) {
+            $array[] = $row["Field"];
         }
     }
     return $array;
