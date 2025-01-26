@@ -11,7 +11,6 @@ class evaluator
         "/var/www/.structure/library/base/communication.php",
         "/var/www/.structure/library/base/utilities.php",
         "/var/www/.structure/library/base/sql.php",
-        "/var/www/.structure/library/base/objects/AbstractMethodReply.php",
         "/var/www/.structure/library/memory/api/handlers/base.php"
     ),
         exemptedPaths = array();
