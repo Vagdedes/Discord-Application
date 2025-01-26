@@ -12,7 +12,7 @@ $unsigned_59bit_full_Integer = 576460752303423488;
 
 $backup_domain = "www.idealistic.ai";
 
-$keys_from_file_directory = "/root/discord_bot/private/credentials/";
+$keys_from_file_directory = "/var/www/.structure/private/";
 
 // Constants
 
@@ -60,7 +60,7 @@ function get_raw_google_doc(string $url, bool $returnHTML = false, int $timeoutS
         if (sizeof($html) > 1) {
             $html = explode('<script', $html[1])[0];
             $html = str_replace("</span>", "\n</span>", $html);
-            $html = strip_tags($html,"<a>");
+            $html = strip_tags($html, "<a>");
 
             if ($returnHTML) {
                 $html = str_replace("\n", "<br>", $html);
@@ -713,17 +713,24 @@ function boolean_to_integer(bool $boolean): int
 
 function string_to_integer(?string $string, bool $long = false): int
 {
-    if ($string === null) {
-        return 0;
-    }
-    $result = 1;
+    if (is_integer($string)) {
+        return $string;
+    } else {
+        if ($string === null) {
+            return 0;
+        } else {
+            $result = 1;
 
-    if (!empty($string)) {
-        foreach (unpack("C*", $string) as $byte) {
-            $result = $long ? overflow_long(($result * 31) + $byte) : overflow_integer(($result * 31) + $byte);
+            if (strlen($string) > 0) {
+                foreach (unpack("C*", $string) as $byte) {
+                    $result = $long
+                        ? overflow_long(($result * 31) + $byte)
+                        : overflow_integer(($result * 31) + $byte);
+                }
+            }
+            return $result;
         }
     }
-    return $result;
 }
 
 function array_to_integer(array|object|null $array, bool $long = false): int
@@ -805,17 +812,20 @@ function manipulate_date(string $date, int|string $time): string
 
 function get_future_date(int|string $time): string
 {
-    return date('Y-m-d H:i:s', strtotime("+" . $time));
+    $dateTime = new DateTime("@" . strtotime("+" . $time), new DateTimeZone("UTC"));
+    return $dateTime->format("Y-m-d H:i:s");
 }
 
 function get_past_date(int|string $time): string
 {
-    return date('Y-m-d H:i:s', strtotime("-" . $time));
+    $dateTime = new DateTime("@" . strtotime("-" . $time), new DateTimeZone("UTC"));
+    return $dateTime->format("Y-m-d H:i:s");
 }
 
 function time_to_date(int $time): string
 {
-    return date('Y-m-d H:i:s', $time);
+    $dateTime = new DateTime("@" . $time, new DateTimeZone("UTC"));
+    return $dateTime->format("Y-m-d H:i:s");
 }
 
 function get_date_days_difference(string $date): float
@@ -925,7 +935,8 @@ function get_full_date(string $date): string
 
 function get_current_date(): string
 {
-    return date("Y-m-d H:i:s");
+    $dateTime = new DateTime("now", new DateTimeZone("UTC"));
+    return $dateTime->format("Y-m-d H:i:s");
 }
 
 // Lists
