@@ -587,7 +587,7 @@ function sql_insert_multiple(string $table, array $columns, array $values): mixe
 
 // Set
 
-function set_sql_query(string $table, array $what, ?array $where = null, string|array|null $order = null, int $limit = 0): bool
+function set_sql_query(string $table, array $what, ?array $where = null, string|array|null $order = null, int $limit = 0): mixed
 {
     $query = "UPDATE " . $table . " SET ";
     $counter = 0;
@@ -612,17 +612,17 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
     }
-    if (sql_query($query . ";")) {
+    $query = sql_query($query . ";");
+
+    if ($query) {
         sql_clear_cache($table, array_keys($what));
-        return true;
-    } else {
-        return false;
     }
+    return $query;
 }
 
 // Delete
 
-function delete_sql_query(string $table, array $where, string|array|null $order = null, int $limit = 0): bool
+function delete_sql_query(string $table, array $where, string|array|null $order = null, int $limit = 0): mixed
 {
     $columnsQuery = sql_query("SELECT * FROM " . $table . " LIMIT 1;");
     $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);
@@ -633,14 +633,14 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
     }
-    if (sql_query($query . ";")) {
+    $query = sql_query($query . ";");
+
+    if ($query) {
         if (($columnsQuery->num_rows ?? 0) > 0) {
             sql_clear_cache($table, array_keys($columnsQuery->fetch_assoc()));
         }
-        return true;
-    } else {
-        return false;
     }
+    return $query;
 }
 
 // Local
