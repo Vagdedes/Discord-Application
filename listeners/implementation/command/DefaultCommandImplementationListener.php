@@ -236,7 +236,7 @@ class DefaultCommandImplementationListener
                     "messages" => $messages
                 );
                 $managerAI = new AIManager(
-                    AIModelFamily::OPENAI_VISION_PRO,
+                    AIImageReadingModelFamily::BEST_PRICE_TO_PERFORMANCE,
                     AIHelper::getAuthorization(AIAuthorization::OPENAI),
                     $input
                 );
@@ -262,7 +262,7 @@ class DefaultCommandImplementationListener
                             $input["quality"] = "hd";
                         }
                         $managerAI = new AIManager(
-                            AIModelFamily::DALL_E_3,
+                            AIImageCreationModelFamily::MOST_POWERFUL,
                             AIHelper::getAuthorization(AIAuthorization::OPENAI),
                             $input
                         );
@@ -360,7 +360,7 @@ class DefaultCommandImplementationListener
                             $arguments["quality"] = "hd";
                         }
                         $managerAI = new AIManager(
-                            AIModelFamily::DALL_E_3,
+                            AIImageCreationModelFamily::MOST_POWERFUL,
                             AIHelper::getAuthorization(AIAuthorization::OPENAI),
                             $arguments
                         );
