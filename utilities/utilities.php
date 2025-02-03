@@ -713,7 +713,7 @@ function boolean_to_integer(bool $boolean): int
 
 function string_to_integer(?string $string, bool $long = false): int
 {
-    if (is_integer($string)) {
+    if (is_numeric($string)) {
         return $string;
     } else {
         if ($string === null) {
@@ -741,10 +741,14 @@ function array_to_integer(array|object|null $array, bool $long = false): int
     $result = 1;
 
     foreach ($array as $value) {
+        if (is_object($value)
+            || is_array($value)) {
+            $value = serialize($value);
+        }
         if ($long) {
-            $result = overflow_long(($result * 31) + string_to_integer(serialize($value), true));
+            $result = overflow_long(($result * 31) + string_to_integer($value, true));
         } else {
-            $result = overflow_integer(($result * 31) + string_to_integer(serialize($value), false));
+            $result = overflow_integer(($result * 31) + string_to_integer($value, false));
         }
     }
     return $result;
