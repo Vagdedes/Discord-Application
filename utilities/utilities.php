@@ -714,7 +714,7 @@ function boolean_to_integer(bool $boolean): int
 function string_to_integer(?string $string, bool $long = false): int
 {
     if (is_numeric($string)) {
-        return $string;
+        return (int)$string;
     } else {
         if ($string === null) {
             return 0;
