@@ -61,7 +61,7 @@ Advanced statistics that predict who is hacking.
 
 
 Cloud Feature:
-Fix and report issues in real-time without updating with the plugin or restarting your server. Learn more via the URL: https://github.com/Vagdedes/Spartan-AntiCheat/blob/main/src/documentation/cloud_feature.md
+Learn more via the URL: https://github.com/Vagdedes/Spartan-AntiCheat/blob/main/src/documentation/cloud_feature.md
 
 
 Videos:
