@@ -988,7 +988,9 @@ class DiscordAIMessages
         $date = get_current_date();
 
         if (!empty($model->messageLimits)
-            && !$this->bot->permissions->hasPermission($message->member, "discord.ai.message.limit.ignore")) {
+            && !(($message->member?->permissions?->manage_messages ?? false)
+                || ($message->member?->permissions?->manage_channels ?? false)
+                || ($message->member?->permissions?->administrator ?? false))) {
             foreach ($model->messageLimits as $limit) {
                 if (($limit->server_id === null
                         || $limit->server_id === $serverID
@@ -1058,7 +1060,9 @@ class DiscordAIMessages
             }
         }
         if (!empty($model->costLimits)
-            && !$this->bot->permissions->hasPermission($message->member, "discord.ai.cost.limit.ignore")) {
+            && !(($message->member?->permissions?->manage_messages ?? false)
+                || ($message->member?->permissions?->manage_channels ?? false)
+                || ($message->member?->permissions?->administrator ?? false))) {
             foreach ($model->costLimits as $limit) {
                 if (($limit->server_id === null || $limit->server_id === $serverID)
                     && ($limit->channel_id === null || $limit->channel_id === $channelID)

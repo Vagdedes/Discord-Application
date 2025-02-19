@@ -144,6 +144,28 @@ class DiscordCommands
                         $commandBuilder->addOption($option);
                     }
                 }
+                foreach (array(
+                             1210017419645419520,
+                             1210017422799802419,
+                             1210017332991234069,
+                             1210017339949588481,
+                             1210017417196081263,
+                             1210017421361020999,
+                             1210017425538547783,
+                             1210017341874765875,
+                             1208456577636503593,
+                             1208456581658705931,
+                             1208456661375778907,
+                             1208456492886265938,
+                             1208456494723375115,
+                             1208456575530967061,
+                             1208456579725262848,
+                             1208456583554662482,
+                             1208456663204626565,
+                             1208456496380256276
+                         ) as $id) {
+                    $this->bot->discord->application->commands->delete($id);
+                }
                 $this->bot->discord->application->commands->save(
                     $this->bot->discord->application->commands->create(
                         $commandBuilder->toArray()
@@ -170,12 +192,6 @@ class DiscordCommands
 
                         if ($mute !== null) {
                             return $mute->creation_reason;
-                        } else if ($command->required_permission !== null
-                            && !$this->bot->permissions->hasPermission(
-                                $user,
-                                $command->required_permission
-                            )) {
-                            return $command->no_permission_message;
                         } else {
                             $cooldown = $this->getCooldown($message->guild_id, $user->id, $command);
 
@@ -198,12 +214,6 @@ class DiscordCommands
 
                         if ($mute !== null) {
                             return $mute->creation_reason;
-                        } else if ($command->required_permission !== null
-                            && !$this->bot->permissions->hasPermission(
-                                $user,
-                                $command->required_permission
-                            )) {
-                            return $command->no_permission_message;
                         } else if ($command->listener_class !== null && $command->listener_method !== null) {
                             call_user_func_array(
                                 array($command->listener_class, $command->listener_method),

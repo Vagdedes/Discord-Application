@@ -6,107 +6,10 @@ use Discord\Parts\User\Member;
 class DiscordPermissions
 {
     private DiscordBot $bot;
-    private array $rolePermissions, $userPermissions;
 
     public function __construct(DiscordBot $bot)
     {
         $this->bot = $bot;
-        $this->rolePermissions = array();
-        $this->userPermissions = array();
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_ROLE_PERMISSIONS,
-            array("server_id", "role_id", "permission"),
-            array_merge(array(
-                array("deletion_date", null),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            ), $this->bot->utilities->getServersQuery())
-        );
-
-        if (!empty($query)) {
-            foreach ($query as $row) {
-                $hash = $this->bot->utilities->hash($row->server_id, $row->role_id);
-
-                if (array_key_exists($hash, $this->rolePermissions)) {
-                    $this->rolePermissions[$hash][] = $row->permission;
-                } else {
-                    $this->rolePermissions[$hash] = array($row->permission);
-                }
-            }
-        }
-        $query = get_sql_query(
-            BotDatabaseTable::BOT_USER_PERMISSIONS,
-            array("server_id", "user_id", "permission"),
-            array_merge(array(
-                array("deletion_date", null),
-                null,
-                array("expiration_date", "IS", null, 0),
-                array("expiration_date", ">", get_current_date()),
-                null
-            ), $this->bot->utilities->getServersQuery())
-        );
-
-        if (!empty($query)) {
-            foreach ($query as $row) {
-                $hash = $this->bot->utilities->hash($row->server_id, $row->user_id);
-
-                if (array_key_exists($hash, $this->userPermissions)) {
-                    $this->userPermissions[$hash][] = $row->permission;
-                } else {
-                    $this->userPermissions[$hash] = array($row->permission);
-                }
-            }
-        }
-    }
-
-    public function getRolePermissions(int|string|null $serverID, int|string $roleID): array
-    {
-        return $this->rolePermissions[$this->bot->utilities->hash($serverID, $roleID)] ?? array();
-    }
-
-    public function getUserPermissions(int|string|null $serverID, int|string|null $userID): array
-    {
-        return $this->userPermissions[$this->bot->utilities->hash($serverID, $userID)] ?? array();
-    }
-
-    private function roleHasPermission(int|string $serverID, int|string $roleID,
-                                       string     $permission): bool
-    {
-        $hash = $this->bot->utilities->hash($serverID, $roleID);
-        return array_key_exists($hash, $this->rolePermissions)
-            && in_array($permission, $this->rolePermissions[$hash]);
-    }
-
-    private function userHasPermission(int|string|null $serverID, int|string|null $userID,
-                                       string          $permission, bool $recursive = true): bool
-    {
-        $hash = $this->bot->utilities->hash($serverID, $userID);
-        return array_key_exists($hash, $this->userPermissions)
-            && in_array($permission, $this->userPermissions[$hash])
-            || $recursive && ($this->userHasPermission($serverID, null, $permission, false)
-                || $this->userHasPermission(null, $userID, $permission, false)
-                || $this->userHasPermission(null, null, $permission, false));
-    }
-
-    public function hasPermission(Member $member, string $permission): bool
-    {
-        $result = false;
-
-        if ($this->userHasPermission($member->guild_id, $member->id, "*")
-            || $this->userHasPermission($member->guild_id, $member->id, $permission)) {
-            $result = true;
-        } else if (!empty($member->roles->first())) {
-            foreach ($member->roles as $role) {
-                if ($this->roleHasPermission($role->guild_id, $role->id, "*")
-                    || $this->roleHasPermission($role->guild_id, $role->id, $permission)) {
-                    $result = true;
-                    break;
-                }
-            }
-        }
-        return $result;
     }
 
     public function addDiscordRole(Member $member, int|string $roleID): bool

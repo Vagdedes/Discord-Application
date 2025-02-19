@@ -711,141 +711,6 @@ class DefaultCommandImplementationListener
 
     // Separator
 
-    public static function create_giveaway(DiscordBot          $bot,
-                                           Interaction|Message $interaction,
-                                           object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->create(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $arguments["title"]["value"] ?? null,
-                $arguments["description"]["value"] ?? null,
-                $arguments["minimum-participants"]["value"] ?? null,
-                $arguments["maximum-participants"]["value"] ?? null,
-                $arguments["winner-amount"]["value"] ?? null,
-                $arguments["repeat-after-ending"]["value"] ?? null
-            ) ?? MessageBuilder::new()->setContent("Giveaway successfully created."),
-            true
-        );
-    }
-
-    public static function delete_giveaway(DiscordBot          $bot,
-                                           Interaction|Message $interaction,
-                                           object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->delete(
-                $interaction,
-                $arguments["name"]["value"] ?? null
-            ) ?? MessageBuilder::new()->setContent("Giveaway successfully deleted."),
-            true
-        );
-    }
-
-    public static function start_giveaway(DiscordBot          $bot,
-                                          Interaction|Message $interaction,
-                                          object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->start(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $arguments["duration"]["value"] ?? null,
-            ) ?? MessageBuilder::new()->setContent("Giveaway successfully started."),
-            true
-        );
-    }
-
-    public static function end_giveaway(DiscordBot          $bot,
-                                        Interaction|Message $interaction,
-                                        object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->end(
-                $interaction,
-                $arguments["name"]["value"] ?? null
-            ) ?? MessageBuilder::new()->setContent("Giveaway successfully ended."),
-            true
-        );
-    }
-
-    public static function add_giveaway_permission(DiscordBot          $bot,
-                                                   Interaction|Message $interaction,
-                                                   object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->setRequiredPermission(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $arguments["permission"]["value"] ?? null
-            ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully added."),
-            true
-        );
-    }
-
-    public static function remove_giveaway_permission(DiscordBot          $bot,
-                                                      Interaction|Message $interaction,
-                                                      object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->setRequiredPermission(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $arguments["permission"]["value"] ?? null,
-                false
-            ) ?? MessageBuilder::new()->setContent("Giveaway required permission successfully removed."),
-            true
-        );
-    }
-
-    public static function add_giveaway_role(DiscordBot          $bot,
-                                             Interaction|Message $interaction,
-                                             object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->setRequiredRole(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $interaction->data?->resolved?->roles?->first()->id
-            ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully added."),
-            true
-        );
-    }
-
-    public static function remove_giveaway_role(DiscordBot          $bot,
-                                                Interaction|Message $interaction,
-                                                object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $bot->userGiveaways->setRequiredRole(
-                $interaction,
-                $arguments["name"]["value"] ?? null,
-                $interaction->data?->resolved?->roles?->first()->id,
-                false
-            ) ?? MessageBuilder::new()->setContent("Giveaway required role successfully removed."),
-            true
-        );
-    }
-
-    // Separator
-
     public static function create_embed_message(DiscordBot          $bot,
                                                 Interaction|Message $interaction,
                                                 object              $command): void
@@ -1301,15 +1166,9 @@ class DefaultCommandImplementationListener
                  ) as $commands) {
             if (!empty($commands)) {
                 foreach ($commands as $command) {
-                    if ($command->required_permission !== null
-                        && $bot->permissions->hasPermission(
-                            $interaction->member,
-                            $command->required_permission
-                        )) {
-                        $content .= "__" . $command->id . "__ "
-                            . $command->command_placeholder
-                            . $command->command_identification . "\n";
-                    }
+                    $content .= "__" . $command->id . "__ "
+                        . $command->command_placeholder
+                        . $command->command_identification . "\n";
                 }
             }
         }

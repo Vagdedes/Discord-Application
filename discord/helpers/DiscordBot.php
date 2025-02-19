@@ -69,7 +69,6 @@ class DiscordBot
     public DiscordAIMessages $aiMessages;
     public DiscordStatusMessages $statusMessages;
     public DiscordUserNotes $userNotes;
-    public DiscordUserGiveaways $userGiveaways;
     public DiscordChatFilteredMessages $chatFilteredMessages;
     public DiscordObjectiveChannels $objectiveChannels;
     public DiscordNotificationMessages $notificationMessages;
@@ -107,7 +106,6 @@ class DiscordBot
         $this->statusMessages = new DiscordStatusMessages($this);
         $this->userTargets = new DiscordUserTargets($this);
         $this->userNotes = new DiscordUserNotes($this);
-        $this->userGiveaways = new DiscordUserGiveaways($this);
         $this->chatFilteredMessages = new DiscordChatFilteredMessages($this);
         $this->objectiveChannels = new DiscordObjectiveChannels($this);
         $this->notificationMessages = new DiscordNotificationMessages($this);

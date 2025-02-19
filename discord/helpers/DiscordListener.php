@@ -145,16 +145,6 @@ class DiscordListener
                                 MessageBuilder::new()->setContent($mute->creation_reason),
                                 $command->ephemeral !== null
                             );
-                        } else if ($command->required_permission !== null
-                            && !$this->bot->permissions->hasPermission(
-                                $interaction->member,
-                                $command->required_permission
-                            )) {
-                            $this->bot->utilities->acknowledgeCommandMessage(
-                                $interaction,
-                                MessageBuilder::new()->setContent($command->no_permission_message),
-                                $command->ephemeral !== null
-                            );
                         } else if ($command->command_reply !== null) {
                             $this->bot->utilities->acknowledgeCommandMessage(
                                 $interaction,

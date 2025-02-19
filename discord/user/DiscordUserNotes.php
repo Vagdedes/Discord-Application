@@ -140,8 +140,7 @@ class DiscordUserNotes
                 $proceed = false;
             }
 
-            if ($proceed
-                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.edit")) {
+            if ($proceed) {
                 $this->bot->component->createModal(
                     $interaction,
                     "Connect Account",
@@ -235,8 +234,7 @@ class DiscordUserNotes
                 $proceed = false;
             }
 
-            if ($proceed
-                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.delete")) {
+            if ($proceed) {
                 if (set_sql_query(
                     BotDatabaseTable::BOT_NOTES,
                     array(
@@ -362,8 +360,7 @@ class DiscordUserNotes
                     $proceed = true;
                 }
 
-                if ($proceed
-                    || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.get")) {
+                if ($proceed) {
                     if ($query->settings->view_public !== null
                         || $interaction->user->id == $query->user_id) {
                         return $query;
@@ -560,8 +557,7 @@ class DiscordUserNotes
                 $proceed = false;
             }
 
-            if ($proceed
-                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.change.setting")) {
+            if ($proceed) {
                 if (sql_insert(
                     BotDatabaseTable::BOT_NOTE_SETTINGS,
                     array(
@@ -634,8 +630,7 @@ class DiscordUserNotes
                 $proceed = false;
             }
 
-            if ($proceed
-                || $this->bot->permissions->hasPermission($interaction->member, "idealistic.note.modify.participant")) {
+            if ($proceed) {
                 $foundParticipant = null;
 
                 if (!empty($object->participants)) {
