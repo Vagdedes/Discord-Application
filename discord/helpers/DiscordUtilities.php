@@ -171,6 +171,7 @@ class DiscordUtilities
                         } catch (Throwable $exception) {
                             global $logger;
                             $logger->logError($exception->getMessage());
+                            $logger->logError($exception->getTraceAsString());
                             return MessageBuilder::new()->setContent($exception->getMessage());
                         }
                     };
@@ -364,7 +365,7 @@ class DiscordUtilities
                 $function();
             } catch (Throwable $exception) {
                 global $logger;
-                $logger->logError($exception);
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         };
@@ -377,7 +378,7 @@ class DiscordUtilities
                 $function($object);
             } catch (Throwable $exception) {
                 global $logger;
-                $logger->logError($exception);
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         };
@@ -390,7 +391,7 @@ class DiscordUtilities
                 $function($object1, $object2);
             } catch (Throwable $exception) {
                 global $logger;
-                $logger->logError($exception);
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         };
