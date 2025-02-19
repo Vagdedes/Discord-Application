@@ -501,6 +501,7 @@ class DiscordUserTickets
                 } catch (Throwable $exception) {
                     global $logger;
                     $logger->logError($exception->getMessage());
+                    $logger->logError($exception->getTraceAsString());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -559,6 +560,7 @@ class DiscordUserTickets
                 } catch (Throwable $exception) {
                     global $logger;
                     $logger->logError($exception->getMessage());
+                    $logger->logError($exception->getTraceAsString());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
