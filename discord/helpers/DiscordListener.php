@@ -55,6 +55,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -75,6 +76,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -95,6 +97,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return MessageBuilder::new()->setContent($exception->getMessage());
             }
@@ -119,6 +122,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return $input;
             }
@@ -159,6 +163,7 @@ class DiscordListener
                                 );
                             } catch (Throwable $exception) {
                                 global $logger;
+                                $logger->logError($exception->getTraceAsString());
                                 $logger->logError($exception->getMessage());
                             }
                         }
@@ -184,6 +189,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -204,6 +210,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -223,6 +230,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -245,6 +253,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -267,6 +276,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return $name;
             }
@@ -290,6 +300,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return MessageBuilder::new()->setContent($exception->getMessage());
             }
@@ -315,6 +326,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return MessageBuilder::new()->setContent($exception->getMessage());
             }
@@ -337,6 +349,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return MessageBuilder::new()->setContent($exception->getMessage());
             }
@@ -359,6 +372,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }
@@ -382,6 +396,7 @@ class DiscordListener
                 );
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
                 return array($localInstructions, $publicInstructions);
             }

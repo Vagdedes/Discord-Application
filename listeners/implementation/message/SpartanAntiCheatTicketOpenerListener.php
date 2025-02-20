@@ -11,10 +11,16 @@ class SpartanAntiCheatTicketOpenerListener
                                 MessageBuilder $messageBuilder,
                                 mixed          $objects): void // Name can be changed
     {
-        $bot->component->showModal(
+        if (!$bot->userTickets->call(
             $interaction,
             "0-spartan_anti_cheat_ticket"
-        );
+        )) {
+            $bot->utilities->acknowledgeMessage(
+                $interaction,
+                MessageBuilder::new()->setContent("Failed to open the ticket."),
+                true
+            );
+        }
     }
 
 }

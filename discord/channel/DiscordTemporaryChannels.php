@@ -533,6 +533,7 @@ class DiscordTemporaryChannels
                 }
             } catch (Throwable $exception) {
                 global $logger;
+                $logger->logError($exception->getTraceAsString());
                 $logger->logError($exception->getMessage());
             }
         }

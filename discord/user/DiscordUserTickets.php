@@ -64,7 +64,6 @@ class DiscordUserTickets
         $query = $this->tickets[$key] ?? null;
 
         if (!empty($query)) {
-            $query = $query[0];
             return $this->bot->component->showModal(
                 $interaction,
                 $query->modal_component_id,
@@ -310,8 +309,8 @@ class DiscordUserTickets
                             $rolePermissions[$arrayKey] = array(
                                 "id" => $role->role_id,
                                 "type" => "role",
-                                "allow" => empty($role->allow) ? $query->allow_permission : $role->allow,
-                                "deny" => empty($role->deny) ? $query->deny_permission : $role->deny
+                                "allow" => $role->allow,
+                                "deny" => $role->deny
                             );
                         }
                     }

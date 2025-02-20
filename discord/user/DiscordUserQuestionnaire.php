@@ -682,6 +682,7 @@ class DiscordUserQuestionnaire
                     }
                 } catch (Throwable $exception) {
                     global $logger;
+                    $logger->logError($exception->getTraceAsString());
                     $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
@@ -757,6 +758,7 @@ class DiscordUserQuestionnaire
                     }
                 } catch (Throwable $exception) {
                     global $logger;
+                    $logger->logError($exception->getTraceAsString());
                     $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }

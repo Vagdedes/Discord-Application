@@ -425,6 +425,7 @@ class DiscordUserTargets
                 } catch (Throwable $exception) {
                     global $logger;
                     $logger->logError($exception->getMessage());
+                    $logger->logError($exception->getTraceAsString());
                     return "(Exception) " . $exception->getMessage();
                 }
             }
@@ -492,6 +493,7 @@ class DiscordUserTargets
                     }
                 } catch (Throwable $exception) {
                     global $logger;
+                    $logger->logError($exception->getTraceAsString());
                     $logger->logError($exception->getMessage());
                     return "(Exception) " . $exception->getMessage();
                 }
