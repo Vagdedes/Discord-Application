@@ -237,9 +237,9 @@ class DiscordAIMessages
                     }
                     return true;
                 } else {
-                    $stop = $this->bot->userTickets->track($originalMessage)
-                        || $this->bot->userTargets->track($originalMessage)
-                        || $this->bot->userQuestionnaire->track($originalMessage, $object)
+                    $this->bot->userTickets->track($originalMessage);
+                    $this->bot->userTargets->track($originalMessage);
+                    $stop = $this->bot->userQuestionnaire->track($originalMessage, $object)
                         || $this->bot->countingChannels->track($originalMessage)
                         || $this->bot->objectiveChannels->trackCreation($originalMessage)
                         || $this->bot->notificationMessages->executeMessage($originalMessage);

@@ -104,36 +104,43 @@ class DiscordChannels
         return false;
     }
 
-    public function getIfHasAccess(Channel|Thread $channel, Member|User $member): ?object
+    public function getIfHasAccess(Channel|Thread|int|string $channel, Member|User $member): ?object
     {
         $result = false;
         $list = $this->getList();
 
         if (!empty($list)) {
-            $parent = $channel instanceof Thread ? $channel->parent_id : $channel->id;
+            $parent = is_object($channel)
+                ? ($channel instanceof Thread ? $channel->parent_id : $channel->id)
+                : null;
 
             foreach ($list as $channelRow) {
-                if ($channelRow->server_id == $channel->guild_id
+                if (is_object($channel)
+                    ? $channelRow->server_id == $channel->guild_id
                     && ($channelRow->category_id === null
                         || $channelRow->category_id == $channel->parent_id)
                     && ($channelRow->channel_id === null
                         || $channelRow->channel_id == $parent)
                     && ($channelRow->thread_id === null
-                        || $channelRow->thread_id == $channel->id)) {
+                        || $channelRow->thread_id == $channel->id)
+                    : $channelRow->category_id == $channel) {
                     if ($channelRow->whitelist === null) {
                         $result = $channelRow;
                         break;
                     } else if (!empty($this->whitelist)) {
                         foreach ($this->whitelist as $whitelist) {
                             if ($whitelist->user_id == $member->id
-                                && ($whitelist->server_id === null
-                                    || $whitelist->server_id == $channel->guild_id
-                                    && ($whitelist->category_id === null
-                                        || $whitelist->category_id == $channel->parent_id)
-                                    && ($whitelist->channel_id === null
-                                        || $whitelist->channel_id == $parent)
-                                    && ($whitelist->thread_id === null
-                                        || $whitelist->thread_id == $channel->id))) {
+                                && (is_object($channel)
+                                    ? ($whitelist->server_id === null
+                                        || $whitelist->server_id == $channel->guild_id
+                                        && ($whitelist->category_id === null
+                                            || $whitelist->category_id == $channel->parent_id)
+                                        && ($whitelist->channel_id === null
+                                            || $whitelist->channel_id == $parent)
+                                        && ($whitelist->thread_id === null
+                                            || $whitelist->thread_id == $channel->id))
+                                    : ($whitelist->category_id === null
+                                        || $whitelist->category_id == $channel))) {
                                 $result = $channelRow;
                                 break 2;
                             }
@@ -144,7 +151,11 @@ class DiscordChannels
                 }
             }
         }
-        return $result === false ? null : $result;
+        return $result === false
+            ? ($channel instanceof Channel && $channel->parent_id !== null
+                ? $this->getIfHasAccess($channel->parent_id, $member)
+                : null)
+            : $result;
     }
 
     public function addTemporary(Channel $channel, ?array $properties = null): bool

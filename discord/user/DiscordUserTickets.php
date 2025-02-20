@@ -387,7 +387,7 @@ class DiscordUserTickets
             $channel = $message->channel;
             $query = get_sql_query(
                 BotDatabaseTable::BOT_TICKET_CREATIONS,
-                array("id", "ticket_id", "ticket_creation_id", "expiration_date"),
+                array("id", "ticket_id", "ticket_creation_id", "expiration_date", "deletion_date"),
                 array(
                     array("created_channel_server_id", $channel->guild_id),
                     array("created_channel_id", $channel->id),
