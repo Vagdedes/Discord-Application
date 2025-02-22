@@ -629,7 +629,7 @@ class DiscordAIMessages
                                     $inputParameters = array(
                                         "n" => 1,
                                         "prompt" => $content
-                                    ); // todo add image reference if supported by model
+                                    );
                                     $found = true;
                                     break;
                                 }
@@ -793,7 +793,7 @@ class DiscordAIMessages
                             $embed = new Embed($this->bot->discord);
                             $embed->setImage($reply);
                             $embeds[] = $embed;
-                            return array($content, $builder, $embeds);
+                            return array($model->getRevisedPrompt($replyObject) ?? $content, $builder, $embeds);
                         default:
                             return array($reply, $builder, $embeds);
                     }

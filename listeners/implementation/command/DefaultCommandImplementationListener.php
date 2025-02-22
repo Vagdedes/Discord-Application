@@ -272,7 +272,7 @@ class DefaultCommandImplementationListener
 
                         if (array_shift($outcome)) {
                             $image = $outcome[0]->getImage($outcome[1]);
-                            $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                            $messageBuilder = MessageBuilder::new()->setContent($outcome[0]->getRevisedPrompt($outcome[1]) ?? $prompt);
                             $embed = new Embed($bot->discord);
                             $embed->setImage($originalPrompt->url);
                             $messageBuilder->addEmbed($embed);
@@ -370,7 +370,7 @@ class DefaultCommandImplementationListener
 
                         if (array_shift($outcome)) {
                             $image = $outcome[0]->getImage($outcome[1]);
-                            $messageBuilder = MessageBuilder::new()->setContent($prompt);
+                            $messageBuilder = MessageBuilder::new()->setContent($outcome[0]->getRevisedPrompt($outcome[1]) ?? $prompt);
                             $embed = new Embed($bot->discord);
                             $embed->setImage($image);
 
@@ -388,6 +388,72 @@ class DefaultCommandImplementationListener
                 ));
             }
         ));
+    }
+
+    public static function create_ticket(DiscordBot          $bot,
+                                         Interaction|Message $interaction,
+                                         object              $command): void
+    {
+        // channel.role.user
+        $channel = $interaction->data?->resolved?->channels?->first();
+
+        if ($channel !== null
+            && ($channel->allowText()
+                || $channel->allowInvite()
+                || $channel->allowVoice())) {
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Channel must be a category channel, not text, voice or allow invites."
+                ),
+                true
+            );
+            return;
+        }
+        $arguments = $interaction->data->options->toArray();
+        $permissionEquation = 446676978752;
+
+        $rolePermissions = new stdClass();
+        $rolePermissions->allow = $permissionEquation;
+        $rolePermissions->deny = 0;
+
+        $everyonePermissions = new stdClass();
+        $everyonePermissions->allow = 0;
+        $everyonePermissions->deny = $permissionEquation;
+
+        $channelName = $arguments["channel-name"]["value"] ?? null;
+
+        if ($channelName !== null) {
+            $bot->userTickets->create(
+                $interaction,
+                null,
+                $channel?->id,
+                $arguments["channel-name"]["value"],
+                null,
+                null,
+                null,
+                array(
+                    $interaction->data?->resolved?->roles?->first()?->id => $rolePermissions,
+                    $interaction->guild_id => $everyonePermissions
+                ),
+                null
+            );
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Attempting to create abstract ticket..."
+                ),
+                true
+            );
+        } else {
+            $bot->utilities->acknowledgeCommandMessage(
+                $interaction,
+                MessageBuilder::new()->setContent(
+                    "Channel name is required."
+                ),
+                true
+            );
+        }
     }
 
     public static function find_message_reference(DiscordBot          $bot,
