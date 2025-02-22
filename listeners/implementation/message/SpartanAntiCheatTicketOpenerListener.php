@@ -13,7 +13,7 @@ class SpartanAntiCheatTicketOpenerListener
     {
         if (!$bot->userTickets->call(
             $interaction,
-            "0-spartan_anti_cheat_ticket"
+            "0-anti_cheat_ticket"
         )) {
             $bot->utilities->acknowledgeMessage(
                 $interaction,
