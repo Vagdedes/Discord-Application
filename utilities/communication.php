@@ -55,7 +55,7 @@ function load_sql_database(string $file = SqlDatabaseCredentials::STORAGE): void
             null,
             null,
             true,
-            "5 minutes"
+            DiscordProperties::SYSTEM_REFRESH_TIME
         );
     }
 }
