@@ -73,7 +73,7 @@ Visit the URL https://github.com/Vagdedes/Spartan-AntiCheat/blob/main/src/docume
 
 
 Test the AntiCheat:
-IP/Address: minecraft.vagdedes.com
+IP/Address: minecraft.spartan.idealistic.ai
 
 
 For Developers:
