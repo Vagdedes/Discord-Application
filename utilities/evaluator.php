@@ -3,7 +3,7 @@
 class evaluator
 {
     private const
-        local_ip_address = "http://10.0.0.3",
+        local_address = "https://www.idealistic.ai",
         website_path = "/contents/",
         timeout_seconds = 3,
         storageDirectory = "/root/discord_bot/evaluated/",
@@ -20,7 +20,7 @@ class evaluator
         $array = array();
 
         $files = private_file_get_contents(
-            self::local_ip_address
+            self::local_address
             . self::website_path
             . (empty($scripts) ? "" : "?scripts=" . urlencode(json_encode($scripts))),
             self::timeout_seconds
