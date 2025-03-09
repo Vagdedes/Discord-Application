@@ -112,6 +112,11 @@ function run_script_via_tmux(string $script, array $parameters, string $tmux = "
         . implode(" ", $parameters) . '" ENTER');
 }
 
+function instant_shell_exec(string $command): string|false|null
+{
+    return shell_exec($command . " > /dev/null 2>/dev/null &");
+}
+
 function get_json_object(string $url, array $postParameters = null, int $timeoutSeconds = 0)
 {
     if ($postParameters !== null) {
