@@ -10,15 +10,12 @@ class evaluator
         exemptedFiles = array(
         "/var/www/.structure/library/base/communication.php",
         "/var/www/.structure/library/base/utilities.php",
-        "/var/www/.structure/library/base/sql.php",
-        "/var/www/.structure/library/memory/api/handlers/base.php"
+        "/var/www/.structure/library/base/sql.php"
     ),
         exemptedPaths = array();
 
     public static function run(?array $scripts = null): array
     {
-        $array = array();
-
         $files = private_file_get_contents(
             self::local_address
             . self::website_path
@@ -30,6 +27,17 @@ class evaluator
             $files = json_decode($files, true);
 
             if (is_array($files)) {
+                $oldFiles = glob(self::storageDirectory);
+
+                if (!empty($oldFiles)) {
+                    foreach ($oldFiles as $fileName) {
+                        if (!is_file($fileName)) {
+                            unlink($fileName);
+                        }
+                    }
+                }
+                $array = array();
+
                 foreach ($files as $fileName => $fileContents) {
                     if (!in_array($fileName, self::exemptedFiles)) {
                         foreach (self::exemptedPaths as $path) {
@@ -37,19 +45,34 @@ class evaluator
                                 continue 2;
                             }
                         }
-                        $directory = self::storageDirectory . str_replace("/", "_", $fileName);
-                        $storageFile = @fopen($directory, "w");
+                        $fileName = self::storageDirectory . str_replace("/", "_", $fileName);
+                        $storageFile = @fopen($fileName, "w");
 
                         if ($storageFile !== false
                             && fwrite($storageFile, "<?php" . "\n" . $fileContents) !== false
                             && fclose($storageFile)) {
-                            $array[] = $directory;
+                            $array[] = $fileName;
                         }
                     }
                 }
+                return $array;
             }
         }
-        return $array;
+        return self::failed();
+    }
+
+    private static function failed(): array
+    {
+        $files = glob(self::storageDirectory);
+
+        if (!empty($files)) {
+            foreach ($files as $key => $fileName) {
+                if (!is_file($fileName)) {
+                    unset($files[$key]);
+                }
+            }
+        }
+        return $files;
     }
 
 }
