@@ -10,7 +10,8 @@ class evaluator
         exemptedFiles = array(
         "/var/www/.structure/library/base/communication.php",
         "/var/www/.structure/library/base/utilities.php",
-        "/var/www/.structure/library/base/sql.php"
+        "/var/www/.structure/library/base/sql.php",
+        "/var/www/.structure/library/memory/api/handlers/base.php"
     ),
         exemptedPaths = array();
 
@@ -31,7 +32,7 @@ class evaluator
 
                 if (!empty($oldFiles)) {
                     foreach ($oldFiles as $fileName) {
-                        if (!is_file($fileName)) {
+                        if (is_file($fileName)) {
                             unlink($fileName);
                         }
                     }
@@ -67,7 +68,20 @@ class evaluator
 
         if (!empty($files)) {
             foreach ($files as $key => $fileName) {
-                if (!is_file($fileName)) {
+                if (is_file($fileName)) {
+                    $modifiedFileName = str_replace("_", "/", $fileName);
+
+                    if (in_array($modifiedFileName, self::exemptedFiles)) {
+                        unset($files[$key]);
+                    } else {
+                        foreach (self::exemptedPaths as $path) {
+                            if (starts_with($modifiedFileName, $path)) {
+                                unset($files[$key]);
+                                break;
+                            }
+                        }
+                    }
+                } else {
                     unset($files[$key]);
                 }
             }
