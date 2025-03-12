@@ -114,3 +114,7 @@ Download the always latest ProtocolLib plugin version from its original develope
 
 Vagdedes.com Website:
 The vagdedes.com website has been deprecated a long time ago. It used to be the place where you could register, log in, purchase and download the products you want. If the last time you used our products was when this website was not deprecated, please open a ticket so we can guide you.
+
+
+Plugin Name Change:
+On the 12th of March 2025, we switched the plugin's name from Spartan to Vacan. This change has brought changes to the plugin's menus, commands, webpages, transactions, etc.
