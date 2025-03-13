@@ -27,8 +27,8 @@ Supported Versions:
 
 
 Versions and their cost:
-“Vacan AntiCheat: Java Edition”: 19.99 EUR/USD
-“Vacan AntiCheat: Bedrock Edition”: 19.99 EUR/USD
+“Vacan AntiCheat: Java Edition”: 19.99 EUR / 21.99 USD
+“Vacan AntiCheat: Bedrock Edition”: 19.99 EUR / 21.99 USD
 
 
 Slogan:
