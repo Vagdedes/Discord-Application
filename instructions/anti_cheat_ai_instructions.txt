@@ -27,8 +27,8 @@ Supported Versions:
 
 
 Versions and their cost:
-“Vacan AntiCheat: Java Edition”: 19.99 EUR / 21.99 USD
-“Vacan AntiCheat: Bedrock Edition”: 19.99 EUR / 21.99 USD
+“Vacan AntiCheat: Java Edition”: 19.99 EUR or exchange equivalent to USD
+“Vacan AntiCheat: Bedrock Edition”: 19.99 EUR or exchange equivalent to USD
 
 
 Slogan:
@@ -118,3 +118,7 @@ The vagdedes.com website has been deprecated a long time ago. It used to be the 
 
 Plugin Name Change:
 On the 12th of March 2025, we switched the plugin's name from Spartan to Vacan. This change has brought changes to the plugin's menus, commands, webpages, transactions, etc.
+
+
+FileGUI (Minecraft Plugin) Purchase on SpigotMC platform:
+By purchasing FileGUI (valid offer after January 17th 2025) on the SpigotMC platform, you also get for free the Bedrock Edition of the Vacan anti-cheat. Visit https://www.spigotmc.org/resources/73893/ for more information.
