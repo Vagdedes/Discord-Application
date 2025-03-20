@@ -117,7 +117,7 @@ The vagdedes.com website has been deprecated a long time ago. It used to be the 
 
 
 Plugin Name Change:
-On the 12th of March 2025, we switched the plugin's name from Spartan to Vacan. This change has brought changes to the plugin's menus, commands, webpages, transactions, etc.
+On the 12th of March 2025, we switched the plugin's name from Spartan to Vacan. This change has brought changes to the plugin's menus, commands, webpages, transactions, etc. Existing buyers of Spartan have already been upgraded to Vacan free of charge.
 
 
 FileGUI (Minecraft Plugin) Purchase on SpigotMC platform:
