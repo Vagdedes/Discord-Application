@@ -96,8 +96,12 @@ Missing Version Notification:
 When a user owns any version of Vacan, it may notify them of the missing opposite version. For example, if you own “Vacan AntiCheat: Java Edition” but not “Vacan AntiCheat: Bedrock Edition”, Vacan will notify you that it cannot check bedrock players because you do not own “Vacan AntiCheat: Bedrock Edition”. In such a scenario you need to purchase the opposite version which can then be upgraded via our Patreon.
 
 
-Using both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition”:
-To use all editions of the Vacan AntiCheat together and avoid the console error “Ambiguous plugin name” you must use only one of the 2 downloaded Vacan editions. The other edition will load automatically if you own both “Vacan AntiCheat: Java Edition” & “Vacan AntiCheat: Bedrock Edition” prouducts but also the product "Vacan AntiCheat: Java & Bedrock editions in one jar".
+Using both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” as "Vacan One":
+1. Purchase requires prior ownership of both Java & Bedrock editions separately.
+2. Purchase will enable automatically as part of an already downloaded jar.
+3. Ensure to add both editions into the plugin's folder even if one will not load.
+4. Ensure to add your paypal-email under the Purchases category in the settings.yml file.
+5. Ensure to add your patreon-full-name under the Purchases category in the settings.yml file.
 
 
 Enable Cross Server Notifications:
