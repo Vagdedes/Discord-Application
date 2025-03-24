@@ -250,7 +250,7 @@ class DefaultCommandImplementationListener
                     $model = array_shift($outcome);
                     $data = array_shift($outcome);
                     $originalPrompt = $prompt;
-                    $prompt = $model->getText($data);
+                    $prompt = $model->getTextOrVoice($data);
 
                     if (!empty($prompt)) {
                         $input = array(
