@@ -653,12 +653,11 @@ class DiscordAIMessages
                     break;
                 case AIModelFamily::CHAT_GPT:
                 case AIModelFamily::CHAT_GPT_PRO:
-                case AIModelFamily::OPENAI_O1:
-                case AIModelFamily::OPENAI_O1_MINI:
                 case AIModelFamily::OPENAI_O3_MINI:
                 case AIModelFamily::OPENAI_VISION:
                 case AIModelFamily::OPENAI_VISION_PRO:
                 case AIModelFamily::OPENAI_SOUND:
+                case AIModelFamily::OPENAI_SOUND_PRO:
                     if ($source instanceof Message) {
                         if (empty($source->attachments->first())) {
                             $messages = array(
