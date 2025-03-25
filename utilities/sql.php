@@ -319,7 +319,7 @@ function sql_store_cache(string           $table,
     foreach ($columns as $key => $column) {
         $columns[$key] = array($table, $column, $hash, $time);
     }
-    $store = json_encode($query);
+    $store = @json_encode($query, JSON_UNESCAPED_UNICODE);
 
     if (strlen($store) <= 16312) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
@@ -453,7 +453,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 
     if (!$debug && ($cache->num_rows ?? 0) > 0) {
         $row = $cache->fetch_assoc();
-        $results = json_decode($row["results"], false);
+        $results = @json_decode($row["results"], false);
 
         if (is_array($results)) {
             return $results;
