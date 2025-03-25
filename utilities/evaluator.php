@@ -33,7 +33,7 @@ class evaluator
                 if (!empty($oldFiles)) {
                     foreach ($oldFiles as $fileName) {
                         if (is_file($fileName)) {
-                            unlink($fileName);
+                            @unlink($fileName);
                         }
                     }
                 }
