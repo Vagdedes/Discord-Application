@@ -62,9 +62,10 @@ class DiscordLogs
     }
 
     public function logInfo(Guild|int|string|null $guild,
-                            int|string|null       $userID, ?string $action,
-                            mixed                 $object, mixed $oldObject = null,
-                            bool                  $refresh = true): bool
+                            int|string|null       $userID,
+                            ?string               $action,
+                            mixed                 $object,
+                            mixed                 $oldObject = null): void
     {
         if ($guild !== null && !($guild instanceof Guild)) {
             foreach ($this->bot?->discord->guilds as $guildFound) {
@@ -189,10 +190,6 @@ class DiscordLogs
                 }
             }
         }
-        if ($hasGuild && $this->bot !== null) {
-            $this->bot->userLevels->trackVoiceChannels($guild);
-        }
-        return $refresh && $this->bot !== null && $this->bot->refresh();
     }
 
     private function prepareLogMessage(object          $row, string $date,

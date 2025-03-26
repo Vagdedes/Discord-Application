@@ -37,6 +37,8 @@
  */
 
 use Discord\Discord;
+use Discord\Parts\Guild\Guild;
+use Discord\Parts\User\Member;
 
 class DiscordBot
 {
@@ -72,11 +74,10 @@ class DiscordBot
     public DiscordChatFilteredMessages $chatFilteredMessages;
     public DiscordObjectiveChannels $objectiveChannels;
     public DiscordNotificationMessages $notificationMessages;
-    private int $counter;
 
     public function __construct(Discord $discord, int|string $botID)
     {
-        $this->counter = 0;
+        global $logger;
         $this->discord = $discord;
         $this->botID = $botID;
 
@@ -112,24 +113,63 @@ class DiscordBot
         $this->inviteTracker = new DiscordInviteTracker($this);
 
         $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
+
+        // Separator
+
+        foreach ($discord->guilds as $guild) {
+            if ($guild instanceof Guild) {
+                $member = $guild->members->toArray()[$botID];
+
+                if ($member instanceof Member) {
+                    if (empty($member->roles->toArray())) {
+                        //$guild->leave();
+                        $logger->logError("Bot ignored guild " . $guild->id . " because it has no roles and therefore no permissions.");
+                    } else {
+                        $valid = false;
+
+                        foreach ($member->roles as $role) {
+                            if ($role->permissions->administrator
+                                || $role->permissions->manage_channels
+                                && $role->permissions->create_instant_invite
+                                && $role->permissions->view_channel
+
+                                && $role->permissions->send_messages
+                                && $role->permissions->create_public_threads
+                                && $role->permissions->create_private_threads
+                                && $role->permissions->send_messages_in_threads
+                                && $role->permissions->manage_messages
+                                && $role->permissions->manage_threads
+                                && $role->permissions->read_message_history
+                                && $role->permissions->add_reactions
+
+                                && $role->permissions->mute_members
+                                && $role->permissions->move_members) {
+                                $valid = true;
+                                break;
+                            }
+                        }
+
+                        if (!$valid) {
+                            //$guild->leave();
+                            $logger->logError("Bot ignored guild " . $guild->id . " because it has no administrator permissions.");
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    public function refresh($force = false): bool
+    public function refresh(): bool
     {
-        if ($force || get_current_date() > $this->refreshDate) {
+        if (get_current_date() > $this->refreshDate) {
             $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
             reset_all_sql_connections();
             clear_memory();
-
-            if (++$this->counter === 10) {
-                $this->discord->close(true);
-                initiate_discord_bot();
-            } else {
-                load_sql_database();
-            }
+            load_sql_database();
             return true;
         } else {
             return false;
         }
     }
+
 }

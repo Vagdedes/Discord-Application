@@ -105,50 +105,6 @@ function initiate_discord_bot(): void
         global $createdDiscordBot, $logger;
         load_sql_database();
         $botID = $discord->id;
-
-        if (!empty($discord->guilds->first())) {
-            foreach ($discord->guilds as $guild) {
-                if ($guild instanceof Guild) {
-                    $member = $guild->members->toArray()[$botID];
-
-                    if ($member instanceof Member) {
-                        if (empty($member->roles->toArray())) {
-                            //$guild->leave();
-                            $logger->logError("Bot ignored guild " . $guild->id . " because it has no roles and therefore no permissions.");
-                        } else {
-                            $valid = false;
-
-                            foreach ($member->roles as $role) {
-                                if ($role->permissions->administrator
-                                    || $role->permissions->manage_channels
-                                    && $role->permissions->create_instant_invite
-                                    && $role->permissions->view_channel
-
-                                    && $role->permissions->send_messages
-                                    && $role->permissions->create_public_threads
-                                    && $role->permissions->create_private_threads
-                                    && $role->permissions->send_messages_in_threads
-                                    && $role->permissions->manage_messages
-                                    && $role->permissions->manage_threads
-                                    && $role->permissions->read_message_history
-                                    && $role->permissions->add_reactions
-
-                                    && $role->permissions->mute_members
-                                    && $role->permissions->move_members) {
-                                    $valid = true;
-                                    break;
-                                }
-                            }
-
-                            if (!$valid) {
-                                //$guild->leave();
-                                $logger->logError("Bot ignored guild " . $guild->id . " because it has no administrator permissions.");
-                            }
-                        }
-                    }
-                }
-            }
-        }
         $createdDiscordBot = new DiscordBot($discord, $botID);
         $logger = new DiscordLogs($createdDiscordBot);
 
@@ -182,6 +138,14 @@ function initiate_discord_bot(): void
                 });
             }
             $logger->logInfo($message->guild, $message->user_id, Event::MESSAGE_CREATE, $message);
+        });
+
+        $discord->getLoop()->addPeriodicTimer(60, function () use ($discord, $createdDiscordBot) {
+            $createdDiscordBot->refresh();
+
+            foreach ($discord->guilds as $guild) {
+                $createdDiscordBot->userLevels->trackVoiceChannels($guild);
+            }
         });
 
         $discord->on(Event::MESSAGE_DELETE, function (object $message, Discord $discord) use ($logger, $createdDiscordBot) {
@@ -322,14 +286,10 @@ function initiate_discord_bot(): void
 
         // Separator
 
-        $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($logger, $createdDiscordBot) {
-            if ($guild instanceof Guild) {
-                if (!$logger->logInfo($guild, null, Event::GUILD_CREATE, $guild)) {
-                    $createdDiscordBot->refresh(true);
-                }
-            } else {
-                $logger->logInfo(null, null, Event::GUILD_CREATE, $guild);
-            }
+        $discord->on(Event::GUILD_CREATE, function (object $guild, Discord $discord) use ($botID, &$logger, &$createdDiscordBot) {
+            $logger->logInfo(null, null, Event::GUILD_CREATE, $guild);
+            $createdDiscordBot = new DiscordBot($discord, $botID);
+            $logger = new DiscordLogs($createdDiscordBot);
         });
 
         $discord->on(Event::GUILD_UPDATE, function (Guild $guild, Discord $discord, ?Guild $oldGuild) use ($logger) {
@@ -483,7 +443,7 @@ function initiate_discord_bot(): void
         // Separator
 
         $discord->on(Event::INTERACTION_CREATE, function (Interaction $interaction, Discord $discord) use ($logger) {
-            $logger->logInfo($interaction->guild, $interaction->user->id, Event::INTERACTION_CREATE, $interaction, null, false);
+            $logger->logInfo($interaction->guild, $interaction->user->id, Event::INTERACTION_CREATE, $interaction, null);
         });
 
         // Separator
