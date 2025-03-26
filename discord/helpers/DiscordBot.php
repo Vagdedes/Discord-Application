@@ -162,7 +162,6 @@ class DiscordBot
     public function refresh(): bool
     {
         if (get_current_date() > $this->refreshDate) {
-            $this->refreshDate = get_future_date(DiscordProperties::SYSTEM_REFRESH_TIME);
             reset_all_sql_connections();
             clear_memory();
             load_sql_database();

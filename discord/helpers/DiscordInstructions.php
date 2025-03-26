@@ -34,6 +34,18 @@ class DiscordInstructions
         return $this->managers[$serverID];
     }
 
+    public function refreshManagers(): void
+    {
+        if (!empty($this->managers)) {
+            foreach ($this->managers as $manager) {
+                if (!($manager instanceof AccountInstructions)) {
+                    continue;
+                }
+                $manager->getPublic();
+            }
+        }
+    }
+
     public function replace(array   $messages,
                             ?object $object,
                             ?array  $specificPublic = null,
