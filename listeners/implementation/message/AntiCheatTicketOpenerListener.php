@@ -3,7 +3,7 @@
 use Discord\Builders\MessageBuilder;
 use Discord\Parts\Interactions\Interaction;
 
-class SpartanAntiCheatTicketOpenerListener
+class AntiCheatTicketOpenerListener
 {
 
     public static function open(DiscordBot     $bot,
