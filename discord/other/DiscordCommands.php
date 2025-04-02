@@ -144,6 +144,13 @@ class DiscordCommands
                         $commandBuilder->addOption($option);
                     }
                 }
+                $commandsToRemove = array();
+
+                if (!empty($commandsToRemove)) {
+                    foreach ($commandsToRemove as $remove) {
+                        $this->bot->discord->application->commands->delete($remove);
+                    }
+                }
                 $this->bot->discord->application->commands->save(
                     $this->bot->discord->application->commands->create(
                         $commandBuilder->toArray()

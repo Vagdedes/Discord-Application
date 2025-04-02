@@ -541,73 +541,6 @@ class CommandImplementationListener
         }
     }
 
-    public static function configuration_changes(DiscordBot          $bot,
-                                                 Interaction|Message $interaction,
-                                                 object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $message = new MessageBuilder();
-        $gameCloudUser = new GameCloudUser(
-            $arguments["platform-id"]["value"] ?? null,
-            $arguments["license-id"]["value"] ?? null
-        );
-        if ($arguments["add"]["value"] ?? false) {
-            $result = $gameCloudUser->getActions()->addAutomaticConfigurationChange(
-                $arguments["version"]["value"] ?? null,
-                $arguments["file-name"]["value"] ?? null,
-                $arguments["option-name"]["value"] ?? null,
-                $arguments["option-value"]["value"] ?? null,
-                $arguments["product-id"]["value"] ?? null,
-                $arguments["email"]["value"] ?? null
-            );
-        } else {
-            $result = $gameCloudUser->getActions()->removeAutomaticConfigurationChange(
-                $arguments["version"]["value"] ?? null,
-                $arguments["file-name"]["value"] ?? null,
-                $arguments["option-name"]["value"] ?? null,
-                $arguments["product-id"]["value"] ?? null
-            );
-        }
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $message->setContent(strval($result)),
-            true
-        );
-    }
-
-    public static function disabled_detections(DiscordBot          $bot,
-                                               Interaction|Message $interaction,
-                                               object              $command): void
-    {
-        $arguments = $interaction->data->options->toArray();
-        $message = new MessageBuilder();
-        $gameCloudUser = new GameCloudUser(
-            $arguments["platform-id"]["value"] ?? null,
-            $arguments["license-id"]["value"] ?? null
-        );
-        if ($arguments["add"]["value"]) {
-            $result = $gameCloudUser->getActions()->addDisabledDetection(
-                $arguments["plugin-version"]["value"] ?? null,
-                $arguments["server-version"]["value"] ?? null,
-                $arguments["check"]["value"] ?? null,
-                $arguments["detection"]["value"] ?? null,
-                $arguments["email"]["value"] ?? null
-            );
-        } else {
-            $result = $gameCloudUser->getActions()->removeDisabledDetection(
-                $arguments["plugin-version"]["value"] ?? null,
-                $arguments["server-version"]["value"] ?? null,
-                $arguments["check"]["value"] ?? null,
-                $arguments["detection"]["value"] ?? null,
-            );
-        }
-        $bot->utilities->acknowledgeCommandMessage(
-            $interaction,
-            $message->setContent(strval($result)),
-            true
-        );
-    }
-
     public static function manage_platform_user(DiscordBot          $bot,
                                                 Interaction|Message $interaction,
                                                 object              $command): void
@@ -783,7 +716,7 @@ class CommandImplementationListener
         $interaction->react("👍");
     }
 
-    public static function vagdedes_embed_reply(DiscordBot          $bot,
+    public static function embed_reply(DiscordBot          $bot,
                                                 Interaction|Message $interaction,
                                                 object              $command): void
     {
