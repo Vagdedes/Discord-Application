@@ -717,8 +717,8 @@ class CommandImplementationListener
     }
 
     public static function embed_reply(DiscordBot          $bot,
-                                                Interaction|Message $interaction,
-                                                object              $command): void
+                                       Interaction|Message $interaction,
+                                       object              $command): void
     {
         $arguments = $interaction->data->options->toArray();
         $embed = $arguments["embed"]["value"] ?? null;
@@ -742,6 +742,36 @@ class CommandImplementationListener
                 true
             );
         }
+    }
+
+    public static function set_cloud_product(DiscordBot          $bot,
+                                             Interaction|Message $interaction,
+                                             object              $command): void
+    {
+        $arguments = $interaction->data->options->toArray();
+        $gameCloudUser = new GameCloudUser(
+            $arguments["platform-id"]["value"] ?? null,
+            $arguments["license-id"]["value"] ?? null
+        );
+        $email = $arguments["email-address"]["value"] ?? null;
+        $data = $arguments["data-directory"]["value"] ?? null;
+        $trueFalse = $arguments["true-or-false"]["value"] ?? null;
+        $expiration = $arguments["expiration-date"]["value"] ?? null;
+        $justification = $arguments["justification"]["value"] ?? null;
+
+        $bot->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent(
+                strval($gameCloudUser->getPurchases()->addToDatabase(
+                    $email,
+                    $data,
+                    $trueFalse,
+                    $expiration,
+                    $justification
+                ))
+            ),
+            true
+        );
     }
 
 }
