@@ -819,6 +819,12 @@ function manipulate_date(string $date, int|string $time): string
     return date('Y-m-d H:i:s', strtotime($date . " " . $time));
 }
 
+function reformat_date(string $date, string $format = "Y-m-d H:i:s"): string
+{
+    $dateTime = new DateTime($date);
+    return $dateTime->format($format);
+}
+
 function get_future_date(int|string $time): string
 {
     $dateTime = new DateTime("@" . strtotime("+" . $time), new DateTimeZone("UTC"));
