@@ -27,18 +27,18 @@ Supported Versions:
 
 
 Editions and their cost (Duration: Forever):
-“Vacan AntiCheat: Java Edition”: 4.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Bedrock Edition”: 4.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Java Edition”: 4.99 EUR or exchange equivalent to any other currency (https://bit.ly/42e8kRH)
+“Vacan AntiCheat: Bedrock Edition”: 4.99 EUR or exchange equivalent to any other currency (https://bit.ly/42e8kRH)
 
 Edition additions and their cost (Duration: 6 Months):
-“Vacan AntiCheat: All Java Checks”: 29.97 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: All Bedrock Checks”: 29.97 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Java Combat Checks”: 9.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Bedrock Combat Checks”: 9.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Java Movement Checks”: 9.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Bedrock Movement Checks”: 9.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Java World Checks”: 9.99 EUR or exchange equivalent to any other currency
-“Vacan AntiCheat: Bedrock World Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: All Java Checks”: 29.97 EUR or exchange equivalent to any other currency (https://bit.ly/4cg951g)
+“Vacan AntiCheat: All Bedrock Checks”: 29.97 EUR or exchange equivalent to any other currency (https://bit.ly/3RHk5LD)
+“Vacan AntiCheat: Java Combat Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/4lxfb1M)
+“Vacan AntiCheat: Bedrock Combat Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/3RB1vow)
+“Vacan AntiCheat: Java Movement Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/421lyTl)
+“Vacan AntiCheat: Bedrock Movement Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/4ckbTdK)
+“Vacan AntiCheat: Java World Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/4clOkl4)
+“Vacan AntiCheat: Bedrock World Checks”: 9.99 EUR or exchange equivalent to any other currency (https://bit.ly/4i3ptDM)
 
 
 Slogan:
@@ -79,7 +79,7 @@ IP/Address: minecraft.vacan.idealistic.ai
 
 
 For Developers:
-Visit the URL https://github.com/CheatSolutions/Vacan-AntiCheat/tree/main/src/main/java/me/vagdedes/spartan/api to find out more about our Developer API. Our dedicated team made sure it has all the features that developers need.
+Visit the URL https://github.com/CheatSolutions/Vacan-AntiCheat/tree/main/src/main/java/ai/idealistic/vacan/api to find out more about our Developer API. Our dedicated team made sure it has all the features that developers need.
 
 
 Enable Bedrock Compatibility/Detections through Floodgate:
@@ -91,7 +91,7 @@ Vacan’s notifications often contain complex information usually in the form of
 
 
 Cheaper Purchase:
-On the BuiltByBit platform you can purchase both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” for 50% OFF via the URL https://builtbybit.com/resources/bundle/730/. For the Polymart platform you can purchase both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” for 50% OFF via the URL https://polymart.org/bundle/368.
+On the BuiltByBit platform you can purchase both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” for 30% OFF via the URL https://builtbybit.com/resources/bundle/730. For the Polymart platform you can purchase both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” for 30% OFF via the URL https://polymart.org/bundle/368.
 
 
 Disabling the NPC:
@@ -103,7 +103,7 @@ Go to your server’s folder, click plugins, click Vacan and open the settings.y
 
 
 Missing Version Notification:
-When a user owns any version of Vacan, it may notify them of the missing opposite version. For example, if you own “Vacan AntiCheat: Java Edition” but not “Vacan AntiCheat: Bedrock Edition”, Vacan will notify you that it cannot check bedrock players because you do not own “Vacan AntiCheat: Bedrock Edition”. In such a scenario you need to purchase the opposite version which can then be upgraded via our Patreon.
+When a user owns any version of Vacan, it may notify them of the missing opposite version. For example, if you own “Vacan AntiCheat: Java Edition” but not “Vacan AntiCheat: Bedrock Edition”, Vacan will notify you that it cannot check bedrock players because you do not own “Vacan AntiCheat: Bedrock Edition”. In such a scenario you need to optionally purchase the other version.
 
 
 Using both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” as one anti-cheat:
