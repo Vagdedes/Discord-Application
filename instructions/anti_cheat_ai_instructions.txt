@@ -26,13 +26,23 @@ Supported Versions:
 1.7 up to the latest Minecraft version publicly known and available.
 
 
-Versions and their cost:
-“Vacan AntiCheat: Java Edition”: 19.99 EUR or exchange equivalent to USD
-“Vacan AntiCheat: Bedrock Edition”: 19.99 EUR or exchange equivalent to USD
+Editions and their cost (Duration: Forever):
+“Vacan AntiCheat: Java Edition”: 4.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Bedrock Edition”: 4.99 EUR or exchange equivalent to any other currency
+
+Edition additions and their cost (Duration: 6 Months):
+“Vacan AntiCheat: All Java Checks”: 29.97 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: All Bedrock Checks”: 29.97 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Java Combat Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Bedrock Combat Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Java Movement Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Bedrock Movement Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Java World Checks”: 9.99 EUR or exchange equivalent to any other currency
+“Vacan AntiCheat: Bedrock World Checks”: 9.99 EUR or exchange equivalent to any other currency
 
 
 Slogan:
-In the mission to create & maintain the best Minecraft anti-cheat, powered by Machine Learning.
+The intuitive solution when it comes to anti-cheat protection
 
 
 What is Vacan?
@@ -97,12 +107,11 @@ When a user owns any version of Vacan, it may notify them of the missing opposit
 
 
 Using both “Vacan AntiCheat: Java Edition” and “Vacan AntiCheat: Bedrock Edition” as one anti-cheat:
-1. Purchase requires prior ownership of both Java & Bedrock editions separately.
-2. Purchase will enable automatically as part of an already downloaded jar.
-3. Ensure to add both editions into the plugin's folder even if one will not load.
-4. Ensure to add your paypal-email under the Purchases category in the settings.yml file.
-5. Ensure to add your patreon-full-name under the Purchases category in the settings.yml file.
-6. Ensure to add your builtbybit-user-url under the Purchases category in the settings.yml file.
+1. Requires prior ownership of both Java & Bedrock editions separately.
+2. Ensure to add both editions into the plugin's folder even if one will not load.
+3. Ensure to add your paypal-email under the Purchases category in the settings.yml file.
+4. Ensure to add your patreon-full-name under the Purchases category in the settings.yml file.
+5. Ensure to add your builtbybit-user-url under the Purchases category in the settings.yml file.
 
 
 Enable Cross Server Notifications:
@@ -126,4 +135,4 @@ On the 12th of March 2025, we switched the plugin's name from Spartan to Vacan. 
 
 
 FileGUI (Minecraft Plugin) Purchase on SpigotMC platform:
-By purchasing FileGUI (valid offer after January 17th 2025) on the SpigotMC platform, you also get for free the Bedrock Edition of the Vacan anti-cheat. Visit https://www.spigotmc.org/resources/73893/ for more information.
+By purchasing FileGUI (valid offer after March 17th 2025) on the SpigotMC platform, you also get for free the Bedrock Edition of the Vacan anti-cheat. Visit https://www.spigotmc.org/resources/73893 for more information.
