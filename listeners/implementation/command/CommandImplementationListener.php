@@ -774,4 +774,104 @@ class CommandImplementationListener
         );
     }
 
+    public static function transfer_from_spigotmc(DiscordBot          $bot,
+                                                  Interaction|Message $interaction,
+                                                  object              $command): void
+    {
+        $bot->utilities->acknowledgeCommandMessage(
+            $interaction,
+            MessageBuilder::new()->setContent("Please wait..."),
+            true
+        )->done(function () use ($interaction, $bot) {
+            try {
+                $arguments = $interaction->data->options->toArray();
+                $email = $arguments["paypal-email-address"]["value"] ?? null;
+
+                if ($email !== null) {
+                    $emails = explode(",", $email);
+                    $transactions = array();
+                    $threshold = 19.99;
+                    $amount = 0;
+                    $amountPerYear = 0;
+                    $emailsAnalyzed = array();
+
+                    foreach ($emails as $email) {
+                        $email = trim(strtolower($email));
+
+                        if (!is_email($email)) {
+                            $interaction->updateOriginalResponse(
+                                MessageBuilder::new()->setContent("Invalid email address/es provided.")
+                            );
+                            return;
+                        }
+                        if (in_array($email, $emailsAnalyzed)) {
+                            continue;
+                        } else {
+                            $emailsAnalyzed[] = $email;
+                        }
+                        $find = find_paypal_transactions_by_data_pair(
+                            array(
+                                "EMAIL" => $email,
+                            )
+                        );
+
+                        if (!empty($find)) {
+                            foreach ($find as $transaction) {
+                                $transactions[] = $transaction;
+                            }
+                        }
+                    }
+
+                    if (!empty($transactions)) {
+                        $oldestDate = null;
+
+                        foreach ($transactions as $transaction) {
+                            if (isset($transaction->TIMESTAMP)
+                                && isset($transaction->AMT)) {
+                                $date = reformat_date($transaction->TIMESTAMP);
+
+                                if ($oldestDate === null || $date < $oldestDate) {
+                                    $oldestDate = $date;
+                                }
+                                $amount += $transaction->AMT;
+                            }
+                        }
+
+                        if ($oldestDate !== null) {
+                            $currentDate = get_current_date();
+                            $secondsInAYear = 31_536_000;
+                            $timePassed = strtotime($currentDate) - strtotime($oldestDate);
+                            $yearsPassed = ceil($timePassed / $secondsInAYear);
+                            $amountPerYear = $amount / $yearsPassed;
+
+                            if ($amountPerYear >= $threshold) {
+                                $interaction->updateOriginalResponse(
+                                    MessageBuilder::new()->setContent(
+                                        "You are valid for a transfer from the SpigotMC platform. "
+                                        . "Please create a ticket and provide us with your paypal email address/es."
+                                    )
+                                );
+                                return;
+                            }
+                        }
+                    }
+
+                    $interaction->updateOriginalResponse(
+                        MessageBuilder::new()->setContent(
+                            "You must pay " . cut_decimal($threshold - $amountPerYear, 2) . " EUR to be eligible for a transfer."
+                        )
+                    );
+                } else {
+                    $interaction->updateOriginalResponse(
+                        MessageBuilder::new()->setContent("No single email address provided.")
+                    );
+                }
+            } catch (Throwable $e) {
+                $interaction->updateOriginalResponse(
+                    MessageBuilder::new()->setContent($e->getMessage()),
+                );
+            }
+        });
+    }
+
 }
