@@ -791,6 +791,7 @@ class CommandImplementationListener
                     $emails = explode(",", $email);
                     $transactions = array();
                     $threshold = 19.99;
+                    $offerThreshold = ($threshold * 2.0) * 0.7;
                     $amount = 0;
                     $amountPerYear = 0;
                     $emailsAnalyzed = array();
@@ -841,24 +842,44 @@ class CommandImplementationListener
                             $currentDate = get_current_date();
                             $secondsInAYear = 31_536_000;
                             $timePassed = strtotime($currentDate) - strtotime($oldestDate);
-                            $yearsPassed = ceil($timePassed / $secondsInAYear);
+                            $yearsPassed = $timePassed / $secondsInAYear;
                             $amountPerYear = $amount / $yearsPassed;
 
                             if ($amountPerYear >= $threshold) {
-                                $interaction->updateOriginalResponse(
-                                    MessageBuilder::new()->setContent(
-                                        "You are valid for a transfer from the SpigotMC platform. "
-                                        . "Please create a ticket and provide us with your paypal email address/es."
-                                    )
-                                );
+                                if ($amountPerYear >= $offerThreshold) {
+                                    $interaction->updateOriginalResponse(
+                                        MessageBuilder::new()->setContent(
+                                            "You are valid for a transfer of Java and Bedrock editions from the SpigotMC platform. "
+                                            . "Please create a ticket and provide us with your (1) paypal email address/es"
+                                            . " and (2) [BuiltByBit](https://builtbybit.com) username."
+                                        )
+                                    );
+                                } else {
+                                    $interaction->updateOriginalResponse(
+                                        MessageBuilder::new()->setContent(
+                                            "You are valid for a transfer of the Java **or** the Bedrock edition from the SpigotMC platform. "
+                                            . "Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2)
+                                            . " EUR for a transfer of both the Java and Bedrock editions. "
+                                            . "Please create a ticket and provide us with your (1) paypal email address/es"
+                                            . " and (2) [BuiltByBit](https://builtbybit.com) username."
+                                        )
+                                    );
+                                }
                                 return;
                             }
                         }
                     }
 
+                    $owed = cut_decimal($threshold - $amountPerYear, 2);
                     $interaction->updateOriginalResponse(
                         MessageBuilder::new()->setContent(
-                            "You must pay " . cut_decimal($threshold - $amountPerYear, 2) . " EUR to be eligible for a transfer."
+                            "You must pay "
+                            . $owed
+                            . " EUR to become eligible for a transfer from the SpigotMC platform for the Java **or** the Bedrock edition."
+                            . " Optionally, you can pay " . cut_decimal($offerThreshold - $owed, 2) . " EUR for a transfer of both the Java and Bedrock editions."
+                            . ($amountPerYear > 0.0
+                                ? " Fortunately, you have already covered " . cut_decimal($amountPerYear, 2) . " EUR of the amount over the years."
+                                : " No transactions were found, meaning (1) you have not covered any amount or (2) no valid email address was provided or (3) your transactions are too old and would not suffice anyway.")
                         )
                     );
                 } else {
