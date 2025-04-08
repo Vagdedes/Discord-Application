@@ -791,14 +791,15 @@ class CommandImplementationListener
                     $emails = explode(",", $email);
                     $transactions = array();
                     $threshold = 19.99;
-                    $offerThreshold = ($threshold * 2.0) * 0.7;
+                    $doubleThreshold = $threshold * 2.0;
+                    $offerThreshold = $doubleThreshold * 0.7;
+                    $thresholdWin = ceil($doubleThreshold - $offerThreshold);
                     $amount = 0;
                     $amountPerYear = 0;
                     $emailsAnalyzed = array();
                     $builder = MessageBuilder::new();
                     $embed = new Embed($bot->discord);
                     $embeds = 0;
-                    $lessThanAYear = false;
 
                     foreach ($emails as $email) {
                         $email = trim(strtolower($email));
@@ -885,7 +886,7 @@ class CommandImplementationListener
                                             "You can transfer the Java **or** the Bedrock edition from the SpigotMC platform. "
                                             . "You have paid us about ``" . cut_decimal($amountPerYear, 2) . " EUR`` per year. "
                                             . "Optionally, you can pay ``" . cut_decimal($offerThreshold - $amountPerYear, 2)
-                                            . " EUR`` to transfer both the Java and Bedrock editions. "
+                                            . " EUR`` to transfer both the Java and Bedrock editions (effectively saving ``" . $thresholdWin . " EUR``). "
                                             . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
@@ -902,7 +903,8 @@ class CommandImplementationListener
                             "You must pay ``"
                             . $owed
                             . " EUR`` to transfer from the SpigotMC platform the Java **or** the Bedrock edition."
-                            . " Optionally, you can pay ``" . ceil($offerThreshold - $amountPerYear) . " EUR`` to transfer both the Java and Bedrock editions."
+                            . " Optionally, you can pay ``" . ceil($offerThreshold - $amountPerYear) . " EUR`` to transfer both the Java and Bedrock editions"
+                            . " (effectively saving ``" . $thresholdWin . " EUR``). "
                             . ($amountPerYear > 0.0
                                 ? " Fortunately, you have already paid ``" . floor($amountPerYear) . " EUR`` of this amount over the years. "
                                 . "Create a ticket and provide us with your (1) paypal email address/es"
