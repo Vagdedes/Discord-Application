@@ -850,7 +850,7 @@ class CommandImplementationListener
                                     $interaction->updateOriginalResponse(
                                         MessageBuilder::new()->setContent(
                                             "You are valid for a transfer of Java and Bedrock editions from the SpigotMC platform. "
-                                            . "Please create a ticket and provide us with your (1) paypal email address/es"
+                                            . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
                                     );
@@ -860,7 +860,7 @@ class CommandImplementationListener
                                             "You are valid for a transfer of the Java **or** the Bedrock edition from the SpigotMC platform. "
                                             . "Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2)
                                             . " EUR for a transfer of both the Java and Bedrock editions. "
-                                            . "Please create a ticket and provide us with your (1) paypal email address/es"
+                                            . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
                                     );
@@ -878,7 +878,9 @@ class CommandImplementationListener
                             . " EUR to become eligible for a transfer from the SpigotMC platform for the Java **or** the Bedrock edition."
                             . " Optionally, you can pay " . cut_decimal($offerThreshold - $owed, 2) . " EUR for a transfer of both the Java and Bedrock editions."
                             . ($amountPerYear > 0.0
-                                ? " Fortunately, you have already covered " . cut_decimal($amountPerYear, 2) . " EUR of the amount over the years."
+                                ? " Fortunately, you have already covered " . cut_decimal($amountPerYear, 2) . " EUR of the amount over the years. "
+                                . "Create a ticket and provide us with your (1) paypal email address/es"
+                                . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                 : " No transactions were found, meaning (1) you have not covered any amount or (2) no valid email address was provided or (3) your transactions are too old and would not suffice anyway.")
                         )
                     );
