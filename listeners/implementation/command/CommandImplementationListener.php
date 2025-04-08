@@ -795,6 +795,9 @@ class CommandImplementationListener
                     $amount = 0;
                     $amountPerYear = 0;
                     $emailsAnalyzed = array();
+                    $builder = MessageBuilder::new();
+                    $embed = new Embed($bot->discord);
+                    $embeds = 0;
 
                     foreach ($emails as $email) {
                         $email = trim(strtolower($email));
@@ -828,36 +831,50 @@ class CommandImplementationListener
 
                         foreach ($transactions as $transaction) {
                             if (isset($transaction->TIMESTAMP)
-                                && isset($transaction->AMT)) {
+                                && isset($transaction->AMT)
+                                && isset($transaction->L_NAME0)) {
                                 $date = reformat_date($transaction->TIMESTAMP);
 
                                 if ($oldestDate === null || $date < $oldestDate) {
                                     $oldestDate = $date;
                                 }
                                 $amount += $transaction->AMT;
+
+                                if ($embeds < DiscordInheritedLimits::MAX_FIELDS_PER_EMBED) {
+                                    $embed->addFieldValues(
+                                        $transaction->L_NAME0,
+                                        cut_decimal($transaction->AMT, 2)
+                                    );
+                                    $embeds++;
+                                }
                             }
+                        }
+                        if (!empty($embed->fields->first())) {
+                            $builder->addEmbed($embed);
                         }
 
                         if ($oldestDate !== null) {
                             $currentDate = get_current_date();
                             $secondsInAYear = 31_536_000;
                             $timePassed = strtotime($currentDate) - strtotime($oldestDate);
-                            $yearsPassed = $timePassed / $secondsInAYear;
+                            $yearsPassed = max($timePassed / $secondsInAYear, 1.0);
                             $amountPerYear = $amount / $yearsPassed;
 
                             if ($amountPerYear >= $threshold) {
                                 if ($amountPerYear >= $offerThreshold) {
                                     $interaction->updateOriginalResponse(
-                                        MessageBuilder::new()->setContent(
-                                            "You are valid for a transfer of Java and Bedrock editions from the SpigotMC platform. "
+                                        $builder->setContent(
+                                            "You are valid for a transfer of the Java and Bedrock editions from the SpigotMC platform. "
+                                            . "You have paid us an average of " . cut_decimal($amountPerYear, 2) . " EUR per year. "
                                             . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
                                     );
                                 } else {
                                     $interaction->updateOriginalResponse(
-                                        MessageBuilder::new()->setContent(
+                                        $builder->setContent(
                                             "You are valid for a transfer of the Java **or** the Bedrock edition from the SpigotMC platform. "
+                                            . "You have paid us an average of " . cut_decimal($amountPerYear, 2) . " EUR per year. "
                                             . "Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2)
                                             . " EUR for a transfer of both the Java and Bedrock editions. "
                                             . "Create a ticket and provide us with your (1) paypal email address/es"
@@ -872,11 +889,11 @@ class CommandImplementationListener
 
                     $owed = cut_decimal($threshold - $amountPerYear, 2);
                     $interaction->updateOriginalResponse(
-                        MessageBuilder::new()->setContent(
+                        $builder->setContent(
                             "You must pay "
                             . $owed
                             . " EUR to become eligible for a transfer from the SpigotMC platform for the Java **or** the Bedrock edition."
-                            . " Optionally, you can pay " . cut_decimal($offerThreshold - $owed, 2) . " EUR for a transfer of both the Java and Bedrock editions."
+                            . " Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2) . " EUR for a transfer of both the Java and Bedrock editions."
                             . ($amountPerYear > 0.0
                                 ? " Fortunately, you have already covered " . cut_decimal($amountPerYear, 2) . " EUR of the amount over the years. "
                                 . "Create a ticket and provide us with your (1) paypal email address/es"
