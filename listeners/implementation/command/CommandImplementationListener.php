@@ -798,6 +798,7 @@ class CommandImplementationListener
                     $builder = MessageBuilder::new();
                     $embed = new Embed($bot->discord);
                     $embeds = 0;
+                    $lessThanAYear = false;
 
                     foreach ($emails as $email) {
                         $email = trim(strtolower($email));
@@ -866,9 +867,10 @@ class CommandImplementationListener
                             $secondsInAYear = 31_536_000;
                             $timePassed = strtotime($currentDate) - strtotime($oldestDate);
                             $yearsPassed = $timePassed / $secondsInAYear;
-                            $amountPerYear = $yearsPassed < 1.0
-                                ? $amount * $yearsPassed
-                                : $amount / $yearsPassed;
+                            $lessThanAYear = $yearsPassed < 1.0;
+                            $amountPerYear = $lessThanAYear
+                                ? ceil($amount * $yearsPassed)
+                                : floor($amount / $yearsPassed);
 
                             if ($amountPerYear >= $threshold) {
                                 if ($amountPerYear >= $offerThreshold) {
@@ -897,15 +899,20 @@ class CommandImplementationListener
                         }
                     }
 
-                    $owed = cut_decimal($threshold - $amountPerYear, 2);
+                    $owed = cut_decimal(
+                        $lessThanAYear
+                            ? $amountPerYear
+                            : $threshold - $amountPerYear,
+                        2
+                    );
                     $interaction->updateOriginalResponse(
                         $builder->setContent(
                             "You must pay ``"
                             . $owed
                             . " EUR`` to transfer from the SpigotMC platform the Java **or** the Bedrock edition."
-                            . " Optionally, you can pay ``" . cut_decimal($offerThreshold - $amountPerYear, 2) . " EUR`` for a transfer of both the Java and Bedrock editions."
+                            . " Optionally, you can pay ``" . cut_decimal($lessThanAYear ? $offerThreshold - $threshold + $amountPerYear : $offerThreshold - $amountPerYear, 2) . " EUR`` for a transfer of both the Java and Bedrock editions."
                             . ($amountPerYear > 0.0
-                                ? " Fortunately, you have already covered ``" . cut_decimal($amountPerYear, 2) . " EUR`` of the amount over the years. "
+                                ? " Fortunately, you have already covered ``" . cut_decimal($lessThanAYear ? $threshold - $amountPerYear : $amountPerYear, 2) . " EUR`` of the amount over the years. "
                                 . "Create a ticket and provide us with your (1) paypal email address/es"
                                 . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                 : " No transactions were found, meaning (1) you have not covered any amount or (2) no valid email address was provided or (3) your transactions are too old and would not suffice anyway.")
