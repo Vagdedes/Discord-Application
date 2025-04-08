@@ -865,15 +865,17 @@ class CommandImplementationListener
                             $currentDate = get_current_date();
                             $secondsInAYear = 31_536_000;
                             $timePassed = strtotime($currentDate) - strtotime($oldestDate);
-                            $yearsPassed = max($timePassed / $secondsInAYear, 1.0);
-                            $amountPerYear = $amount / $yearsPassed;
+                            $yearsPassed = $timePassed / $secondsInAYear;
+                            $amountPerYear = $yearsPassed < 1.0
+                                ? $amount * $yearsPassed
+                                : $amount / $yearsPassed;
 
                             if ($amountPerYear >= $threshold) {
                                 if ($amountPerYear >= $offerThreshold) {
                                     $interaction->updateOriginalResponse(
                                         $builder->setContent(
-                                            "You are valid for a transfer of the Java and Bedrock editions from the SpigotMC platform. "
-                                            . "You have paid us an average of " . cut_decimal($amountPerYear, 2) . " EUR per year. "
+                                            "You can transfer the Java and Bedrock editions from the SpigotMC platform. "
+                                            . "You have paid us an average of ``" . cut_decimal($amountPerYear, 2) . " EUR`` per year. "
                                             . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
@@ -881,10 +883,10 @@ class CommandImplementationListener
                                 } else {
                                     $interaction->updateOriginalResponse(
                                         $builder->setContent(
-                                            "You are valid for a transfer of the Java **or** the Bedrock edition from the SpigotMC platform. "
-                                            . "You have paid us an average of " . cut_decimal($amountPerYear, 2) . " EUR per year. "
-                                            . "Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2)
-                                            . " EUR for a transfer of both the Java and Bedrock editions. "
+                                            "You can transfer the Java **or** the Bedrock edition from the SpigotMC platform. "
+                                            . "You have paid us an average of ``" . cut_decimal($amountPerYear, 2) . " EUR`` per year. "
+                                            . "Optionally, you can pay ``" . cut_decimal($offerThreshold - $amountPerYear, 2)
+                                            . " EUR`` for the transfer of both Java and Bedrock editions. "
                                             . "Create a ticket and provide us with your (1) paypal email address/es"
                                             . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                         )
@@ -898,12 +900,12 @@ class CommandImplementationListener
                     $owed = cut_decimal($threshold - $amountPerYear, 2);
                     $interaction->updateOriginalResponse(
                         $builder->setContent(
-                            "You must pay "
+                            "You must pay ``"
                             . $owed
-                            . " EUR to become eligible for a transfer from the SpigotMC platform for the Java **or** the Bedrock edition."
-                            . " Optionally, you can pay " . cut_decimal($offerThreshold - $amountPerYear, 2) . " EUR for a transfer of both the Java and Bedrock editions."
+                            . " EUR`` to transfer from the SpigotMC platform the Java **or** the Bedrock edition."
+                            . " Optionally, you can pay ``" . cut_decimal($offerThreshold - $amountPerYear, 2) . " EUR`` for a transfer of both the Java and Bedrock editions."
                             . ($amountPerYear > 0.0
-                                ? " Fortunately, you have already covered " . cut_decimal($amountPerYear, 2) . " EUR of the amount over the years. "
+                                ? " Fortunately, you have already covered ``" . cut_decimal($amountPerYear, 2) . " EUR`` of the amount over the years. "
                                 . "Create a ticket and provide us with your (1) paypal email address/es"
                                 . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                 : " No transactions were found, meaning (1) you have not covered any amount or (2) no valid email address was provided or (3) your transactions are too old and would not suffice anyway.")
