@@ -828,8 +828,15 @@ class CommandImplementationListener
 
                     if (!empty($transactions)) {
                         $oldestDate = null;
+                        $failedTransactions = get_failed_paypal_transactions(10_000);
 
                         foreach ($transactions as $transaction) {
+                            if (!isset($transaction->TRANSACTIONID)) {
+                                continue;
+                            }
+                            if (in_array($transaction->TRANSACTIONID, $failedTransactions)) {
+                                continue;
+                            }
                             if (isset($transaction->TIMESTAMP)
                                 && isset($transaction->AMT)
                                 && isset($transaction->L_NAME0)) {
@@ -844,6 +851,7 @@ class CommandImplementationListener
                                     $embed->addFieldValues(
                                         $transaction->L_NAME0,
                                         cut_decimal($transaction->AMT, 2)
+                                        . " | " . reformat_date($transaction->TIMESTAMP)
                                     );
                                     $embeds++;
                                 }
