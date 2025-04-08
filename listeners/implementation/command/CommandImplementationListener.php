@@ -900,7 +900,8 @@ class CommandImplementationListener
                     $owed = ceil($threshold - $amountPerYear);
                     $interaction->updateOriginalResponse(
                         $builder->setContent(
-                            "You can pay ``"
+                            "Hi " . $interaction->user->username . "! Try to not be pessimistic about the following information, our support can find a specific solution for you. "
+                            . " You can pay ``"
                             . $owed
                             . " EUR`` to transfer from the SpigotMC platform the Java **or** the Bedrock edition."
                             . " Optionally, you can pay ``" . ceil($offerThreshold - $amountPerYear) . " EUR`` to transfer both the Java and Bedrock editions"
