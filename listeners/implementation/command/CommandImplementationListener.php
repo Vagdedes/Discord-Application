@@ -867,7 +867,7 @@ class CommandImplementationListener
                             $secondsInAYear = 31_536_000;
                             $timePassed = strtotime($currentDate) - strtotime($oldestDate);
                             $yearsPassed = ($timePassed / $secondsInAYear) + 1.0;
-                            $amountPerYear = floor($amount / $yearsPassed);
+                            $amountPerYear = $amount / $yearsPassed;
 
                             if ($amountPerYear >= $threshold) {
                                 if ($amountPerYear >= $offerThreshold) {
@@ -904,7 +904,7 @@ class CommandImplementationListener
                             . " EUR`` to transfer from the SpigotMC platform the Java **or** the Bedrock edition."
                             . " Optionally, you can pay ``" . ceil($offerThreshold - $amountPerYear) . " EUR`` to transfer both the Java and Bedrock editions."
                             . ($amountPerYear > 0.0
-                                ? " Fortunately, you have already paid ``" . $amountPerYear . " EUR`` of this amount over the years. "
+                                ? " Fortunately, you have already paid ``" . floor($amountPerYear) . " EUR`` of this amount over the years. "
                                 . "Create a ticket and provide us with your (1) paypal email address/es"
                                 . " and (2) [BuiltByBit](https://builtbybit.com) username."
                                 : " No transactions were found, meaning (1) you have not paid any amount or (2) no valid email address was provided or (3) your transactions are too old and would not suffice anyway.")
