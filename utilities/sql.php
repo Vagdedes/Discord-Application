@@ -81,7 +81,7 @@ function create_sql_connection(): ?object
                 global $is_sql_usable;
                 $is_sql_usable = false;
                 $sql_connections[$hash] = mysqli_init();
-                $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
+                $sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 1);
 
                 if ($sql_credentials[9]) {
                     $sql_connections[$hash]->real_connect($sql_credentials[0], $sql_credentials[1], $sql_credentials[2],
