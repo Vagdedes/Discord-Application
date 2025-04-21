@@ -37,6 +37,18 @@ function has_sql_credentials(): bool
     return !empty($sql_credentials);
 }
 
+function has_sql_connections(): bool
+{
+    global $sql_connections;
+    return !empty($sql_connections);
+}
+
+function is_sql_usable(): bool
+{
+    global $is_sql_usable;
+    return $is_sql_usable;
+}
+
 function get_sql_connection(): ?object
 {
     global $sql_credentials;
