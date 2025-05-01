@@ -554,13 +554,15 @@ class CommandImplementationListener
         $duration = $arguments["duration"]["value"] ?? null;
         $product = $arguments["product-id"]["value"] ?? null;
         $type = $arguments["type"]["value"] ?? null;
+        $ipAddress = $arguments["ip-address"]["value"] ?? null;
 
         if ($arguments["add"]["value"] ?? false) {
             $message = strval($gameCloudUser->getVerification()->addLicenseManagement(
                 $product,
                 $type,
                 !empty($reason) ? $reason : null,
-                !empty($duration) ? get_future_date($duration) : null
+                !empty($duration) ? get_future_date($duration) : null,
+                $ipAddress
             ));
         } else {
             $message = strval($gameCloudUser->getVerification()->removeLicenseManagement(
