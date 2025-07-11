@@ -537,6 +537,17 @@ function is_base64_image(?string $string): bool
 
 // Strings
 
+function str_contains_ignore_diacritics(string $haystack, string $needle): bool {
+    $normalizedHaystack = remove_diacritics($haystack);
+    $normalizedNeedle = remove_diacritics($needle);
+    return mb_stripos($normalizedHaystack, $normalizedNeedle) !== false;
+}
+
+function remove_diacritics(string $text): string {
+    $normalized = Normalizer::normalize($text, Normalizer::FORM_D);
+    return preg_replace('/\p{Mn}/u', '', $normalized);
+}
+
 function get_urls_from_string(string $string): array
 {
     preg_match_all('#\bhttps?://[^,\s()<>]+(?:\([\w\d]+\)|([^,[:punct:]\s]|/))#', $string, $match);
