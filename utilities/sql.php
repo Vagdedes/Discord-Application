@@ -197,7 +197,12 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
                 }
             }
         } else {
-            $equals = sizeof($single) === 2;
+            $size = sizeof($single);
+
+            if ($size < 2 || $size > 4) {
+                log_sql_error(null, "Invalid WHERE clause: " . json_encode($single));
+            }
+            $equals = $size === 2;
             $value = $single[$equals ? 1 : 2];
             $nullValue = $value === null;
             $booleanValue = is_bool($value);
@@ -411,7 +416,7 @@ function sql_debug(): void
 function get_sql_query(string $table, ?array $select = null, ?array $where = null, string|array|null $order = null, int $limit = 0): array
 {
     global $debug;
-    $hasWhere = $where !== null;
+    $hasWhere = !empty($where);
 
     if ($select === null) {
         $columns = get_sql_database_columns($table);
@@ -525,25 +530,43 @@ function sql_query(string $command, bool $localDebug = true): mixed
         }
         if (!$query) {
             $query = $command;
-            $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
-                . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
-                . "', '" . $query . "', '" . properly_sql_encode($sqlConnection->error) . "');";
-
-            if ($show_sql_errors) {
-                $sqlConnection->query($command);
-            } else {
-                error_reporting(0);
-
-                try {
-                    $sqlConnection->query($command);
-                } catch (Exception $e) {
-                }
-                error_reporting(E_ALL);
-            }
+            log_sql_error($query, $sqlConnection->error, $sqlConnection);
         }
         return $query;
     }
     return null;
+}
+
+function log_sql_error(?string $query, mixed $error, mixed $sqlConnection = null): void
+{
+    if (is_object($error)
+        || is_array($error)) {
+        $error = json_encode($error);
+
+        if ($error === false) {
+            return;
+        }
+    }
+    global $sql_credentials;
+    $show_sql_errors = $sql_credentials[9];
+    $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
+        . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
+        . "', '" . $query . "', '" . $error . "');";
+
+    if ($sqlConnection === null) {
+        $sqlConnection = get_sql_connection();
+    }
+    if ($show_sql_errors) {
+        $sqlConnection->query($command);
+    } else {
+        error_reporting(0);
+
+        try {
+            $sqlConnection->query($command);
+        } catch (Exception $e) {
+        }
+        error_reporting(E_ALL);
+    }
 }
 
 // Insert
@@ -615,7 +638,7 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
             $query .= ", ";
         }
     }
-    if ($where !== null) {
+    if (!empty($where)) {
         $query .= " WHERE " . sql_build_where($where);
     }
     if ($order !== null) {
