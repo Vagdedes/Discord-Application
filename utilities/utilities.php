@@ -145,10 +145,23 @@ function create_and_close_connection(string $url): bool|string
     return timed_file_get_contents($url, 1);
 }
 
-function timed_file_get_contents(string $url, int $timeoutSeconds = 0): bool|string
+function timed_file_get_contents(
+    string $url,
+    int    $timeoutSeconds = 0,
+    ?array $contextOptions = null
+): bool|string
 {
     if ($timeoutSeconds > 0) {
-        return @file_get_contents($url, 0, stream_context_create(["http" => ["timeout" => $timeoutSeconds]]));
+        if ($contextOptions !== null) {
+            $contextOptions['http']['timeout'] = $timeoutSeconds;
+        } else {
+            $contextOptions = ['http' => ['timeout' => $timeoutSeconds]];
+        }
+        return @file_get_contents(
+            $url,
+            0,
+            stream_context_create($contextOptions)
+        );
     } else {
         return @file_get_contents($url);
     }
