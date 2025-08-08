@@ -116,7 +116,17 @@ function instant_shell_exec(string $command, bool $debug = true): string|false|n
 {
     if ($debug) {
         $logFile = '/tmp/instant_shell_exec_debug.log';
-        return shell_exec($command . " >> " . $logFile . " 2>&1 &");
+        $pid = shell_exec($command . " >> " . $logFile . " 2>&1 & echo $!");
+
+        if ($pid) {
+            $alive = trim(shell_exec("ps -p $pid -o pid=")) ? "RUNNING" : "FAILED";
+            file_put_contents(
+                $logFile,
+                "[" . get_current_date() . "] PID: $pid, Status: $alive, Command: $command\n",
+                FILE_APPEND
+            );
+        }
+        return $pid;
     } else {
         return shell_exec($command . " > /dev/null 2>/dev/null &");
     }
