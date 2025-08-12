@@ -397,11 +397,11 @@ class DiscordAIMessages
                                                 ));
                                             } else {
                                                 if ($channel->require_starting_text !== null
-                                                    && !starts_with($messageContent, $channel->require_starting_text)
+                                                    && !str_starts_with($messageContent, $channel->require_starting_text)
                                                     || $channel->require_contained_text !== null
                                                     && !str_contains($messageContent, $channel->require_contained_text)
                                                     || $channel->require_ending_text !== null
-                                                    && !ends_with($messageContent, $channel->require_ending_text)
+                                                    && !str_ends_with($messageContent, $channel->require_ending_text)
                                                     || $channel->min_message_length !== null
                                                     && strlen($messageContent) < $channel->min_message_length
                                                     || $channel->max_message_length !== null

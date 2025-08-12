@@ -194,7 +194,7 @@ class DiscordCommands
                 foreach ($this->dynamicCommands as $command) {
                     if (($command->server_id === null || $command->server_id == $message->guild_id)
                         && ($command->channel_id === null || $command->channel_id == $message->channel_id)
-                        && starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
+                        && str_starts_with($message->content, $command->command_placeholder . $command->command_identification)) {
                         $mute = $this->bot->mute->isMuted($user, $message->channel, DiscordMute::COMMAND);
 
                         if ($mute !== null) {

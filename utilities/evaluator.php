@@ -42,7 +42,7 @@ class evaluator
                 foreach ($files as $fileName => $fileContents) {
                     if (!in_array($fileName, self::exemptedFiles)) {
                         foreach (self::exemptedPaths as $path) {
-                            if (starts_with($fileName, $path)) {
+                            if (str_starts_with($fileName, $path)) {
                                 continue 2;
                             }
                         }
@@ -75,7 +75,7 @@ class evaluator
                         unset($files[$key]);
                     } else {
                         foreach (self::exemptedPaths as $path) {
-                            if (starts_with($modifiedFileName, $path)) {
+                            if (str_starts_with($modifiedFileName, $path)) {
                                 unset($files[$key]);
                                 break;
                             }
