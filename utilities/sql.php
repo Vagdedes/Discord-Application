@@ -524,14 +524,7 @@ function sql_query(string $command, bool $localDebug = true): mixed
         $show_sql_errors = $sql_credentials[9];
 
         if ($show_sql_errors) {
-            global $sql_last_insert_id;
             $query = $sqlConnection->query($command);
-            $sql_last_insert_id = $sqlConnection->insert_id;
-
-            if (!is_numeric($sql_last_insert_id)
-                || $sql_last_insert_id == 0) {
-                $sql_last_insert_id = null;
-            }
         } else {
             error_reporting(0);
 
@@ -602,6 +595,13 @@ function sql_insert(string $table, array $pairs): mixed
     $result = sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
 
     if ($result) {
+        global $sql_last_insert_id;
+        $sql_last_insert_id = get_sql_connection()?->insert_id;
+
+        if (!is_numeric($sql_last_insert_id)
+            || $sql_last_insert_id == 0) {
+            $sql_last_insert_id = null;
+        }
         sql_clear_cache($table, array_keys($pairs));
     }
     return $result;
