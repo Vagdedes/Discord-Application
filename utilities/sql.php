@@ -3,6 +3,7 @@ $sql_connections = array();
 $sql_credentials = array();
 $is_sql_usable = false;
 $debug = false;
+$sql_last_insert_id = null;
 
 // Connection
 
@@ -59,6 +60,12 @@ function get_sql_connection(): ?object
     } else {
         return null;
     }
+}
+
+function get_sql_last_insert_id(): ?int
+{
+    global $sql_last_insert_id;
+    return $sql_last_insert_id;
 }
 
 function reset_all_sql_connections(): void
@@ -470,7 +477,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 
     if (!$debug && ($cache->num_rows ?? 0) > 0) {
         $row = $cache->fetch_assoc();
-        $results = @json_decode($row["results"], false);
+        $results = json_decode($row["results"], false);
 
         if (is_array($results)) {
             return $results;
@@ -517,7 +524,14 @@ function sql_query(string $command, bool $localDebug = true): mixed
         $show_sql_errors = $sql_credentials[9];
 
         if ($show_sql_errors) {
+            global $sql_last_insert_id;
             $query = $sqlConnection->query($command);
+            $sql_last_insert_id = $sqlConnection->insert_id;
+
+            if (!is_numeric($sql_last_insert_id)
+                || $sql_last_insert_id == 0) {
+                $sql_last_insert_id = null;
+            }
         } else {
             error_reporting(0);
 
