@@ -60,7 +60,12 @@ function load_sql_database(string $file = SqlDatabaseCredentials::STORAGE): void
     }
 }
 
-function private_file_get_contents(string $url, int $timeout = 0): bool|string
+function private_file_get_contents(
+    string $url,
+    int    $timeout = 0,
+    array  $parameters = [],
+    bool   $clearPreviousParameters = false
+): bool|string
 {
     global $memory_private_connections_table;
     $code = random_string(512);
@@ -73,13 +78,17 @@ function private_file_get_contents(string $url, int $timeout = 0): bool|string
         )
     );
     load_previous_sql_database();
+
     return post_file_get_contents(
         $url,
-        array(
-            "private_verification_key" => $code,
-            "private_ip_address" => get_client_ip_address()
+        array_merge(
+            array(
+                "private_verification_key" => $code,
+                "private_ip_address" => get_client_ip_address()
+            ),
+            $parameters
         ),
-        false,
+        $clearPreviousParameters,
         $_SERVER['HTTP_USER_AGENT'] ?? "",
         $timeout
     );
