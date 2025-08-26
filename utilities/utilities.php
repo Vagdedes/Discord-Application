@@ -167,14 +167,12 @@ function timed_file_get_contents(
         } else {
             $contextOptions = ['http' => ['timeout' => $timeoutSeconds]];
         }
-        return @file_get_contents(
-            $url,
-            0,
-            stream_context_create($contextOptions)
-        );
-    } else {
-        return @file_get_contents($url);
     }
+    return @file_get_contents(
+        $url,
+        0,
+        stream_context_create($contextOptions)
+    );
 }
 
 function create_and_close_curl_connection(string $url, array $properties = null): bool|string|null
