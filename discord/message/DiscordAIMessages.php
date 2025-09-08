@@ -17,7 +17,7 @@ class DiscordAIMessages
     private array $messageCounter, $messageReplies, $messageFeedback;
 
     public const
-        PAST_MESSAGES_COUNT = 100,
+        PAST_MESSAGES_COUNT = 500,
         PAST_MESSAGES_LENGTH = 10_000,
         THREADS_ANALYZED = 20,
         THREAD_ANALYZED_MESSAGES = 10;
