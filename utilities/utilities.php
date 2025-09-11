@@ -564,6 +564,13 @@ function str_contains_ignore_diacritics(string $haystack, string $needle): bool 
     return mb_stripos($normalizedHaystack, $normalizedNeedle) !== false;
 }
 
+function str_contains_word(string $haystack, string $needle): bool
+{
+    $normalizedHaystack = remove_diacritics($haystack);
+    $normalizedNeedle = remove_diacritics($needle);
+    return preg_match('/\b' . preg_quote($normalizedNeedle, '/') . '\b/ui', $normalizedHaystack) === 1;
+}
+
 function remove_diacritics(string $text): string {
     $normalized = Normalizer::normalize($text, Normalizer::FORM_D);
     return preg_replace('/\p{Mn}/u', '', $normalized);
