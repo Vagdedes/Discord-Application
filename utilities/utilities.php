@@ -851,6 +851,33 @@ function manage_errors(mixed $display = null, mixed $log = null): void // NULL l
     }
 }
 
+// Time
+
+function seconds_to_time_string(int $seconds): string
+{
+    if ($seconds < 0) {
+        return "Invalid input";
+    }
+    $units = [
+        "year" => 365 * 24 * 60 * 60, // approximate
+        "month" => 30 * 24 * 60 * 60,  // approximate
+        "day" => 24 * 60 * 60,
+        "hour" => 60 * 60,
+        "minute" => 60,
+        "second" => 1
+    ];
+    $parts = [];
+
+    foreach ($units as $name => $divisor) {
+        $value = intdiv($seconds, $divisor);
+        if ($value > 0) {
+            $parts[] = $value . " " . $name . ($value > 1 ? "s" : "");
+            $seconds %= $divisor;
+        }
+    }
+    return $parts ? implode(", ", $parts) : "0 seconds";
+}
+
 // Dates
 
 function remove_dates($string): array|string|null
