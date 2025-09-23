@@ -607,6 +607,42 @@ function sql_insert(string $table, array $pairs): mixed
     return $result;
 }
 
+function multiple_sql_insert(string $table, array $columns, array $rows): mixed
+{
+    $columnsArray = array();
+    $valuesArray = array();
+
+    foreach ($columns as $column) {
+        $columnsArray [] = properly_sql_encode($column);
+    }
+    foreach ($rows as $row) {
+        $subValues = array();
+
+        foreach ($row as $value) {
+            $subValues[] = ($value === null ? "NULL" :
+                (is_bool($value) ? ($value ? "'1'" : "NULL") :
+                    "'" . properly_sql_encode($value, true) . "'"));
+        }
+        $valuesArray [] = "(" . implode(", ", $subValues) . ")";
+    }
+    $columnsArray = implode(", ", $columnsArray);
+    $valuesArray = implode(", ", $valuesArray);
+    $table = properly_sql_encode($table);
+    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES $valuesArray;");
+
+    if ($result) {
+        global $sql_last_insert_id;
+        $sql_last_insert_id = get_sql_connection()?->insert_id;
+
+        if (!is_numeric($sql_last_insert_id)
+            || $sql_last_insert_id == 0) {
+            $sql_last_insert_id = null;
+        }
+        sql_clear_cache($table, $columns);
+    }
+    return $result;
+}
+
 function sql_insert_multiple(string $table, array $columns, array $values): mixed
 {
     $columnsArray = array();
