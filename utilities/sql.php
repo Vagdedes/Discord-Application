@@ -4,6 +4,8 @@ $sql_credentials = array();
 $is_sql_usable = false;
 $debug = false;
 $sql_last_insert_id = null;
+$sql_enable_local_memory = false;
+$sql_local_memory = array();
 
 // Connection
 
@@ -78,6 +80,33 @@ function reset_all_sql_connections(): void
         $sql_connections = array();
         $sql_credentials = array();
         $is_sql_usable = false;
+    }
+}
+
+function sql_set_local_memory(bool|array|string $boolOrTables): void
+{
+    global $sql_enable_local_memory;
+
+    if (is_string($boolOrTables)) {
+        if (is_array($sql_enable_local_memory)) {
+            $sql_enable_local_memory[] = $boolOrTables;
+        } else {
+            $sql_enable_local_memory = array($boolOrTables);
+        }
+    } else {
+        $sql_enable_local_memory = $boolOrTables;
+    }
+}
+
+function is_sql_local_memory_enabled(?string $table): bool
+{
+    global $sql_enable_local_memory;
+
+    if (is_array($sql_enable_local_memory)) {
+        return $table === null
+            || in_array($table, $sql_enable_local_memory);
+    } else {
+        return $sql_enable_local_memory;
     }
 }
 
@@ -262,8 +291,23 @@ function sql_build_order(string|array|null $order): ?string
 
 // Cache
 
-function sql_delete_outdated_cache(int $time = 60 * 60): bool
+function sql_delete_outdated_cache(int $time = 60 * 60, bool $memory = true): bool
 {
+    if ($memory
+        && is_sql_local_memory_enabled(null)) {
+        global $sql_local_memory;
+
+        foreach ($sql_local_memory as $table => $entries) {
+            foreach ($entries as $hash => $value) {
+                if ($value[2] < (time() - $time)) {
+                    unset($sql_local_memory[$table][$hash]);
+                }
+            }
+            if (empty($sql_local_memory[$table])) {
+                unset($sql_local_memory[$table]);
+            }
+        }
+    }
     $retrieverTable = "memory.queryCacheRetriever";
     $trackerTable = "memory.queryCacheTracker";
     $query = sql_query(
@@ -286,6 +330,21 @@ function sql_delete_outdated_cache(int $time = 60 * 60): bool
 
 function sql_clear_cache(string $table, array $columns): bool
 {
+    if (is_sql_local_memory_enabled($table)) {
+        global $sql_local_memory;
+        $memory = $sql_local_memory[$table] ?? null;
+
+        if ($memory !== null) {
+            foreach ($memory as $hash => $value) {
+                foreach ($columns as $column) {
+                    if (in_array($column, $value[0])) {
+                        unset($sql_local_memory[$table][$hash]);
+                        break;
+                    }
+                }
+            }
+        }
+    }
     $retrieverTable = "memory.queryCacheRetriever";
     $trackerTable = "memory.queryCacheTracker";
 
@@ -340,6 +399,15 @@ function sql_store_cache(string           $table,
 {
     $time = time();
 
+    if (is_sql_local_memory_enabled($table)) {
+        global $sql_local_memory;
+
+        if (array_key_exists($table, $sql_local_memory)) {
+            $sql_local_memory[$table][$hash] = array($columns, $query, $time);
+        } else {
+            $sql_local_memory[$table] = array($hash => array($columns, $query, $time));
+        }
+    }
     foreach ($columns as $key => $column) {
         $columns[$key] = array($table, $column, $hash, $time);
     }
@@ -466,6 +534,24 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         ),
         true
     );
+    if (!$debug
+        && is_sql_local_memory_enabled($table)) {
+        global $sql_local_memory;
+
+        if (array_key_exists($table, $sql_local_memory)) {
+            $value = $sql_local_memory[$table][$hash] ?? null;
+
+            if ($value !== null) {
+                $results = $value[1];
+
+                if (is_array($results)) {
+                    $value[2] = time();
+                    $sql_local_memory[$table][$hash] = $value;
+                    return $results;
+                }
+            }
+        }
+    }
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $cache = sql_query(
         "SELECT results FROM memory.queryCacheRetriever "
