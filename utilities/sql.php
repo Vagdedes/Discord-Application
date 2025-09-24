@@ -566,6 +566,15 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $results = json_decode($row["results"], false);
 
         if (is_array($results)) {
+            if (is_sql_local_memory_enabled($table)) {
+                global $sql_local_memory;
+
+                if (array_key_exists($table, $sql_local_memory)) {
+                    $sql_local_memory[$table][$hash] = array($columns, $results, time());
+                } else {
+                    $sql_local_memory[$table] = array($hash => array($columns, $results, time()));
+                }
+            }
             return $results;
         }
         $cacheExists = true;
