@@ -2,7 +2,7 @@
 $sql_connections = array();
 $sql_credentials = array();
 $is_sql_usable = false;
-$debug = false;
+$sql_query_debug = false;
 $sql_last_insert_id = null;
 $sql_enable_local_memory = false;
 $sql_local_memory = array();
@@ -484,13 +484,13 @@ function abstract_search_sql_encode(string $string): string
 
 function sql_debug(): void
 {
-    global $debug;
-    $debug = true;
+    global $sql_query_debug;
+    $sql_query_debug = true;
 }
 
 function get_sql_query(string $table, ?array $select = null, ?array $where = null, string|array|null $order = null, int $limit = 0): array
 {
-    global $debug;
+    global $sql_query_debug;
     $hasWhere = !empty($where);
 
     if ($select === null) {
@@ -534,7 +534,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         ),
         true
     );
-    if (!$debug
+    if (!$sql_query_debug
         && is_sql_local_memory_enabled($table)) {
         global $sql_local_memory;
 
@@ -561,7 +561,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     );
     load_previous_sql_database();
 
-    if (!$debug && ($cache->num_rows ?? 0) > 0) {
+    if (!$sql_query_debug && ($cache->num_rows ?? 0) > 0) {
         $row = $cache->fetch_assoc();
         $results = json_decode($row["results"], false);
 
@@ -607,11 +607,12 @@ function sql_query(string $command, bool $localDebug = true): mixed
     global $is_sql_usable;
 
     if ($localDebug) {
-        global $debug;
+        global $sql_query_debug;
 
-        if ($debug) {
-            $debug = false;
+        if ($sql_query_debug) {
+            $sql_query_debug = false;
             var_dump($command);
+            error_log($command);
         }
     }
     if ($is_sql_usable) {
