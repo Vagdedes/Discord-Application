@@ -790,7 +790,9 @@ function array_to_integer(array|object|null $array, bool $long = false): int
     $result = 1;
 
     foreach ($array as $value) {
-        if (!is_string($value)
+        if (is_bool($value)) {
+            $value = boolean_to_integer($value);
+        } else if (!is_string($value)
             && !is_integer($value)) {
             $value = serialize($value);
         }
