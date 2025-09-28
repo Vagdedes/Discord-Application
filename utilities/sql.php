@@ -279,7 +279,7 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
     return $buildKey ? array($query, $queryKey) : $query;
 }
 
-function sql_build_order(string|array|null $order): ?string
+function sql_build_order(string|array $order): string
 {
     if (is_array($order)) {
         $orderType = array_shift($order);
@@ -518,22 +518,20 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $query .= " WHERE " . $where[0];
     }
     if ($order !== null) {
-        $query .= " ORDER BY " . sql_build_order($order);
+        $order = sql_build_order($order);
+        $query .= " ORDER BY " . $order;
     }
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
     }
+    $hash = overflow_long((string_to_integer($table, true) * 31)
+        + string_to_integer($select === null ? null : implode(",", $select), true));
+    $hash = overflow_long(($hash * 31)
+        + string_to_integer($hasWhere ? implode(",", $where[1]) : null, true));
+    $hash = overflow_long(($hash * 31)
+        + string_to_integer($order === null ? null : $order, true));
+    $hash = overflow_long(($hash * 31) + $limit);
 
-    $hash = array_to_integer(
-        array(
-            $table,
-            $select,
-            $hasWhere ? $where[1] : null,
-            $order,
-            $limit
-        ),
-        true
-    );
     if (!$sql_query_debug
         && is_sql_local_memory_enabled($table)) {
         global $sql_local_memory;
