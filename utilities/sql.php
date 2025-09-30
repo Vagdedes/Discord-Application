@@ -527,7 +527,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     $hash = overflow_long((string_to_integer($table, true) * 31)
         + string_to_integer($select === null ? null : implode(",", $select), true));
     $hash = overflow_long(($hash * 31)
-        + string_to_integer($hasWhere ? implode(",", $where[1]) : null, true));
+        + string_to_integer($hasWhere ? implode(",", $where[0]) : null, true));
     $hash = overflow_long(($hash * 31)
         + string_to_integer($order === null ? null : $order, true));
     $hash = overflow_long(($hash * 31) + $limit);
