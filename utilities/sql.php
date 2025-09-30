@@ -193,11 +193,8 @@ function close_sql_connection(bool $clear = false): bool
 
 // Utilities
 
-function sql_build_where(array $where, bool $buildKey = false): string|array
+function sql_build_where(array $where): string|array
 {
-    if ($buildKey) {
-        $queryKey = array();
-    }
     $query = "";
     $parenthesesCount = 0;
     $whereEnd = sizeof($where) - 1;
@@ -214,23 +211,11 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
                 $previous = $where[$count - 1];
                 $and = $previous === null || is_string($previous) || ($previous[3] ?? 1) === 1;
                 $and_or = ($and ? " AND " : " OR ");
-
-                if ($buildKey) {
-                    $queryKey[] = ($and ? 1 : 0);
-                }
             }
             $query .= ($close ? ")" : $and_or . "(");
-
-            if ($buildKey) {
-                $queryKey[] = ($close ? 2 : 3);
-            }
         } else if (is_string($single)) {
             if (isset($single[0])) {
                 $query .= " " . $single . " ";
-
-                if ($buildKey) {
-                    $queryKey[] = remove_dates($single);
-                }
             }
         } else {
             $size = sizeof($single);
@@ -247,14 +232,6 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
                 . " " . ($nullValue ? "NULL" :
                     ($booleanValue ? ($value ? "'1'" : "NULL") :
                         "'" . properly_sql_encode($value, true) . "'"));
-
-            if ($buildKey && ($nullValue || $booleanValue || !is_date($value))) {
-                if ($equals || $single[1] === "=" || $single[1] === "IS") {
-                    $queryKey[$single[0]] = $value;
-                } else {
-                    $queryKey[$single[0]] = array($single[1], $value);
-                }
-            }
             $customCount = $count;
 
             while ($customCount !== $whereEnd) {
@@ -267,16 +244,12 @@ function sql_build_where(array $where, bool $buildKey = false): string|array
                 if (!is_string($next) || !empty($next)) {
                     $and = $equals || ($single[3] ?? 1) === 1;
                     $query .= ($and ? " AND " : " OR ");
-
-                    if ($buildKey) {
-                        $queryKey[] = ($and ? 1 : 0);
-                    }
                     break;
                 }
             }
         }
     }
-    return $buildKey ? array($query, $queryKey) : $query;
+    return $query;
 }
 
 function sql_build_order(string|array $order): string
@@ -497,7 +470,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $columns = get_sql_database_columns($table);
 
         if ($hasWhere) {
-            $where = sql_build_where($where, true);
+            $where = sql_build_where($where);
         }
     } else {
         $columns = $select;
@@ -509,13 +482,13 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
                     $columns[] = $single[0];
                 }
             }
-            $where = sql_build_where($where, true);
+            $where = sql_build_where($where);
         }
     }
     $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
 
     if ($hasWhere) {
-        $query .= " WHERE " . $where[0];
+        $query .= " WHERE " . $where;
     }
     if ($order !== null) {
         $order = sql_build_order($order);
@@ -527,13 +500,15 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     $hash = overflow_long((string_to_integer($table, true) * 31)
         + string_to_integer($select === null ? null : implode(",", $select), true));
     $hash = overflow_long(($hash * 31)
-        + string_to_integer($hasWhere ? $where[0] : null, true));
+        + string_to_integer($hasWhere ? $where : null, true));
     $hash = overflow_long(($hash * 31)
-        + string_to_integer($order === null ? null : $order, true));
+        + string_to_integer($order, true));
     $hash = overflow_long(($hash * 31) + $limit);
 
-    if (!$sql_query_debug
-        && is_sql_local_memory_enabled($table)) {
+    if ($sql_query_debug) {
+        var_dump($hash);
+        error_log($hash);
+    } else if (is_sql_local_memory_enabled($table)) {
         global $sql_local_memory;
 
         if (array_key_exists($table, $sql_local_memory)) {
@@ -559,21 +534,23 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     );
     load_previous_sql_database();
 
-    if (!$sql_query_debug && ($cache->num_rows ?? 0) > 0) {
-        $row = $cache->fetch_assoc();
-        $results = json_decode($row["results"], false);
+    if (($cache->num_rows ?? 0) > 0) {
+        if (!$sql_query_debug) {
+            $row = $cache->fetch_assoc();
+            $results = json_decode($row["results"], false);
 
-        if (is_array($results)) {
-            if (is_sql_local_memory_enabled($table)) {
-                global $sql_local_memory;
+            if (is_array($results)) {
+                if (is_sql_local_memory_enabled($table)) {
+                    global $sql_local_memory;
 
-                if (array_key_exists($table, $sql_local_memory)) {
-                    $sql_local_memory[$table][$hash] = array($columns, $results, time());
-                } else {
-                    $sql_local_memory[$table] = array($hash => array($columns, $results, time()));
+                    if (array_key_exists($table, $sql_local_memory)) {
+                        $sql_local_memory[$table][$hash] = array($columns, $results, time());
+                    } else {
+                        $sql_local_memory[$table] = array($hash => array($columns, $results, time()));
+                    }
                 }
+                return $results;
             }
-            return $results;
         }
         $cacheExists = true;
     } else {
