@@ -215,7 +215,7 @@ function sql_build_where(array $where): string|array
             $query .= ($close ? ")" : $and_or . "(");
         } else if (is_string($single)) {
             if (isset($single[0])) {
-                $query .= " " . $single . " ";
+                $query .= ($count === 0 ? "" : " ") . $single . " ";
             }
         } else {
             $size = sizeof($single);
@@ -249,7 +249,7 @@ function sql_build_where(array $where): string|array
             }
         }
     }
-    return $query;
+    return trim($query);
 }
 
 function sql_build_order(string|array $order): string
