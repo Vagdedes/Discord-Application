@@ -164,8 +164,15 @@ function timed_file_get_contents(
     if ($timeoutSeconds > 0) {
         if ($contextOptions !== null) {
             $contextOptions['http']['timeout'] = $timeoutSeconds;
+
+            if (!array_key_exists('follow_location', $contextOptions['http'])) {
+                $contextOptions['http']['follow_location'] = true;
+            }
         } else {
-            $contextOptions = ['http' => ['timeout' => $timeoutSeconds]];
+            $contextOptions = ['http' => [
+                'timeout' => $timeoutSeconds,
+                'follow_location' => true
+            ]];
         }
     }
     return @file_get_contents(
