@@ -143,7 +143,7 @@ function get_json_object(string $url, array $postParameters = null, int $timeout
                 "timeout" => $timeoutSeconds
             )
         );
-        $contents = file_get_contents($url, false, stream_context_create($opts));
+        $contents = @file_get_contents($url, false, stream_context_create($opts));
     } else {
         $contents = timed_file_get_contents($url, $timeoutSeconds);
     }
