@@ -264,35 +264,26 @@ function sql_build_order(string|array $order): string
 
 // Cache
 
-function sql_delete_outdated_cache(int $time = 60 * 60, bool $memory = true): bool
+function sql_delete_outdated_cache(
+    int $limit = 500
+): bool
 {
-    if ($memory
-        && is_sql_local_memory_enabled(null)) {
+    if (is_sql_local_memory_enabled(null)) {
         global $sql_local_memory;
-
-        foreach ($sql_local_memory as $table => $entries) {
-            foreach ($entries as $hash => $value) {
-                if ($value[2] < (time() - $time)) {
-                    unset($sql_local_memory[$table][$hash]);
-                }
-            }
-            if (empty($sql_local_memory[$table])) {
-                unset($sql_local_memory[$table]);
-            }
-        }
+        $sql_local_memory = array();
     }
     $retrieverTable = "memory.queryCacheRetriever";
-    $trackerTable = "memory.queryCacheTracker";
     $query = sql_query(
-        "DELETE FROM $retrieverTable "
-        . "WHERE last_access_time < '" . (time() - $time) . "';",
+        "DELETE FROM " . $retrieverTable
+        . " ORDER BY last_access_time ASC LIMIT " . $limit . ";",
         false
     );
 
     if ($query) {
+        $trackerTable = "memory.queryCacheTracker";
         $query = sql_query(
-            "DELETE FROM $trackerTable "
-            . "WHERE last_access_time < '" . (time() - $time) . "';",
+            "DELETE FROM " . $trackerTable
+            . " ORDER BY last_access_time ASC LIMIT " . $limit . ";",
             false
         );
         return (bool)$query;
@@ -318,16 +309,16 @@ function sql_clear_cache(string $table, array $columns): bool
             }
         }
     }
-    $retrieverTable = "memory.queryCacheRetriever";
-    $trackerTable = "memory.queryCacheTracker";
+    $retrieverTable = "memory . queryCacheRetriever";
+    $trackerTable = "memory . queryCacheTracker";
 
-    if (!in_array("*", $columns)) {
-        $columns[] = "*";
+    if (!in_array(" * ", $columns)) {
+        $columns[] = " * ";
     }
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $query = sql_query(
         "SELECT id, hash FROM " . $trackerTable
-        . " WHERE table_name = '$table' AND column_name IN ('" . implode("', '", $columns) . "');",
+        . " WHERE table_name = '$table' and column_name IN('" . implode("', '", $columns) . "');",
         false
     );
 
@@ -344,14 +335,14 @@ function sql_clear_cache(string $table, array $columns): bool
         }
         $query = sql_query(
             "DELETE FROM " . $trackerTable
-            . " WHERE id IN ('" . implode("', '", $ids) . "');",
+            . " WHERE id IN('" . implode("', '", $ids) . "');",
             false
         );
 
         if ($query) {
             $query = sql_query(
                 "DELETE FROM " . $retrieverTable
-                . " WHERE table_name = '$table' AND hash IN ('" . implode("', '", $hashes) . "');",
+                . " WHERE table_name = '$table' and hash IN('" . implode("', '", $hashes) . "');",
                 false
             );
 
@@ -388,20 +379,20 @@ function sql_store_cache(string           $table,
 
     if (strlen($store) <= 16312) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
-        $retrieverTable = "memory.queryCacheRetriever";
-        $trackerTable = "memory.queryCacheTracker";
+        $retrieverTable = "memory . queryCacheRetriever";
+        $trackerTable = "memory . queryCacheTracker";
 
         if ($cacheExists) {
             $query = sql_query(
                 "UPDATE " . $retrieverTable
                 . " SET results = '$store', last_access_time = '$time'"
-                . " WHERE table_name = '$table' AND hash = '$hash';"
+                . " WHERE table_name = '$table' and hash = '$hash';"
             );
 
             if ($query) {
                 $query = sql_query(
                     "DELETE FROM " . $trackerTable
-                    . " WHERE table_name = '$table' AND hash = '$hash';",
+                    . " WHERE table_name = '$table' and hash = '$hash';",
                     false
                 );
             }
@@ -409,9 +400,15 @@ function sql_store_cache(string           $table,
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
                 . " (table_name, hash, results, last_access_time) "
-                . "VALUES ('$table', '$hash', '$store', '$time');",
+                . "VALUES('$table', '$hash', '$store', '$time');",
                 false
             );
+
+            if (get_sql_connection()->errno === 1114 ||
+                (get_sql_connection()->errno === 1030
+                    && str_contains(get_sql_connection()->error, '1114'))) {
+                sql_delete_outdated_cache();
+            }
         }
         if ($query) {
             $columnsString = array();
@@ -425,6 +422,12 @@ function sql_store_cache(string           $table,
                 . "VALUES " . implode(", ", $columnsString) . ";",
                 false
             );
+
+            if (get_sql_connection()->errno === 1114 ||
+                (get_sql_connection()->errno === 1030
+                    && str_contains(get_sql_connection()->error, '1114'))) {
+                sql_delete_outdated_cache();
+            }
         }
         load_previous_sql_database();
         return (bool)$query;
@@ -450,7 +453,7 @@ function properly_sql_encode(string $string, bool $partial = false): ?string
 
 function abstract_search_sql_encode(string $string): string
 {
-    return str_replace("_", "\_", str_replace("%", "\%", $string));
+    return str_replace("_", "\_", str_replace(" % ", "\%", $string));
 }
 
 // Get
@@ -485,7 +488,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
             $where = sql_build_where($where);
         }
     }
-    $query = "SELECT " . ($select === null ? "*" : implode(", ", $select)) . " FROM " . $table;
+    $query = "SELECT " . ($select === null ? " * " : implode(", ", $select)) . " FROM " . $table;
 
     if ($hasWhere) {
         $query .= " WHERE " . $where;
@@ -527,8 +530,8 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     }
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $cache = sql_query(
-        "SELECT results FROM memory.queryCacheRetriever "
-        . "WHERE table_name = '$table' AND hash = '$hash' "
+        "SELECT results FROM memory . queryCacheRetriever "
+        . "WHERE table_name = '$table' and hash = '$hash' "
         . "LIMIT 1;",
         false
     );
@@ -627,7 +630,7 @@ function log_sql_error(?string $query, mixed $error, mixed $sqlConnection = null
     }
     global $sql_credentials;
     $show_sql_errors = $sql_credentials[9];
-    $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
+    $command = "INSERT INTO logs . sqlErrors(creation, file, query, error) VALUES "
         . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
         . "', '" . $query . "', '" . $error . "');";
 
@@ -663,7 +666,7 @@ function sql_insert(string $table, array $pairs): mixed
     $columnsArray = implode(", ", $columnsArray);
     $valuesArray = implode(", ", $valuesArray);
     $table = properly_sql_encode($table);
-    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
+    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES($valuesArray);");
 
     if ($result) {
         global $sql_last_insert_id;
@@ -804,7 +807,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
 function get_sql_database_tables(string $database): array
 {
     $array = array();
-    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
+    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
 
     if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
@@ -817,7 +820,7 @@ function get_sql_database_tables(string $database): array
 function get_sql_database_schemas(): array
 {
     $array = array();
-    $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA;");
+    $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA . SCHEMATA;");
 
     if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
