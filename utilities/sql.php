@@ -668,7 +668,7 @@ function sql_insert(string $table, array $pairs): mixed
     $columnsArray = implode(", ", $columnsArray);
     $valuesArray = implode(", ", $valuesArray);
     $table = properly_sql_encode($table);
-    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES($valuesArray);");
+    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
 
     if ($result) {
         global $sql_last_insert_id;
