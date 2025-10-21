@@ -591,6 +591,7 @@ function sql_query(string $command, bool $localDebug = true): mixed
             $sql_query_debug = false;
             var_dump($command);
             error_log($command);
+            log_sql_error($command, "DEBUG");
         }
     }
     if ($is_sql_usable) {
@@ -630,7 +631,7 @@ function log_sql_error(?string $query, mixed $error, mixed $sqlConnection = null
     }
     global $sql_credentials;
     $show_sql_errors = $sql_credentials[9];
-    $command = "INSERT INTO logs . sqlErrors(creation, file, query, error) VALUES "
+    $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
         . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
         . "', '" . $query . "', '" . $error . "');";
 
