@@ -511,6 +511,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     if ($sql_query_debug) {
         var_dump($hash);
         error_log($hash);
+        log_sql_error($hash, "DEBUG HASH");
     } else if (is_sql_local_memory_enabled($table)) {
         global $sql_local_memory;
 
@@ -591,7 +592,7 @@ function sql_query(string $command, bool $localDebug = true): mixed
             $sql_query_debug = false;
             var_dump($command);
             error_log($command);
-            log_sql_error($command, "DEBUG");
+            log_sql_error($command, "DEBUG QUERY");
         }
     }
     if ($is_sql_usable) {
