@@ -565,6 +565,29 @@ function is_base64_image(?string $string): bool
 
 // Strings
 
+function str_replace_whole_words(string|array $search, string|array $replace, string $subject): string
+{
+    if (!is_array($search)) {
+        $search = [$search];
+    }
+    if (!is_array($replace)) {
+        $replace = [$replace];
+    }
+
+    // Match replacement counts like str_replace
+    if (count($replace) === 1 && count($search) > 1) {
+        $replace = array_fill(0, count($search), $replace[0]);
+    }
+
+    foreach ($search as $i => $word) {
+        $rep = $replace[$i] ?? '';
+        $pattern = '/\b' . preg_quote($word, '/') . '\b/u';
+        $subject = preg_replace($pattern, $rep, $subject);
+    }
+
+    return $subject;
+}
+
 function str_contains_ignore_diacritics(string $haystack, string $needle): bool {
     $normalizedHaystack = remove_diacritics($haystack);
     $normalizedNeedle = remove_diacritics($needle);
