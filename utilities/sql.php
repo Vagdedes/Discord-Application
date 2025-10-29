@@ -809,7 +809,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
 function get_sql_database_tables(string $database): array
 {
     $array = array();
-    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
+    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . $database . "';", false);
 
     if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
@@ -822,7 +822,7 @@ function get_sql_database_tables(string $database): array
 function get_sql_database_schemas(): array
 {
     $array = array();
-    $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA . SCHEMATA;");
+    $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA . SCHEMATA;", false);
 
     if (($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
@@ -837,7 +837,7 @@ function get_sql_database_schemas(): array
 function get_sql_database_columns(string $table): array
 {
     $array = array();
-    $query = sql_query("SHOW COLUMNS FROM " . $table . ";");
+    $query = sql_query("SHOW COLUMNS FROM " . $table . ";", false);
 
     if ($query instanceof mysqli_result) {
         while ($row = $query->fetch_assoc()) {
