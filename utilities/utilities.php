@@ -966,6 +966,28 @@ function get_date_seconds_difference(string $date): float|int
     return abs(time() - strtotime($date));
 }
 
+function get_time_passed(int $seconds): string
+{
+    $units = [
+        "year" => 365 * 24 * 60 * 60, // approximate
+        "month" => 30 * 24 * 60 * 60,  // approximate
+        "day" => 24 * 60 * 60,
+        "hour" => 60 * 60,
+        "minute" => 60,
+        "second" => 1
+    ];
+    $parts = [];
+
+    foreach ($units as $name => $divisor) {
+        $value = intdiv($seconds, $divisor);
+        if ($value > 0) {
+            $parts[] = $value . " " . $name . ($value > 1 ? "s" : "");
+            $seconds %= $divisor;
+        }
+    }
+    return $parts ? implode(", ", $parts) . " ago" : "now";
+}
+
 function get_full_date(string $date): string
 {
     if ($date == null) {
