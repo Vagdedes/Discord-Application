@@ -1,5 +1,4 @@
 <?php
-$administrator_local_server_ip_addresses_table = "administrator.localServerIpAddresses";
 $memory_private_connections_table = "memory.privateConnections";
 $private_connection_access = false;
 $current_sql_database = null;
@@ -103,10 +102,8 @@ function is_private_connection(): bool
     if ($private_connection_access) {
         return true;
     } else {
-        global $memory_private_connections_table;
-
         if (isset($_POST['private_verification_key'])) {
-            global $administrator_local_server_ip_addresses_table;
+            global $memory_private_connections_table;
             load_sql_database(SqlDatabaseCredentials::MEMORY);
             $query = get_sql_query( // No cache required, already in memory table
                 $memory_private_connections_table,
@@ -117,66 +114,18 @@ function is_private_connection(): bool
                 null,
                 1
             );
-            $cacheKey = array(__METHOD__, get_raw_client_ip_address());
+            load_previous_sql_database();
 
             if (!empty($query)) {
-                if (!function_exists("has_memory_cooldown")
-                    || !has_memory_cooldown($cacheKey, null, false)) {
-                    delete_sql_query(
-                        $memory_private_connections_table,
-                        array(
-                            array("id", "=", $query[0]->id, 0),
-                            array("expiration", "<", time())
-                        )
-                    );
-                    load_previous_sql_database();
-                    $localAddress = get_local_ip_address();
-                    $queryArgs = array(
-                        array("deletion_date", null),
-                        null,
-                        array("expiration_date", "IS", null, 0),
-                        array("expiration_date", ">", get_current_date()),
-                        null,
-                        null
-                    );
-                    $explode = explode(".", $localAddress);
-                    $size = sizeof($explode);
-                    $last = (1 << $size);
-
-                    for ($i = 0; $i < $last; $i++) {
-                        $loopLocalAddress = [];
-
-                        for ($j = 0; $j < $size; $j++) {
-                            if ($i & (1 << $j)) {
-                                $loopLocalAddress[] = "X";
-                            } else {
-                                $loopLocalAddress[] = $explode[$j];
-                            }
-                        }
-                        if ($i === $last - 1) {
-                            $queryArgs[] = array("ip_address", "=", implode(".", $loopLocalAddress));
-                        } else {
-                            $queryArgs[] = array("ip_address", "=", implode(".", $loopLocalAddress), 0);
-                        }
-                    }
-                    $queryArgs[] = null;
-
-                    if (!empty(get_sql_query(
-                        $administrator_local_server_ip_addresses_table,
-                        array("id"),
-                        $queryArgs,
-                        null,
-                        1
-                    ))) {
-                        $private_connection_access = true;
-                        return true;
-                    }
-                }
-            } else {
-                if (function_exists("has_memory_cooldown")) {
-                    has_memory_cooldown($cacheKey, "1 minute", true, true);
-                }
-                load_previous_sql_database();
+                $private_connection_access = true;
+                delete_sql_query(
+                    $memory_private_connections_table,
+                    array(
+                        array("id", "=", $query[0]->id, 0),
+                        array("expiration", "<", time())
+                    )
+                );
+                return true;
             }
         }
         return false;
