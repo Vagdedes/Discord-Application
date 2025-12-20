@@ -77,7 +77,6 @@ function private_file_get_contents(
         )
     );
     load_previous_sql_database();
-
     return post_file_get_contents(
         $url,
         array_merge(
