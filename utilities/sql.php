@@ -561,16 +561,19 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $cacheExists = false;
     }
     $query = sql_query($query . ";");
-    $array = array();
+    $rowCount = $query->num_rows ?? 0;
 
-    if (($query->num_rows ?? 0) > 0) {
-        while ($row = $query->fetch_assoc()) {
-            $object = new stdClass();
+    if ($rowCount >= 50_000) {
+        $array = array();
 
-            foreach ($row as $key => $value) {
-                $object->{$key} = $value;
-            }
-            $array[] = $object;
+        while ($row = $query->fetch_object()) {
+            $array[] = $row;
+        }
+    } else {
+        $array = $query->fetch_all(MYSQLI_ASSOC);
+
+        foreach ($array as &$r) {
+            $r = (object)$r;
         }
     }
     sql_store_cache($table, $array, $columns, $hash, $cacheExists);
