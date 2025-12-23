@@ -569,12 +569,14 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         while ($row = $query->fetch_object()) {
             $array[] = $row;
         }
-    } else {
+    } else if ($rowCount > 0) {
         $array = $query->fetch_all(MYSQLI_ASSOC);
 
         foreach ($array as &$r) {
             $r = (object)$r;
         }
+    } else {
+        $array = array();
     }
     sql_store_cache($table, $array, $columns, $hash, $cacheExists);
     return $array;
