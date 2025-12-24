@@ -651,13 +651,7 @@ class DiscordAIMessages
                     //$inputParameters = array_merge($input, $systemInstructions);
                     $input = $content;
                     break;
-                case AIModelFamily::CHAT_GPT:
-                case AIModelFamily::CHAT_GPT_PRO:
-                case AIModelFamily::OPENAI_OMNI_MINI:
-                case AIModelFamily::OPENAI_VISION:
-                case AIModelFamily::OPENAI_VISION_PRO:
-                case AIModelFamily::OPENAI_SOUND:
-                case AIModelFamily::OPENAI_SOUND_PRO:
+                default:
                     if ($source instanceof Message) {
                         if (empty($source->attachments->first())) {
                             $messages = array(
@@ -734,10 +728,6 @@ class DiscordAIMessages
                         "messages" => $messages,
                     );
                     break;
-                default:
-                    global $logger;
-                    $logger->logError("Failed to find code for the existing chat-model-family '" . $familyID . "' for app: " . $this->bot->botID);
-                    return null;
             }
             $outcome = $aiModel->managerAI->getResult(
                 $hash,
