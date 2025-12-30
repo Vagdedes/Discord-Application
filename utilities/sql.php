@@ -86,15 +86,77 @@ function reset_all_sql_connections(): void
 function sql_set_local_memory(bool|array|string $boolOrTables): void
 {
     global $sql_enable_local_memory;
+    $loadRecentQueries = function (null|array|string $tables) {
+        $limit = 10_000;
+
+        if (is_string($tables)) {
+            $query = sql_query(
+                "SELECT hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
+                . "WHERE table_name = '$tables' "
+                . "ORDER BY last_access_time DESC LIMIT $limit;",
+                false
+            );
+
+            if (($query->num_rows ?? 0) > 0) {
+                global $sql_local_memory;
+
+                while ($row = $query->fetch_assoc()) {
+                    if (array_key_exists($tables, $sql_local_memory)) {
+                        $sql_local_memory[$tables][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                    } else {
+                        $sql_local_memory[$tables] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                    }
+                }
+            }
+        } else {
+            $query = sql_query(
+                "SELECT table_name, hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
+                . ($tables === null ? ""
+                    : "WHERE table_name IN('" . implode("', '", $tables) . "') ")
+                . "ORDER BY last_access_time DESC LIMIT $limit;",
+                false
+            );
+
+            if (($query->num_rows ?? 0) > 0) {
+                global $sql_local_memory;
+
+                while ($row = $query->fetch_assoc()) {
+                    if (array_key_exists($row["table_name"], $sql_local_memory)) {
+                        $sql_local_memory[$row["table_name"]][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                    } else {
+                        $sql_local_memory[$row["table_name"]] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                    }
+                }
+            }
+        }
+    };
 
     if (is_string($boolOrTables)) {
         if (is_array($sql_enable_local_memory)) {
-            $sql_enable_local_memory[] = $boolOrTables;
+            if (!in_array($boolOrTables, $sql_enable_local_memory)) {
+                $sql_enable_local_memory[] = $boolOrTables;
+            }
         } else {
             $sql_enable_local_memory = array($boolOrTables);
         }
+        load_sql_database(SqlDatabaseCredentials::MEMORY);
+        $loadRecentQueries($sql_enable_local_memory);
+        load_previous_sql_database();
     } else {
         $sql_enable_local_memory = $boolOrTables;
+
+        if ($boolOrTables === true) {
+            load_sql_database(SqlDatabaseCredentials::MEMORY);
+            $loadRecentQueries(null);
+            load_previous_sql_database();
+        } else if ($boolOrTables === false) {
+            global $sql_local_memory;
+            $sql_local_memory = array();
+        } else {
+            load_sql_database(SqlDatabaseCredentials::MEMORY);
+            $loadRecentQueries($boolOrTables);
+            load_previous_sql_database();
+        }
     }
 }
 
@@ -300,6 +362,16 @@ function sql_clear_cache(string $table, array $columns): bool
 
         if ($memory !== null) {
             foreach ($memory as $hash => $value) {
+                if (is_string($value[0])) {
+                    $value[0] = json_decode($value[0], false);
+
+                    if (is_array($value[0])) {
+                        $sql_local_memory[$table][$hash][0] = $value[0];
+                    } else {
+                        unset($sql_local_memory[$table][$hash]);
+                        continue;
+                    }
+                }
                 foreach ($columns as $column) {
                     if (in_array($column, $value[0])) {
                         unset($sql_local_memory[$table][$hash]);
@@ -309,8 +381,8 @@ function sql_clear_cache(string $table, array $columns): bool
             }
         }
     }
-    $retrieverTable = "memory . queryCacheRetriever";
-    $trackerTable = "memory . queryCacheTracker";
+    $retrieverTable = "memory.queryCacheRetriever";
+    $trackerTable = "memory.queryCacheTracker";
 
     if (!in_array(" * ", $columns)) {
         $columns[] = " * ";
@@ -372,15 +444,17 @@ function sql_store_cache(string           $table,
             $sql_local_memory[$table] = array($hash => array($columns, $query, $time));
         }
     }
+    $originalColumns = $columns;
+
     foreach ($columns as $key => $column) {
         $columns[$key] = array($table, $column, $hash, $time);
     }
     $store = @json_encode($query, JSON_UNESCAPED_UNICODE);
 
-    if (strlen($store) <= 16312) {
+    if (strlen($store) <= 15_800) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
-        $retrieverTable = "memory . queryCacheRetriever";
-        $trackerTable = "memory . queryCacheTracker";
+        $retrieverTable = "memory.queryCacheRetriever";
+        $trackerTable = "memory.queryCacheTracker";
 
         if ($cacheExists) {
             $query = sql_query(
@@ -399,8 +473,8 @@ function sql_store_cache(string           $table,
         } else {
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
-                . " (table_name, hash, results, last_access_time) "
-                . "VALUES('$table', '$hash', '$store', '$time');",
+                . " (table_name, hash, results, last_access_time, column_names) "
+                . "VALUES('$table', '$hash', '$store', '$time', '" . json_encode($originalColumns) . "');",
                 false
             );
 
@@ -521,6 +595,12 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
             if ($value !== null) {
                 $results = $value[1];
 
+                if (is_string($results)) {
+                    $results = json_decode($results, false);
+                    $value[0] = $columns;
+                    $value[1] = $results;
+                    $sql_local_memory[$table][$hash] = $value;
+                }
                 if (is_array($results)) {
                     $value[2] = time();
                     $sql_local_memory[$table][$hash] = $value;
@@ -531,7 +611,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     }
     load_sql_database(SqlDatabaseCredentials::MEMORY);
     $cache = sql_query(
-        "SELECT results FROM memory . queryCacheRetriever "
+        "SELECT results, last_access_time FROM memory.queryCacheRetriever "
         . "WHERE table_name = '$table' and hash = '$hash' "
         . "LIMIT 1;",
         false
@@ -548,9 +628,9 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
                     global $sql_local_memory;
 
                     if (array_key_exists($table, $sql_local_memory)) {
-                        $sql_local_memory[$table][$hash] = array($columns, $results, time());
+                        $sql_local_memory[$table][$hash] = array($columns, $results, $row["last_access_time"]);
                     } else {
-                        $sql_local_memory[$table] = array($hash => array($columns, $results, time()));
+                        $sql_local_memory[$table] = array($hash => array($columns, $results, $row["last_access_time"]));
                     }
                 }
                 return $results;
