@@ -460,7 +460,8 @@ function sql_store_cache(string           $table,
             $query = sql_query(
                 "UPDATE " . $retrieverTable
                 . " SET results = '$store', last_access_time = '$time'"
-                . " WHERE table_name = '$table' and hash = '$hash';"
+                . " WHERE table_name = '$table' and hash = '$hash';",
+                false
             );
 
             if ($query) {
