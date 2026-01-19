@@ -837,11 +837,18 @@ function array_to_integer(array|object|null $array, bool $long = false): int
 
 function random_number(int $length = 9): int|string
 {
+    if ($length <= 1) {
+        return rand(0, 9);
+    }
     $characters = '0123456789';
-    $charactersLength = strlen($characters);
+    $charactersLength = strlen($characters) - 1;
     $randomString = '';
     for ($i = 0; $i < $length; $i++) {
-        $randomString .= $characters[rand(0, $charactersLength - 1)];
+        if ($i === 0) {
+            $randomString .= $characters[rand(1, max($charactersLength, 1))];
+        } else {
+            $randomString .= $characters[rand(0, $charactersLength)];
+        }
     }
     return $randomString;
 }
