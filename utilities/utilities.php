@@ -835,22 +835,21 @@ function array_to_integer(array|object|null $array, bool $long = false): int
     return $result;
 }
 
-function random_number(int $length = 9): int|string
+function random_number(int $length = 9): int
 {
-    if ($length <= 1) {
+    if ($length <= 0) {
         return rand(0, 9);
     }
-    $characters = '0123456789';
-    $charactersLength = strlen($characters) - 1;
-    $randomString = '';
+    $randomString = "";
+
     for ($i = 0; $i < $length; $i++) {
         if ($i === 0) {
-            $randomString .= $characters[rand(1, max($charactersLength, 1))];
+            $randomString .= rand(1, 9);
         } else {
-            $randomString .= $characters[rand(0, $charactersLength)];
+            $randomString .= rand(0, 9);
         }
     }
-    return $randomString;
+    return (int)$randomString;
 }
 
 function add_ordinal_number(int $num): string
