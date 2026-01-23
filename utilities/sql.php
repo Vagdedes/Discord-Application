@@ -6,6 +6,7 @@ $sql_query_debug = false;
 $sql_last_insert_id = null;
 $sql_enable_local_memory = false;
 $sql_local_memory = array();
+$sql_database_columns_cache = array();
 
 // Connection
 
@@ -202,6 +203,7 @@ function create_sql_connection(): ?object
                         $sql_credentials[3], $sql_credentials[4], $sql_credentials[5]);
                     error_reporting(E_ALL); // In rare occasions, this would be something, but it's recommended to keep it to E_ALL
                 }
+                $sql_connections[$hash]->set_charset("utf8mb4");
 
                 if ($sql_connections[$hash]->connect_error) {
                     $is_sql_usable = false;
@@ -314,14 +316,33 @@ function sql_build_where(array $where): string|array
     return trim($query);
 }
 
-function sql_build_order(string|array $order): string
+function sql_build_order(string|array $order, string $table): string
 {
-    if (is_array($order)) {
-        $orderType = array_shift($order);
-        return implode(", ", $order) . " " . $orderType;
-    } else {
+    if (is_string($order)) {
         return $order;
     }
+    if (is_array($order)) {
+        $direction = strtoupper(array_shift($order));
+
+        if (!in_array($direction, array('ASC', 'DESC'))) {
+            $direction = 'ASC';
+        }
+        $validatedColumns = array();
+        $allowedColumns = get_sql_database_columns($table);
+
+        foreach ($order as $column) {
+            $cleanColumn = str_replace('`', '', $column);
+
+            if (in_array($cleanColumn, $allowedColumns)) {
+                $validatedColumns[] = "`" . $cleanColumn . "`";
+            }
+        }
+
+        if (!empty($validatedColumns)) {
+            return implode(", ", $validatedColumns) . " " . $direction;
+        }
+    }
+    return "";
 }
 
 // Cache
@@ -569,7 +590,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         $query .= " WHERE " . $where;
     }
     if ($order !== null) {
-        $order = sql_build_order($order);
+        $order = sql_build_order($order, $table);
         $query .= " ORDER BY " . $order;
     }
     if ($limit > 0) {
@@ -841,9 +862,23 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
     $whatSize = sizeof($what);
 
     foreach ($what as $key => $value) {
-        $query .= properly_sql_encode($key) . " = " . ($value === null ? "NULL" :
-                (is_bool($value) ? ($value ? "'1'" : "NULL") :
-                    "'" . properly_sql_encode($value, true) . "'"));
+        if (is_array($value)) {
+            $value = array_shift($value);
+
+            if ($value === null) {
+                log_sql_error(null, "Invalid SET value: NULL for key " . $key);
+                return false;
+            }
+            if (!is_string($value)) {
+                log_sql_error(null, "Invalid SET value: Non-string for key " . $key);
+                return false;
+            }
+            $query .= properly_sql_encode($key) . " = " . $value;
+        } else {
+            $query .= properly_sql_encode($key) . " = " . ($value === null ? "NULL" :
+                    (is_bool($value) ? ($value ? "'1'" : "NULL") :
+                        "'" . properly_sql_encode($value, true) . "'"));
+        }
         $counter++;
 
         if ($counter !== $whatSize) {
@@ -854,7 +889,7 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
         $query .= " WHERE " . sql_build_where($where);
     }
     if ($order !== null) {
-        $query .= " ORDER BY " . sql_build_order($order);
+        $query .= " ORDER BY " . sql_build_order($order, $table);
     }
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
@@ -875,7 +910,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
     $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);
 
     if ($order !== null) {
-        $query .= " ORDER BY " . sql_build_order($order);
+        $query .= " ORDER BY " . sql_build_order($order, $table);
     }
     if ($limit > 0) {
         $query .= " LIMIT " . $limit;
@@ -920,8 +955,17 @@ function get_sql_database_schemas(): array
     return $array;
 }
 
-function get_sql_database_columns(string $table): array
+function get_sql_database_columns(string $table, bool $cache = true): array
 {
+    global $sql_database_columns_cache;
+
+    if ($cache) {
+        $array = $sql_database_columns_cache[$table] ?? null;
+
+        if (is_array($array)) {
+            return $array;
+        }
+    }
     $array = array();
     $query = sql_query("SHOW COLUMNS FROM " . $table . ";", false);
 
@@ -930,5 +974,6 @@ function get_sql_database_columns(string $table): array
             $array[] = $row["Field"];
         }
     }
+    $sql_database_columns_cache[$table] = $array;
     return $array;
 }
