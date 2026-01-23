@@ -863,6 +863,10 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
 
     foreach ($what as $key => $value) {
         if (is_array($value)) {
+            if (sizeof($value) > 1) {
+                log_sql_error(null, "Invalid SET value: Multiple values for key " . $key);
+                return false;
+            }
             $value = array_shift($value);
 
             if ($value === null) {
