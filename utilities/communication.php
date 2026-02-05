@@ -113,7 +113,6 @@ function is_private_connection(): bool
                 null,
                 1
             );
-            load_previous_sql_database();
 
             if (!empty($query)) {
                 $private_connection_access = true;
@@ -124,8 +123,10 @@ function is_private_connection(): bool
                         array("expiration", "<", time())
                     )
                 );
+                load_previous_sql_database();
                 return true;
             }
+            load_previous_sql_database();
         }
         return false;
     }
