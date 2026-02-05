@@ -14,7 +14,8 @@ function set_sql_credentials(string          $hostname,
                              string          $username,
                              ?string         $password = null,
                              ?string         $database = null,
-                             int|string      $port = null, $socket = null,
+                             int|string      $port = null,
+                             mixed           $socket = null,
                              bool            $exit = false,
                              string|int|null $duration = null,
                              bool            $showErrors = false): void
@@ -32,7 +33,7 @@ function set_sql_credentials(string          $hostname,
         $duration === null ? null : get_future_date($duration),
         $showErrors
     );
-    $sql_credentials[] = string_to_integer(json_encode($sql_credentials));
+    $sql_credentials[] = string_to_integer(@json_encode($sql_credentials));
 }
 
 function has_sql_credentials(): bool
@@ -285,7 +286,7 @@ function sql_build_where(array $where): string|array
             $size = sizeof($single);
 
             if ($size < 2 || $size > 4) {
-                log_sql_error(null, "Invalid WHERE clause: " . json_encode($single));
+                log_sql_error(null, "Invalid WHERE clause: " . @json_encode($single));
             }
             $equals = $size === 2;
             $value = $single[$equals ? 1 : 2];
@@ -470,9 +471,16 @@ function sql_store_cache(string           $table,
     foreach ($columns as $key => $column) {
         $columns[$key] = array($table, $column, $hash, $time);
     }
+    $limit = 15_800;
     $store = @json_encode($query, JSON_UNESCAPED_UNICODE);
 
-    if (strlen($store) <= 15_800) {
+    if (is_string($store)
+        && strlen($store) <= $limit) {
+        $store = properly_sql_encode($store, true);
+    } else {
+        return false;
+    }
+    if (strlen($store) <= $limit) {
         load_sql_database(SqlDatabaseCredentials::MEMORY);
         $retrieverTable = "memory.queryCacheRetriever";
         $trackerTable = "memory.queryCacheTracker";
@@ -496,7 +504,7 @@ function sql_store_cache(string           $table,
             $query = sql_query(
                 "INSERT INTO " . $retrieverTable
                 . " (table_name, hash, results, last_access_time, column_names) "
-                . "VALUES('$table', '$hash', '$store', '$time', '" . json_encode($originalColumns) . "');",
+                . "VALUES ('$table', '$hash', '$store', '$time', '" . @json_encode($originalColumns) . "');",
                 false
             );
 
@@ -605,8 +613,6 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     $hash = overflow_long(($hash * 31) + $limit);
 
     if ($sql_query_debug) {
-        var_dump($hash);
-        error_log($hash);
         log_sql_error($hash, "DEBUG HASH");
     } else if (is_sql_local_memory_enabled($table)) {
         global $sql_local_memory;
@@ -697,8 +703,6 @@ function sql_query(string $command, bool $localDebug = true): mixed
 
         if ($sql_query_debug) {
             $sql_query_debug = false;
-            var_dump($command);
-            error_log($command);
             log_sql_error($command, "DEBUG QUERY");
         }
     }
@@ -720,43 +724,30 @@ function sql_query(string $command, bool $localDebug = true): mixed
         }
         if (!$query) {
             $query = $command;
-            log_sql_error($query, $sqlConnection->error, $sqlConnection);
+            log_sql_error($query, $sqlConnection->error);
         }
         return $query;
     }
     return null;
 }
 
-function log_sql_error(?string $query, mixed $error, mixed $sqlConnection = null): void
+function log_sql_error(?string $query, mixed $error): void
 {
     if (is_object($error)
         || is_array($error)) {
-        $error = json_encode($error);
+        $error = @json_encode($error);
 
         if ($error === false) {
             return;
         }
     }
-    global $sql_credentials;
-    $show_sql_errors = $sql_credentials[9];
-    $command = "INSERT INTO logs.sqlErrors (creation, file, query, error) VALUES "
-        . "('" . time() . "', '" . properly_sql_encode($_SERVER["SCRIPT_NAME"])
-        . "', '" . $query . "', '" . $error . "');";
-
-    if ($sqlConnection === null) {
-        $sqlConnection = get_sql_connection();
+    if ($query !== null) {
+        error_log($query);
     }
-    if ($show_sql_errors) {
-        $sqlConnection->query($command);
-    } else {
-        error_reporting(0);
-
-        try {
-            $sqlConnection->query($command);
-        } catch (Exception $e) {
-        }
-        error_reporting(E_ALL);
+    if ($error !== null) {
+        error_log($error);
     }
+    error_log(@json_encode(debug_backtrace()));
 }
 
 // Insert
