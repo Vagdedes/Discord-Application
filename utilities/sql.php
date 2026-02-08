@@ -89,25 +89,28 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
 {
     global $sql_enable_local_memory;
     $loadRecentQueries = function (null|array|string $tables) {
-        $limit = 10_000;
+        $limit = 100_000;
 
         if (is_string($tables)) {
             $query = sql_query(
                 "SELECT hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
                 . "WHERE table_name = '$tables' "
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
+                false,
                 false
             );
+            global $sql_local_memory;
 
-            if (($query->num_rows ?? 0) > 0) {
-                global $sql_local_memory;
+            while ($row = $query->fetch_assoc()) {
+                if (array_key_exists($tables, $sql_local_memory)) {
+                    $sql_local_memory[$tables][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                } else {
+                    $sql_local_memory[$tables] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                }
 
-                while ($row = $query->fetch_assoc()) {
-                    if (array_key_exists($tables, $sql_local_memory)) {
-                        $sql_local_memory[$tables][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
-                    } else {
-                        $sql_local_memory[$tables] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
-                    }
+                if (memory_get_usage() / (1024 * 1024) > 100) {
+                    $query->free();
+                    break;
                 }
             }
         } else {
@@ -116,18 +119,21 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
                 . ($tables === null ? ""
                     : "WHERE table_name IN('" . implode("', '", $tables) . "') ")
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
+                false,
                 false
             );
+            global $sql_local_memory;
 
-            if (($query->num_rows ?? 0) > 0) {
-                global $sql_local_memory;
+            while ($row = $query->fetch_assoc()) {
+                if (array_key_exists($row["table_name"], $sql_local_memory)) {
+                    $sql_local_memory[$row["table_name"]][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                } else {
+                    $sql_local_memory[$row["table_name"]] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                }
 
-                while ($row = $query->fetch_assoc()) {
-                    if (array_key_exists($row["table_name"], $sql_local_memory)) {
-                        $sql_local_memory[$row["table_name"]][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
-                    } else {
-                        $sql_local_memory[$row["table_name"]] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
-                    }
+                if (memory_get_usage() / (1024 * 1024) > 100) {
+                    $query->free();
+                    break;
                 }
             }
         }
@@ -693,7 +699,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 /**
  * @throws Exception
  */
-function sql_query(string $command, bool $localDebug = true): mixed
+function sql_query(string $command, bool $localDebug = true, bool $buffer = true): mixed
 {
     $sqlConnection = create_sql_connection();
     global $is_sql_usable;
@@ -711,12 +717,22 @@ function sql_query(string $command, bool $localDebug = true): mixed
         $show_sql_errors = $sql_credentials[9];
 
         if ($show_sql_errors) {
-            $query = $sqlConnection->query($command);
+            $query = $sqlConnection->query(
+                $command,
+                $buffer
+                    ? MYSQLI_STORE_RESULT
+                    : MYSQLI_USE_RESULT
+            );
         } else {
             error_reporting(0);
 
             try {
-                $query = $sqlConnection->query($command);
+                $query = $sqlConnection->query(
+                    $command,
+                    $buffer
+                        ? MYSQLI_STORE_RESULT
+                        : MYSQLI_USE_RESULT
+                );
             } catch (Exception $e) {
                 $query = false;
             }
