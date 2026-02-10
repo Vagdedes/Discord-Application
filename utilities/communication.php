@@ -72,7 +72,6 @@ function private_file_get_contents(
 ): bool|string
 {
     $code = random_string(512);
-    load_sql_database(__SqlDatabaseServers::MEMORY);
     sql_insert(
         __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
         array(
@@ -80,7 +79,6 @@ function private_file_get_contents(
             "expiration" => time() + 60
         )
     );
-    load_previous_sql_database();
     return post_file_get_contents(
         $url,
         array_merge(
@@ -106,7 +104,6 @@ function is_private_connection(): bool
         return true;
     } else {
         if (isset($_POST['private_verification_key'])) {
-            load_sql_database(__SqlDatabaseServers::MEMORY);
             $query = get_sql_query( // No cache required, already in memory table
                 __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
                 array("id"),
@@ -126,10 +123,8 @@ function is_private_connection(): bool
                         array("expiration", "<", time())
                     )
                 );
-                load_previous_sql_database();
                 return true;
             }
-            load_previous_sql_database();
         }
         return false;
     }
