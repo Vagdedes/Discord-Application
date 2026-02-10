@@ -1,16 +1,21 @@
 <?php
-$memory_private_connections_table = "memory.privateConnections";
 $private_connection_access = false;
 $current_sql_database = null;
 $previous_sql_database = null;
 
 //load_sql_database(); Moved to bot implementation
 
-class SqlDatabaseCredentials
+class __SqlDatabaseServers
 {
     public const
         STORAGE = "sql_storage_credentials",
         MEMORY = "sql_memory_credentials";
+}
+
+class __SqlDatabaseCommunication
+{
+    public const
+        PRIVATE_CONNECTIONS_TABLE = "localMemory.privateConnections";
 }
 
 function load_previous_sql_database(): void
@@ -27,14 +32,14 @@ function load_previous_sql_database(): void
             null,
             null,
             null,
-            true,
+            false,
             DiscordProperties::SYSTEM_REFRESH_TIME);
     } else {
         load_sql_database();
     }
 }
 
-function load_sql_database(string $file = SqlDatabaseCredentials::STORAGE): void
+function load_sql_database(string $file = __SqlDatabaseServers::STORAGE): void
 {
     global $current_sql_database, $previous_sql_database;
     $previous_sql_database = $current_sql_database;
@@ -53,7 +58,7 @@ function load_sql_database(string $file = SqlDatabaseCredentials::STORAGE): void
             null,
             null,
             null,
-            true,
+            false,
             DiscordProperties::SYSTEM_REFRESH_TIME
         );
     }
@@ -66,11 +71,10 @@ function private_file_get_contents(
     bool   $clearPreviousParameters = false
 ): bool|string
 {
-    global $memory_private_connections_table;
     $code = random_string(512);
-    load_sql_database(SqlDatabaseCredentials::MEMORY);
+    load_sql_database(__SqlDatabaseServers::MEMORY);
     sql_insert(
-        $memory_private_connections_table,
+        __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
         array(
             "code" => hash("sha512", $code),
             "expiration" => time() + 60
@@ -102,10 +106,9 @@ function is_private_connection(): bool
         return true;
     } else {
         if (isset($_POST['private_verification_key'])) {
-            global $memory_private_connections_table;
-            load_sql_database(SqlDatabaseCredentials::MEMORY);
+            load_sql_database(__SqlDatabaseServers::MEMORY);
             $query = get_sql_query( // No cache required, already in memory table
-                $memory_private_connections_table,
+                __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
                 array("id"),
                 array(
                     array("code", hash("sha512", $_POST['private_verification_key']))
@@ -117,7 +120,7 @@ function is_private_connection(): bool
             if (!empty($query)) {
                 $private_connection_access = true;
                 delete_sql_query(
-                    $memory_private_connections_table,
+                    __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
                     array(
                         array("id", "=", $query[0]->id, 0),
                         array("expiration", "<", time())
