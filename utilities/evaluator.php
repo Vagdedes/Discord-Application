@@ -17,6 +17,7 @@ class evaluator
 
     public static function run(?array $scripts = null): array
     {
+        load_sql_database();
         $files = private_file_get_contents(
             self::local_address
             . self::website_path

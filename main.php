@@ -100,7 +100,6 @@ $discord = new Discord([
 
 $discord->on('ready', function (Discord $discord) {
     global $createdDiscordBot, $logger;
-    load_sql_database();
     $botID = $discord->id;
     $createdDiscordBot = new DiscordBot($discord, $botID);
     $logger = new DiscordLogs($createdDiscordBot);
