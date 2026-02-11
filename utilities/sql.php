@@ -91,8 +91,8 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
 
         if (is_string($tables)) {
             $query = sql_query(
-                "SELECT hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
-                . "WHERE table_name = '$tables' "
+                "SELECT hash, results, last_access_time, column_names FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
+                . " WHERE table_name = '$tables' "
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
                 false,
                 true
@@ -114,9 +114,10 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
             }
         } else {
             $query = sql_query(
-                "SELECT table_name, hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
-                . ($tables === null ? ""
-                    : "WHERE table_name IN ('" . implode("', '", $tables) . "') ")
+                "SELECT table_name, hash, results, last_access_time, column_names FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
+                . ($tables === null
+                    ? " "
+                    : " WHERE table_name IN ('" . implode("', '", $tables) . "') ")
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
                 false,
                 true
@@ -227,14 +228,19 @@ function create_sql_connection(bool $force = false): ?mysqli
 function close_sql_connection(bool $clear = false): bool
 {
     if (!empty(__SqlDatabaseFields::$sql_credentials)) {
-        $hash = __SqlDatabaseFields::$sql_credentials[6];
-        $result = __SqlDatabaseFields::$sql_connections[$hash]->close();
-        unset(__SqlDatabaseFields::$sql_connections[$hash]);
+        $hash = __SqlDatabaseFields::$sql_credentials[6] ?? null;
 
-        if ($clear) {
-            __SqlDatabaseFields::$sql_credentials = array();
+        if ($hash !== null) {
+            $connection = __SqlDatabaseFields::$sql_connections[$hash] ?? null;
+            unset(__SqlDatabaseFields::$sql_connections[$hash]);
+
+            if ($clear) {
+                __SqlDatabaseFields::$sql_credentials = array();
+            }
+            if ($connection instanceof mysqli) {
+                return $connection->close();
+            }
         }
-        return $result;
     }
     return false;
 }
@@ -587,8 +593,8 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     if (__SqlDatabaseFields::$sql_global_memory) {
         load_sql_database(__SqlDatabaseServers::MEMORY);
         $cache = sql_query(
-            "SELECT results, last_access_time FROM memory.queryCacheRetriever "
-            . "WHERE table_name = '$table' and hash = '$hash' "
+            "SELECT results, last_access_time FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
+            . " WHERE table_name = '$table' and hash = '$hash' "
             . "LIMIT 1;",
             true,
             true
