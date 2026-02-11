@@ -19,6 +19,9 @@ class __SqlDatabaseFields
 
     public const
         MEMORY_HOST_NAME = "10.0.0.5",
+        DISABLED_HOST_NAMES = array(
+        self::MEMORY_HOST_NAME
+    ),
         TRACKER_TABLE = "memory.queryCacheTracker",
         RETRIEVER_TABLE = "memory.queryCacheRetriever",
         SQL_LOCAL_BYTE_LIMIT = 95 * 1024 * 1024; // 95 MB + 5 potential overhead
@@ -176,6 +179,12 @@ function is_sql_local_memory_enabled(?string $table): bool
 
 function create_sql_connection(bool $force = false): ?mysqli
 {
+    if (in_array(
+        __SqlDatabaseFields::$sql_credentials[0] ?? null,
+        __SqlDatabaseFields::DISABLED_HOST_NAMES
+    )) {
+        return null;
+    }
     $hash = __SqlDatabaseFields::$sql_credentials[6] ?? null;
 
     if ($hash !== null) {
