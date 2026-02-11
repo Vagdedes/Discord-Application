@@ -19,6 +19,8 @@ class __SqlDatabaseFields
 
     public const
         MEMORY_HOST_NAME = "10.0.0.5",
+        TRACKER_TABLE = "memory.queryCacheTracker",
+        RETRIEVER_TABLE = "memory.queryCacheRetriever",
         SQL_LOCAL_BYTE_LIMIT = 95 * 1024 * 1024; // 95 MB + 5 potential overhead
 
 }
@@ -350,15 +352,12 @@ function sql_clear_cache(string $table, array $columns): bool
     if (!__SqlDatabaseFields::$sql_global_memory) {
         return false;
     }
-    $retrieverTable = "memory.queryCacheRetriever";
-    $trackerTable = "memory.queryCacheTracker";
-
     if (!in_array(" * ", $columns)) {
         $columns[] = " * ";
     }
     load_sql_database(__SqlDatabaseServers::MEMORY);
     $query = sql_query(
-        "SELECT id, hash FROM " . $trackerTable
+        "SELECT id, hash FROM " . __SqlDatabaseFields::TRACKER_TABLE
         . " WHERE table_name = '$table' and column_name IN ('" . implode("', '", $columns) . "');",
         true,
         true
@@ -376,7 +375,7 @@ function sql_clear_cache(string $table, array $columns): bool
             }
         }
         $query = sql_query(
-            "DELETE FROM " . $trackerTable
+            "DELETE FROM " . __SqlDatabaseFields::TRACKER_TABLE
             . " WHERE id IN ('" . implode("', '", $ids) . "');",
             true,
             true
@@ -384,7 +383,7 @@ function sql_clear_cache(string $table, array $columns): bool
 
         if ($query) {
             $query = sql_query(
-                "DELETE FROM " . $retrieverTable
+                "DELETE FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . " WHERE table_name = '$table' and hash IN ('" . implode("', '", $hashes) . "');",
                 true,
                 true
@@ -435,12 +434,10 @@ function sql_store_cache(string           $table,
     }
     if (strlen($store) <= $limit) {
         load_sql_database(__SqlDatabaseServers::MEMORY);
-        $retrieverTable = "memory.queryCacheRetriever";
-        $trackerTable = "memory.queryCacheTracker";
 
         if ($cacheExists) {
             $query = sql_query(
-                "UPDATE " . $retrieverTable
+                "UPDATE " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . " SET results = '$store', last_access_time = '$time'"
                 . " WHERE table_name = '$table' and hash = '$hash';",
                 true,
@@ -449,7 +446,7 @@ function sql_store_cache(string           $table,
 
             if ($query) {
                 $query = sql_query(
-                    "DELETE FROM " . $trackerTable
+                    "DELETE FROM " . __SqlDatabaseFields::TRACKER_TABLE
                     . " WHERE table_name = '$table' and hash = '$hash';",
                     true,
                     true
@@ -457,7 +454,7 @@ function sql_store_cache(string           $table,
             }
         } else {
             $query = sql_query(
-                "INSERT INTO " . $retrieverTable
+                "INSERT INTO " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . " (table_name, hash, results, last_access_time, column_names) "
                 . "VALUES ('$table', '$hash', '$store', '$time', '" . @json_encode($originalColumns) . "');",
                 true,
@@ -471,7 +468,7 @@ function sql_store_cache(string           $table,
                 $columnsString[] = "('" . implode("', '", $column) . "')";
             }
             $query = sql_query(
-                "INSERT INTO " . $trackerTable
+                "INSERT INTO " . __SqlDatabaseFields::TRACKER_TABLE
                 . " (table_name, column_name, hash, last_access_time) "
                 . "VALUES " . implode(", ", $columnsString) . ";",
                 true,
