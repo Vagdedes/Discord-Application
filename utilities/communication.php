@@ -26,14 +26,11 @@ function load_previous_sql_database(): void
         global $current_sql_database;
         $current_sql_database = $previous_sql_database;
         $previous_sql_database = null;
-        set_sql_credentials($current_sql_database[0],
+        set_sql_credentials(
+            $current_sql_database[0],
             $current_sql_database[1],
-            $current_sql_database[2],
-            null,
-            null,
-            null,
-            false,
-            DiscordProperties::SYSTEM_REFRESH_TIME);
+            $current_sql_database[2]
+        );
     } else {
         load_sql_database();
     }
@@ -54,12 +51,7 @@ function load_sql_database(string $file = __SqlDatabaseServers::STORAGE): void
         set_sql_credentials(
             $current_sql_database[0],
             $current_sql_database[1],
-            $current_sql_database[2],
-            null,
-            null,
-            null,
-            false,
-            DiscordProperties::SYSTEM_REFRESH_TIME
+            $current_sql_database[2]
         );
     }
 }

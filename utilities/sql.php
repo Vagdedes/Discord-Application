@@ -14,24 +14,24 @@ class __SqlDatabaseFields
     public static ?int
         $sql_last_insert_id = null;
 
-    public static int
-        $sql_local_byte_limit = 95 * 1024 * 1024; // 95 MB + 5 potential overhead
-
     public static bool|array|string
         $sql_enable_local_memory = false;
+
+    public const
+        MEMORY_HOST_NAME = "10.0.0.5",
+        SQL_LOCAL_BYTE_LIMIT = 95 * 1024 * 1024; // 95 MB + 5 potential overhead
 
 }
 
 // Connection
 
 function set_sql_credentials(
-    string          $hostname,
-    string          $username,
-    ?string         $password = null,
-    ?string         $database = null,
-    int|string      $port = null,
-    mixed           $socket = null,
-    string|int|null $duration = null
+    string     $hostname,
+    string     $username,
+    ?string    $password = null,
+    ?string    $database = null,
+    int|string $port = null,
+    mixed      $socket = null
 ): void
 {
     __SqlDatabaseFields::$sql_credentials = array(
@@ -39,12 +39,10 @@ function set_sql_credentials(
         $username,
         $password,
         $database,
-        $port,
-        $socket,
-        $duration,
-        $duration === null ? null : get_future_date($duration)
+        is_numeric($port) ? (int)$port : 3306,
+        $socket
     );
-    __SqlDatabaseFields::$sql_credentials[] = string_to_integer(@json_encode(__SqlDatabaseFields::$sql_credentials));
+    __SqlDatabaseFields::$sql_credentials[] = array_to_integer(__SqlDatabaseFields::$sql_credentials);
 }
 
 function has_sql_credentials(): bool
@@ -95,38 +93,42 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
                 true
             );
 
-            while ($row = $query?->fetch_assoc()) {
-                if (array_key_exists($tables, __SqlDatabaseFields::$sql_local_memory)) {
-                    __SqlDatabaseFields::$sql_local_memory[$tables][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
-                } else {
-                    __SqlDatabaseFields::$sql_local_memory[$tables] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
-                }
+            if (($query?->num_rows ?? 0) > 0) {
+                while ($row = $query->fetch_assoc()) {
+                    if (array_key_exists($tables, __SqlDatabaseFields::$sql_local_memory)) {
+                        __SqlDatabaseFields::$sql_local_memory[$tables][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                    } else {
+                        __SqlDatabaseFields::$sql_local_memory[$tables] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                    }
 
-                if (memory_get_usage() >= __SqlDatabaseFields::$sql_local_byte_limit) {
-                    $query->free();
-                    break;
+                    if (memory_get_usage() >= __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
+                        $query->free();
+                        break;
+                    }
                 }
             }
         } else {
             $query = sql_query(
                 "SELECT table_name, hash, results, last_access_time, column_names FROM memory.queryCacheRetriever "
                 . ($tables === null ? ""
-                    : "WHERE table_name IN('" . implode("', '", $tables) . "') ")
+                    : "WHERE table_name IN ('" . implode("', '", $tables) . "') ")
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
                 false,
                 true
             );
 
-            while ($row = $query?->fetch_assoc()) {
-                if (array_key_exists($row["table_name"], __SqlDatabaseFields::$sql_local_memory)) {
-                    __SqlDatabaseFields::$sql_local_memory[$row["table_name"]][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
-                } else {
-                    __SqlDatabaseFields::$sql_local_memory[$row["table_name"]] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
-                }
+            if (($query?->num_rows ?? 0) > 0) {
+                while ($row = $query->fetch_assoc()) {
+                    if (array_key_exists($row["table_name"], __SqlDatabaseFields::$sql_local_memory)) {
+                        __SqlDatabaseFields::$sql_local_memory[$row["table_name"]][$row["hash"]] = array($row["column_names"], $row["results"], $row["last_access_time"]);
+                    } else {
+                        __SqlDatabaseFields::$sql_local_memory[$row["table_name"]] = array($row["hash"] => array($row["column_names"], $row["results"], $row["last_access_time"]));
+                    }
 
-                if (memory_get_usage() >= __SqlDatabaseFields::$sql_local_byte_limit) {
-                    $query->free();
-                    break;
+                    if (memory_get_usage() >= __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
+                        $query->free();
+                        break;
+                    }
                 }
             }
         }
@@ -140,20 +142,20 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
         } else {
             __SqlDatabaseFields::$sql_enable_local_memory = array($boolOrTables);
         }
-        load_sql_database(SqlDatabaseCredentials::MEMORY);
+        load_sql_database(__SqlDatabaseServers::MEMORY);
         $loadRecentQueries(__SqlDatabaseFields::$sql_enable_local_memory);
         load_previous_sql_database();
     } else {
         __SqlDatabaseFields::$sql_enable_local_memory = $boolOrTables;
 
         if ($boolOrTables === true) {
-            load_sql_database(SqlDatabaseCredentials::MEMORY);
+            load_sql_database(__SqlDatabaseServers::MEMORY);
             $loadRecentQueries(null);
             load_previous_sql_database();
         } else if ($boolOrTables === false) {
             __SqlDatabaseFields::$sql_local_memory = array();
         } else {
-            load_sql_database(SqlDatabaseCredentials::MEMORY);
+            load_sql_database(__SqlDatabaseServers::MEMORY);
             $loadRecentQueries($boolOrTables);
             load_previous_sql_database();
         }
@@ -170,19 +172,15 @@ function is_sql_local_memory_enabled(?string $table): bool
     }
 }
 
-function create_sql_connection(): ?mysqli
+function create_sql_connection(bool $force = false): ?mysqli
 {
-    $hash = __SqlDatabaseFields::$sql_credentials[8] ?? null;
+    $hash = __SqlDatabaseFields::$sql_credentials[6] ?? null;
 
     if ($hash !== null) {
-        $expired = __SqlDatabaseFields::$sql_credentials[7] !== null
-            && __SqlDatabaseFields::$sql_credentials[7] < time();
-
-        if ($expired
+        if ($force
             || !array_key_exists($hash, __SqlDatabaseFields::$sql_connections)) {
-            if ($expired) {
-                __SqlDatabaseFields::$sql_credentials[7] = get_future_date(__SqlDatabaseFields::$sql_credentials[6]);
-            }
+            unset(__SqlDatabaseFields::$sql_connections[$hash]);
+
             try {
                 __SqlDatabaseFields::$sql_connections[$hash] = mysqli_init();
                 __SqlDatabaseFields::$sql_connections[$hash]->options(MYSQLI_OPT_CONNECT_TIMEOUT, 1);
@@ -195,10 +193,17 @@ function create_sql_connection(): ?mysqli
                     __SqlDatabaseFields::$sql_credentials[5]
                 );
                 __SqlDatabaseFields::$sql_connections[$hash]->set_charset("utf8mb4");
-            } catch (Throwable $ignored) {
+            } catch (Throwable $e) {
+                unset(__SqlDatabaseFields::$sql_connections[$hash]);
+
+                if (__SqlDatabaseFields::$sql_credentials[0] === __SqlDatabaseFields::MEMORY_HOST_NAME) {
+                    __SqlDatabaseFields::$sql_global_memory = false;
+                } else {
+                    log_sql_error(null, $e->getMessage(), $e->getTraceAsString());
+                }
             }
         }
-        $object = __SqlDatabaseFields::$sql_connections[$hash];
+        $object = __SqlDatabaseFields::$sql_connections[$hash] ?? null;
 
         if ($object instanceof mysqli
             && $object->connect_error === null) {
@@ -211,7 +216,7 @@ function create_sql_connection(): ?mysqli
 function close_sql_connection(bool $clear = false): bool
 {
     if (!empty(__SqlDatabaseFields::$sql_credentials)) {
-        $hash = __SqlDatabaseFields::$sql_credentials[8];
+        $hash = __SqlDatabaseFields::$sql_credentials[6];
         $result = __SqlDatabaseFields::$sql_connections[$hash]->close();
         unset(__SqlDatabaseFields::$sql_connections[$hash]);
 
@@ -351,18 +356,15 @@ function sql_clear_cache(string $table, array $columns): bool
     if (!in_array(" * ", $columns)) {
         $columns[] = " * ";
     }
-    load_sql_database(SqlDatabaseCredentials::MEMORY);
+    load_sql_database(__SqlDatabaseServers::MEMORY);
     $query = sql_query(
         "SELECT id, hash FROM " . $trackerTable
-        . " WHERE table_name = '$table' and column_name IN('" . implode("', '", $columns) . "');",
+        . " WHERE table_name = '$table' and column_name IN ('" . implode("', '", $columns) . "');",
         true,
         true
     );
 
-    if (!$query) {
-        __SqlDatabaseFields::$sql_global_memory = false;
-        return false;
-    } else if (($query?->num_rows ?? 0) > 0) {
+    if (($query?->num_rows ?? 0) > 0) {
         $ids = array();
         $hashes = array();
 
@@ -375,7 +377,7 @@ function sql_clear_cache(string $table, array $columns): bool
         }
         $query = sql_query(
             "DELETE FROM " . $trackerTable
-            . " WHERE id IN('" . implode("', '", $ids) . "');",
+            . " WHERE id IN ('" . implode("', '", $ids) . "');",
             true,
             true
         );
@@ -383,16 +385,10 @@ function sql_clear_cache(string $table, array $columns): bool
         if ($query) {
             $query = sql_query(
                 "DELETE FROM " . $retrieverTable
-                . " WHERE table_name = '$table' and hash IN('" . implode("', '", $hashes) . "');",
+                . " WHERE table_name = '$table' and hash IN ('" . implode("', '", $hashes) . "');",
                 true,
                 true
             );
-
-            if (!$query) {
-                __SqlDatabaseFields::$sql_global_memory = false;
-            }
-        } else {
-            __SqlDatabaseFields::$sql_global_memory = false;
         }
         load_previous_sql_database();
         return (bool)$query;
@@ -413,10 +409,10 @@ function sql_store_cache(string           $table,
     if (is_sql_local_memory_enabled($table)) {
         if (array_key_exists($table, __SqlDatabaseFields::$sql_local_memory)) {
             if (array_key_exists($hash, __SqlDatabaseFields::$sql_local_memory[$table])
-                || memory_get_usage() < __SqlDatabaseFields::$sql_local_byte_limit) {
+                || memory_get_usage() < __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
                 __SqlDatabaseFields::$sql_local_memory[$table][$hash] = array($columns, $query, $time);
             }
-        } else if (memory_get_usage() < __SqlDatabaseFields::$sql_local_byte_limit) {
+        } else if (memory_get_usage() < __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
             __SqlDatabaseFields::$sql_local_memory[$table] = array($hash => array($columns, $query, $time));
         }
     }
@@ -438,7 +434,7 @@ function sql_store_cache(string           $table,
         return false;
     }
     if (strlen($store) <= $limit) {
-        load_sql_database(SqlDatabaseCredentials::MEMORY);
+        load_sql_database(__SqlDatabaseServers::MEMORY);
         $retrieverTable = "memory.queryCacheRetriever";
         $trackerTable = "memory.queryCacheTracker";
 
@@ -458,12 +454,6 @@ function sql_store_cache(string           $table,
                     true,
                     true
                 );
-
-                if (!$query) {
-                    __SqlDatabaseFields::$sql_global_memory = false;
-                }
-            } else {
-                __SqlDatabaseFields::$sql_global_memory = false;
             }
         } else {
             $query = sql_query(
@@ -473,10 +463,6 @@ function sql_store_cache(string           $table,
                 true,
                 true
             );
-
-            if (!$query) {
-                __SqlDatabaseFields::$sql_global_memory = false;
-            }
         }
         if ($query) {
             $columnsString = array();
@@ -491,10 +477,6 @@ function sql_store_cache(string           $table,
                 true,
                 true
             );
-
-            if (!$query) {
-                __SqlDatabaseFields::$sql_global_memory = false;
-            }
         }
         load_previous_sql_database();
         return (bool)$query;
@@ -514,8 +496,12 @@ function properly_sql_encode(string $string, bool $partial = false): ?string
             $text = $partial ? $string : htmlspecialchars($string);
         }
     } catch (Throwable $e) {
-        log_sql_error(null, $e->getMessage());
-        $text = $partial ? $string : htmlspecialchars($string);
+        if (__SqlDatabaseFields::$sql_credentials[0] === __SqlDatabaseFields::MEMORY_HOST_NAME) {
+            __SqlDatabaseFields::$sql_global_memory = false;
+        } else {
+            log_sql_error(null, $e->getMessage(), $e->getTraceAsString());
+            $text = $partial ? $string : htmlspecialchars($string);
+        }
     }
     return $text;
 }
@@ -593,7 +579,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     }
 
     if (__SqlDatabaseFields::$sql_global_memory) {
-        load_sql_database(SqlDatabaseCredentials::MEMORY);
+        load_sql_database(__SqlDatabaseServers::MEMORY);
         $cache = sql_query(
             "SELECT results, last_access_time FROM memory.queryCacheRetriever "
             . "WHERE table_name = '$table' and hash = '$hash' "
@@ -603,10 +589,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
         );
         load_previous_sql_database();
 
-        if (!$cache) {
-            __SqlDatabaseFields::$sql_global_memory = false;
-            $cacheExists = false;
-        } else if (($cache->num_rows ?? 0) > 0) {
+        if (($cache->num_rows ?? 0) > 0) {
             $row = $cache->fetch_assoc();
             $results = json_decode($row["results"], false);
 
@@ -614,10 +597,10 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
                 if (is_sql_local_memory_enabled($table)) {
                     if (array_key_exists($table, __SqlDatabaseFields::$sql_local_memory)) {
                         if (array_key_exists($hash, __SqlDatabaseFields::$sql_local_memory[$table])
-                            || memory_get_usage() < __SqlDatabaseFields::$sql_local_byte_limit) {
+                            || memory_get_usage() < __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
                             __SqlDatabaseFields::$sql_local_memory[$table][$hash] = array($columns, $results, $row["last_access_time"]);
                         }
-                    } else if (memory_get_usage() < __SqlDatabaseFields::$sql_local_byte_limit) {
+                    } else if (memory_get_usage() < __SqlDatabaseFields::SQL_LOCAL_BYTE_LIMIT) {
                         __SqlDatabaseFields::$sql_local_memory[$table] = array($hash => array($columns, $results, $row["last_access_time"]));
                     }
                 }
@@ -652,9 +635,14 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
     return $array;
 }
 
-function sql_query(string $command, bool $buffer = true, bool $memoryQuery = false): mysqli_result|bool
+function sql_query(
+    string $command,
+    bool   $buffer = true,
+    bool   $memoryQuery = false,
+    bool   $redundant = true
+): mysqli_result|bool
 {
-    $sqlConnection = create_sql_connection();
+    $sqlConnection = create_sql_connection(!$redundant);
 
     try {
         $query = $sqlConnection?->query(
@@ -672,11 +660,20 @@ function sql_query(string $command, bool $buffer = true, bool $memoryQuery = fal
             }
         }
     } catch (Throwable $e) {
-        if (!$memoryQuery
-            || $e->getMessage() !== "MySQL server has gone away") {
+        if (is_sql_usable()) {
             log_sql_error($command, $e->getMessage(), $e->getTraceAsString());
         }
         $query = false;
+    }
+
+    if ($redundant) {
+        if (!$query
+            && !is_sql_usable()) {
+            return sql_query($command, $buffer, $memoryQuery, false);
+        }
+    } else if (!$query
+        && __SqlDatabaseFields::$sql_credentials[0] === __SqlDatabaseFields::MEMORY_HOST_NAME) {
+        __SqlDatabaseFields::$sql_global_memory = false;
     }
     return $query;
 }
