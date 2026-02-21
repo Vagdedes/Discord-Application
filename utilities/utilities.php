@@ -565,6 +565,12 @@ function is_base64_image(?string $string): bool
 
 // Strings
 
+function replace_url_by_prefix(string $text, string $lookFor, string $replacement): string
+{
+    $pattern = '/(?<=^|\s)' . preg_quote($lookFor, '/') . '[^\s]*/';
+    return preg_replace($pattern, $replacement, $text);
+}
+
 function str_replace_whole_words(string|array $search, string|array $replace, string $subject): string
 {
     if (!is_array($search)) {
