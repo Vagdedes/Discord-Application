@@ -841,7 +841,7 @@ function array_to_integer(array|object|null $array, bool $long = false): int
     return $result;
 }
 
-function random_number(int $length = 9): int
+function random_number(int $length = 9, bool $zero = true): string
 {
     if ($length <= 0) {
         return rand(0, 9);
@@ -849,13 +849,13 @@ function random_number(int $length = 9): int
     $randomString = "";
 
     for ($i = 0; $i < $length; $i++) {
-        if ($i === 0) {
+        if (!$zero && $i === 0) {
             $randomString .= rand(1, 9);
         } else {
             $randomString .= rand(0, 9);
         }
     }
-    return (int)$randomString;
+    return $randomString;
 }
 
 function add_ordinal_number(int $num): string
