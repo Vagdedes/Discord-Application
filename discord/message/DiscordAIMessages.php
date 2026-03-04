@@ -713,8 +713,7 @@ class DiscordAIMessages
                         $aiModel,
                         $systemInstructions[0],
                         $systemInstructions[1],
-                        $systemInstructions[2],
-                        $content
+                        $systemInstructions[2]
                     );
 
                     if (!empty($system)) {
@@ -812,13 +811,14 @@ class DiscordAIMessages
         }
     }
 
-    private function buildSystemInstructions(object  $model,
-                                             object  $object,
-                                             ?array  $specificLocal = null,
-                                             ?array  $specificPublic = null,
-                                             ?string $userInput = null): string
+    private function buildSystemInstructions(
+        object $model,
+        object $object,
+        ?array $specificLocal = null,
+        ?array $specificPublic = null
+    ): string
     {
-        $local = $this->bot->instructions->get($object->serverID, $model->managerAI)->getLocal($specificLocal, $userInput);
+        $local = $this->bot->instructions->get($object->serverID, $model->managerAI)->getLocal($specificLocal);
 
         if (!empty($local)) {
             foreach ($local as $key => $value) {

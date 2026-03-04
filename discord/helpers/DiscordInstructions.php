@@ -19,7 +19,7 @@ class DiscordInstructions
         $this->managers = array();
     }
 
-    public function get(int|string|Guild $serverID, mixed $managerAI = null): mixed
+    public function get(int|string|Guild $serverID, mixed $managerAI = null): AccountInstructions
     {
         if ($serverID instanceof Guild) {
             $serverID = $serverID->id;
@@ -46,11 +46,13 @@ class DiscordInstructions
         }
     }
 
-    public function replace(array   $messages,
-                            ?object $object,
-                            ?array  $specificPublic = null,
-                            bool    $callables = false,
-                            bool    $extra = false,): array
+    public function replace(
+        array   $messages,
+        ?object $object,
+        ?array  $specificPublic = null,
+        bool    $callables = false,
+        bool    $extra = false
+    ): array
     {
         if ($object === null) {
             $account = new Account();
