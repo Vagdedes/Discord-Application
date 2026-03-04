@@ -397,7 +397,7 @@ class DiscordLogs
             BotDatabaseTable::BOT_ERRORS,
             array(
                 "bot_id" => $this->bot?->botID,
-                "object" => $object !== null ? @json_encode($object) : null,
+                "object" => $object !== null ? @json_encode($object, JSON_PRETTY_PRINT) : null,
                 "creation_date" => get_current_date()
             )
         );

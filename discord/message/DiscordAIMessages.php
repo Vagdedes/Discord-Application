@@ -17,7 +17,7 @@ class DiscordAIMessages
     private array $messageCounter, $messageReplies, $messageFeedback;
 
     public const
-        PAST_MESSAGES_COUNT = 100,
+        PAST_MESSAGES_COUNT = 50,
         PAST_MESSAGES_LENGTH = 10_000,
         THREADS_ANALYZED = 20,
         THREAD_ANALYZED_MESSAGES = 10;
@@ -851,7 +851,8 @@ class DiscordAIMessages
                                int             $limit = 0,
                                int             $length = 0): array
     {
-        if ($channelID === null || $userID === null) {
+        if ($channelID === null
+            || $userID === null) {
             return array();
         }
         $channel = $this->bot->discord->getChannel($channelID);
@@ -865,7 +866,6 @@ class DiscordAIMessages
                 if (!empty($channel->threads->first())) {
                     foreach ($channel->threads as $thread) {
                         if ($thread->id == $threadID) {
-                            $channel = $thread;
                             $found = true;
                             break;
                         }
