@@ -826,7 +826,6 @@ class DiscordAIMessages
                     array($value),
                     $object,
                     $specificPublic,
-                    $userInput,
                     true,
                     true
                 );

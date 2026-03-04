@@ -49,7 +49,6 @@ class DiscordInstructions
     public function replace(array   $messages,
                             ?object $object,
                             ?array  $specificPublic = null,
-                            ?string $userInput = null,
                             bool    $callables = false,
                             bool    $extra = false,): array
     {
@@ -65,10 +64,9 @@ class DiscordInstructions
             !$callables
                 ? null
                 : array(
-                "publicInstructions" => function () use ($manager, $specificPublic, $userInput) {
+                "publicInstructions" => function () use ($manager, $specificPublic) {
                     return $manager->getPublic(
                         $specificPublic,
-                        $userInput,
                         false
                     );
                 },
