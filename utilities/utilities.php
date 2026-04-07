@@ -655,8 +655,15 @@ function get_keys_from_file(string $file, int $amount = 1, bool $custom = false)
     $contents = timed_file_get_contents(($custom ? "" : $keys_from_file_directory) . $file, 3);
 
     if ($contents !== false) {
-        $keys = explode("\n", trim($contents));
-        return sizeof($keys) != $amount ? null : $keys;
+        $keys = explode("\n", trim($contents), $amount + 1);
+
+        if (sizeof($keys) != $amount) {
+            return null;
+        }
+        foreach ($keys as $key => $value) {
+            $keys[$key] = trim($value);
+        }
+        return $keys;
     } else {
         return null;
     }
