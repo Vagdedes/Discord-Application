@@ -873,10 +873,9 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
     }
     $query = sql_query($query . ";");
 
-    if ($query) {
-        if (($columnsQuery->num_rows ?? 0) > 0) {
-            sql_clear_cache($table, array_keys($columnsQuery->fetch_assoc()));
-        }
+    if ($query
+        && ($columnsQuery->num_rows ?? 0) > 0) {
+        sql_clear_cache($table, array_keys($columnsQuery->fetch_assoc()));
     }
     return $query;
 }
@@ -888,7 +887,8 @@ function get_sql_database_tables(string $database): array
     $array = array();
     $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
 
-    if (($query?->num_rows ?? 0) > 0) {
+    if ($query
+        && ($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
             $array[] = $row["TABLE_NAME"];
         }
@@ -901,7 +901,8 @@ function get_sql_database_schemas(): array
     $array = array();
     $query = sql_query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA . SCHEMATA;");
 
-    if (($query?->num_rows ?? 0) > 0) {
+    if ($query
+        && ($query->num_rows ?? 0) > 0) {
         while ($row = $query->fetch_assoc()) {
             if ($row["SCHEMA_NAME"] !== "information_schema") {
                 $array[] = $row["SCHEMA_NAME"];
@@ -923,9 +924,12 @@ function get_sql_database_columns(string $table, bool $cache = true): array
     $array = array();
     $query = sql_query("SHOW COLUMNS FROM " . $table . ";");
 
-    while ($row = $query?->fetch_assoc()) {
-        $array[] = $row["Field"];
+    if ($query
+        && ($query->num_rows ?? 0) > 0) {
+        while ($row = $query->fetch_assoc()) {
+            $array[] = $row["Field"];
+        }
+        __SqlDatabaseFields::$sql_database_columns_cache[$table] = $array;
     }
-    __SqlDatabaseFields::$sql_database_columns_cache[$table] = $array;
     return $array;
 }
