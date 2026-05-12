@@ -28,7 +28,7 @@ class IndividualMemoryBlock
 
         if (!empty($memory_array)) {
             foreach ($memory_array as $arrayKey => $arrayValue) {
-                if ($arrayValue->expiration !== false && $arrayValue->expiration < time()) {
+                if ($arrayValue->expiration !== false && $arrayValue->expiration < microtime(true)) {
                     unset($memory_array[$arrayKey]);
                 }
             }
@@ -48,7 +48,7 @@ class IndividualMemoryBlock
 
         if (array_key_exists($this->key, $memory_array)) {
             if ($memory_array[$this->key]->expiration === false
-                || $memory_array[$this->key]->expiration >= time()) {
+                || $memory_array[$this->key]->expiration >= microtime(true)) {
                 return $memory_array[$this->key];
             } else {
                 unset($memory_array[$this->key]);
