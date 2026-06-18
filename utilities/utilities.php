@@ -161,20 +161,16 @@ function timed_file_get_contents(
     ?array $contextOptions = null
 ): bool|string
 {
-    if ($timeoutSeconds > 0) {
-        if ($contextOptions !== null) {
-            $contextOptions['http']['timeout'] = $timeoutSeconds;
-
-            if (!array_key_exists('follow_location', $contextOptions['http'])) {
-                $contextOptions['http']['follow_location'] = true;
-            }
-        } else {
-            $contextOptions = ['http' => [
-                'timeout' => $timeoutSeconds,
-                'follow_location' => true
-            ]];
-        }
+    if ($contextOptions === null) {
+        $contextOptions = ['http' => []];
     }
+    if ($timeoutSeconds > 0) {
+        $contextOptions['http']['timeout'] = $timeoutSeconds;
+    }
+    if (!isset($contextOptions['http']['follow_location'])) {
+        $contextOptions['http']['follow_location'] = true;
+    }
+    $contextOptions['http']['user_agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
     return @file_get_contents(
         $url,
         0,
