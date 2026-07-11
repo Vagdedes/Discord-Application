@@ -170,7 +170,9 @@ function timed_file_get_contents(
     if (!isset($contextOptions['http']['follow_location'])) {
         $contextOptions['http']['follow_location'] = true;
     }
-    $contextOptions['http']['user_agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    if (!isset($contextOptions['http']['user_agent'])) {
+        $contextOptions['http']['user_agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+    }
     return @file_get_contents(
         $url,
         0,
