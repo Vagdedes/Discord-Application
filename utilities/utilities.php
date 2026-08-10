@@ -509,7 +509,13 @@ function is_url(?string $url): bool
 
 function is_domain(?string $domain): bool
 {
-    return filter_var($domain, FILTER_VALIDATE_DOMAIN) != false;
+    if (empty($domain) || strtolower($domain) === 'null') {
+        return false;
+    }
+    if (!str_contains($domain, '.')) {
+        return false;
+    }
+    return filter_var($domain, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME) !== false;
 }
 
 function prepare_phone_number(string $number): string
