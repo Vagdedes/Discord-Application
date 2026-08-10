@@ -507,6 +507,11 @@ function is_url(?string $url): bool
     return filter_var($url, FILTER_VALIDATE_URL) != false;
 }
 
+function is_domain(?string $domain): bool
+{
+    return filter_var($domain, FILTER_VALIDATE_DOMAIN) != false;
+}
+
 function prepare_phone_number(string $number): string
 {
     return $number[0] === "+" ? $number : ("+" . $number);
