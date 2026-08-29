@@ -31,12 +31,12 @@ class __SqlDatabaseFields
 // Connection
 
 function set_sql_credentials(
-    string     $hostname,
-    string     $username,
-    ?string    $password = null,
-    ?string    $database = null,
-    int|string $port = null,
-    mixed      $socket = null
+    string          $hostname,
+    string          $username,
+    ?string         $password = null,
+    ?string         $database = null,
+    int|string|null $port = null,
+    mixed           $socket = null
 ): void
 {
     __SqlDatabaseFields::$sql_credentials = array(
@@ -90,9 +90,10 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
         $limit = 100_000;
 
         if (is_string($tables)) {
+            $escapedTable = properly_sql_encode($tables, true);
             $query = sql_query(
                 "SELECT hash, results, last_access_time, column_names FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
-                . " WHERE table_name = '$tables' "
+                . " WHERE table_name = '$escapedTable' "
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
                 false,
                 true
@@ -117,7 +118,10 @@ function sql_set_local_memory(bool|array|string $boolOrTables): void
                 "SELECT table_name, hash, results, last_access_time, column_names FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . ($tables === null
                     ? " "
-                    : " WHERE table_name IN ('" . implode("', '", $tables) . "') ")
+                    : " WHERE table_name IN ('" . implode("', '", array_map(
+                        static fn(string $t): string => properly_sql_encode($t, true),
+                        $tables
+                    )) . "') ")
                 . "ORDER BY last_access_time DESC LIMIT $limit;",
                 false,
                 true
@@ -276,12 +280,22 @@ function sql_build_where(array $where): string|array
 
             if ($size < 2 || $size > 4) {
                 log_sql_error(null, "Invalid WHERE clause: " . @json_encode($single));
+                continue;
             }
             $equals = $size === 2;
+
+            if (!$equals) {
+                $allowedOperators = array("=", "!=", "<>", "<", "<=", ">", ">=", "LIKE", "NOT LIKE", "IS", "IS NOT");
+
+                if (!in_array(strtoupper(trim((string)$single[1])), $allowedOperators, true)) {
+                    log_sql_error(null, "Invalid WHERE operator: " . @json_encode($single[1]));
+                    continue;
+                }
+            }
             $value = $single[$equals ? 1 : 2];
             $nullValue = $value === null;
             $booleanValue = is_bool($value);
-            $query .= $single[0]
+            $query .= sql_validate_identifier($single[0])
                 . " " . ($equals ? ($nullValue || $booleanValue && !$value ? "IS" : "=") : $single[1])
                 . " " . ($nullValue ? "NULL" :
                     ($booleanValue ? ($value ? "'1'" : "NULL") :
@@ -371,9 +385,11 @@ function sql_clear_cache(string $table, array $columns): bool
         $columns[] = " * ";
     }
     load_sql_database(__SqlDatabaseServers::MEMORY);
+    $escapedTable = properly_sql_encode($table, true);
+    $escapedColumns = array_map(static fn(string $c): string => properly_sql_encode($c, true), $columns);
     $query = sql_query(
         "SELECT id, hash FROM " . __SqlDatabaseFields::TRACKER_TABLE
-        . " WHERE table_name = '$table' and column_name IN ('" . implode("', '", $columns) . "');",
+        . " WHERE table_name = '$escapedTable' and column_name IN ('" . implode("', '", $escapedColumns) . "');",
         true,
         true
     );
@@ -397,9 +413,10 @@ function sql_clear_cache(string $table, array $columns): bool
         );
 
         if ($query) {
+            $escapedHashes = array_map(static fn($h): string => properly_sql_encode((string)$h, true), $hashes);
             $query = sql_query(
                 "DELETE FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
-                . " WHERE table_name = '$table' and hash IN ('" . implode("', '", $hashes) . "');",
+                . " WHERE table_name = '$escapedTable' and hash IN ('" . implode("', '", $escapedHashes) . "');",
                 true,
                 true
             );
@@ -449,12 +466,13 @@ function sql_store_cache(string           $table,
     }
     if (strlen($store) <= $limit) {
         load_sql_database(__SqlDatabaseServers::MEMORY);
+        $escapedTable = properly_sql_encode($table, true);
 
         if ($cacheExists) {
             $query = sql_query(
                 "UPDATE " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . " SET results = '$store', last_access_time = '$time'"
-                . " WHERE table_name = '$table' and hash = '$hash';",
+                . " WHERE table_name = '$escapedTable' and hash = '$hash';",
                 true,
                 true
             );
@@ -462,16 +480,17 @@ function sql_store_cache(string           $table,
             if ($query) {
                 $query = sql_query(
                     "DELETE FROM " . __SqlDatabaseFields::TRACKER_TABLE
-                    . " WHERE table_name = '$table' and hash = '$hash';",
+                    . " WHERE table_name = '$escapedTable' and hash = '$hash';",
                     true,
                     true
                 );
             }
         } else {
+            $encodedColumns = properly_sql_encode((string)@json_encode($originalColumns), true);
             $query = sql_query(
                 "INSERT INTO " . __SqlDatabaseFields::RETRIEVER_TABLE
                 . " (table_name, hash, results, last_access_time, column_names) "
-                . "VALUES ('$table', '$hash', '$store', '$time', '" . @json_encode($originalColumns) . "');",
+                . "VALUES ('$escapedTable', '$hash', '$store', '$time', '$encodedColumns');",
                 true,
                 true
             );
@@ -480,7 +499,8 @@ function sql_store_cache(string           $table,
             $columnsString = array();
 
             foreach ($columns as $column) {
-                $columnsString[] = "('" . implode("', '", $column) . "')";
+                $escapedColumn = array_map(static fn($v): string => properly_sql_encode((string)$v, true), $column);
+                $columnsString[] = "('" . implode("', '", $escapedColumn) . "')";
             }
             $query = sql_query(
                 "INSERT INTO " . __SqlDatabaseFields::TRACKER_TABLE
@@ -498,6 +518,24 @@ function sql_store_cache(string           $table,
 }
 
 // Encoding
+
+/**
+ * Validates a SQL identifier (table or column name, optionally schema-qualified
+ * as "schema.table") against a strict whitelist and returns it safely
+ * backtick-quoted. Identifiers cannot be parameterized like values, so they
+ * must be validated instead of escaped. Throws if the identifier is unsafe.
+ */
+function sql_validate_identifier(string $identifier): string
+{
+    if (!preg_match('/^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?$/', $identifier)) {
+        log_sql_error(null, "Invalid SQL identifier: " . $identifier);
+        throw new InvalidArgumentException("Invalid SQL identifier: " . $identifier);
+    }
+    return implode(".", array_map(
+        static fn(string $part): string => "`" . $part . "`",
+        explode(".", $identifier)
+    ));
+}
 
 function properly_sql_encode(string $string, bool $partial = false): ?string
 {
@@ -520,7 +558,7 @@ function properly_sql_encode(string $string, bool $partial = false): ?string
 
 function abstract_search_sql_encode(string $string): string
 {
-    return str_replace("_", "\_", str_replace(" % ", "\%", $string));
+    return str_replace("_", "\_", str_replace("%", "\%", $string));
 }
 
 // Get
@@ -548,7 +586,7 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
             $where = sql_build_where($where);
         }
     }
-    $query = "SELECT " . ($select === null ? " * " : implode(", ", $select)) . " FROM " . $table;
+    $query = "SELECT " . ($select === null ? " * " : implode(", ", array_map("sql_validate_identifier", $select))) . " FROM " . sql_validate_identifier($table);
 
     if ($hasWhere) {
         $query .= " WHERE " . $where;
@@ -592,9 +630,10 @@ function get_sql_query(string $table, ?array $select = null, ?array $where = nul
 
     if (__SqlDatabaseFields::$sql_global_memory) {
         load_sql_database(__SqlDatabaseServers::MEMORY);
+        $escapedTable = properly_sql_encode($table, true);
         $cache = sql_query(
             "SELECT results, last_access_time FROM " . __SqlDatabaseFields::RETRIEVER_TABLE
-            . " WHERE table_name = '$table' and hash = '$hash' "
+            . " WHERE table_name = '$escapedTable' and hash = '$hash' "
             . "LIMIT 1;",
             true,
             true
@@ -721,15 +760,15 @@ function sql_insert(string $table, array $pairs): mysqli_result|bool
     $valuesArray = array();
 
     foreach ($pairs as $column => $value) {
-        $columnsArray [] = properly_sql_encode($column);
+        $columnsArray [] = sql_validate_identifier((string)$column);
         $valuesArray [] = ($value === null ? "NULL" :
             (is_bool($value) ? ($value ? "'1'" : "NULL") :
                 "'" . properly_sql_encode($value, true) . "'"));
     }
     $columnsArray = implode(", ", $columnsArray);
     $valuesArray = implode(", ", $valuesArray);
-    $table = properly_sql_encode($table);
-    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES ($valuesArray);");
+    $safeTable = sql_validate_identifier($table);
+    $result = sql_query("INSERT INTO $safeTable ($columnsArray) VALUES ($valuesArray);");
 
     if ($result) {
         __SqlDatabaseFields::$sql_last_insert_id = create_sql_connection()?->insert_id;
@@ -749,7 +788,7 @@ function multiple_sql_insert(string $table, array $columns, array $rows): mysqli
     $valuesArray = array();
 
     foreach ($columns as $column) {
-        $columnsArray [] = properly_sql_encode($column);
+        $columnsArray [] = sql_validate_identifier((string)$column);
     }
     foreach ($rows as $row) {
         $subValues = array();
@@ -763,8 +802,8 @@ function multiple_sql_insert(string $table, array $columns, array $rows): mysqli
     }
     $columnsArray = implode(", ", $columnsArray);
     $valuesArray = implode(", ", $valuesArray);
-    $table = properly_sql_encode($table);
-    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES $valuesArray;");
+    $safeTable = sql_validate_identifier($table);
+    $result = sql_query("INSERT INTO $safeTable ($columnsArray) VALUES $valuesArray;");
 
     if ($result) {
         __SqlDatabaseFields::$sql_last_insert_id = create_sql_connection()?->insert_id;
@@ -784,7 +823,7 @@ function sql_insert_multiple(string $table, array $columns, array $values): mysq
     $valuesArray = array();
 
     foreach ($columns as $column) {
-        $columnsArray [] = properly_sql_encode($column);
+        $columnsArray [] = sql_validate_identifier((string)$column);
     }
     foreach ($values as $subValues) {
         foreach ($subValues as $key => $value) {
@@ -796,8 +835,8 @@ function sql_insert_multiple(string $table, array $columns, array $values): mysq
     }
     $columnsArray = implode(", ", $columnsArray);
     $valuesArray = implode(", ", $valuesArray);
-    $table = properly_sql_encode($table);
-    $result = sql_query("INSERT INTO $table ($columnsArray) VALUES $valuesArray;");
+    $safeTable = sql_validate_identifier($table);
+    $result = sql_query("INSERT INTO $safeTable ($columnsArray) VALUES $valuesArray;");
 
     if ($result) {
         sql_clear_cache($table, $columns);
@@ -809,7 +848,7 @@ function sql_insert_multiple(string $table, array $columns, array $values): mysq
 
 function set_sql_query(string $table, array $what, ?array $where = null, string|array|null $order = null, int $limit = 0): mysqli_result|bool
 {
-    $query = "UPDATE " . $table . " SET ";
+    $query = "UPDATE " . sql_validate_identifier($table) . " SET ";
     $counter = 0;
     $whatSize = sizeof($what);
 
@@ -829,9 +868,11 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
                 log_sql_error(null, "Invalid SET value: Non-string for key " . $key);
                 return false;
             }
-            $query .= properly_sql_encode($key) . " = " . $value;
+            // NOTE: this branch is a raw-SQL-fragment escape hatch (e.g. "col + 1") and is
+            // inserted unescaped. Only ever pass trusted, non-user-controlled strings here.
+            $query .= sql_validate_identifier($key) . " = " . $value;
         } else {
-            $query .= properly_sql_encode($key) . " = " . ($value === null ? "NULL" :
+            $query .= sql_validate_identifier($key) . " = " . ($value === null ? "NULL" :
                     (is_bool($value) ? ($value ? "'1'" : "NULL") :
                         "'" . properly_sql_encode($value, true) . "'"));
         }
@@ -862,8 +903,9 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
 
 function delete_sql_query(string $table, array $where, string|array|null $order = null, int $limit = 0): mysqli_result|bool
 {
-    $columnsQuery = sql_query("SELECT * FROM " . $table . " LIMIT 1;");
-    $query = "DELETE FROM " . $table . " WHERE " . sql_build_where($where);
+    $safeTable = sql_validate_identifier($table);
+    $columnsQuery = sql_query("SELECT * FROM " . $safeTable . " LIMIT 1;");
+    $query = "DELETE FROM " . $safeTable . " WHERE " . sql_build_where($where);
 
     if ($order !== null) {
         $query .= " ORDER BY " . sql_build_order($order, $table);
@@ -885,7 +927,7 @@ function delete_sql_query(string $table, array $where, string|array|null $order 
 function get_sql_database_tables(string $database): array
 {
     $array = array();
-    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . $database . "';");
+    $query = sql_query("SELECT TABLE_NAME FROM INFORMATION_SCHEMA . TABLES WHERE TABLE_SCHEMA = '" . properly_sql_encode($database, true) . "';");
 
     if ($query
         && ($query->num_rows ?? 0) > 0) {
@@ -922,7 +964,7 @@ function get_sql_database_columns(string $table, bool $cache = true): array
         }
     }
     $array = array();
-    $query = sql_query("SHOW COLUMNS FROM " . $table . ";");
+    $query = sql_query("SHOW COLUMNS FROM " . sql_validate_identifier($table) . ";");
 
     if ($query
         && ($query->num_rows ?? 0) > 0) {
