@@ -12,7 +12,7 @@ $unsigned_59bit_full_Integer = 576460752303423488;
 
 $backup_domain = "www.idealistic.ai";
 
-$keys_from_file_directory = "/root/discord_bot/private/credentials/";
+$keys_from_file_directory = "/root/idealistic_telegram/private/credentials/";
 
 // Constants
 
@@ -79,21 +79,15 @@ function post_file_get_contents(string                     $url,
                                 int|float|string|bool|null $user_agent = null,
                                 int                        $timeoutSeconds = 0): bool|string
 {
-    global $_POST;
+    $postData = $clearPreviousParameters ? array() : $_POST;
 
     if ($parameters !== null) {
-        if ($clearPreviousParameters) {
-            $_POST = $parameters;
-        } else {
-            $_POST = array_merge($_POST, $parameters);
-        }
-    } else if ($clearPreviousParameters) {
-        $_POST = array();
+        $postData = $clearPreviousParameters ? $parameters : array_merge($postData, $parameters);
     }
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_USERAGENT, $user_agent);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($_POST));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -106,10 +100,13 @@ function post_file_get_contents(string                     $url,
 
 function run_script_via_tmux(string $script, array $parameters, string $tmux = "async"): void
 {
-    shell_exec("tmux new -s " . $tmux);
-    shell_exec('tmux send -t ' . $tmux
-        . ' "php /var/www/.structure/scripts/' . $script . '.php '
-        . implode(" ", $parameters) . '" ENTER');
+    $safeTmux = escapeshellarg($tmux);
+    $safeScript = escapeshellarg($script);
+    $safeParameters = implode(" ", array_map("escapeshellarg", $parameters));
+    shell_exec("tmux new -s " . $safeTmux);
+    shell_exec('tmux send -t ' . $safeTmux
+        . ' "php /var/www/.structure/scripts/' . $safeScript . '.php '
+        . $safeParameters . '" ENTER');
 }
 
 function instant_shell_exec(string $command, bool $debug = true): string|false|null
@@ -182,11 +179,11 @@ function timed_file_get_contents(
 
 function create_and_close_curl_connection(string $url, array $properties = null): bool|string|null
 {
-    return shell_exec(
-        "curl"
-        . ($properties !== null ? " --" . implode(" --", $properties) . " " : " ")
-        . $url
-    );
+    $safeUrl = escapeshellarg($url);
+    $safeProperties = $properties !== null
+        ? " --" . implode(" --", array_map("escapeshellarg", $properties)) . " "
+        : " ";
+    return shell_exec("curl" . $safeProperties . $safeUrl);
 }
 
 function get_curl(string $url, string $type, array $headers, mixed $arguments,
@@ -262,7 +259,7 @@ function copy_and_send_file_download(mixed $file, string $directory, bool $exit 
 
 function can_reach_server(string $ip): bool
 {
-    exec("/bin/ping -c2 -w2 $ip", $outcome, $status);
+    exec("/bin/ping -c2 -w2 " . escapeshellarg($ip), $outcome, $status);
     return $status == 0;
 }
 
@@ -285,34 +282,10 @@ function get_client_ip_address(): ?string
 
 function get_raw_client_ip_address(): ?string
 {
-    if (getenv('HTTP_CLIENT_IP')) {
-        $ipAddress = getenv('HTTP_CLIENT_IP');
-    } else if (getenv('HTTP_X_FORWARDED_FOR')) {
-        $ipAddress = getenv('HTTP_X_FORWARDED_FOR');
-    } else if (getenv('HTTP_X_FORWARDED')) {
-        $ipAddress = getenv('HTTP_X_FORWARDED');
-    } else if (getenv('HTTP_FORWARDED_FOR')) {
-        $ipAddress = getenv('HTTP_FORWARDED_FOR');
-    } else if (getenv('HTTP_FORWARDED')) {
-        $ipAddress = getenv('HTTP_FORWARDED');
-    } else if (getenv('REMOTE_ADDR')) {
-        $ipAddress = getenv('REMOTE_ADDR');
-    } else if (isset($_SERVER['HTTP_CLIENT_IP'])) {
-        $ipAddress = $_SERVER['HTTP_CLIENT_IP'];
-    } else if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ipAddress = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } else if (isset($_SERVER['HTTP_X_FORWARDED'])) {
-        $ipAddress = $_SERVER['HTTP_X_FORWARDED'];
-    } else if (isset($_SERVER['HTTP_FORWARDED_FOR'])) {
-        $ipAddress = $_SERVER['HTTP_FORWARDED_FOR'];
-    } else if (isset($_SERVER['HTTP_FORWARDED'])) {
-        $ipAddress = $_SERVER['HTTP_FORWARDED'];
-    } else if (isset($_SERVER['REMOTE_ADDR'])) {
-        $ipAddress = $_SERVER['REMOTE_ADDR'];
-    } else {
-        return "";
+    if (isset($_SERVER['HTTP_CF_CONNECTING_IP']) && is_ip_address($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        return $_SERVER['HTTP_CF_CONNECTING_IP'];
     }
-    return explode(",", $ipAddress, 2)[0];
+    return $_SERVER['REMOTE_ADDR'] ?? "";
 }
 
 function redirect_to_url(string $url, mixed $argumentBlacklist = null): void
@@ -603,7 +576,8 @@ function str_replace_whole_words(string|array $search, string|array $replace, st
     return $subject;
 }
 
-function str_contains_ignore_diacritics(string $haystack, string $needle): bool {
+function str_contains_ignore_diacritics(string $haystack, string $needle): bool
+{
     $normalizedHaystack = remove_diacritics($haystack);
     $normalizedNeedle = remove_diacritics($needle);
     return mb_stripos($normalizedHaystack, $normalizedNeedle) !== false;
@@ -616,7 +590,8 @@ function str_contains_word(string $haystack, string $needle): bool
     return preg_match('/\b' . preg_quote($normalizedNeedle, '/') . '\b/ui', $normalizedHaystack) === 1;
 }
 
-function remove_diacritics(string $text): string {
+function remove_diacritics(string $text): string
+{
     $normalized = Normalizer::normalize($text, Normalizer::FORM_D);
     return preg_replace('/\p{Mn}/u', '', $normalized);
 }
@@ -710,18 +685,6 @@ function make_alpha_numeric(string $string): array|string|null
     return preg_replace('/[^A-Za-z0-9\-]/', '', str_replace(' ', '', $string));
 }
 
-function starts_with(string $haystack, string $needle): bool
-{
-    $length = strlen($needle);
-    return $length == 0 || (substr($haystack, 0, $length) === $needle);
-}
-
-function ends_with(string $haystack, string $needle): bool
-{
-    $length = strlen($needle);
-    return $length == 0 || substr($haystack, -$length) === $needle;
-}
-
 function random_string(int $length = 10, bool $lower = true, bool $capital = true, bool $numbers = true): ?string
 {
     $characters = "";
@@ -735,16 +698,16 @@ function random_string(int $length = 10, bool $lower = true, bool $capital = tru
     if ($numbers) {
         $characters .= "0123456789";
     }
-    if (!empty($capital)) {
-        $charactersLength = strlen($characters);
-        $randomString = '';
-
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
-        }
-        return $randomString;
+    if ($characters === "") {
+        return null;
     }
-    return null;
+    $charactersLength = strlen($characters);
+    $randomString = '';
+
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[random_int(0, $charactersLength - 1)];
+    }
+    return $randomString;
 }
 
 function cut_string_at_first_number(string $string): string
@@ -860,15 +823,15 @@ function array_to_integer(array|object|null $array, bool $long = false): int
 function random_number(int $length = 9, bool $zero = true): string
 {
     if ($length <= 0) {
-        return rand(0, 9);
+        return (string)random_int(0, 9);
     }
     $randomString = "";
 
     for ($i = 0; $i < $length; $i++) {
         if (!$zero && $i === 0) {
-            $randomString .= rand(1, 9);
+            $randomString .= random_int(1, 9);
         } else {
-            $randomString .= rand(0, 9);
+            $randomString .= random_int(0, 9);
         }
     }
     return $randomString;

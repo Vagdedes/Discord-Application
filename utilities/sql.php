@@ -519,14 +519,24 @@ function sql_store_cache(string           $table,
 
 // Encoding
 
-/**
- * Validates a SQL identifier (table or column name, optionally schema-qualified
- * as "schema.table") against a strict whitelist and returns it safely
- * backtick-quoted. Identifiers cannot be parameterized like values, so they
- * must be validated instead of escaped. Throws if the identifier is unsafe.
- */
 function sql_validate_identifier(string $identifier): string
 {
+    static $allowedFunctions = [
+        'LOWER', 'UPPER',
+        'TRIM', 'LTRIM', 'RTRIM',
+        'LENGTH', 'CHAR_LENGTH',
+        'DATE', 'YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND',
+    ];
+
+    if (preg_match('/^([A-Za-z_]+)\((.+)\)$/', $identifier, $matches)) {
+        $function = strtoupper($matches[1]);
+
+        if (!in_array($function, $allowedFunctions, true)) {
+            log_sql_error(null, "Invalid SQL identifier function: " . $identifier);
+            throw new InvalidArgumentException("Invalid SQL identifier: " . $identifier);
+        }
+        return $function . "(" . sql_validate_identifier($matches[2]) . ")";
+    }
     if (!preg_match('/^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?$/', $identifier)) {
         log_sql_error(null, "Invalid SQL identifier: " . $identifier);
         throw new InvalidArgumentException("Invalid SQL identifier: " . $identifier);
@@ -868,8 +878,6 @@ function set_sql_query(string $table, array $what, ?array $where = null, string|
                 log_sql_error(null, "Invalid SET value: Non-string for key " . $key);
                 return false;
             }
-            // NOTE: this branch is a raw-SQL-fragment escape hatch (e.g. "col + 1") and is
-            // inserted unescaped. Only ever pass trusted, non-user-controlled strings here.
             $query .= sql_validate_identifier($key) . " = " . $value;
         } else {
             $query .= sql_validate_identifier($key) . " = " . ($value === null ? "NULL" :

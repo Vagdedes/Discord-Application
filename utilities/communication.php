@@ -3,8 +3,6 @@ $private_connection_access = false;
 $current_sql_database = null;
 $previous_sql_database = null;
 
-//load_sql_database(); Moved to bot implementation
-
 class __SqlDatabaseServers
 {
     public const
@@ -94,32 +92,32 @@ function is_private_connection(): bool
 
     if ($private_connection_access) {
         return true;
-    } else {
-        if (isset($_POST['private_verification_key'])) {
-            $query = get_sql_query( // No cache required, already in memory table
-                __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
-                array("id"),
-                array(
-                    array("code", hash("sha512", $_POST['private_verification_key']))
-                ),
-                null,
-                1
-            );
-
-            if (!empty($query)) {
-                $private_connection_access = true;
-                delete_sql_query(
-                    __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
-                    array(
-                        array("id", "=", $query[0]->id, 0),
-                        array("expiration", "<", time())
-                    )
-                );
-                return true;
-            }
-        }
+    }
+    if (!isset($_POST['private_verification_key'])) {
         return false;
     }
+    $query = get_sql_query(
+        __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
+        array("id"),
+        array(
+            array("code", hash("sha512", $_POST['private_verification_key'])),
+            array("expiration", ">=", time())
+        ),
+        null,
+        1
+    );
+
+    if (empty($query)) {
+        return false;
+    }
+    $private_connection_access = true;
+    delete_sql_query(
+        __SqlDatabaseCommunication::PRIVATE_CONNECTIONS_TABLE,
+        array(
+            array("id", $query[0]->id)
+        )
+    );
+    return true;
 }
 
 function get_private_ip_address(): ?string
